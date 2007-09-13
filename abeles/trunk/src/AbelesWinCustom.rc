@@ -1,0 +1,75 @@
+/*	XOP-specific resources for Abeles on Windows
+
+	This file is compiled by the resource compiler and creates XOP-specific
+	resources that IGOR looks for in an XOP module.
+*/
+
+#include "XOPResources.h"			// Defines XOP-specific symbols.
+
+1100 STR#							// Custom error messages.
+BEGIN
+	"Abeles requires Igor Pro 4.0 or later.\0",
+	"Wave does not exist\0",
+	"Coefficient wave must be single or double precision floating point\0",
+	"The coefficient wave has the wrong number of parameters. Wavelength = 4*w[0]+6+4*mullayers\0",
+	"Waves not same length\0",
+	"Requires double precision wave\0",
+	// You can add error messages here.
+	
+	0,								// NOTE: 0 required to terminate the resource.
+END
+
+1101 STR#							// Misc strings that Igor looks for.
+BEGIN
+	"-1\0",							// -1 means we don't want to add a menu item via STR# 1101. We add it via the XMI1 reource.
+	"---\0",						// IGOR ignores item 2 because item 1 is -1.
+	"Abeles Help\0",			// Name of XOP's help file.
+
+	"\0"							// NOTE: NULL required to terminate the resource.
+END
+
+1100 XOPI							// XOPI - Describes general XOP properties to IGOR. 
+BEGIN
+	XOP_VERSION,					// Version number of host XOP system.
+	DEV_SYS_CODE,					// Code for development system used to make XOP.
+	0,								// Obsolete - set to zero.
+	0,								// Obsolete - set to zero.
+	XOP_TOOLKIT_VERSION				// XOP Toolkit version.
+END
+
+1100 XOPF							// Describes functions added by XOP to IGOR.
+BEGIN
+	"Abeles\0",					// Function name.
+	F_EXP | F_EXTERNAL,				// Function category,
+	NT_FP64,						// Return value type.
+		NT_FP64 | WAVE_TYPE,		// Double precision wave (coefficient wave).
+		NT_FP64,					// Double precision x.
+		0,							// NOTE: 0 required to terminate list of parameter types.
+	
+	"Abeles_imag\0",					// Function name.
+	F_EXP | F_EXTERNAL,				// Function category,
+	NT_FP64,						// Return value type.
+		NT_FP64 | WAVE_TYPE,		// Double precision wave (coefficient wave).
+		NT_FP64,					// Double precision x.
+		0,							// NOTE: 0 required to terminate list of parameter types.
+		
+	"AbelesAll\0",					// Function name.
+	F_EXP | F_EXTERNAL,				// Function category,
+	NT_FP64,						// Return value type.
+		NT_FP64 + WAVE_TYPE,		// Double precision wave (coefficient wave).
+		NT_FP64 + WAVE_TYPE,		// Double precision wave (y wave).
+		NT_FP64 + WAVE_TYPE,		// Double precision wave (x wave).
+		0,							// NOTE: 0 required to terminate list of parameter types.
+	
+	"Abeles_imagAll\0",					// Function name.
+	F_EXP | F_EXTERNAL,				// Function category,
+	NT_FP64,						// Return value type.
+		NT_FP64 + WAVE_TYPE,		// Double precision wave (coefficient wave).
+		NT_FP64 + WAVE_TYPE,		// Double precision wave (y wave).
+		NT_FP64 + WAVE_TYPE,		// Double precision wave (x wave).
+		0,							// NOTE: 0 required to terminate list of parameter types.
+		
+	// More function descriptions can appear here.
+	
+	0,								// NOTE: 0 required to terminate the resource.
+END
