@@ -53,7 +53,7 @@ BEGIN
 	//[22]
 	"FitFunction returned NaN/INF for one or more values.\0",
 	//[23]
-	"Unspecified Gencurvefit Error.\0",
+	"Unspecified Internal Gencurvefit Error.\0",
 	//[24]
 	"Holdstring should be same length as coefficient wave.\0",
 	//[25]

@@ -63,7 +63,7 @@ resource 'STR#' (1100) {					/* custom error messages */
 	//[22]
 	"FitFunction returned NaN/INF for one or more values.",
 	//[23]
-	"Unspecified Gencurvefit Error.",
+	"Unspecified Internal Gencurvefit Error.",
 	//[24]
 	"Holdstring should be same length as coefficient wave.",
 	//[25]
