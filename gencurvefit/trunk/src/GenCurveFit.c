@@ -235,6 +235,7 @@ struct GenCurveFitRuntimeParams {
 	Has dimensions [numpnts(coefs)][2].  First column contains lower limit, second column contains upper limit.
 	Legal use:
 	lowerlimit[parameter1] < coefs[parameter1] < upperlimit[parameter1]
+	The check to see whether the coefficients are within the upper and lower limits is only performed if bit 0 of the /OPT flag is set.
 	*/
 	int limitswaveEncountered;
 	waveHndl limitswave;
@@ -329,7 +330,7 @@ struct GenCurveFitInternals{
 	waveHndl GenCurveFitCoefs;
 	//the full range of xpoints being used (including masked points)
 	waveHndl fullExtentOfData[MAX_MDFIT_SIZE];
-	//a temporary wave handle.  This will be made with /D specified and if the data dimension =1
+	//a temporary wave handle.  This will be made if /D is specified and if the independent data is univariate
 	waveHndl tempWaveHndl_OUTx;
 	
 	//Wave Handles for the output, i.e. the fit waves.
@@ -359,7 +360,6 @@ struct allFitFunc { // Used to pass parameters to the function.
 	waveHndl waveY;	// for filling up by the function
 	waveHndl waveX[MAX_MDFIT_SIZE];	// supplies independent values for function
 };
-
 
 typedef struct allFitFunc allFitFunc;
 typedef struct allFitFunc* allFitFuncPtr;
