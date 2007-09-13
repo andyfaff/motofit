@@ -1,0 +1,72 @@
+/*
+GenCurveFit.c -- An XOP for curvefitting via Differential Evolution.
+@copyright: Andrew Nelson and the Australian Nuclear Science and Technology Organisation 2007.
+*/
+
+
+#include "XOPResources.h"			// Defines XOP-specific symbols.
+
+1100 STR#							// Custom error messages.
+BEGIN
+	"GenCurveFit requires Igor Pro 5.03 or later.\0",
+	"Non-Existent Wave.\0",
+	"Requires Double or Single Precision Wave.\0",
+	"Waves not the same length.\0",
+	"Input data must be 1D.\0",
+	"Input data has no points.\0",
+	"Input data contains NaN/INF.\0",
+	"Coefficient Wave has no points.\0",
+	"Coefficient Wave contains NaN/INF.\0",
+	"Scaling of Y wave is NaN/INF.\0",
+	"/K --> genetic optimisation parameters not specified correctly.\0",
+	"Please specify holdstring.\0",
+	"Holdstring should only contain 0 and 1 (fit,don't fit).\0",
+	"Stopping tolerance must be 0<tol and not NaN/INF .\0",
+	"Invalid FitFunction\0",
+	"Fitfunction doesn't return a number.\0",
+	"Multivariate fitfunction supplied, but wrong independent variable information supplied.\0",
+	"Parameters for fitfunc must be f(Wave,Wave,Wave).\0",
+	"Fit function wasn't specified.\0",
+	"Limits Wave must have dimensions NUMROWS=numpnts(coefs), NUMCOLS=2.\0",
+	"Limits and/or coefficient waves not specified correctly.\n lowerlim<coef<upperlim.\0",
+	"FitFunction returned NaN/INF for one or more values.\0",
+	"Unspecified GeneticOptimisation Error.\0",
+	"Holdstring should be same length as coefficient wave.\0",
+	"All parameters are being held.\0",
+	"Genetic Optimisation Aborted.\0",
+	"Output wave requires same number of points as ywave (/R/D).\0",
+	"You are trying to overwrite an Input/Output wave with an output wave (/R/D).\0",
+	"you are trying to weight with standard deviations, but one of them is zero - DIVIDE BY ZERO.\0",
+	"User redimensioned/killed Internal GenOpt fitwave.\0",
+	"Wrong Index for cost function.\0",
+	"Subrange limited to point specification (you specified xscaling) - remember to sort wave.\0",
+
+	// You can add error messages here.
+
+	0,								// NOTE: 0 required to terminate the resource.
+END
+
+1101 STR#							// Misc strings that Igor looks for.
+BEGIN
+	"-1\0",							// -1 means we don't want to add a menu item via STR# 1101. We add it via the XMI1 reource.
+	"---\0",						// IGOR ignores item 2 because item 1 is -1.
+	"GenCurveFit Help\0",			// Name of XOP's help file.
+	"\0"							// NOTE: NULL required to terminate the resource.
+END
+
+1100 XOPI							// XOPI - Describes general XOP properties to IGOR.
+BEGIN
+	XOP_VERSION,					// Version number of host XOP system.
+	DEV_SYS_CODE,					// Code for development system used to make XOP.
+	0,								// Obsolete - set to zero.
+	0,								// Obsolete - set to zero.
+	XOP_TOOLKIT_VERSION				// XOP Toolkit version.
+END
+
+1100 XOPC							// Describes operations that the XOP adds to IGOR.
+BEGIN
+	"GenCurveFit\0",
+	utilOp | XOPOp | compilableOp,
+
+	"\0"							// NOTE: NULL required to terminate the resource.
+END
