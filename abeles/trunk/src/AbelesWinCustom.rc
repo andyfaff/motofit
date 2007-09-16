@@ -68,6 +68,15 @@ BEGIN
 		NT_FP64 + WAVE_TYPE,		// Double precision wave (y wave).
 		NT_FP64 + WAVE_TYPE,		// Double precision wave (x wave).
 		0,							// NOTE: 0 required to terminate list of parameter types.
+
+	"smearedAbelesAll\0",					// Function name.
+	F_EXP | F_EXTERNAL,				// Function category,
+	NT_FP64,						// Return value type.
+		NT_FP64 + WAVE_TYPE,		// Double precision wave (coefficient wave).
+		NT_FP64 + WAVE_TYPE,		// Double precision wave (y wave).
+		NT_FP64 + WAVE_TYPE,		// Double precision wave (x wave).
+		NT_FP64 + WAVE_TYPE,		// Double precision wave (dx wave).
+		0,							// NOTE: 0 required to terminate list of parameter types.
 		
 	// More function descriptions can appear here.
 	
