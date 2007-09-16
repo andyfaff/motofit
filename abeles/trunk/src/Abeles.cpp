@@ -57,11 +57,21 @@ typedef struct FitParamsAll {
 	DOUBLE result;			// not actually used.
 }FitParamsAll, *FitParamsAllPtr;
 
+typedef struct SmearedParamsAll {
+	waveHndl dXWaveHandle;	// X wave (input).	
+	waveHndl XWaveHandle;	// X wave (input).
+	waveHndl YWaveHandle;	// Y wave (output).
+	waveHndl CoefHandle;	// Coefficient wave.
+	DOUBLE result;			// not actually used.
+}SmearedParamsAll, *SmearedParamsAllPtr;
+
+
 #include "XOPStructureAlignmentReset.h"
 static int AbelescalcAll(double*,double*,double*,long);
 static int Abelescalc_imagAll(double*,double*,double*,long);
 static int Abelescalc(double*,double, double*);
 static int Abelescalc_imag(double*,double,double*);
+static int smearedAbelescalcAll(double *coefP, double *yP, double *xP, double *dxP, long npoints);
 static void matmul(MyComplex,MyComplex,MyComplex);
 static MyComplex fres(MyComplex,MyComplex,double);
 
@@ -138,6 +148,96 @@ done:
 		delete [] yP;
 	if(coefP != NULL)
 		delete [] coefP;
+
+	return err;	
+}
+
+static int
+smearedAbelesAll(SmearedParamsAllPtr p){
+	long ncoefs,npoints;
+	double realVal,imagVal;
+	int nlayers,Vmullayers=-1, err=0;
+	double *coefP = NULL;
+	double *xP = NULL;
+	double *yP = NULL;
+	double *dxP = NULL;
+	
+
+	if (p->CoefHandle == NULL || p->YWaveHandle == NULL || p->XWaveHandle == NULL || p->dXWaveHandle == NULL) 
+	{
+		SetNaN64(&p->result);
+		err = NON_EXISTENT_WAVE;
+		goto done;
+	}
+	if (!(WaveType(p->CoefHandle) != NT_FP64 || WaveType(p->YWaveHandle) != NT_FP64 || WaveType(p->XWaveHandle) != NT_FP64
+		|| WaveType(p->XWaveHandle) != NT_FP32 || WaveType(p->YWaveHandle) != NT_FP32 || WaveType(p->CoefHandle) != NT_FP32
+		|| WaveType(p->dXWaveHandle) != NT_FP32 || WaveType(p->dXWaveHandle) != NT_FP64)){
+		SetNaN64(&p->result);
+		err = REQUIRES_SP_OR_DP_WAVE;
+		goto done;
+	}
+	
+	if(FetchNumVar("Vmullayers", &realVal, &imagVal) == -1){
+		Vmullayers=0;
+	} else{
+		Vmullayers=(long)realVal;
+	}
+
+	ncoefs= WavePoints(p->CoefHandle);
+	npoints = WavePoints(p->YWaveHandle);
+	if (npoints != WavePoints(p->XWaveHandle)){
+		SetNaN64(&p->result);
+		err = WAVES_NOT_SAME_LENGTH;
+		goto done;
+	}
+	if (npoints != WavePoints(p->dXWaveHandle)){
+		SetNaN64(&p->result);
+		err = WAVES_NOT_SAME_LENGTH;
+		goto done;
+	}
+	
+	try{
+		coefP =  new double[ncoefs];
+		xP =  new double[npoints];
+		yP = new double[npoints];
+		dxP = new double[npoints];
+	} catch (...){
+		err = NOMEM;
+		goto done;
+	}
+
+	if(err = MDGetDPDataFromNumericWave(p->CoefHandle, coefP))
+		goto done;
+	if(err = MDGetDPDataFromNumericWave(p->YWaveHandle, yP))
+		goto done;
+	if(err = MDGetDPDataFromNumericWave(p->XWaveHandle, xP))
+		goto done;
+	if(err = MDGetDPDataFromNumericWave(p->dXWaveHandle, dxP))
+		goto done;
+
+	nlayers = (long)coefP[0];
+	if(ncoefs != (4*Vmullayers+(4*nlayers+6))){
+		err = INCORRECT_INPUT;
+		goto done;
+	};
+	
+	if(err = smearedAbelescalcAll(coefP,yP,xP,dxP,npoints))
+		goto done;
+	if(err = MDStoreDPDataInNumericWave(p->YWaveHandle,yP))
+		goto done;
+	
+	WaveHandleModified(p->YWaveHandle);
+	p->result = 0;		// not actually used by FuncFit
+
+done:
+	if(xP != NULL)
+		delete [] xP;
+	if(yP != NULL)
+		delete [] yP;
+	if(coefP != NULL)
+		delete [] coefP;
+	if(dxP != NULL)
+		delete [] dxP;
 
 	return err;	
 }
@@ -340,6 +440,9 @@ RegisterFunction()
 		case 3:
 			return((long)Abeles_imagAll);
 			break;
+		case 4:
+			return((long)smearedAbelesAll);
+			break;
 	}
 	return NIL;
 }
@@ -385,23 +488,18 @@ HOST_IMPORT void main(IORecHandle ioRecHandle)
 		SetXOPResult(0L);
 }
 
-static void
+inline void
 matmul(MyComplex a[2][2],MyComplex b[2][2],MyComplex c[2][2]){
 	c[0][0] = a[0][0]*b[0][0] + a[0][1]*b[1][0];
 	c[0][1] = a[0][0]*b[0][1] + a[0][1]*b[1][1];
 	c[1][0]	= a[1][0]*b[0][0] + a[1][1]*b[1][0];
 	c[1][1] = a[1][0]*b[0][1] + a[1][1]*b[1][1];	
 }
+
+
 static MyComplex
 fres(MyComplex a,MyComplex b,double rough){
-	MyComplex c;
-	MyComplex arg = a*b;
-	arg = MyComplex(-2*rough*rough,0)*arg;
-//	arg = c.compexp(arg);
-	arg = compexp(arg);
-	c = (a-b)/(a+b);
-	c = c*arg;
-	return c;
+	return (compexp(MyComplex(-2*rough*rough,0)*a*b))*(a-b)/(a+b);
 }
 
 static int
@@ -852,7 +950,6 @@ done:
 }
 
 
-
 static int 
 AbelescalcAll(double *coefP, double *yP, double *xP,long npoints){
 	int err = 0;
@@ -987,6 +1084,7 @@ AbelescalcAll(double *coefP, double *yP, double *xP,long npoints){
 			temp2[0][1] = MRtotal[0][1];
 			temp2[1][0] = MRtotal[1][0];
 			temp2[1][1] = MRtotal[1][1];
+						
 			//multiply MR,MI to get the updated total matrix.			
 			matmul(temp2,MI,MRtotal);
 
@@ -1303,3 +1401,264 @@ done:
 	return err;
 }
 
+
+static int 
+smearedAbelescalcAll(double *coefP, double *yP, double *xP, double *dxP, long npoints){
+	int err = 0;
+	int j=0, respoints=13;
+	int Vmulrep=0,Vmulappend=0,Vmullayers=0;
+	double realVal=0,imagVal=0;
+	int ii=0,jj=0,kk=0;
+
+	double scale,bkg,subrough;
+	double num=0,den=0, answer=0,qq;
+	double anum,anum2;
+	MyComplex temp,SLD,beta,rj;
+	double numtemp=0;
+	int offset=0;
+	MyComplex  MRtotal[2][2];
+	MyComplex subtotal[2][2];
+	MyComplex MI[2][2];
+	MyComplex temp2[2][2];
+	MyComplex qq2;
+	MyComplex oneC = MyComplex(1,0);
+	MyComplex *pj_mul = NULL;
+	MyComplex *pj = NULL;
+	double *dyP = NULL;
+	double *ddxP = NULL;
+	double *SLDmatrix = NULL;
+	double *SLDmatrixREP = NULL;
+
+	int nlayers = (int)coefP[0];
+	
+	try{
+		pj = new MyComplex [nlayers+2];
+		SLDmatrix = new double [nlayers+2];
+		dyP = new double [npoints*respoints];
+		ddxP = new double [npoints*respoints];
+	} catch(...){
+		err = NOMEM;
+		goto done;
+	}
+
+	memset(pj, 0, sizeof(pj));
+	memset(SLDmatrix, 0, sizeof(SLDmatrix));
+	memset(dyP, 0, sizeof(dyP));
+	memset(ddxP, 0, sizeof(ddxP));
+
+	for(ii=0 ; ii < npoints*respoints ; ii+=1){
+		realVal = *(xP+ii/respoints) + (double)((ii%respoints)-(respoints-1)/2)*0.2*(*(dxP+ii/respoints));
+		*(ddxP+ii) = *(xP+ii/respoints) + (double)((ii%respoints)-(respoints-1)/2)*0.2*(*(dxP+ii/respoints));
+	}
+	
+	scale = coefP[1];
+	bkg = fabs(coefP[4]);
+	subrough = coefP[5];
+
+	//offset tells us where the multilayers start.
+	offset = 4 * nlayers + 6;
+
+	//fillout all the SLD's for all the layers
+	for(ii=1; ii<nlayers+1;ii+=1){
+		numtemp = 1.e-6 * ((100. - coefP[4*ii+4])/100.) * coefP[4*ii+3]+ (coefP[4*ii+4]*coefP[3]*1.e-6)/100.;		//sld of the layer
+		*(SLDmatrix+ii) = 4*PI*(numtemp  - (coefP[2]*1e-6));
+	}
+	*(SLDmatrix) = 0;
+	*(SLDmatrix+nlayers+1) = 4*PI*((coefP[3]*1e-6) - (coefP[2]*1e-6));
+	
+	if(FetchNumVar("Vmullayers", &realVal, &imagVal)!=-1){ // Fetch value
+		Vmullayers=(int)realVal;
+		if(FetchNumVar("Vappendlayer", &realVal, &imagVal)!=-1) // Fetch value
+			Vmulappend=(int)realVal;
+		if(FetchNumVar("Vmulrep", &realVal, &imagVal) !=-1) // Fetch value
+			Vmulrep=(int)realVal;
+
+		if(Vmullayers > 0 && Vmulrep > 0 && Vmulappend >= 0){
+		//set up an array for wavevectors
+			try{
+				SLDmatrixREP = new double [Vmullayers];
+				pj_mul = new MyComplex [Vmullayers];
+			} catch(...){
+				err = NOMEM;
+				goto done;
+			}
+			memset(pj_mul, 0, sizeof(pj_mul));
+			for(ii=0; ii<Vmullayers;ii+=1){
+				numtemp = (coefP[3]*1e-6*coefP[(4*ii)+offset+2]/100) +(1e-6 * ((100 - coefP[(4*ii)+offset+2])/100) * coefP[(4*ii)+offset+1]);		//sld of the layer
+				*(SLDmatrixREP+ii) = 4*PI*(numtemp  - (coefP[2]*1e-6));
+			}
+		}
+	}
+	
+	for (j = 0; j < npoints * respoints; j++) {
+		//intialise the matrices
+		memset(MRtotal,0,sizeof(MRtotal));
+		MRtotal[0][0] = oneC ; MRtotal[1][1] = oneC;
+
+		qq = ddxP[j]*ddxP[j]/4;
+		qq2=MyComplex(qq,0);
+
+		for(ii=0; ii<nlayers+2 ; ii++){			//work out the wavevector in each of the layers
+			pj[ii] = (*(SLDmatrix+ii)>qq) ? compsqrt(qq2-MyComplex(*(SLDmatrix+ii),0)): MyComplex(sqrt(qq-*(SLDmatrix+ii)),0);
+		}
+		
+		//workout the wavevector in the toplayer of the multilayer, if it exists.
+		if(Vmullayers > 0 && Vmulrep > 0 && Vmulappend >=0){
+			memset(subtotal,0,sizeof(subtotal));
+			subtotal[0][0]=MyComplex(1,0);subtotal[1][1]=MyComplex(1,0);
+			pj_mul[0] = (*(SLDmatrixREP)>qq) ? compsqrt(qq2-MyComplex(*SLDmatrixREP,0)): MyComplex(sqrt(qq-*SLDmatrixREP),0);
+		}
+		
+		//now calculate reflectivities
+		for(ii = 0 ; ii < nlayers+1 ; ii++){
+			//work out the fresnel coefficients
+			//this looks more complicated than it really is.
+			//the reason it looks so convoluted is because if there is no complex part of the wavevector,
+			//then it is faster to do the calc with real arithmetic then put it into a complex number.
+			if(Vmullayers>0 && ii==Vmulappend && Vmulrep>0 ){
+				rj=fres(pj[ii],pj_mul[0],coefP[offset+3]);
+			} else {
+				if((pj[ii]).im == 0 && (pj[ii+1]).im==0){
+					anum = (pj[ii]).re;
+					anum2 = (pj[ii+1]).re;
+					rj = (ii==nlayers) ?
+					MyComplex(((anum-anum2)/(anum+anum2))*exp(anum*anum2*-2*subrough*subrough),0)
+					:
+					MyComplex(((anum-anum2)/(anum+anum2))*exp(anum*anum2*-2*coefP[4*(ii+1)+5]*coefP[4*(ii+1)+5]),0);
+				} else {
+					rj = (ii == nlayers) ?
+						((pj[ii]-pj[ii+1])/(pj[ii]+pj[ii+1]))*compexp(pj[ii]*pj[ii+1]*MyComplex(-2*subrough*subrough,0))
+						:
+						((pj[ii]-pj[ii+1])/(pj[ii]+pj[ii+1]))*compexp(pj[ii]*pj[ii+1]*MyComplex(-2*coefP[4*(ii+1)+5]*coefP[4*(ii+1)+5],0));	
+				};
+			}
+
+			//work out the beta for the (non-multi)layer
+			beta = (ii==0)? oneC : compexp(pj[ii] * MyComplex(0,fabs(coefP[4*ii+2])));
+
+			//this is the characteristic matrix of a layer
+			MI[0][0]=beta;
+			MI[0][1]=rj*beta;
+			MI[1][1]=oneC/beta;
+			MI[1][0]=rj*MI[1][1];
+
+			temp2[0][0] = MRtotal[0][0];
+			temp2[0][1] = MRtotal[0][1];
+			temp2[1][0] = MRtotal[1][0];
+			temp2[1][1] = MRtotal[1][1];
+						
+			//multiply MR,MI to get the updated total matrix.			
+			matmul(temp2,MI,MRtotal);
+
+		if(Vmullayers > 0 && ii == Vmulappend && Vmulrep > 0){
+		//workout the wavevectors in each of the layers
+			for(jj=1 ; jj < Vmullayers; jj++){
+				pj_mul[jj] = (*(SLDmatrixREP+jj)>qq) ? compsqrt(qq2-MyComplex(*(SLDmatrixREP+jj),0)): MyComplex(sqrt(qq-*(SLDmatrixREP+jj)),0);
+			}
+
+			//work out the fresnel coefficients
+			for(jj = 0 ; jj < Vmullayers; jj++){
+
+				rj = (jj == Vmullayers-1) ?
+				//if you're in the last layer then the roughness is the roughness of the top
+				((pj_mul[jj]-pj_mul[0])/(pj_mul[jj]+pj_mul[0]))*compexp((pj_mul[jj]*pj_mul[0])*MyComplex(-2*coefP[offset+3]*coefP[offset+3],0))
+				:
+				//otherwise it's the roughness of the layer below
+				((pj_mul[jj]-pj_mul[jj+1])/(pj_mul[jj]+pj_mul[jj+1]))*compexp((pj_mul[jj]*pj_mul[jj+1])*MyComplex(-2*coefP[4*(jj+1)+offset+3]*coefP[4*(jj+1)+offset+3],0));
+				
+				//Beta's
+				beta = compexp(MyComplex(0,fabs(coefP[4*jj+offset]))*pj_mul[jj]);
+
+				MI[0][0]=beta;
+				MI[0][1]=rj*beta;
+				MI[1][1]=oneC/beta;
+				MI[1][0]=rj*MI[1][1];
+
+				temp2[0][0] = subtotal[0][0];
+				temp2[0][1] = subtotal[0][1];
+				temp2[1][0] = subtotal[1][0];
+				temp2[1][1] = subtotal[1][1];
+
+				matmul(temp2,MI,subtotal);
+			};
+
+			for(kk = 0; kk < Vmulrep; kk++){		//if you are in the last multilayer
+				if(kk==Vmulrep-1){					//if you are in the last layer of the multilayer
+					for(jj=0;jj<Vmullayers;jj++){
+						beta = compexp((MyComplex(0,fabs(coefP[4*jj+offset]))*pj_mul[jj]));
+
+						if(jj==Vmullayers-1){
+							if(Vmulappend==nlayers){
+								rj = ((pj_mul[Vmullayers-1]-pj[nlayers+1])/(pj_mul[Vmullayers-1]+pj[nlayers+1]))*compexp((pj_mul[Vmullayers-1]*pj[nlayers+1])*MyComplex(-2*subrough*subrough,0));
+							} else {
+								rj = ((pj_mul[Vmullayers-1]-pj[Vmulappend+1])/(pj_mul[Vmullayers-1]+pj[Vmulappend+1]))*compexp((pj_mul[Vmullayers-1]*pj[Vmulappend+1])*MyComplex(-2*coefP[4*(Vmulappend+1)+5]*coefP[4*(Vmulappend+1)+5],0));
+							};
+						} else {
+							rj = ((pj_mul[jj]-pj_mul[jj+1])/(pj_mul[jj]+pj_mul[jj+1]))*compexp((pj_mul[jj]*pj_mul[jj+1])*MyComplex(-2*coefP[4*(jj+1)+offset+3]*coefP[4*(jj+1)+offset+3],0));
+						}
+
+						MI[0][0]=beta;
+						MI[0][1]=(rj*beta);
+						MI[1][1]=oneC/beta;
+						MI[1][0]=(rj*MI[1][1]);
+
+						temp2[0][0] = MRtotal[0][0];
+						temp2[0][1] = MRtotal[0][1];
+						temp2[1][0] = MRtotal[1][0];
+						temp2[1][1] = MRtotal[1][1];
+
+						matmul(temp2,MI,MRtotal);
+					}
+				} else {
+					temp2[0][0] = MRtotal[0][0];
+					temp2[0][1] = MRtotal[0][1];
+					temp2[1][0] = MRtotal[1][0];
+					temp2[1][1] = MRtotal[1][1];
+					
+					matmul(temp2,subtotal,MRtotal);
+				};
+			};
+		};
+
+		}
+		
+		den=compnorm(MRtotal[0][0]);
+		num=compnorm(MRtotal[1][0]);
+		answer=((num/den)*scale)+bkg;
+
+		*(dyP+j) = answer;
+	}
+	
+	for(ii=0 ; ii < npoints ; ii+=1){
+		*(yP+ii) = 0.056*(*(dyP+ii*respoints));
+		*(yP+ii) += 0.135*(*(dyP+ii*respoints+1));														
+		*(yP+ii) += 0.278*(*(dyP+ii*respoints+2));
+		*(yP+ii) += 0.487*(*(dyP+ii*respoints+3));
+		*(yP+ii) += 0.726*(*(dyP+ii*respoints+4));
+		*(yP+ii) += 0.923*(*(dyP+ii*respoints+5));
+		*(yP+ii) += (*(dyP+ii*respoints+6));
+		*(yP+ii) += 0.923*(*(dyP+ii*respoints+7));
+		*(yP+ii) += 0.726*(*(dyP+ii*respoints+8));
+		*(yP+ii) += 0.487*(*(dyP+ii*respoints+9));
+		*(yP+ii) += 0.278*(*(dyP+ii*respoints+10));
+		*(yP+ii) += 0.135*(*(dyP+ii*respoints+11));
+		*(yP+ii) += 0.056*(*(dyP+ii*respoints+12));
+		*(yP+ii) /=6.211;
+	}
+	
+done:
+	if(pj != NULL)
+		delete [] pj;
+	if(pj_mul !=NULL)
+		delete[] pj_mul;
+	if(SLDmatrix != NULL)
+		delete[] SLDmatrix;
+	if(SLDmatrixREP != NULL)
+		delete[] SLDmatrixREP;
+	if(ddxP != NULL)
+		delete[] ddxP;
+	if(dyP != NULL)
+		delete[] dyP;
+
+	return err;
+}
