@@ -1362,8 +1362,6 @@ checkZeros(waveHndl wavH,long* numzeros){
 	return result;
 }
 
-
-
 /*
 	calcMaxLikelihood calculates Maximum Likelihood as a cost function for the fit
 	dataObs		-	array containing the experimental data
@@ -1507,6 +1505,7 @@ init_GenCurveFitInternals(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr
 	char cmd[MAXCMDLEN];
 	char letter[3];
 	int toDisplay=0;
+	int outPutType=NT_FP64;
 	double temp1=0;
 	long temp;
 	waveStats wavStats;
@@ -1855,7 +1854,8 @@ init_GenCurveFitInternals(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr
 	if(!p->DFlagEncountered){		//if there is no destination wave specified
 		if(goiP->numVarMD == 1){	//and if the data is 1D
 			dimensionSizes[0] = (long)p->LFlag_destlen;
-			if(err = MDMakeWave(&goiP->OUT_data,datawavename,goiP->cDF,dimensionSizes,NT_FP64, 1))
+			outPutType = WaveType(p->dataWave.waveH);	//to save memory use datawaves type
+			if(err = MDMakeWave(&goiP->OUT_data,datawavename,goiP->cDF,dimensionSizes,outPutType, 1))
 				goto done;
 			minpos = findmin(goiP->allIndependentVariable,goiP->dataPoints);
 			maxpos = findmax(goiP->allIndependentVariable,goiP->dataPoints);
