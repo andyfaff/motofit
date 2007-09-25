@@ -15,6 +15,7 @@ J. Appl. Cryst. (2006). 39,273-276.
 /*
  put all the standard headers in GenCurveFit.h, including those from wavemetrics
  */
+#include "XOPStandardHeaders.h"
 #include "GenCurveFit.h"
 
 
