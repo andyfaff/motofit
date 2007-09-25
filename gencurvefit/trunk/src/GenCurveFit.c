@@ -105,20 +105,20 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 	 if there are no errors, or if the user aborted, then return the best fit.
 	 If the data is displayed in the top graph append the fitcurve to the top graph
 	 */
-	if((err ==0 || err == FIT_ABORTED)){
+	if((err == 0 || err == FIT_ABORTED)){
 		err2 = ReturnFit( &goi,  p);
 		
 		//return an error wave
 		//make an error wave
 		dimensionSizes[0] = goi.totalnumparams;
 		dimensionSizes[1] = 0;
-		err = MDMakeWave(&goi.W_sigma,"W_sigma",goi.cDF,dimensionSizes,NT_FP64, 1);
+		err2 = MDMakeWave(&goi.W_sigma,"W_sigma",goi.cDF,dimensionSizes,NT_FP64, 1);
 		
 		//set the error wave to zero
 		for(ii=0; ii<goi.totalnumparams; ii+=1){
 			indices[0] = ii;
 			value[0] = 0;
-			err = MDSetNumericWavePointValue(goi.W_sigma,indices,value);					 
+			err2 = MDSetNumericWavePointValue(goi.W_sigma,indices,value);					 
 		}
 		goi.covarianceMatrix = (double**)malloc2d(goi.numvarparams,goi.numvarparams,sizeof(double));
 		if(goi.covarianceMatrix == NULL){ err = NOMEM;}{	
@@ -127,7 +127,7 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 				for(ii=0; ii<goi.numvarparams ; ii+=1){
 					indices[0] = *(goi.varparams+ii);
 					value[0] = sqrt(goi.covarianceMatrix[ii][ii]);
-					err = MDSetNumericWavePointValue(goi.W_sigma,indices,value);
+					err2 = MDSetNumericWavePointValue(goi.W_sigma,indices,value);
 				}					 
 				WaveHandleModified(goi.W_sigma);
 				
@@ -136,13 +136,13 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 					dimensionSizes[0] = goi.totalnumparams;
 					dimensionSizes[1] = goi.totalnumparams;
 					dimensionSizes[2] = 0;
-					err = MDMakeWave(&goi.M_covariance,"M_Covar",goi.cDF,dimensionSizes,NT_FP64, 1);
+					err2 = MDMakeWave(&goi.M_covariance,"M_Covar",goi.cDF,dimensionSizes,NT_FP64, 1);
 					for(ii=0; ii<goi.totalnumparams; ii+=1){
 						for(jj=0 ; jj<goi.totalnumparams; jj+=1){
 							indices[0] = ii;
 							indices[1] = jj;
 							value[0] = 0;
-							err = MDSetNumericWavePointValue(goi.M_covariance,indices,value);
+							err2 = MDSetNumericWavePointValue(goi.M_covariance,indices,value);
 						}
 					}
 					for(ii=0; ii<goi.numvarparams ; ii+=1){
@@ -150,7 +150,7 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 							indices[0] = *(goi.varparams+ii);
 							indices[1] = *(goi.varparams+jj);
 							value[0] = goi.covarianceMatrix[ii][jj];
-							err = MDSetNumericWavePointValue(goi.M_covariance,indices,value);
+							err2 = MDSetNumericWavePointValue(goi.M_covariance,indices,value);
 						}
 					}
 					WaveHandleModified(goi.M_covariance);
@@ -173,7 +173,7 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 					strcat(cmd," vs ");
 					strcat(cmd,&note_buffer2[0]);
 				}
-				if(err = XOPSilentCommand(&cmd[0]))
+				if(err2 = XOPSilentCommand(&cmd[0]))
 					return err;
 			}
 		}
