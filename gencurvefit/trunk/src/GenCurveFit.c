@@ -109,22 +109,20 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 		err2 = ReturnFit( &goi,  p);
 		
 		//return an error wave
+		//make an error wave
+		dimensionSizes[0] = goi.totalnumparams;
+		dimensionSizes[1] = 0;
+		err = MDMakeWave(&goi.W_sigma,"W_sigma",goi.cDF,dimensionSizes,NT_FP64, 1);
+		
+		//set the error wave to zero
+		for(ii=0; ii<goi.totalnumparams; ii+=1){
+			indices[0] = ii;
+			value[0] = 0;
+			err = MDSetNumericWavePointValue(goi.W_sigma,indices,value);					 
+		}
 		goi.covarianceMatrix = (double**)malloc2d(goi.numvarparams,goi.numvarparams,sizeof(double));
 		if(goi.covarianceMatrix == NULL){ err = NOMEM;}{	
 			if(!(err2 = getCovarianceMatrix(p, &goi))){
-				
-				//make an error wave
-				dimensionSizes[0] = goi.totalnumparams;
-				dimensionSizes[1] = 0;
-				err = MDMakeWave(&goi.W_sigma,"W_sigma",goi.cDF,dimensionSizes,NT_FP64, 1);
-				
-				//set the error wave to zero
-				for(ii=0; ii<goi.totalnumparams; ii+=1){
-					indices[0] = ii;
-					value[0] = 0;
-					err = MDSetNumericWavePointValue(goi.W_sigma,indices,value);					 
-				}
-				
 				//set the error wave
 				for(ii=0; ii<goi.numvarparams ; ii+=1){
 					indices[0] = *(goi.varparams+ii);
