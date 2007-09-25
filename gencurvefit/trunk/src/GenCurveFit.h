@@ -7,10 +7,6 @@ GenCurvefit.c -- An XOP for curvefitting via Differential Evolution.
 #include "XOPStandardHeaders.h"			// Include ANSI headers, Mac headers, IgorXOP.h, XOP.h and XOPSupport.h
 #include <time.h>
 #include <stdlib.h>
-#ifdef _WINDOWS_
-#include "malloc2d.c"
-#endif
-
 
 //maximum dimension of fit
 #define MAX_MDFIT_SIZE 50
@@ -437,6 +433,18 @@ void DestroyXOPWindow(XOP_WINDOW_REF w);
 	int CreateXOPWindowClass(void);
 #endif	
 
+/*
+functions contained in errorEstimation.c
+*/
+static int ludcmp(double**,int,int*,double*);
+static int lubksb(double **a, int n, int *indx, double b[]);
+static int matrixInversion(double **a, int N);
+int getCovarianceMatrix(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP);
+int updatePartialDerivative(double**, GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP);
+int partialDerivative(double**, int, GenCurveFitRuntimeParamsPtr, GenCurveFitInternalsPtr,int);
+int updateAlpha(double**,double**, GenCurveFitInternalsPtr goiP);
+int calculateAlphaElement(int row, int col, double **alpha, double **derivativeMatrix, GenCurveFitInternalsPtr goiP);
+int packAlphaSymmetric(double** alpha,GenCurveFitInternalsPtr);
 
 //in malloc2D.c
 void* malloc2d(int ii, int jj, int sz);

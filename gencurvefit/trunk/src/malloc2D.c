@@ -31,6 +31,7 @@ Note you can access elements by
 	 *(*(p+i)+j) is equivalent to p[i][j]
  In addition *(p+i) points to a whole row.
 	*/
+#include "XOPStandardHeaders.h"
 
 void* malloc2d(int ii, int jj, int sz)
 {
