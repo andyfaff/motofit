@@ -160,7 +160,7 @@ static int ludcmp(double **a, int n, int *indx, double *d){
 		for(j=0 ; j<n ; j++)
 			if((temp = fabs(a[i][j])) > big) big = temp;
 		if(big == 0.0){
-			err = 0;
+			err = UNSPECIFIED_ERROR;
 			goto done;
 		}
 		vv[i] = 1.0/big;	

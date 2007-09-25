@@ -106,7 +106,10 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 	 If the data is displayed in the top graph append the fitcurve to the top graph
 	 */
 	if((err == 0 || err == FIT_ABORTED)){
-		err2 = ReturnFit( &goi,  p);
+		if(err2 = ReturnFit( &goi,  p)){
+			err = err2;
+			goto done;
+		}
 		
 		//return an error wave
 		//make an error wave
@@ -121,40 +124,40 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 			err2 = MDSetNumericWavePointValue(goi.W_sigma,indices,value);					 
 		}
 		goi.covarianceMatrix = (double**)malloc2d(goi.numvarparams,goi.numvarparams,sizeof(double));
-		if(goi.covarianceMatrix == NULL){ err = NOMEM;}{	
-			if(!(err2 = getCovarianceMatrix(p, &goi))){
-				//set the error wave
-				for(ii=0; ii<goi.numvarparams ; ii+=1){
-					indices[0] = *(goi.varparams+ii);
-					value[0] = sqrt(goi.covarianceMatrix[ii][ii]);
-					err2 = MDSetNumericWavePointValue(goi.W_sigma,indices,value);
-				}					 
-				WaveHandleModified(goi.W_sigma);
-				
-				if(p->MATFlagEncountered){
-					//make the covariance matrix
-					dimensionSizes[0] = goi.totalnumparams;
-					dimensionSizes[1] = goi.totalnumparams;
-					dimensionSizes[2] = 0;
-					err2 = MDMakeWave(&goi.M_covariance,"M_Covar",goi.cDF,dimensionSizes,NT_FP64, 1);
-					for(ii=0; ii<goi.totalnumparams; ii+=1){
-						for(jj=0 ; jj<goi.totalnumparams; jj+=1){
-							indices[0] = ii;
-							indices[1] = jj;
-							value[0] = 0;
-							err2 = MDSetNumericWavePointValue(goi.M_covariance,indices,value);
-						}
+		if(goi.covarianceMatrix == NULL){ err = NOMEM; goto done;}
+		
+		if(!(err2 = getCovarianceMatrix(p, &goi))){
+			//set the error wave
+			for(ii=0; ii<goi.numvarparams ; ii+=1){
+				indices[0] = *(goi.varparams+ii);
+				value[0] = sqrt(goi.covarianceMatrix[ii][ii]);
+				err2 = MDSetNumericWavePointValue(goi.W_sigma,indices,value);
+			}					 
+			WaveHandleModified(goi.W_sigma);
+			
+			if(p->MATFlagEncountered){
+				//make the covariance matrix
+				dimensionSizes[0] = goi.totalnumparams;
+				dimensionSizes[1] = goi.totalnumparams;
+				dimensionSizes[2] = 0;
+				err2 = MDMakeWave(&goi.M_covariance,"M_Covar",goi.cDF,dimensionSizes,NT_FP64, 1);
+				for(ii=0; ii<goi.totalnumparams; ii+=1){
+					for(jj=0 ; jj<goi.totalnumparams; jj+=1){
+						indices[0] = ii;
+						indices[1] = jj;
+						value[0] = 0;
+						err2 = MDSetNumericWavePointValue(goi.M_covariance,indices,value);
 					}
-					for(ii=0; ii<goi.numvarparams ; ii+=1){
-						for(jj=0; jj<goi.numvarparams ; jj+=1){
-							indices[0] = *(goi.varparams+ii);
-							indices[1] = *(goi.varparams+jj);
-							value[0] = goi.covarianceMatrix[ii][jj];
-							err2 = MDSetNumericWavePointValue(goi.M_covariance,indices,value);
-						}
-					}
-					WaveHandleModified(goi.M_covariance);
 				}
+				for(ii=0; ii<goi.numvarparams ; ii+=1){
+					for(jj=0; jj<goi.numvarparams ; jj+=1){
+						indices[0] = *(goi.varparams+ii);
+						indices[1] = *(goi.varparams+jj);
+						value[0] = goi.covarianceMatrix[ii][jj];
+						err2 = MDSetNumericWavePointValue(goi.M_covariance,indices,value);
+					}
+				}
+				WaveHandleModified(goi.M_covariance);
 			}
 		}
 		
@@ -249,6 +252,7 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 	 freeAllocMem frees all the internal data structures which have had memory allocated to them.
 	 this is ultra essential for no memory leaks.
 	 */
+done:
 	freeAllocMem(&goi);
 	
 	return err;
@@ -2342,7 +2346,7 @@ optimiseloop(GenCurveFitInternalsPtr goiP, GenCurveFitRuntimeParamsPtr p){
 #endif				
 			}	
 			//cmd-dot or abort button
-			if(CheckAbort(timeOutTicks) == -1){
+			if(CheckAbort(0)==-1){
 				return FIT_ABORTED;
 			}
 			
