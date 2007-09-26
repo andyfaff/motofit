@@ -241,13 +241,13 @@ int matrixInversion(double **a, int N){
 	
 	indx = (int*)malloc(sizeof(int)*N);
 	if(indx == NULL){
-		err = 0;
+		err = NOMEM;
 		goto done;
 	}
 	
 	tempA = (double**)malloc2d(N,N,sizeof(double));
 	if(tempA == NULL){
-		err = 0;
+		err = NOMEM;
 		goto done;
 	}
 	for(i=0; i<N; i++){
@@ -258,7 +258,7 @@ int matrixInversion(double **a, int N){
 	
 	col = (double*)malloc(sizeof(double)*N);
 	if(col == NULL){
-		err = 0;
+		err = NOMEM;
 		goto done;
 	}
 
