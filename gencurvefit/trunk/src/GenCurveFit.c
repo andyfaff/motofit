@@ -876,16 +876,6 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 		}
 		//get the holdstring
 		len = GetHandleSize(p->holdstring);
-		holdstr = (char*)malloc((len+1)*sizeof(char));
-		if(holdstr == NULL){
-			err = NOMEM;
-			goto done;
-		}
-		comparison = (char*)malloc(2*sizeof(char));
-		if(comparison == NULL){
-			err = NOMEM;
-			goto done;
-		}
 		
 		*(comparison+1) = '\0';
 		if(err = GetCStringFromHandle(p->holdstring,holdstr,len)){
@@ -960,7 +950,7 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 	}
 	// free all memory allocated during this function
 done:
-		if(comparison != NULL)
+	if(comparison != NULL)
 			free(comparison);
 	if(holdstr != NULL)
 		free(holdstr);
@@ -1965,7 +1955,7 @@ calcModelXY(FunctionInfo* fip, waveHndl coefs, waveHndl output, waveHndl xx[MAX_
 				err = NOMEM;
 				goto done;
 			}
-				tempY = (double*)malloc(numfitpoints*sizeof(double));
+			tempY = (double*)malloc(numfitpoints*sizeof(double));
 			if(tempY == NULL){
 				err = NOMEM;
 				goto done;
@@ -1979,7 +1969,7 @@ calcModelXY(FunctionInfo* fip, waveHndl coefs, waveHndl output, waveHndl xx[MAX_
 						goto done;
 				}
 				
-				parameters.waveH = coefs;
+			parameters.waveH = coefs;
 			requiredParameterTypes[0] = WAVE_TYPE;
 			for(ii=0 ; ii<ndims ; ii+=1)
 				requiredParameterTypes[ii+1] = NT_FP64;
@@ -2093,8 +2083,8 @@ subtractTwoWaves(waveHndl wav1, waveHndl wav2){
 	
 	WaveHandleModified(wav1);
 done:
-		if(temp1!=NULL)
-			free(temp1);
+	if(temp1!=NULL)
+		free(temp1);
 	if(temp2!=NULL)
 		free(temp2);
 	
@@ -2441,7 +2431,7 @@ ReturnFit(GenCurveFitInternalsPtr goiP, GenCurveFitRuntimeParamsPtr p){
 	if(err = MDStoreDPDataInNumericWave(p->coefs,goiP->gen_coefsCopy))
 		return err;
 	WaveHandleModified(p->coefs);
-	
+
 	switch(goiP->numVarMD){
 		case 1:
 			if(p->DFlagEncountered && p->XFlagEncountered){
