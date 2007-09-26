@@ -76,7 +76,14 @@ struct GenCurveFitRuntimeParams {
 	N - no updates during fit.  This makes the fit faster
 	*/
 	int NFlagEncountered;
-
+	
+	/*
+	SEED - seed to initialise random number generator to have reproducible fit
+	*/
+	int SEEDFlagEncountered;
+	double SEEDFlag_seed;
+	int SEEDFlagParamsSet[1];
+	
 	/*
 	L - Destination Length
 	this option specifies the length of the output wave (assuming the /D flag is not specified.

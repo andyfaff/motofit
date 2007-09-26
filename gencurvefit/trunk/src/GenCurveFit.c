@@ -69,21 +69,24 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 			lt1 = 1;
 		}
 		err = 0;
-		err2 = SetIgorIntVar(varname, lt1, 1);
+		if(err2 = SetIgorIntVar(varname, lt1, 1)){err = err2;goto done;};
 	}	
 	
 	/*
-	 Genetic Optimisation uses a lot of random numbers, we are seeding the generator here.
-	 */
-	srand( (unsigned)time( NULL ) );
-	
+	Genetic Optimisation uses a lot of random numbers, we are seeding the generator here.
+	If you want to seed the generator we can 
+	*/
+	if(p->SEEDFlagEncountered){
+		srand( (unsigned int)p->SEEDFlag_seed );
+	} else {
+		srand( (unsigned)time( NULL ) );
+	}
 	/*
 	 checkInput checks the input that IGOR sends to the XOP.  If everything is correct it returns 0, 
 	 else it returns an error.  Errors can be caused by, e.g. different x and y wave lengths, etc.
 	 */
-	if(!err){
-		err = checkInput(p,&goi);
-	}
+	if(err = checkInput(p,&goi))
+		goto done;
 	
 	/*
 	 init_GenCurveFitInternals sets up the internal data arrays in the GenCurveFitInternals structure.  It holds
@@ -91,38 +94,34 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 	 several times to set aside memory for all this.  If this procedure works without a hitch then the function
 	 returns 0.
 	 */
-	if(!err){
-		err = init_GenCurveFitInternals(p,&goi);
-	}
+	if(err = init_GenCurveFitInternals(p,&goi))
+		goto done;
+	
 	/*
 	 optimiseloop does the Differential Evolution, according to Storn and Price.  When this returns 0, then 
 	 you have the best fit in the GenCurveFitInternals structure.  Otherwise it returns an error code.  If the user aborts
 	 then the FIT_ABORTED error code is returned, but it is still possible to retrieve the best solution so far
 	 */
-	if(!err){
-		err = optimiseloop(&goi, p);
-	}
+	err = optimiseloop(&goi, p);
+	
 	/*
 	 if there are no errors, or if the user aborted, then return the best fit.
 	 If the data is displayed in the top graph append the fitcurve to the top graph
 	 */
-	if((err == 0 || err == FIT_ABORTED)){
-		if(err2 = ReturnFit( &goi,  p)){
-			err = err2;
-			goto done;
-		}
+	if(err == 0 || err == FIT_ABORTED){
+		if(err2 = ReturnFit( &goi,  p)) {err = err2;goto done;}
 		
 		//return an error wave
 		//make an error wave
 		dimensionSizes[0] = goi.totalnumparams;
 		dimensionSizes[1] = 0;
-		err2 = MDMakeWave(&goi.W_sigma,"W_sigma",goi.cDF,dimensionSizes,NT_FP64, 1);
+		if(err2 = MDMakeWave(&goi.W_sigma,"W_sigma",goi.cDF,dimensionSizes,NT_FP64, 1)){err = err2;goto done;}
 		
 		//set the error wave to zero
 		for(ii=0; ii<goi.totalnumparams; ii+=1){
 			indices[0] = ii;
 			value[0] = 0;
-			err2 = MDSetNumericWavePointValue(goi.W_sigma,indices,value);					 
+			if(err2 = MDSetNumericWavePointValue(goi.W_sigma,indices,value)){err = err2;goto done;};					 
 		}
 		goi.covarianceMatrix = (double**)malloc2d(goi.numvarparams,goi.numvarparams,sizeof(double));
 		if(goi.covarianceMatrix == NULL){ err = NOMEM; goto done;}
@@ -132,7 +131,7 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 			for(ii=0; ii<goi.numvarparams ; ii+=1){
 				indices[0] = *(goi.varparams+ii);
 				value[0] = sqrt(goi.covarianceMatrix[ii][ii]);
-				err2 = MDSetNumericWavePointValue(goi.W_sigma,indices,value);
+				if(err2 = MDSetNumericWavePointValue(goi.W_sigma,indices,value)){err = err2;goto done;};
 			}					 
 			WaveHandleModified(goi.W_sigma);
 			
@@ -141,13 +140,13 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 				dimensionSizes[0] = goi.totalnumparams;
 				dimensionSizes[1] = goi.totalnumparams;
 				dimensionSizes[2] = 0;
-				err2 = MDMakeWave(&goi.M_covariance,"M_Covar",goi.cDF,dimensionSizes,NT_FP64, 1);
+				if(err2 = MDMakeWave(&goi.M_covariance,"M_Covar",goi.cDF,dimensionSizes,NT_FP64, 1)){err = err2;goto done;};
 				for(ii=0; ii<goi.totalnumparams; ii+=1){
 					for(jj=0 ; jj<goi.totalnumparams; jj+=1){
 						indices[0] = ii;
 						indices[1] = jj;
 						value[0] = 0;
-						err2 = MDSetNumericWavePointValue(goi.M_covariance,indices,value);
+						if(err2 = MDSetNumericWavePointValue(goi.M_covariance,indices,value)){err = err2;goto done;};
 					}
 				}
 				for(ii=0; ii<goi.numvarparams ; ii+=1){
@@ -155,7 +154,7 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 						indices[0] = *(goi.varparams+ii);
 						indices[1] = *(goi.varparams+jj);
 						value[0] = goi.covarianceMatrix[ii][jj];
-						err2 = MDSetNumericWavePointValue(goi.M_covariance,indices,value);
+						if(err2 = MDSetNumericWavePointValue(goi.M_covariance,indices,value)){err = err2;goto done;};
 					}
 				}
 				WaveHandleModified(goi.M_covariance);
@@ -163,9 +162,9 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 		}
 		
 		
-		err2 = isWaveDisplayed(p->dataWave.waveH,&isDisplayed);
+		if(err2 = isWaveDisplayed(p->dataWave.waveH,&isDisplayed)){err = err2;goto done;};
 		if(isDisplayed && goi.numVarMD == 1){
-			err2 = isWaveDisplayed(goi.OUT_data,&isDisplayed);
+			if(err2 = isWaveDisplayed(goi.OUT_data,&isDisplayed)){err = err2;goto done;};
 			if(!isDisplayed){
 				strcpy(cmd,"");
 				strcpy(cmd,"appendtograph/w=$(winname(0,1)) ");
@@ -177,8 +176,7 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 					strcat(cmd," vs ");
 					strcat(cmd,&note_buffer2[0]);
 				}
-				if(err2 = XOPSilentCommand(&cmd[0]))
-					return err;
+				if(err2 = XOPSilentCommand(&cmd[0])){err = err2;goto done;}
 			}
 		}
 	}
@@ -226,16 +224,16 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 			lt1 = 1;
 		}
 		err = 0;
-		err2 = SetIgorIntVar(varname, lt1, 1);
+		if(err2 = SetIgorIntVar(varname, lt1, 1)){err = err2;goto done;}
 	}
 	/*
 	 This section puts a copy of the fit parameters into the history area, unless one sets quiet mode.
 	 */
 	if(!p->QFlagEncountered && (!err || err == FIT_ABORTED) && lt1==0 ){
 		if(!err)
-		{output = sprintf(note,"_______________________________\rGenetic Optimisation Successful\r");XOPNotice(note);}
+			{output = sprintf(note,"_______________________________\rGenetic Optimisation Successful\r");XOPNotice(note);}
 		if(err == FIT_ABORTED)
-		{output = sprintf(note,"_______________________________\rGenetic Optimisation ABORTED\r");XOPNotice(note);}
+			{output = sprintf(note,"_______________________________\rGenetic Optimisation ABORTED\r");XOPNotice(note);}
 		WaveName(p->dataWave.waveH,note_buffer1);
 		
 		output = sprintf(note,"Fitting: %s to %s\r",note_buffer1,goi.fi.name);XOPNotice(note);
@@ -244,8 +242,10 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 		for(ii=0;ii<WavePoints(p->coefs);ii+=1){
 			indices[0] = ii;
 			indices[1] = 0;
-			err = MDGetNumericWavePointValue(goi.W_sigma,indices,value);
-			output = sprintf(note,"\tw[%d]\t=\t%g   +/-   %g\r",ii,*(goi.gen_coefsCopy+ii),value[0]);XOPNotice(note);
+			if(err = MDGetNumericWavePointValue(goi.W_sigma,indices,value))
+				goto done;
+			output = sprintf(note,"\tw[%d]\t=\t%g   +/-   %g\r",ii,*(goi.gen_coefsCopy+ii),value[0]);
+			XOPNotice(note);
 		}
 		output = sprintf(note,"_______________________________\r");XOPNotice(note);
 	}
@@ -255,19 +255,17 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 	 */
 done:
 	freeAllocMem(&goi);
-	
 	return err;
 }
 
 static int
-RegisterGenCurveFit(void)
-{
+RegisterGenCurveFit(void){
 	char* cmdTemplate;
 	char* runtimeNumVarList;
 	char* runtimeStrVarList;
 	
 	// NOTE: If you change this template, you must change the GenCurveFitRuntimeParams structure as well.
-	cmdTemplate = "GenCurveFit /opt=number:opt /MAT /q /n /L=number:destLen /R[=Wave:resid] /meth=number:method /X={Wave:xx[,Wave[49]]}  /D=wave:outputwave /W=wave:weighttype /I=[number:weighttype] /M=wave:maskwave /k={number:iterations, number:popsize, number:km, number:recomb} /TOL=number:tol name:fitfun, waveRange:dataWave, wave:coefs, string:holdstring, wave:limitswave";
+	cmdTemplate = "GenCurveFit /opt=number:opt /MAT /q /n /SEED=number:seed /L=number:destLen /R[=Wave:resid] /meth=number:method /X={Wave:xx[,Wave[49]]}  /D=wave:outputwave /W=wave:weighttype /I=[number:weighttype] /M=wave:maskwave /k={number:iterations, number:popsize, number:km, number:recomb} /TOL=number:tol name:fitfun, waveRange:dataWave, wave:coefs, string:holdstring, wave:limitswave";
 	runtimeNumVarList = "";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(GenCurveFitRuntimeParams), (void*)ExecuteGenCurveFit, 0);
@@ -2324,7 +2322,6 @@ optimiseloop(GenCurveFitInternalsPtr goiP, GenCurveFitRuntimeParamsPtr p){
 	int err=0;
 	int currentpvector;
 	double chi2pvector,chi2trial;
-	long timeOutTicks=0;
 	waveStats wavStats;
 	
 	//Display the coefficients so far.
