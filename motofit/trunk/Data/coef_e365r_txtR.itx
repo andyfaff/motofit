@@ -1,0 +1,24 @@
+IGOR
+X plotcalcref()
+WAVES/D coef_e365r_txtR
+BEGIN
+	2
+	1.01307
+	2.07
+	3.47
+	2.0592e-05
+	4
+	14.2109
+	3.47
+	0
+	4
+	214.886
+	0.502659
+	0
+	4
+END
+X Note coef_e365r_txtR, "Motofitcontrol:;plotyp:1;SLDpts:500;res:5;"
+X Note coef_e365r_txtR, "usedqwave:0;useconstraint:0;fitcursors:0;holdstring:10110111110011;"
+X Note coef_e365r_txtR, "dataset:e365r_txtR;useerrors:1;coefwave:coef_e365r_txtR;V_chisq:5.2341;"
+X Note coef_e365r_txtR, "SLDtype:neutron;multilayer:0;Vmullayers:0;mulrep:0;"
+X Note coef_e365r_txtR, "mulappend:0;inFIT:0;"

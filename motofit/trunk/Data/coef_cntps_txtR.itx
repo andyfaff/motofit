@@ -1,0 +1,24 @@
+IGOR
+X plotcalcref()
+WAVES/D coef_cntps_txtR
+BEGIN
+	2
+	1
+	0
+	20.1
+	3.55905e-08
+	13.4921
+	333.391
+	11.4636
+	0
+	3.15643
+	35.8536
+	18.9
+	0
+	7.73794
+END
+X Note coef_cntps_txtR, "Motofitcontrol:;plotyp:1;SLDpts:500;res:0;"
+X Note coef_cntps_txtR, "usedqwave:0;useconstraint:0;fitcursors:0;holdstring:11110000100110;"
+X Note coef_cntps_txtR, "dataset:cntps_txtR;useerrors:0;coefwave:coef_cntps_txtR;V_chisq:0.01124;"
+X Note coef_cntps_txtR, "SLDtype:neutron;multilayer:0;Vmullayers:0;mulrep:0;"
+X Note coef_cntps_txtR, "mulappend:0;inFIT:0;paramsperlayer:4;baselength:6"
