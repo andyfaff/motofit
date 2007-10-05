@@ -229,8 +229,8 @@ End
 
 	SetVariable limitsWAV_setvar_tab2,pos={326,94},size={173,20},title="Limits Wave",fsize=11
 	SetVariable limitsWAV_setvar_tab2,bodyWidth= 110,noedit=1
-	MakeSetVarIntoWSPopupButton("gencurvefitpanel", "limitsWAV_setvar_tab2", "", "root:Packages:Motofit:gencurvefit:limitsWav",content = WMWS_Waves)
-	PopupWS_MatchOptions("gencurvefitpanel", "limitsWAV_setvar_tab2", matchStr="*", listoptions="DIMS:1,CMPLX:0,TEXT:0,BYTE:0,WORD:0,INTEGER:0,MINROWS:1,maxcols:2,mincols:2",namefilterproc = "Gen_filter_limitsWav")
+	MakeSetVarIntoWSPopupButton("gencurvefitpanel", "limitsWAV_setvar_tab2", "Gen_waveselectionNotification", "root:Packages:Motofit:gencurvefit:limitsWav",content = WMWS_Waves)
+	PopupWS_MatchOptions("gencurvefitpanel", "limitsWAV_setvar_tab2", matchStr="*", listoptions="DIMS:2,CMPLX:0,TEXT:0,BYTE:0,WORD:0,INTEGER:0,MINROWS:1,maxcols:2,mincols:2",namefilterproc = "Gen_filter_limitsWav")
 	PopupWS_AddSelectableString("gencurvefitpanel", "limitsWAV_setvar_tab2","_from below_")
 	PopupWS_SetSelectionFullPath("gencurvefitpanel", "limitsWav_setvar_tab2","_from below_")
 
