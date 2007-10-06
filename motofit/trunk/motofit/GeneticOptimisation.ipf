@@ -1381,7 +1381,6 @@ Function Gen_rebuildPopups(event,wavepath,windowname,ctrlname)
 	strswitch(ctrlname)
 		default:
 			Wave/z ywave = $wavepath
-			if(waveexists(ywave))
 				variable numpoints = numpnts(ywave)
 				for(ii=0;ii<itemsinlist(ctrllist,";");ii+=1)
 					ctrl = stringfromlist(ii,ctrllist,";")
@@ -1394,7 +1393,6 @@ Function Gen_rebuildPopups(event,wavepath,windowname,ctrlname)
 						PopupWS_SetSelectionFullPath("gencurvefitpanel", ctrl, stringbykey(ctrl,ctrllist))
 					endif
 				endfor
-			endif					
 		break
 	
 	endswitch
