@@ -981,9 +981,7 @@ checkNanInf(waveHndl wav){
 		goto done;
 	
 	for(ii=0 ; ii<points ; ii+=1)
-		if(IsNaN64(dp+ii) || IsINF64(dp+ii)) break;
-	
-	
+		if((err=IsNaN64(dp+ii)) || (err=IsINF64(dp+ii))) break;
 	
 	if(err>0)
 		err = INPUT_WAVES_CONTAINS_NANINF;
@@ -1020,7 +1018,7 @@ checkZeros(waveHndl wavH,long* numzeros){
 	
 	for(ii=0 ; ii<points ; ii+=1){
 		if(*(dp+ii)==0)
-			numzeros+=1;
+			*numzeros+=1;
 	}
 	if(dp != NULL)
 		free(dp);
