@@ -162,7 +162,7 @@ Function plotCalcref()
 	Edit/K=1 parameters_Cref,coef_Cref,resolution
 	
 	//make a nice graph
-	Display/K=1/N=reflectivitygraph/w=(10,10,600,400) theoretical_R vs theoretical_q
+	Display/K=1/N=reflectivitygraph/w=(10,10,550,350) theoretical_R vs theoretical_q
 	controlbar/T/W=reflectivitygraph 35
 	PopupMenu plottype,pos={140,6},size={220,21},proc=Moto_Plottype,title="Plot type"
 	PopupMenu plottype,mode=plotyp,bodyWidth= 100,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
@@ -255,7 +255,8 @@ Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
 	Duplicate/o root:theoretical_q, root:$xwave
 	Duplicate/o root:sld, root:$sldwave
 	Duplicate/o root:zed, root:$zedwave
-
+	setformula root:$sldwave,""
+	
 	return 0
 End
 
