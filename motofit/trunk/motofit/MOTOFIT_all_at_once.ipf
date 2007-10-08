@@ -162,12 +162,14 @@ Function plotCalcref()
 	Edit/K=1 parameters_Cref,coef_Cref,resolution
 	
 	//make a nice graph
-	Display/K=1/N=reflectivitygraph theoretical_R vs theoretical_q
+	Display/K=1/N=reflectivitygraph/w=(10,10,600,400) theoretical_R vs theoretical_q
 	controlbar/T/W=reflectivitygraph 35
-	PopupMenu plottype,pos={220,6},size={220,21},proc=Moto_Plottype,title="Plot type"
-	PopupMenu plottype,mode=plotyp,bodyWidth= 140,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
-	Button Autoscale title="Autoscale",size={60,20},pos={12,7},proc=Moto_autoscaleRef
-	Button ChangeQrange title="Theoretical Q range",proc=Moto_ChangeQrangebutton,size={120,20}
+	PopupMenu plottype,pos={140,6},size={220,21},proc=Moto_Plottype,title="Plot type"
+	PopupMenu plottype,mode=plotyp,bodyWidth= 100,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
+	Button Autoscale title="Autoscale",size={80,20},pos={12,7},proc=Moto_autoscaleRef
+	Button ChangeQrange title="Q range",proc=Moto_ChangeQrangebutton,size={100,20}
+	Button Snapshot title="snapshot",proc=Moto_takesnapshot,size={80,20},pos={380,6}
+	
 	Label bottom "Q /A\\S-1\\M"
 	Label left "R"
 	ModifyGraph log(bottom)=0,mode=0
@@ -191,8 +193,9 @@ Function plotCalcref()
 	Moto_SLDdatabase()
 
 	//bring the reflectivity graph and panel to the front
-	Dowindow/F reflectivitygraph
 	Dowindow/F reflectivitypanel
+	Dowindow/F reflectivitygraph
+	Autopositionwindow/m=1/R=reflectivitygraph reflectivitypanel
 End
 
 Function Moto_ChangeQrangebutton(B_Struct)
@@ -202,6 +205,57 @@ Function Moto_ChangeQrangebutton(B_Struct)
 	endif
 	
 	Moto_changeQrangeprompt()
+	return 0
+End
+
+Function Moto_takesnapshot(B_Struct)
+	STRUCT WMButtonAction &B_Struct
+	if(B_Struct.eventcode!=2)
+		return 0
+	endif
+	
+	string ywave ="",xwave="",sldwave="",zedwave=""
+	if(!Moto_snapshot(ywave,xwave,sldwave,zedwave))
+		if(Findlistitem(ywave,tracenamelist("reflectivitygraph",";",1))==-1)
+			appendtograph/w=reflectivitygraph $("root:"+ywave) vs $("root:"+xwave)
+		endif
+		if(Findlistitem(sldwave,tracenamelist("reflectivitygraph#SLDplot",";",1))==-1)
+			appendtograph/w=reflectivitygraph#sldplot $("root:"+sldwave) vs $("root:"+zedwave)
+		endif
+		Legend/C/N=text0/A=MC
+	endif
+	return 0
+End
+
+Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
+	string &ywave,&xwave,&sldwave,&zedwave
+	
+	string snapStr = "snapshot"
+	prompt snapStr, "Name: "
+
+	do
+		doprompt "Enter a unique name for the snapshot", snapstr
+		if(V_flag)
+			return 1
+		endif
+		ywave = cleanupname(snapstr+"_R",0)
+		xwave = cleanupname(snapstr+"_q",0)
+		sldwave = cleanupname("SLD_"+snapstr,0)
+		zedwave = cleanupname("zed_"+snapstr,0)
+		
+		if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1) || checkname(zedwave,1))
+			Doalert 0, "One of the snapshot waves did not have a unique name"
+			continue
+		else
+			break
+		endif
+	while(1)
+
+	Duplicate/o root:theoretical_R, root:$ywave
+	Duplicate/o root:theoretical_q, root:$xwave
+	Duplicate/o root:sld, root:$sldwave
+	Duplicate/o root:zed, root:$zedwave
+
 	return 0
 End
 
@@ -341,9 +395,9 @@ Function Motofit(w,y,z) :Fitfunc
 	string dQwave=cleanupname(removeending(moto_str("dataset"))+"dq",0)
 	dQwave = "root:motofit:reflectivity:temp_dq"
 
-//	if(cmpstr(nameofwave(z),"GEN_xx")==0) //you may be calling from geneticoptimisation
-//		dQwave = "temp_dq"
-//	endif
+	//	if(cmpstr(nameofwave(z),"GEN_xx")==0) //you may be calling from geneticoptimisation
+	//		dQwave = "temp_dq"
+	//	endif
 	
 	Wave/z dQ=$dQwave
 	
@@ -1051,7 +1105,7 @@ Function Moto_Reflectivitypanel() : Panel
 	PopupMenu SLDtype,pos={25,236},size={189,21},title="SLD type"
 	PopupMenu SLDtype,mode=1,bodyWidth= 140,popvalue="Neutron",value= #"\"Neutron;Xray\""
 	TitleBox hold,pos={184,36},size={26,13},title="hold?",frame=0
-		TabControl thicknesstab, value=1,tabLabel(1)="Fringe spacing"
+	TabControl thicknesstab, value=1,tabLabel(1)="Fringe spacing"
 	TabControl thicknesstab ,value=0,tabLabel(0)="FFT of data"
 	TabControl thicknesstab ,size={564,200},pos={69,426},proc=Moto_thicknesstabproc
 
@@ -1585,14 +1639,14 @@ Function Moto_fit_Genetic()
 		duplicate/o d, root:motofit:reflectivity:temp_dq
 		Wave temp_dq = root:motofit:reflectivity:temp_dq
 		if(usecursors)
-		Variable start=pcsr(A),finish=pcsr(B),temp
-		if(start>finish)
-			temp=finish
-			finish=start
-			start=temp
-		endif
-		Deletepoints (finish+1),(numpnts(temp_dq)-finish-1),temp_dq
-		Deletepoints 0,start, temp_dq
+			Variable start=pcsr(A),finish=pcsr(B),temp
+			if(start>finish)
+				temp=finish
+				finish=start
+				start=temp
+			endif
+			Deletepoints (finish+1),(numpnts(temp_dq)-finish-1),temp_dq
+			Deletepoints 0,start, temp_dq
 		endif
 	endif
 	
@@ -1651,7 +1705,7 @@ Function Moto_fit_Genetic()
 	setactivesubwindow reflectivitygraph
 	
 	try 
-	print cmd
+		print cmd
 		Execute/Q cmd	
 	catch
 		setdatafolder $cDF
@@ -1879,14 +1933,14 @@ Function Moto_fit_Levenberg()
 		duplicate/o d, root:motofit:reflectivity:temp_dq
 		Wave temp_dq = root:motofit:reflectivity:temp_dq
 		if(usecursors)
-		Variable start=pcsr(A),finish=pcsr(B),temp
-		if(start>finish)
-			temp=finish
-			finish=start
-			start=temp
-		endif
-		Deletepoints (finish+1),(numpnts(temp_dq)-finish-1),temp_dq
-		Deletepoints 0,start, temp_dq
+			Variable start=pcsr(A),finish=pcsr(B),temp
+			if(start>finish)
+				temp=finish
+				finish=start
+				start=temp
+			endif
+			Deletepoints (finish+1),(numpnts(temp_dq)-finish-1),temp_dq
+			Deletepoints 0,start, temp_dq
 		endif
 	endif
 	
@@ -2198,14 +2252,14 @@ Function Moto_fit_GenLM()
 		duplicate/o d, root:motofit:reflectivity:temp_dq
 		Wave temp_dq = root:motofit:reflectivity:temp_dq
 		if(usecursors)
-		Variable start=pcsr(A),finish=pcsr(B),temp
-		if(start>finish)
-			temp=finish
-			finish=start
-			start=temp
-		endif
-		Deletepoints (finish+1),(numpnts(temp_dq)-finish-1),temp_dq
-		Deletepoints 0,start, temp_dq
+			Variable start=pcsr(A),finish=pcsr(B),temp
+			if(start>finish)
+				temp=finish
+				finish=start
+				start=temp
+			endif
+			Deletepoints (finish+1),(numpnts(temp_dq)-finish-1),temp_dq
+			Deletepoints 0,start, temp_dq
 		endif
 	endif
 	
@@ -4782,11 +4836,11 @@ Function Moto_SLDcalculateSetvariable(SV_Struct) : Setvariablecontrol
 		
 		strswitch(SV_Struct.ctrlname)
 			case "calcMassDensity":
-			SLD_molvol = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_massdensity*6.023e23)
-			break
+				SLD_molvol = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_massdensity*6.023e23)
+				break
 			case "calcmolvol":
-			SLD_massdensity = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_molvol*6.023e23)
-			break
+				SLD_massdensity = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_molvol*6.023e23)
+				break
 		endswitch
 		
 		Variable/C sld
@@ -4815,13 +4869,13 @@ Function/c Moto_SLDcalculation(chemical,massdensity,type)
 End
 
 Function/S Moto_SLDparsechemical(chemical,type)
-//parses the entered chemical and adds up the total weight and scattering lengths
-string chemical
-variable type
+	//parses the entered chemical and adds up the total weight and scattering lengths
+	string chemical
+	variable type
 
-wave/t scatlengths = root:motofit:reflectivity:slddatabase:scatlengths
+	wave/t scatlengths = root:motofit:reflectivity:slddatabase:scatlengths
 
-String element = ""
+	String element = ""
 	variable isotope, numatoms
 
 	variable/c scatlen, scatlen_tot=cmplx(0,0),sld=cmplx(0,0)
@@ -5133,16 +5187,16 @@ Function moto_holdall()
 End
 
 Function moto_offsetQ(Q,theta,lambda)
-Wave q;variable theta,lambda
+	Wave q;variable theta,lambda
 
-q *= (lambda/(4*Pi))
-q = asin(q)
-q *= (180/Pi)
+	q *= (lambda/(4*Pi))
+	q = asin(q)
+	q *= (180/Pi)
 
-q += theta
+	q += theta
 
-q *=  (Pi/180)
-q = sin(q) 
-q *= (4*Pi/lambda)
+	q *=  (Pi/180)
+	q = sin(q) 
+	q *= (4*Pi/lambda)
 
 End
