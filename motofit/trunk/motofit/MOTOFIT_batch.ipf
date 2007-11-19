@@ -33,43 +33,14 @@ Function FitRefToListOfWaves()
 	
 	controlinfo/W=reflectivitypanel typeoffit
 	//if you're doing genetic optimisation
-	if(cmpstr(S_Value,"Genetic Optimisation")==0 || cmpstr(S_Value,"Genetic + LM")==0 )
-		make/o/d/n=(strlen(holdstring)) batchlimits
-		redimension/n=(-1,2) batchlimits
-		
-		//subset of parameters to be fitted, it's the bestfit vector
-		make/o/d/n=0 GEN_b,GEN_parnumber
-		//ii is a loop counter, jj will be for how many parameters will vary
-		Variable ii=0,jj=0			
-		//parse holdstring to see how many are to be held
-		//and make a wave with the vectors, this wave is the best fit vector
-		for(ii=0;ii<strlen(holdstring);ii+=1)
-			if(GEN_isbitset(holdbits,ii)==0)	//we want to fit that parameter
-				redimension/n=(numpnts(GEN_b)+1) GEN_b,GEN_parnumber
-				GEN_b[numpnts(GEN_b)-1]=temporaryparameterwave[ii]
-				GEN_parnumber[numpnts(GEN_parnumber)-1]=ii
-				jj+=1
-			endif
-		endfor
-		//this makes a GEN_limits wave, need to reexpand to a user definable limits wave
-		GEN_optimise#GEN_setlimitwave(GEN_parnumber,GEN_b)
-		Wave GEN_limits
-		//doing the reexpansion
-		jj=0
-		for(ii=0;ii<strlen(holdstring);ii+=1)
-			if(GEN_isbitset(holdbits,ii) == 0)	//we want to fit that parameter
-				batchlimits[ii][0] = GEN_limits[jj][0]
-				batchlimits[ii][1] = GEN_limits[jj][1]
-				jj+=1
-			endif
-		endfor
-		killwaves/z GEN_limits,GEN_b,GEN_parnumber
+	if(cmpstr(S_Value,"Genetic")==0 || cmpstr(S_Value,"Genetic + LM")==0 )
+		GEN_setlimitsforGENcurvefit(root:motofit:MOTOFIT_batchfits:temporaryparameterwave,holdstring,"root:motofit:MOTOFIT_batchfits")
 	endif
 	
 	//use constraints if the wave exists.
 	controlinfo/w=reflectivitypanel useconstraint
 	String constraint=""
-	ii=0
+	variable ii=0
 	string test
 	Wave/T constraints=root:motofit:reflectivity:constraints
 	if(V_Value)
@@ -95,7 +66,9 @@ Function FitRefToListOfWaves()
 		String aWaveName_E = cleanupname("batchwave"+num2istr(ii+1),0)
 		
 		Wave aWave= $aWaveName_Y
-			
+		
+		appendtograph/w=reflectivitygraph aWave vs $awavename_x
+		
 		// /N suppresses screen updates during fitting
 		// /Q suppresses history output during fitting
 		
@@ -110,7 +83,7 @@ Function FitRefToListOfWaves()
 //		//spoof in dq wave if required
 //		string dataset = moto_str("dataset")
 //		moto_repstr("dataset","temp__")
-//		duplicate/o $aWaveName_X , root:motofit:GEN_optimise:temp_dq
+//		duplicate/o $aWaveName_X , root:motofit:reflectivity:tempwaves:temp_dq
 //		duplicate/o $aWaveName_X , temp_dq
 //		Wave temp_dq=root:motofit:GEN_optimise:temp_dq
 //		REQUIRED: make a functional form for dq
@@ -124,42 +97,42 @@ Function FitRefToListOfWaves()
 		string cmd
 		controlinfo/W=reflectivitypanel typeoffit
 		Strswitch (S_Value)
-		case "Genetic Optimisation":
+		case "Genetic":
 			controlinfo/w=reflectivitypanel useerrors
 			if(V_Value)
-				cmd="GEN_Curvefit(\"motofit\",root:motofit:Motofit_batchfits:temporaryparameterwave,"+aWaveName_Y+",\""+holdstring+"\""+",x="+aWaveName_x
-				cmd+=",w="+aWavename_E+",popsize=20,k_m=0.7,recomb=0.5,iters=50,tol=0.0001,c=batchlimits,q=1)"
+				cmd="gencurvefit "+errors +"/q/n/X="+awavename_x+"/D="+fitdestination+ " motofit,"+awavename_y +",root:motofit:Motofit_batchfits:temporaryparameterwave,\""+holdstring+"\",root:packages:motofit:old_genoptimise:GENcurvefitlimits"
 				Execute/Z cmd
+				duplicate/o $awavename_x,$("fitx_"+awavename_x)
 			else
-				cmd="GEN_Curvefit(\"motofit\",root:motofit:Motofit_batchfits:temporaryparameterwave,"+aWaveName_Y+",\""+holdstring+"\""+",x="+aWaveName_x
-				cmd+=",popsize=20,k_m=0.7,recomb=0.5,iters=50,tol=0.0001,c=batchlimits,q=1)"
-				Execute/Z cmd
+				cmd="gencurvefit /q/n/X="+awavename_x+"/D="+fitdestination+ " motofit,"+awavename_y +",root:motofit:Motofit_batchfits:temporaryparameterwave,\""+holdstring+"\",root:packages:motofit:old_genoptimise:GENcurvefitlimits"		
+				Execute cmd
+				duplicate/o $awavename_x,$("fitx_"+awavename_x)
 			endif
 		break
-		case "Levenberg - Marquardt":
+		case "Levenberg-Marquardt":
 			cmd="FuncFit/H=\""+holdstring+"\"/N /Q Motofit root:motofit:Motofit_batchfits:temporaryparameterwave "+aWaveName_Y+"/X="+aWaveName_X+" /D="+fitdestination+constraint+errors
 			Execute/Z cmd
 		break
 		case "Genetic + LM":
 			controlinfo/w=reflectivitypanel useerrors
 			if(V_Value)
-				cmd="GEN_Curvefit(\"motofit\",root:motofit:Motofit_batchfits:temporaryparameterwave,"+aWaveName_Y+",\""+holdstring+"\""+",x="+aWaveName_x
-				cmd+=",w="+aWavename_E+",popsize=20,k_m=0.7,recomb=0.5,iters=50,tol=0.0001,c=batchlimits,q=1)"
+				cmd="gencurvefit "+errors +"/q/n/X="+awavename_x+"/D="+fitdestination+ " motofit,"+awavename_y +",root:motofit:Motofit_batchfits:temporaryparameterwave,\""+holdstring+"\",root:packages:motofit:old_genoptimise:GENcurvefitlimits"
 				Execute/Z cmd
+				duplicate/o $awavename_x,$("fitx_"+awavename_x)
 				//followupwith curvefit
 				cmd="FuncFit/H=\""+holdstring+"\"/N/q Motofit root:motofit:Motofit_batchfits:temporaryparameterwave "+aWaveName_Y+"/X="+aWaveName_X+" /D="+fitdestination+constraint+errors
 				Execute/Z cmd
 			else
-				cmd="GEN_Curvefit(\"motofit\",root:motofit:Motofit_batchfits:temporaryparameterwave,"+aWaveName_Y+",\""+holdstring+"\""+",x="+aWaveName_x
-				cmd+=",popsize=20,k_m=0.7,recomb=0.5,iters=50,tol=0.0001,c=batchlimits,q=1)"
-				Execute/Z cmd
+				cmd="gencurvefit "+"/q/n/X="+awavename_x+"/D="+fitdestination+ " motofit,"+awavename_y +",root:motofit:Motofit_batchfits:temporaryparameterwave,\""+holdstring+"\",root:packages:motofit:old_genoptimise:GENcurvefitlimits"		
+				Execute cmd
+				duplicate/o $awavename_x,$("fitx_"+awavename_x)
 				//follow up with curvefit
 				cmd="FuncFit/H=\""+holdstring+"\"/N /Q Motofit root:motofit:Motofit_batchfits:temporaryparameterwave "+aWaveName_Y+"/X="+aWaveName_X+" /D="+fitdestination+constraint+errors
 				Execute/Z cmd
 			endif
 		break
 		endswitch
-	
+		
 	//replace the existing dataset, if you are fiddling about with dq.
 	//	moto_repstr("dataset",dataset)
 		
@@ -179,6 +152,22 @@ Function FitRefToListOfWaves()
 		Note/K $("fit_"+aWaveName_Y)
 		Note $("fit_"+aWaveName_Y),coefnote
 		
+//		appendtograph/w=reflectivitygraph $("fit_"+aWavename_y) vs $("fitx_"+awavename_y)
+//		modifygraph/w=reflectivitygraph rgb($("fit_"+awavename_y)) = (0,0,0)
+//		SetAxis/w=reflectivitygraph bottom 0.0111023,0.0758042
+//		SetAxis/w=reflectivitygraph left -2.5,2
+//		Wave sld = root:sld , zed = root:zed
+//		sld = moto_sldplot(root:motofit:motofit_batchfits:temporaryparameterwave,zed)
+//		doupdate
+//		dowindow/f reflectivitygraph
+//		addmovieframe
+//		variable kk
+//		string wally = tracenamelist("reflectivitygraph",";",1)
+//		for(kk=0;kk<itemsinlist(wally);kk+=1)
+//			removefromgraph/w=reflectivitygraph $(stringfromlist(kk,wally))
+//		endfor
+//		doupdate
+		
 		string traces = tracenamelist("batchdata",";",1)
 		variable traceexists = whichlistitem("fit_"+aWaveName_Y,traces,";")
 		if(traceexists==-1)
@@ -190,6 +179,8 @@ Function FitRefToListOfWaves()
 		print (ii+2)/3
 	endfor
 
+//	closemovie
+	
 	//this is where you get to when there are no more waves to fit
 	dowindow/k concatenatedparameters
 	edit/K=1/N=concatenatedparameters concat_fname,concat_coef,chi_2	//display the fit waves
@@ -317,8 +308,8 @@ Function LoadAndGraphAll (pathname)
 	//loop through each file and load it in.
 	for(ii=0;ii<itemsinlist(All_names);ii+=1)
 		filename=StringFromList(ii,All_Names,";")
-		LoadWave /q/a/J/D/O/P=$pathName fileName
-	//	LoadWave/a/J/D/K=0/l={0,120,0,1,3}/V={" "," ",0,0}/P=$pathname filename
+	//	LoadWave /q/a/J/D/O/P=$pathName fileName
+		LoadWave/a/J/D/K=0/l={0,120,0,1,3}/V={" "," ",0,0}/P=$pathname filename
 		if (V_flag==0)  //No waves loaded. Perhaps user cancelled
 			ABORT
 		endif

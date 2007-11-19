@@ -122,6 +122,7 @@ Function plotCalcref()
 	Variable/g root:motofit:reflectivity:chisq	
 		
 	make/o/d/n=(num) theoretical_q,theoretical_R
+	setscale/P x,qmin,((qmax-qmin)/num), theoretical_R
 	make/o/d/n=(SLDpts) zed,sld
 
 	//This section pulls up a graph with the reflectivity in it, and a table containing the reflectivity parameters	
@@ -161,12 +162,14 @@ Function plotCalcref()
 	Edit/K=1 parameters_Cref,coef_Cref,resolution
 	
 	//make a nice graph
-	Display/K=1/N=reflectivitygraph theoretical_R vs theoretical_q
+	Display/K=1/N=reflectivitygraph/w=(10,10,550,350) theoretical_R vs theoretical_q
 	controlbar/T/W=reflectivitygraph 35
-	PopupMenu plottype,pos={220,6},size={220,21},proc=Moto_Plottype,title="Plot type"
-	PopupMenu plottype,mode=plotyp,bodyWidth= 140,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
-	Button Autoscale title="Autoscale",size={60,20},pos={12,7},proc=Moto_autoscaleRef
-	Button ChangeQrange title="Theoretical Q range",proc=Moto_ChangeQrangebutton,size={120,20}
+	PopupMenu plottype,pos={140,6},size={220,21},proc=Moto_Plottype,title="Plot type"
+	PopupMenu plottype,mode=plotyp,bodyWidth= 100,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
+	Button Autoscale title="Autoscale",size={80,20},pos={12,7},proc=Moto_autoscaleRef
+	Button ChangeQrange title="Q range",proc=Moto_ChangeQrangebutton,size={100,20}
+	Button Snapshot title="snapshot",proc=Moto_takesnapshot,size={80,20},pos={380,6}
+	
 	Label bottom "Q /A\\S-1\\M"
 	Label left "R"
 	ModifyGraph log(bottom)=0,mode=0
@@ -190,8 +193,9 @@ Function plotCalcref()
 	Moto_SLDdatabase()
 
 	//bring the reflectivity graph and panel to the front
-	Dowindow/F reflectivitygraph
 	Dowindow/F reflectivitypanel
+	Dowindow/F reflectivitygraph
+	Autopositionwindow/m=1/R=reflectivitygraph reflectivitypanel
 End
 
 Function Moto_ChangeQrangebutton(B_Struct)
@@ -201,6 +205,58 @@ Function Moto_ChangeQrangebutton(B_Struct)
 	endif
 	
 	Moto_changeQrangeprompt()
+	return 0
+End
+
+Function Moto_takesnapshot(B_Struct)
+	STRUCT WMButtonAction &B_Struct
+	if(B_Struct.eventcode!=2)
+		return 0
+	endif
+	
+	string ywave ="",xwave="",sldwave="",zedwave=""
+	if(!Moto_snapshot(ywave,xwave,sldwave,zedwave))
+		if(Findlistitem(ywave,tracenamelist("reflectivitygraph",";",1))==-1)
+			appendtograph/w=reflectivitygraph $("root:"+ywave) vs $("root:"+xwave)
+		endif
+		if(Findlistitem(sldwave,tracenamelist("reflectivitygraph#SLDplot",";",1))==-1)
+			appendtograph/w=reflectivitygraph#sldplot $("root:"+sldwave) vs $("root:"+zedwave)
+		endif
+		Legend/C/N=text0/A=MC
+	endif
+	return 0
+End
+
+Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
+	string &ywave,&xwave,&sldwave,&zedwave
+	
+	string snapStr = "snapshot"
+	prompt snapStr, "Name: "
+
+	do
+		doprompt "Enter a unique name for the snapshot", snapstr
+		if(V_flag)
+			return 1
+		endif
+		ywave = cleanupname(snapstr+"_R",0)
+		xwave = cleanupname(snapstr+"_q",0)
+		sldwave = cleanupname("SLD_"+snapstr,0)
+		zedwave = cleanupname("zed_"+snapstr,0)
+		
+		if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1) || checkname(zedwave,1))
+			Doalert 0, "One of the snapshot waves did not have a unique name"
+			continue
+		else
+			break
+		endif
+	while(1)
+
+	Duplicate/o root:theoretical_R, root:$ywave
+	Duplicate/o root:theoretical_q, root:$xwave
+	Duplicate/o root:sld, root:$sldwave
+	Duplicate/o root:zed, root:$zedwave
+	setformula root:$sldwave,""
+	
 	return 0
 End
 
@@ -225,6 +281,7 @@ Function Moto_changeTheoreticalQrange(num,qmin,qmax)
 	endif
 	
 	make/o/d/n=(num) root:theoretical_q,root:theoretical_R
+	setscale/P x,qmin,((qmax-qmin)/num), theoretical_R
 	Wave theoretical_Q=root:theoretical_Q
 	theoretical_q = qmin+(x)*((qmax-qmin)/num)
 	Moto_update()
@@ -337,10 +394,11 @@ Function Motofit(w,y,z) :Fitfunc
 	Variable res=numberbykey("res",motofitcontrol)
 	variable usedqwave=numberbykey("usedqwave",motofitcontrol)
 	string dQwave=cleanupname(removeending(moto_str("dataset"))+"dq",0)
-	
-	if(cmpstr(nameofwave(z),"GEN_xx")==0) //you may be calling from geneticoptimisation
-		dQwave = "temp_dq"
-	endif
+	dQwave = "root:motofit:reflectivity:temp_dq"
+
+	//	if(cmpstr(nameofwave(z),"GEN_xx")==0) //you may be calling from geneticoptimisation
+	//		dQwave = "temp_dq"
+	//	endif
 	
 	Wave/z dQ=$dQwave
 	
@@ -991,9 +1049,6 @@ Function Moto_Reflectivitypanel() : Panel
 	//	Button increase,pos={270,515},size={48,20},proc=Moto_varyparams,title="increase"
 	//	Button decrease,pos={270,533},size={50,20},proc=Moto_varyparams,title="decrease"
 	
-	TabControl thicknesstab, value=1,tabLabel(1)="Fringe spacing"
-	TabControl thicknesstab ,value=0,tabLabel(0)="FFT of data"
-	TabControl thicknesstab ,size={564,200},pos={69,426},proc=Moto_thicknesstabproc
 	variable/g root:motofit:reflectivity:tempwaves:fringe
 	SetVariable FT_lowQ title="low Q for FFT",bodyWidth=60,value=root:motofit:reflectivity:tempwaves:FTlowQ
 	Setvariable FT_lowQ,pos={160,476},proc=Moto_FTreflectivity,limits={0.005,1,0.01}
@@ -1010,9 +1065,9 @@ Function Moto_Reflectivitypanel() : Panel
 		
 	Button Dofit,pos={253,50},size={140,50},proc=Moto_fitdatabutton,title="Do fit"
 	Button Dofit,help={"Performs the fit"},fColor=(65280,32512,16384)
-	Popupmenu Typeoffit,mode=1,bodywidth=140,pos={345,105},value = "Genetic Optimisation;Levenberg - Marquardt;Genetic + LM"
+	Popupmenu Typeoffit,mode=1,bodywidth=140,pos={345,107},value = "Genetic;Levenberg-Marquardt;Genetic + LM"
 
-	Button loaddatas,pos={253,130},size={140,50},proc=Moto_Loaddatas,title="Load data"
+	Button loaddatas,pos={253,137},size={140,50},proc=Moto_Loaddatas,title="Load data"
 	Button loaddatas,fColor=(65280,32512,16384)
 	PopupMenu dataset,pos={431,42},size={179,21},proc=Motofit_PopMenuProc,title="dataset"
 	PopupMenu dataset,mode=2,bodyWidth= 139,popvalue="_none_",value= #"Listmatch(WaveList(\"*R\", \";\",\"\"),\"!coef*\")"
@@ -1020,7 +1075,7 @@ Function Moto_Reflectivitypanel() : Panel
 	CheckBox useerrors,value= 0
 	CheckBox usedQwave,pos={484,74},size={87,14},proc=Motofit_checkproc,title="use dQ wave?"
 	CheckBox usedQwave,value= 0
-	PopupMenu coefwave,pos={408,118},size={202,21},proc=Moto_changecoefs,title="Model wave"
+	PopupMenu coefwave,pos={408,118},size={202,21},proc=Moto_changecoefs,title="Model"
 	PopupMenu coefwave,mode=1,bodyWidth= 139,popvalue="coef_Cref",value= #"WaveList(\"coef*\",\";\",\"\")"
 	CheckBox fitcursors,pos={483,155},size={116,14},proc=Motofit_checkproc,title="Fit between cursors?"
 	CheckBox fitcursors,help={"To get the cursors on the graph press Ctrl-I.  This enables you to fit over a selected x-range"}
@@ -1034,16 +1089,16 @@ Function Moto_Reflectivitypanel() : Panel
 	PopupMenu plottype,pos={29,209},size={186,21},proc=Moto_Plottype,title="Plot type"
 	PopupMenu plottype,help={"you can change the plot type to whatever you want."}
 	PopupMenu plottype,mode=str2num(moto_str("plotyp")),bodyWidth= 140,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
-	Button Savecoefwave,pos={622,128},size={95,23},proc=Moto_savecoefficients,title="Save model"
+	Button Savecoefwave,pos={622,134},size={95,23},proc=Moto_savecoefficients,title="Save model"
 	Button loadcoefwave,pos={622,105},size={95,24},proc=Moto_loadcoefwave,title="Load model"
 	Button Savefitwave,pos={623,31},size={93,42},proc=moto_savefitwave,title="Save reflectivity \rwaves"
-	Button Addcursor,pos={531,223},size={65,21},proc=Moto_addcursor,title="Add cursor"
+	Button Addcursor,pos={531,223},size={80,21},proc=Moto_addcursor,title="Add cursor"
 	Button cursorleftA,pos={467,220},size={29,14},proc=Moto_cursorleft,title="<"
 	Button cursorrightA,pos={495,220},size={29,14},proc=Moto_cursorright,title=">"
-	Button cursorleftB,pos={467,232},size={29,14},proc=Moto_cursorleft,title="<"
-	Button cursorrightB,pos={495,232},size={29,14},proc=Moto_cursorright,title=">"
+	Button cursorleftB,pos={467,235},size={29,14},proc=Moto_cursorleft,title="<"
+	Button cursorrightB,pos={495,235},size={29,14},proc=Moto_cursorright,title=">"
 	Button Addconstraint,pos={36,52},size={119,29},disable=1,proc=Moto_changeconstraint,title="Add constraint"
-	Button removeconstraint,pos={36,85},size={119,30},disable=1,proc=Moto_changeconstraint,title="Remove constraint"
+	Button removeconstraint,pos={36,95},size={119,30},disable=1,proc=Moto_changeconstraint,title="Remove constraint"
 	CheckBox useconstraint,pos={483,172},size={111,14},proc=Motofit_checkproc,title="Fit with constraints?"
 	CheckBox useconstraint,value= 0
 	CheckBox usemultilayer,pos={483,189},size={96,14},proc=Setupmultilayer,title="make multilayer?"
@@ -1051,6 +1106,10 @@ Function Moto_Reflectivitypanel() : Panel
 	PopupMenu SLDtype,pos={25,236},size={189,21},title="SLD type"
 	PopupMenu SLDtype,mode=1,bodyWidth= 140,popvalue="Neutron",value= #"\"Neutron;Xray\""
 	TitleBox hold,pos={184,36},size={26,13},title="hold?",frame=0
+	TabControl thicknesstab, value=1,tabLabel(1)="Fringe spacing"
+	TabControl thicknesstab ,value=0,tabLabel(0)="FFT of data"
+	TabControl thicknesstab ,size={564,200},pos={69,426},proc=Moto_thicknesstabproc
+
 		
 	//	PopupMenu Calculationtype value="Solvent Penetration;imaginary SLD",pos={366,477},proc=Moto_calculationtype
 	
@@ -1132,11 +1191,11 @@ Function Moto_Reflectivitypanel() : Panel
 	TitleBox baseparam1,frame=0,fStyle=1
 	TitleBox baseparam2,pos={22,86},size={42,13},title="SLDtop",fSize=12,frame=0
 	TitleBox baseparam2,fStyle=1
-	TitleBox baseparam3,pos={18,102},size={51,13},title="SLDbase",fSize=12,frame=0
+	TitleBox baseparam3,pos={8,102},size={51,13},title="SLD subphase",fSize=12,frame=0
 	TitleBox baseparam3,fStyle=1
 	TitleBox baseparam4,pos={31,118},size={21,13},title="bkg",fSize=12,frame=0
 	TitleBox baseparam4,fStyle=1
-	TitleBox baseparam5,pos={14,133},size={63,13},title="base rough",fSize=12
+	TitleBox baseparam5,pos={12,133},size={63,13},title="sub rough",fSize=12
 	TitleBox baseparam5,frame=0,fStyle=1
 	TitleBox baseparam6,pos={80,133},size={50,20}
 	TitleBox baseparam0,pos={140,133},size={50,20}
@@ -1154,6 +1213,11 @@ Function Moto_Reflectivitypanel() : Panel
 	TC_Struct.tab=0
 	moto_fooproc(TC_struct)	
 	moto_thicknesstabProc(TC_Struct)
+End
+
+Function moto_cropPanel()
+	//resizes the reflectivity panel so you can't see FTwindow
+	Movewindow /w=reflectivitypanel 124,62,700,370
 End
 
 Function moto_thicknesstabProc(TC_Struct)
@@ -1447,10 +1511,10 @@ Function Moto_FitDataButton(B_Struct)
 	
 	Controlinfo/W=reflectivitypanel Typeoffit
 	strswitch (S_Value)
-		case "Genetic Optimisation":
+		case "Genetic":
 			Moto_fit_Genetic()
 			break
-		case "Levenberg - Marquardt":
+		case "Levenberg-Marquardt":
 			Moto_fit_Levenberg()
 			break
 		case "Genetic + LM":
@@ -1465,20 +1529,23 @@ Function Moto_fit_Genetic()
 	//this function is the button control that starts the fit.
 	//the fit is done with genetic optimisation which is very very good at finding global minima
 	
+	string cDF = getdatafolder(1)
+	
 	Setdatafolder root:
+	
 	Moto_holdstring("",0)
 	SVAR/Z Motofitcontrol=root:motofit:reflectivity:motofitcontrol
-	newdatafolder/o root:motofit:GEN_optimise
+	
 	Wave coef_Cref,coef_multiCref
 	Variable ii,nlayers,npars,jj,use
-	String coefwave,test
+	variable usecursors,useerrors,usedqwave
+	String test
+	String y,x,e,dx,dataset
+	String cmd,cursors,errors,options
 	Variable plotyp=str2num(moto_Str("plotyp"))
 	Wave zed,SLD
 	
 	//which waves do you want to fit?
-	String y,x,e,dx,dataset
-	String cmd="GEN_curvefit(\"motofit\","
-	
 	Controlinfo/W=reflectivitypanel dataset
 	dataset=S_Value
 	dataset=removeending(dataset)
@@ -1496,7 +1563,6 @@ Function Moto_fit_Genetic()
 	String coefwavestr = Moto_coefficientfocus()
 	Wave coef = $coefwavestr
 	variable multilayer=str2num(moto_str("multilayer"))
-	cmd+=coefwavestr+","
 	
 	//check the x,y waves	
 	if(waveexists(b)==0)
@@ -1517,32 +1583,28 @@ Function Moto_fit_Genetic()
 		Moto_ABORTER("The y data does not have the same number of points as the x data.")
 		return 0						
 	endif
-
-	cmd+=nameofwave(b)+","
 		
 	//set up the holdstring
 	String holdstring=moto_str("holdstring")
-	cmd+="\""+holdstring+"\""
 	
 	//do you want to weight with a resolution wave?
 	controlinfo/W=reflectivitypanel usedqwave
 	if(V_Value==0)
 		moto_repstr("usedqwave","0")
 	else
+		usedqwave=1
 		moto_repstr("usedqwave","1")
 		if(waveexists(d)==1)		
 			if((abs(Dimsize($dx,0)-xlength))>0)
 				Moto_Aborter("the resolution wave does not have the same number of points as the xy data")
 				return 0
 			endif
-			duplicate/o d,root:motofit:GEN_optimise:temp_dq
+			duplicate/o d,root:packages:motofit:old_genoptimise:temp_dq
 		else
 			Moto_Aborter("dQ wave doesn't exist")
 			return 0
 		endif
-	endif
-	
-	cmd+=",x="+nameofwave(a)	
+	endif	
 
 	//do you want to fit with errors?
 	controlinfo/W=reflectivitypanel useerrors
@@ -1555,26 +1617,101 @@ Function Moto_fit_Genetic()
 			Moto_Aborter("error wave needs same number of points as y wave")
 			return 0
 		endif
-		cmd+=",w="+nameofwave(c)
-	endif
-	
-	//do we want to fit with the cursors or not
-	controlinfo/w=reflectivitypanel fitcursors
-	if(V_Value)
-		cmd+=",cursors=1"
+		useerrors = 1
 	endif
 		
+	//do we want to fit with the cursors or not
+	usecursors=str2num(moto_str("fitcursors"))
+	if(usecursors)
+		if (WaveExists(CsrWaveRef(A)) %& WaveExists(CsrWaveRef(B)))
+			if (CmpStr(CsrWave(A),CsrWave(B)) != 0)
+				abort "The cursors are not on the same wave. Please move them so that they are."
+			endif
+		else
+			abort "The cursors must be placed on the top graph.  Select Show Info from the Graph menu for access to the cursors."
+		endif
+	endif
+		
+	String fitdestination="fit_"+y,fitx="fit_"+x
+	duplicate/o b,$("fit_"+y)
+	duplicate/o a,$("fitx_"+y)
+
+	if(usedqwave)
+		duplicate/o d, root:motofit:reflectivity:temp_dq
+		Wave temp_dq = root:motofit:reflectivity:temp_dq
+		if(usecursors)
+			Variable start=pcsr(A),finish=pcsr(B),temp
+			if(start>finish)
+				temp=finish
+				finish=start
+				start=temp
+			endif
+			Deletepoints (finish+1),(numpnts(temp_dq)-finish-1),temp_dq
+			Deletepoints 0,start, temp_dq
+		endif
+	endif
+	
+	//get initialisation parameters for genetic optimisation
+	struct GEN_optimisation gen
+	gen.GEN_Callfolder = cDF
+	GEN_optimise#GEN_Searchparams(gen)
+	
+	//now set up the command for optimisation
+	if(itemsinlist(Operationlist("GENcurvefit",";","external"))==1)
+		cmd ="GENcurvefit"
+		cmd += 	"/x="+nameofwave(a)
+		if(useerrors)
+			cmd += "/I=1/w="+nameofwave(c) 
+		endif
+		cmd += "/D="+fitdestination+" "
+		
+		options = "/k={"+num2str(gen.GEN_generations)+","+num2str(gen.GEN_popsize)+","+num2str(gen.k_m)+","+num2str(gen.GEN_recombination)+"}"
+		options += "/TOL = "+num2str(gen.GEN_V_fittol)
+		cmd += options
+		cmd += " motofit"
+		cmd += ","+nameofwave(b)
+		if(usecursors)
+			cmd += "[xcsr(A),xcsr(B)]"
+		endif
+		cmd += ","+coefwavestr
+		cmd += ",\""+holdstring+"\""
+		
+		//get limits wave
+		GEN_setlimitsforGENcurvefit($coefwavestr,holdstring,cDF)
+		cmd += ",root:packages:motofit:old_genoptimise:GENcurvefitlimits"
+	else
+		cmd="GEN_curvefit(\"motofit\","
+		cmd+=coefwavestr+","
+		cmd+=nameofwave(b)+","
+		cmd+="\""+holdstring+"\""
+		cmd+=",x="+nameofwave(a)
+		if(useerrors)
+			cmd+=",w="+nameofwave(c)
+		endif
+		if(usecursors)
+			cmd+=",cursors=1"
+		endif
+		cmd += ",iters="+num2str(gen.GEN_generations)+",popsize="+num2str(gen.GEN_popsize)+",k_m="+num2str(gen.k_m)+",recomb="+num2str(gen.GEN_recombination)+",tol="+num2str(Gen.gen_V_fittol)
+		cmd+=")"
+	endif
+	
 	//optimise with genetic optimisation
 	Moto_repstr("inFIT","1")
 	//break the SLD relationship with zed, otherwise it can slow the fit down
-	setformula SLD,""
-	
-	cmd+=")"
-	
+	setformula SLD,""	
+		
 	Moto_backupModel() //make a backup of the model before you start the fit, so that you can roll back.
 	
-	print cmd
-	Execute/Q/Z cmd	
+	Dowindow/f reflectivitygraph
+	setactivesubwindow reflectivitygraph
+	
+	try 
+		print cmd
+		Execute/Q cmd	
+	catch
+		setdatafolder $cDF
+		abort
+	endtry
 	
 	//now we're leaving the fit
 	Moto_repstr("inFIT","0")
@@ -1582,7 +1719,8 @@ Function Moto_fit_Genetic()
 	//make a coefficient wave related to the data
 	//y is the name of the y wave data
 	test="coef_"+dataset+"R"
-	Duplicate/O $coefwavestr $test	
+	Duplicate/O $coefwavestr $test,W_Sigma
+	W_Sigma = NaN	
 		
 	//this sets the wave note of the coefficient wave to be the same as motofitcontrol
 	test=cleanupname("coef_"+y,0)
@@ -1619,19 +1757,25 @@ Function Moto_fit_Genetic()
 	//if the trace isn't on the graph add it.  If it is, don't do anything.
 	//produce the fitwaves
 	Dowindow/F reflectivitygraph
-	String fitdestination="fit_"+y,fitx="fit_"+x,temprename="fitx_"+y
+	Setactivesubwindow reflectivitygraph
+	String traceexists=TraceNameList("",";",1)
+	if(Strsearch(traceexists,fitdestination,0)!=-1)
+		Removefromgraph/w=reflectivitygraph $("fit_"+y)
+	endif		
+	String temprename="fitx_"+y
 	Duplicate/o $temprename,$fitx
 	killwaves/z $temprename
 	
-	String traceexists=TraceNameList("",";",1)
+	traceexists=TraceNameList("",";",1)
 	if(Strsearch(traceexists,fitdestination,0)==-1)
-		string colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
-		colour=replacestring("x",colour,fitdestination)
 		AppendToGraph $fitdestination vs $fitX
-		cmd="modifygraph "+colour
-		Execute/Z cmd
-		Modifygraph lsize($fitdestination)=1
 	endif
+	
+	string colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
+	colour=replacestring("x",colour,fitdestination)
+	cmd="modifygraph "+colour
+	Execute/z cmd
+	Modifygraph lsize($fitdestination)=1
 	
 	//figure out what the SLD and Zed and coef waves should be called.  Use a stub of the
 	//data wave.
@@ -1647,18 +1791,18 @@ Function Moto_fit_Genetic()
 	Setformula $zeddestination,""
 	if(Strsearch(traceexists,SLDdestination,0)==-1)
 		AppendToGraph/W=# $SLDdestination vs $zeddestination
-		colour=replacestring(fitdestination,colour,slddestination)
-		cmd="modifygraph "+colour
-		Execute/Z cmd
-		Modifygraph lsize($SLDdestination)=1
 	endif
+	colour=replacestring(fitdestination,colour,slddestination)
+	cmd="modifygraph "+colour
+	Execute/Z cmd
+	Modifygraph lsize($SLDdestination)=1
 	
 	//write the fit to the report notebook
 	//b is the ywave
 	Moto_notebookoutput("Reflectivityfittingreport",b,"Genetic Optimisation")
 	
 	Setactivesubwindow reflectivitygraph
-		
+	setdatafolder $cDF
 	return 0
 End
 //end of genetic optimisation
@@ -1671,18 +1815,18 @@ Function Moto_fit_Levenberg()
 	Wave coef_Cref,zed,SLD
 	SVAR/Z Motofitcontrol=root:motofit:reflectivity:motofitcontrol
 	
-	String test
+	String test,holdstring,constraint="",errors="",cursors=""
+	String y,x,e,dx,dataset
+	variable useerrors=0,usedqwave=0,usecursors=0,useconstraint=0
 	Variable ii
 	Variable plotyp=str2num(Moto_str("plotyp"))
 
 
 	//setupholdstring, all the hold checkboxes are numbered in order h0,h1,h2, etc.
 	Moto_holdstring("",0)
-	String holdstring=moto_str("holdstring")
+	holdstring=moto_str("holdstring")
 
-	//which waves do you want to fit?
-	String y,x,e,dx,dataset
-
+	//which waves do you want to fit	
 	Controlinfo/W=reflectivitypanel dataset
 	dataset=S_Value
 	moto_repstr("dataset",dataset)
@@ -1719,8 +1863,9 @@ Function Moto_fit_Levenberg()
 	//do you want to fit with errors?
 	controlinfo/W=reflectivitypanel useerrors
 	if(V_Value == 0)
-		string errors=""
+		
 	else
+		useerrors=1
 		Moto_repStr("useerrors","1")
 		if(waveexists(c)==1)
 			elength=Dimsize($e,0)
@@ -1739,6 +1884,7 @@ Function Moto_fit_Levenberg()
 	if(V_Value==0)
 		moto_repstr("usedqwave","0")
 	else
+		usedqwave=1
 		moto_repstr("usedqwave","1")
 		if(waveexists(d)==1)		
 			if((abs(Dimsize($dx,0)-xlength))>0)
@@ -1750,10 +1896,9 @@ Function Moto_fit_Levenberg()
 	endif	
 
 	//do we want to fit with the cursors or not
-	Variable fitcursors=str2num(moto_str("fitcursors"))
-	String cursors=""
-	if(fitcursors==1)
-		cursors="[pcsr(A),pcsr(B)] "
+	usecursors=str2num(moto_str("fitcursors"))
+	if(usecursors==1)
+		cursors="[xcsr(A),xcsr(B)] "
 		if (WaveExists(CsrWaveRef(A)) %& WaveExists(CsrWaveRef(B)))
 			if (CmpStr(CsrWave(A),CsrWave(B)) != 0)
 				abort "The cursors are not on the same wave. Please move them so that they are."
@@ -1765,8 +1910,7 @@ Function Moto_fit_Levenberg()
 
 
 	//do you want to use constraints?
-	variable useconstraint=str2num(moto_str("useconstraint"))
-	String constraint=""
+	useconstraint=str2num(moto_str("useconstraint"))
 	if(useconstraint==1)
 		if (Waveexists(root:motofit:reflectivity:constraints)==0)
 			ABORT "no constraint wave exists"
@@ -1786,12 +1930,25 @@ Function Moto_fit_Levenberg()
 		endif
 	endif
 
-	//
+	if(usedqwave)
+		duplicate/o d, root:motofit:reflectivity:temp_dq
+		Wave temp_dq = root:motofit:reflectivity:temp_dq
+		if(usecursors)
+			Variable start=pcsr(A),finish=pcsr(B),temp
+			if(start>finish)
+				temp=finish
+				finish=start
+				start=temp
+			endif
+			Deletepoints (finish+1),(numpnts(temp_dq)-finish-1),temp_dq
+			Deletepoints 0,start, temp_dq
+		endif
+	endif
+	
 	// Set up the fit command
-	//
 	String fitdestination="fit_"+y,fitx="fit_"+x
-	Make/o/d/n=(ylength) $fitdestination
-	Duplicate/o $x $fitx
+	duplicate/o b,$fitdestination
+	duplicate/o a,$fitx
 
 	//whats the name of the fitfunction
 	//if you are fitting with multilayers then you need to change the holdstring,the fit function
@@ -1812,7 +1969,8 @@ Function Moto_fit_Levenberg()
 	
 	try
 		Moto_backupModel() //make a backup of the model before you start the fit, so that you can roll back.
-		string cmd="FuncFit/H=\""+holdstring+"\"/N /M=2"+fitfunction+coefwave+" "+y+cursors+"/X="+x+" /D="+fitdestination+errors+constraint
+		string cmd="FuncFit/H=\""+holdstring+"\"/N /M=2"+fitfunction+coefwave+" "+y+cursors+"/X="+x+"/D="+fitdestination + errors+constraint
+		print cmd
 		Execute/Z cmd
 	
 		if(GEN_isbitset(V_Fiterror,0))
@@ -1873,13 +2031,6 @@ Function Moto_fit_Levenberg()
 	
 	Moto_update()
 
-	//this cuts off the start and finish of the fit waves if you use the cursor
-	if(fitcursors==1)
-		Variable start=pcsr(a),finish=pcsr(b)
-		Deletepoints 0,start, $fitdestination,$fitx
-		Deletepoints (finish-start+1),(ylength-finish-1),$fitdestination,$fitx
-	endif
-
 	//make the SLD curves and fit curves the same colour as the original wave
 	//if the trace isn't on the graph add it.  If it is, don't do anything.
 	String traceexists=TraceNameList("",";",1)
@@ -1918,23 +2069,49 @@ Function Moto_fit_Levenberg()
 	
 	Setactivesubwindow reflectivitygraph
 End
-
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+///
 Function Moto_fit_GenLM()
 	//the fit is done with genetic optimisation then curvefit
 	
+	string savDF = getdatafolder(1)
 	Setdatafolder root:
 	Moto_holdstring("",0)
 	SVAR/Z Motofitcontrol=root:motofit:reflectivity:motofitcontrol
 		
 	Wave coef_Cref,coef_multiCref
-	Variable ii,nlayers,npars,jj,use
-	String coefwave,test
-	Variable plotyp=str2num(moto_Str("plotyp"))
 	Wave zed,SLD
 	
+	Variable ii,nlayers,npars,jj,usedqwave,usecursors,useerrors,useconstraint
+	Variable plotyp=str2num(moto_Str("plotyp"))
+	String coefwave,test,cursors="",errors="",options=""
+	
 	//which waves do you want to fit?
-	String y,x,e,dx,dataset
-	String cmd="GEN_curvefit(\"motofit\","
+	String y,x,e,dx,dataset, holdstring, coefwavestr 
+	String cmd = ""
 	
 	Controlinfo/W=reflectivitypanel dataset
 	dataset=S_Value
@@ -1950,11 +2127,10 @@ Function Moto_fit_GenLM()
 	Wave d=$dx
 	
 	//the name of the coefficient wave
-	String coefwavestr = Moto_coefficientfocus()
+	coefwavestr = Moto_coefficientfocus()
 	Wave coef = $coefwavestr
 	variable multilayer=str2num(moto_str("multilayer"))
-	cmd+=coefwavestr+","
-	
+		
 	//check the x,y waves	
 	if(waveexists(b)==0)
 		Moto_ABORTER("enter a proper dataset in the dataset popup")
@@ -1974,36 +2150,32 @@ Function Moto_fit_GenLM()
 		Moto_ABORTER("The y data does not have the same number of points as the x data.")
 		return 0						
 	endif
-
-	cmd+=nameofwave(b)+","
 		
 	//set up the holdstring
-	String holdstring=moto_str("holdstring")
-	cmd+="\""+holdstring+"\""
+	holdstring=moto_str("holdstring")
 	
 	//do you want to weight with a resolution wave?
 	controlinfo/W=reflectivitypanel usedqwave
 	if(V_Value==0)
 		moto_repstr("usedqwave","0")
 	else
+		usedqwave=1
 		moto_repstr("usedqwave","1")
 		if(waveexists(d)==1)		
 			if((abs(Dimsize($dx,0)-xlength))>0)
 				Moto_Aborter("the resolution wave does not have the same number of points as the xy data")
 				return 0
 			endif
-			duplicate/o d,root:motofit:GEN_optimise:temp_dq
 		else
 			Moto_Aborter("dQ wave doesn't exist")
 			return 0
 		endif
 	endif
-	
-	cmd+=",x="+nameofwave(a)	
 
 	//do you want to fit with errors?
 	controlinfo/W=reflectivitypanel useerrors
 	if(V_Value == 1)
+		useerrors = 1
 		if(!waveexists(c))
 			Moto_Aborter("relevant error wave doesn't exist")
 			return 0
@@ -2012,26 +2184,94 @@ Function Moto_fit_GenLM()
 			Moto_Aborter("error wave needs same number of points as y wave")
 			return 0
 		endif
-		cmd+=",w="+nameofwave(c)
+		errors = "/W="+e+"/I=1"
 	endif
 	
 	//do we want to fit with the cursors or not
 	controlinfo/w=reflectivitypanel fitcursors
 	if(V_Value)
-		cmd+=",cursors=1"
+		usecursors = 1
+		cursors="[xcsr(A),xcsr(B)]"
 	endif
+	
+	//output
+	String fitdestination="fit_"+y,fitx="fit_"+x
+	duplicate/o b,$fitdestination
+	duplicate/o a,$("fitx_"+y)
 		
 	//optimise with genetic optimisation
 	Moto_repstr("inFIT","1")
 	//break the SLD relationship with zed, otherwise it can slow the fit down
 	setformula SLD,""
 	
-	cmd+=",q=1)"		//make it quiet.
+	//get initialisation parameters for genetic optimisation
+	struct GEN_optimisation gen
+	gen.GEN_Callfolder = savDF
+	GEN_optimise#GEN_Searchparams(gen)
+	
+	if(itemsinlist(Operationlist("GENcurvefit",";","external"))==1)
+		cmd ="GENcurvefit"
+		cmd += 	"/q/x="+x
+		cmd += "/D="+fitdestination
+		
+		options = "/k={"+num2str(gen.GEN_generations)+","+num2str(gen.GEN_popsize)+","+num2str(gen.k_m)+","+num2str(gen.GEN_recombination)+"}"
+		options += "/TOL = "+num2str(gen.GEN_V_fittol)
+		cmd += options
+		
+		if(useerrors)
+			cmd += errors
+		endif
+		cmd += " motofit"
+		cmd += ","+y
+		if(usecursors)
+			cmd += "[xcsr(A),xcsr(B)]"
+		endif
+		cmd += ","+coefwavestr
+		cmd += ",\""+holdstring+"\""
+		
+		//get limits wave
+		GEN_setlimitsforGENcurvefit($coefwavestr,holdstring,savdf)
+		cmd += ",root:packages:motofit:old_genoptimise:GENcurvefitlimits"
+	else
+		cmd="GEN_curvefit(\"motofit\","
+		cmd+=coefwavestr+","
+		cmd+=y+","
+		cmd+="\""+holdstring+"\""
+		cmd+=",x="+x
+		if(useerrors)
+			cmd+=",w="+e
+		endif
+		if(usecursors)
+			cmd+=",cursors=1"
+		endif
+		cmd+=")"
+	endif
 	
 	Moto_backupModel() //make a backup of the model before you start the fit, so that you can roll back.
 	
-	print cmd
-	Execute/Q/Z cmd	
+	if(usedqwave)
+		duplicate/o d, root:motofit:reflectivity:temp_dq
+		Wave temp_dq = root:motofit:reflectivity:temp_dq
+		if(usecursors)
+			Variable start=pcsr(A),finish=pcsr(B),temp
+			if(start>finish)
+				temp=finish
+				finish=start
+				start=temp
+			endif
+			Deletepoints (finish+1),(numpnts(temp_dq)-finish-1),temp_dq
+			Deletepoints 0,start, temp_dq
+		endif
+	endif
+	
+	Dowindow/F reflectivitygraph
+	Setactivesubwindow reflectivitygraph
+	
+	try
+		Execute/Q/Z cmd	
+	catch
+		setdatafolder $savDF
+	endtry
 	
 	//make a coefficient wave related to the data
 	//y is the name of the y wave data
@@ -2055,73 +2295,12 @@ Function Moto_fit_GenLM()
 		note $test,motofitcontrol
 	endif
 	
-	//rename the fitwaves
-	String fitdestination="fit_"+y,fitx="fit_"+x,temprename="fitx_"+y
-	Duplicate/o $temprename,$fitx
-	killwaves/z $temprename
-	
-	Dowindow/F Reflectivitygraph
+	Dowindow/F reflectivitygraph
 	Setactivesubwindow reflectivitygraph
-	//make the SLD curves and fit curves the same colour as the original wave
-	//if the trace isn't on the graph add it.  If it is, don't do anything.
-	String traceexists=TraceNameList("",";",1)
-	if(Strsearch(traceexists,fitdestination,0)==-1)
-		string colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
-		colour=replacestring("x",colour,fitdestination)
-		AppendToGraph $fitdestination vs $fitX
-		cmd="modifygraph "+colour
-		Execute/Z cmd
-		Modifygraph lsize($fitdestination)=1
-	endif
-
-	//figure out what the SLD and Zed and coef waves should be called.  Use a stub of the
-	//data wave.
-	//append an SLD wave as well
-	Dowindow/F Reflectivitygraph
-	Setactivesubwindow reflectivitygraph#SLDplot
-	traceexists=TraceNameList("",";",1)
-	String SLDdestination="SLD_"+dataset,zeddestination="zed_"+dataset
-	Wave sld,zed
-	Duplicate/O sld,$SLDdestination
-	Duplicate/O zed,$zeddestination
-	Setformula $SLDdestination,""
-	Setformula $zeddestination,""
-	if(Strsearch(traceexists,SLDdestination,0)==-1)
-		AppendToGraph/W=# $SLDdestination vs $zeddestination
-		colour=replacestring(fitdestination,colour,slddestination)
-		cmd="modifygraph "+colour
-		Execute/Z cmd
-		Modifygraph lsize($SLDdestination)=1
-	endif
-	Setactivesubwindow reflectivitygraph
-	
-	//now do the Levenberg-Marquardt
-	//do you want to fit with errors?
-	controlinfo/W=reflectivitypanel useerrors
-	if(V_Value == 0)
-		string errors=""
-	else
-		errors="/W="+e+" /I=1 "
-	endif
-
-	//do you want to weight with a resolution wave?
-	controlinfo/W=reflectivitypanel usedqwave
-	if(V_Value==0)
-		moto_repstr("usedqwave","0")
-	else
-		moto_repstr("usedqwave","1")
-	endif	
-
-	//do we want to fit with the cursors or not
-	Variable fitcursors=str2num(moto_str("fitcursors"))
-	String cursors=""
-	if(fitcursors==1)
-		cursors="[pcsr(A),pcsr(B)] "
-	endif
-
+	Removefromgraph/w=reflectivitygraph $("fit_"+y)
 
 	//do you want to use constraints?
-	variable useconstraint=str2num(moto_str("useconstraint"))
+	useconstraint=str2num(moto_str("useconstraint"))
 	String constraint=""
 	if(useconstraint==1)
 		if (Waveexists(root:motofit:reflectivity:constraints)==0)
@@ -2141,18 +2320,8 @@ Function Moto_fit_GenLM()
 			Moto_parse_equalconstraints(constraints)
 		endif
 	endif
-
-	//
-	// Set up the fit command
-	//
-	fitdestination="fit_"+y,fitx="fit_"+x
-	Make/o/d/n=(ylength) $fitdestination
-	Duplicate/o $x $fitx
-
-	//whats the name of the fitfunction
-	//if you are fitting with multilayers then you need to change the holdstring,the fit function
-	//and the coefficient wave
-	string fitfunction =" Motofit "
+	
+	setdatafolder $savDF
 	
 	//break the SLD relationship with zed, otherwise it can slow the fit down
 	setformula SLD,""
@@ -2160,11 +2329,10 @@ Function Moto_fit_GenLM()
 	//now we're fitting
 	Moto_repstr("inFIT","1")
 	variable/g V_Fiterror=0
-	variable V_abortcode
 	
 	try
-		cmd="FuncFit/H=\""+holdstring+"\"/q/N /M=2"+fitfunction+coefwavestr+" "+y+cursors+"/X="+x+" /D="+fitdestination+errors+constraint
-		Execute/Z cmd
+		cmd="FuncFit/H=\""+holdstring+"\"/N /M=2 Motofit "+coefwavestr+" "+y+cursors+" /X="+x+" /D="+fitdestination+errors+constraint
+		Execute cmd
 	
 		if(GEN_isbitset(V_Fiterror,0))
 			print V_fiterror
@@ -2217,26 +2385,21 @@ Function Moto_fit_GenLM()
 		
 	Moto_update()
 	
-	//this cuts off the start and finish of the fit waves if you use the cursor
-	if(fitcursors==1)
-		Variable start=pcsr(a),finish=pcsr(b)
-		Deletepoints 0,start, $fitdestination,$fitx
-		Deletepoints (finish-start+1),(ylength-finish-1),$fitdestination,$fitx
-	endif
+	Dowindow/F reflectivitygraph
+	Setactivesubwindow reflectivitygraph
+	String temprename="fitx_"+y
+	Duplicate/o $temprename,$fitx
+	killwaves/z $temprename
 
-	Dowindow/F Reflectivitygraph
-	
-	//make the SLD curves and fit curves the same colour as the original wave
-	//if the trace isn't on the graph add it.  If it is, don't do anything.
-	traceexists=TraceNameList("",";",1)
+	string traceexists=TraceNameList("",";",1)
 	if(Strsearch(traceexists,fitdestination,0)==-1)
-		colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
-		colour=replacestring("x",colour,fitdestination)
 		AppendToGraph $fitdestination vs $fitX
-		cmd="modifygraph "+colour
-		Execute/Z cmd
-		Modifygraph lsize($fitdestination)=1
 	endif
+	string colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
+	colour=replacestring("x",colour,fitdestination)
+	cmd="modifygraph "+colour
+	Execute/Z cmd
+	Modifygraph lsize($fitdestination)=1
 
 	//figure out what the SLD and Zed and coef waves should be called.  Use a stub of the
 	//data wave.
@@ -2244,7 +2407,7 @@ Function Moto_fit_GenLM()
 	Dowindow/F Reflectivitygraph
 	Setactivesubwindow reflectivitygraph#SLDplot
 	traceexists=TraceNameList("",";",1)
-	SLDdestination="SLD_"+dataset,zeddestination="zed_"+dataset
+	string SLDdestination="SLD_"+dataset,zeddestination="zed_"+dataset
 	Wave sld,zed
 	Duplicate/O sld,$SLDdestination
 	Duplicate/O zed,$zeddestination
@@ -2613,7 +2776,7 @@ Function Moto_Makeglobals(ctrlName) : ButtonControl
 		MOTO_WM_NewGlobalFit1#NewGF_AddYWaveToList($test,$test2)
 	endfor									
 
-	Setdatafolder root:motofit:MOTOFITGF:Newglobalfit
+	Setdatafolder root:packages:MOTOFITGF:Newglobalfit
 	Wave/T NewGF_DataSetListWave
 	//this sets the fit function.  Only do this for as many datasets as you have
 	for(ii=0;ii<contrasts;ii+=1)
@@ -2627,7 +2790,7 @@ Function Moto_Makeglobals(ctrlName) : ButtonControl
 
 	//now link the parameters.
 	//you'll have to do a loop, for each of the global parameters, and set them individually.
-	Setdatafolder root:motofit:MOTOFITGF:Newglobalfit
+	Setdatafolder root:packages:motofitgf:Newglobalfit
 	Wave NewGF_MainCoefListSelWave
 	for(ii=0;ii<npars;ii+=1)	
 		test=globalstring[ii]
@@ -2714,13 +2877,15 @@ Function Moto_changecoefs(PU_Struct)
 		duplicate/o coef_multicref TEMP_coef_multicref
 	endif
 	
+ 
+	
 	Setupmultilayer("",multilayer)
 
 	if(cmpstr(popStr,"coef_multiCref")==0)
 		duplicate/o  TEMP_coef_multicref coef_multicref
 		killwaves/z TEMP_coef_multicref
 	endif
-
+	
 	Wave coef_multicref
 	checkbox usemultilayer,win=reflectivitypanel,value=multilayer
 
@@ -2731,16 +2896,16 @@ Function Moto_changecoefs(PU_Struct)
 	if(cmpstr(popstr,compstr)!=0)
 		Duplicate/O coef $compstr
 	endif
-		
+	
 	//need to get those parameters into the layerwaves for the reflectivitypanel			
 	variable layers = coef[0]
-	variable baselength = str2num(moto_str("baselength"))
-	variable paramsperlayer = str2num(moto_str("paramsperlayer"))
+	variable baselength =6
+	variable paramsperlayer = 4
 	
 	Moto_changelayerwave(baselength,layers,paramsperlayer)
 	Moto_CrefToLayerTable()
 	Moto_LayerTableToCref(coef_Cref)
-	
+
 	//add the motofitcontrol string to the wave that you've just copied
 	note/K coef_Cref
 	note coef_cref,motofitcontrol
@@ -3123,6 +3288,10 @@ Function Moto_FTreflectivity(SV_Struct)
 	endif
 	xdata=cleanupname(removeending(ydata)+"q",0)
 	
+	if(!waveexists($ydata))
+		setdatafolder $dfSav
+		abort
+	endif
 	ydata = GetWavesDataFolder($ydata, 2 )
 	xdata = GetWavesDataFolder($xdata, 2 )
 	
@@ -4148,7 +4317,7 @@ Function Moto_LayerTableToCref(coefficients)
 	variable layers=dimsize(layerparams,0), paramsperlayer = round((dimsize(layerparams,1)-1)/3)
 	variable baselength = dimsize(baselayerparams,0)
 	if(layers==0)
-		paramsperlayer = str2num(moto_str("paramsperlayer"))
+		paramsperlayer = 4
 	endif
 	
 	//this is a bodgy way of doing this, but it's difficult to update things.
@@ -4670,11 +4839,11 @@ Function Moto_SLDcalculateSetvariable(SV_Struct) : Setvariablecontrol
 		
 		strswitch(SV_Struct.ctrlname)
 			case "calcMassDensity":
-			SLD_molvol = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_massdensity*6.023e23)
-			break
+				SLD_molvol = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_massdensity*6.023e23)
+				break
 			case "calcmolvol":
-			SLD_massdensity = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_molvol*6.023e23)
-			break
+				SLD_massdensity = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_molvol*6.023e23)
+				break
 		endswitch
 		
 		Variable/C sld
@@ -4703,13 +4872,13 @@ Function/c Moto_SLDcalculation(chemical,massdensity,type)
 End
 
 Function/S Moto_SLDparsechemical(chemical,type)
-//parses the entered chemical and adds up the total weight and scattering lengths
-string chemical
-variable type
+	//parses the entered chemical and adds up the total weight and scattering lengths
+	string chemical
+	variable type
 
-wave/t scatlengths = root:motofit:reflectivity:slddatabase:scatlengths
+	wave/t scatlengths = root:motofit:reflectivity:slddatabase:scatlengths
 
-String element = ""
+	String element = ""
 	variable isotope, numatoms
 
 	variable/c scatlen, scatlen_tot=cmplx(0,0),sld=cmplx(0,0)
@@ -5017,5 +5186,20 @@ Function moto_holdall()
 	endfor
 	moto_repstr("holdstring",holdstring)
 	Moto_updatecontrols()
+
+End
+
+Function moto_offsetQ(Q,theta,lambda)
+	Wave q;variable theta,lambda
+
+	q *= (lambda/(4*Pi))
+	q = asin(q)
+	q *= (180/Pi)
+
+	q += theta
+
+	q *=  (Pi/180)
+	q = sin(q) 
+	q *= (4*Pi/lambda)
 
 End
