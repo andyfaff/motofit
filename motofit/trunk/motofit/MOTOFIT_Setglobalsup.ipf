@@ -103,17 +103,17 @@ Variable numcoefs
 		endif
 			
 		if (LB_Struct.col == NewGF_DSList_NCoefCol)
-			Wave/T ListWave = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetListWave
-			Wave SelWave = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetListSelWave
-			Wave/T CoefListWave = root:packages:motofitgf:NewGlobalFit:NewGF_MainCoefListWave
-			Wave CoefSelWave = root:packages:motofitgf:NewGlobalFit:NewGF_MainCoefListSelWave
+			Wave/T ListWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_DataSetListWave
+			Wave SelWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_DataSetListSelWave
+			Wave/T CoefListWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_MainCoefListWave
+			Wave CoefSelWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_MainCoefListSelWave
 			Variable i,j
 			Variable numrows = DimSize(ListWave, 0)
 			Variable numcols = DimSize(Listwave, 1)
 		
 			numcoefs = str2num(ListWave[LB_Struct.row][LB_Struct.col][0])
 			funcName = ListWave[LB_Struct.row][NewGF_DSList_FuncCol][0]
-			Variable/G root:packages:motofitgf:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
+			Variable/G root:motofit:MOTOFITGF:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
 			
 			if (NumCoefs > DimSize(CoefListWave, 1)-NewGF_DSList_FirstCoefCol)
 				Redimension/N=(-1,NumCoefs+NewGF_DSList_FirstCoefCol, -1) CoefListWave, CoefSelWave
@@ -135,13 +135,13 @@ Variable numcoefs
 			MOTO_WM_NewGlobalFit1#NewGF_CheckCoefsAndReduceDims()
 		endif
 	elseif(LB_Struct.eventCode == 1)		// mouse down
-			Wave SelWave = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetListSelWave
+			Wave SelWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_DataSetListSelWave
 			
 		if (LB_Struct.row == -1)
 			if (CmpStr(LB_Struct.ctrlName, "NewGF_Tab0CoefList") == 0)
-				Wave SelWave = root:packages:motofitgf:NewGlobalFit:NewGF_MainCoefListSelWave
+				Wave SelWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_MainCoefListSelWave
 			else
-				Wave SelWave = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetListSelWave
+				Wave SelWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_DataSetListSelWave
 			endif
 			SelWave[][][0] = SelWave[p][q] & ~1				// de-select everything to make sure we don't leave something selected in another column
 			SelWave[][LB_Struct.col][0] = SelWave[p][LB_Struct.col] | 1			// select all rows
@@ -162,13 +162,13 @@ Variable numcoefs
 						endif
 						break
 					case NewGF_DSList_XWaveCol:
-						Wave/T ListWave = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetListWave
+						Wave/T ListWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_DataSetListWave
 						Wave w = $(ListWave[LB_Struct.row][NewGF_DSList_YWaveCol][1])
 						if (WaveExists(w))
 							String RowsText = num2str(DimSize(w, 0))
 							PopupContextualMenu "_calculated_;"+WaveList("*",";","MINROWS:"+RowsText+",MAXROWS:"+RowsText+",DIMS:1,CMPLX:0,TEXT:0,BYTE:0,WORD:0,INTEGER:0")
 							if (V_flag > 0)
-								Wave SelWave = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetListSelWave
+								Wave SelWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_DataSetListSelWave
 								Wave/Z w = $S_selection
 								MOTO_NewGF_SetXWaveInList(w, LB_Struct.row)
 								SelWave[LB_Struct.row][LB_Struct.col][0] = 0
@@ -180,10 +180,10 @@ Variable numcoefs
 						if (V_flag > 0)
 							FuncName = S_selection
 							
-							Wave/T ListWave = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetListWave
-							Wave SelWave = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetListSelWave
-							Wave/T CoefListWave = root:packages:motofitgf:NewGlobalFit:NewGF_MainCoefListWave
-							Wave CoefSelWave = root:packages:motofitgf:NewGlobalFit:NewGF_MainCoefListSelWave
+							Wave/T ListWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_DataSetListWave
+							Wave SelWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_DataSetListSelWave
+							Wave/T CoefListWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_MainCoefListWave
+							Wave CoefSelWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_MainCoefListSelWave
 							
 							String CoefList
 							NumCoefs = MOTO_WM_NewGlobalFit1#GetNumCoefsAndNamesFromFunction(FuncName, coefList)
@@ -197,7 +197,7 @@ Variable numcoefs
 								endif
 							endif
 							
-							Variable/G root:packages:motofitgf:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
+							Variable/G root:motofit:MOTOFITGF:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
 							ListWave[LB_Struct.row][NewGF_DSList_FuncCol][0] = FuncName
 							if (numType(NumCoefs) == 0)
 								ListWave[LB_Struct.row][NewGF_DSList_NCoefCol][0] = num2istr(NumCoefs)
@@ -245,10 +245,10 @@ Function Removeallglobals()
 	string popstr="Remove All"
 	variable eventcode=2
 	
-	Wave/T ListWave = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetListWave
-	Wave SelWave = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetListSelWave
-	Wave/T CoefListWave = root:packages:motofitgf:NewGlobalFit:NewGF_MainCoefListWave
-	Wave CoefSelWave = root:packages:motofitgf:NewGlobalFit:NewGF_MainCoefListSelWave
+	Wave/T ListWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_DataSetListWave
+	Wave SelWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_DataSetListSelWave
+	Wave/T CoefListWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_MainCoefListWave
+	Wave CoefSelWave = root:motofit:MOTOFITGF:NewGlobalFit:NewGF_MainCoefListSelWave
 	
 	Variable i,j
 	Variable ncols = DimSize(ListWave, 1)
@@ -263,14 +263,14 @@ Function Removeallglobals()
 				CoefListWave = ""
 				SelWave = 0
 				CoefSelWave = 0
-				Variable/G root:packages:motofitgf:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
+				Variable/G root:MOTOFITGF:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
 				break
 			case "Remove Selection":
 				for (i = nrows-1; i >= 0; i -= 1)
 					for (j = 0; j < ncols; j += 1)
 						if (SelWave[i][j][0] & 9)
 							DeletePoints i, 1, ListWave, SelWave, CoefListWave, CoefSelWave
-							Variable/G root:packages:motofitgf:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
+							Variable/G root:MOTOFITGF:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
 							break
 						endif
 					endfor
@@ -280,7 +280,7 @@ Function Removeallglobals()
 				for (i = 0; i < nrows; i += 1)
 					if (CmpStr(popStr, ListWave[i][NewGF_DSList_YWaveCol][0]) == 0)
 						DeletePoints i, 1, ListWave, SelWave, CoefListWave, CoefSelWave
-						Variable/G root:packages:motofitgf:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
+						Variable/G root:MOTOFITGF:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
 						break
 					endif
 				endfor
