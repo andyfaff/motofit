@@ -56,7 +56,7 @@ Function/s Moto_Dummymotofitstring()
 	string dummystring
 	dummystring="Motofitcontrol:;plotyp:1;SLDpts:500;res:0;usedqwave:0;useconstraint:0;fitcursors:0;holdstring:;"
 	dummystring+="dataset:;useerrors:;coefwave:;V_chisq:;"
-	dummystring+="SLDtype:neutron;multilayer:0;Vmullayers:0;mulrep:0;mulappend:0;inFIT:0;paramsperlayer:4;baselength:6"
+	dummystring+="SLDtype:neutron;multilayer:0;Vmullayers:0;mulrep:0;mulappend:0;inFIT:0;:4;baselength:6"
 	return dummystring
 End
 
@@ -148,7 +148,7 @@ Function plotCalcref()
 	Moto_FTreflectivity(SV_Struct)	
 	//add in the FFT of the data to the panel
 	Display/HOST=#/N=FFTplot /W=(230,450,620,620) root:motofit:reflectivity:tempwaves:FFToutput
-	Label/W=reflectivitypanel#FFTplot bottom "size /Å"
+	Label/W=reflectivitypanel#FFTplot bottom "size /Ã…"
 	Legend/W=reflectivitypanel#FFTplot /C/N=text0/J/F=0/A=MC "\\s(FFToutput) Fourier transform of selected dataset"	
 	cursor /F/P/S=2 /H=1/W=reflectivitypanel#FFTplot A FFToutput 0.5,0.5
 	Setwindow reflectivitypanel, hook(FTplot)=Moto_FTplothook
@@ -180,10 +180,10 @@ Function plotCalcref()
 	//This section pulls up a graph of the (real SLD profile). 
 	// It automatically updates whenever you change the fit parameters
 	
-	Label left "\Z08\\f02\\F'Symbol'r\\F'Arial'   \\f00/10\\S-6\\M Å\\S-2 "
+	Label left "\Z08\\f02\\F'Symbol'r\\F'Arial'   \\f00/10\\S-6\\M Ã…\\S-2 "
 	ModifyGraph lblPos(left)=42; 
 	Modifygraph fSize(left)=8
-	Label bottom "\Z06<<-- TOP          \Z08z /Å       \Z06 BOTTOM-->>"
+	Label bottom "\Z06<<-- TOP          \Z08z /Ã…       \Z06 BOTTOM-->>"
 	ModifyGraph lblPos(bottom)=30; 
 	Modifygraph fSize(bottom)=8
 	Modifygraph rgb(sld)=(0,0,52224)
@@ -975,7 +975,7 @@ Function Moto_Plotreflectivity()
 			if(waveexists($dR))
 				ErrorBars $R Y,wave=($dR,$dR)
 			endif
-			Label bottom "Qz/Å\\S-1"
+			Label bottom "Qz/Ã…\\S-1"
 			Label left "Reflectivity"
 			Moto_autoscale()
 		endif
@@ -987,7 +987,7 @@ Function Moto_Plotreflectivity()
 		if(waveexists($dR))
 			ErrorBars $R Y,wave=($dR,$dR)
 		endif
-		Label bottom "Qz/Å\\S-1"
+		Label bottom "Qz/Ã…\\S-1"
 		Label left "Reflectivity"
 		Moto_autoscale()
 	endif
@@ -1230,7 +1230,7 @@ Function moto_thicknesstabProc(TC_Struct)
 	
 	if(tab==0 && Waveexists(root:motofit:reflectivity:tempwaves:FFToutput))
 		Display/HOST=#/N=FFTplot /W=(230,450,620,620) root:motofit:reflectivity:tempwaves:FFToutput
-		Label/W=reflectivitypanel#FFTplot bottom "size /Å"
+		Label/W=reflectivitypanel#FFTplot bottom "size /Ã…"
 		Legend/W=reflectivitypanel#FFTplot /C/N=text1/J/F=0/A=MC "\\s(FFToutput) Fourier transform of selected dataset"	
 		cursor /F/P/S=2 /H=1/W=reflectivitypanel#FFTplot A FFToutput 0.5,0.5
 		Setwindow reflectivitypanel, hook(FTplot)=Moto_FTplothook
@@ -1290,7 +1290,7 @@ Function moto_fooProc(TC_Struct)
 		TC_Struct.tab=tab
 		if(V_Value==0)
 			Display/HOST=#/N=FFTplot /W=(230,450,620,620) root:motofit:reflectivity:tempwaves:FFToutput
-			Label/W=reflectivitypanel#FFTplot bottom "size /Å"
+			Label/W=reflectivitypanel#FFTplot bottom "size /Ã…"
 			Legend/W=reflectivitypanel#FFTplot /C/N=text1/J/F=0/A=MC "\\s(FFToutput) Fourier transform of selected dataset"	
 			cursor /F/P/S=2 /H=1/W=reflectivitypanel#FFTplot A FFToutput 0.5,0.5
 			Setwindow reflectivitypanel, hook(FTplot)=Moto_FTplothook
@@ -2952,7 +2952,7 @@ Function moto_UpdateControls()
 	variable nlayers=Wcoefwave[0],ii=0,hold,jj=0,kk=0
 	string holdstring=moto_str("holdstring")
 	variable baselength = dimsize(root:motofit:reflectivity:baselayerparams,0)
-	variable paramsperlayer = (dimsize(root:motofit:reflectivity:layerparams,1)-1)/3
+	variable paramsperlayer = 4
 	Wave/T baselayerparams = root:motofit:reflectivity:baselayerparams,layerparams = root:motofit:reflectivity:layerparams
 	Wave baselayerparams_selwave = root:motofit:reflectivity:baselayerparams_selwave,layerparams_selwave = root:motofit:reflectivity:layerparams_selwave
 	
@@ -3048,7 +3048,7 @@ Function Moto_savecoefficients(ctrlName) : ButtonControl
 	if(strlen(coefnote)<10)
 		coefnote=Moto_dummymotofitstring()
 		variable baselength = str2num(stringbykey("baselength",coefnote))
-		variable paramsperlayer = str2num(stringbykey("paramsperlayer",coefnote))
+		variable paramsperlayer = 4
 		
 		coefnote=Replacestringbykey("coefwave",coefnote,tempcoef)
 		coefnote=Replacestringbykey("plotyp",coefnote,moto_str("plotyp"))
@@ -4290,7 +4290,7 @@ Function Moto_CrefToLayerTable()
 	Setdatafolder root:motofit:reflectivity
 	Wave/T layerparams,baselayerparams
 	
-	variable layers=dimsize(layerparams,0), paramsperlayer = (dimsize(layerparams,1)-1)/3
+	variable layers=dimsize(layerparams,0), paramsperlayer =4
 	variable baselength = dimsize(baselayerparams,0)
 	variable ii,jj,kk=0
 	for(ii=0;ii<baselength;ii+=1)
@@ -4314,11 +4314,8 @@ Function Moto_LayerTableToCref(coefficients)
 	Setdatafolder root:motofit:reflectivity
 	Wave/T layerparams,baselayerparams
 	
-	variable layers=dimsize(layerparams,0), paramsperlayer = round((dimsize(layerparams,1)-1)/3)
+	variable layers=dimsize(layerparams,0), paramsperlayer = 4
 	variable baselength = dimsize(baselayerparams,0)
-	if(layers==0)
-		paramsperlayer = 4
-	endif
 	
 	//this is a bodgy way of doing this, but it's difficult to update things.
 	//you are changing the number of layers, so you need to change the length of the coefficient wave
@@ -4403,10 +4400,7 @@ Function moto_modelchange(LB_Struct) : ListboxControl
 		Wave layerparams_selwave = root:Motofit:reflectivity:layerparams_selwave
 		variable oldlayers = dimsize(layerparams,0)
 		variable howmany = abs(oldlayers-newlayers)
-		variable paramsperlayer = round((dimsize(layerparams,1)-1)/3),ii=0,jj=0
-		if(oldlayers==0)
-			paramsperlayer = str2num(Moto_str("paramsperlayer"))
-		endif
+		variable paramsperlayer = 4,ii=0,jj=0
 		
 		if(oldlayers>newlayers)
 			//this line of code enables the user to remove the layer from where he would like
@@ -4541,7 +4535,7 @@ Function Moto_initialiselayerwave(layer)
 	variable layer
 	Wave/T layerparams=root:Motofit:reflectivity:layerparams
 	Wave layerparams_selwave = root:Motofit:reflectivity:layerparams_selwave
-	variable paramsperlayer = round((dimsize(layerparams,1)-1)/3)
+	variable paramsperlayer = 4
 	variable ii=0
 	for(ii=0;ii<paramsperlayer;ii+=1)
 		layerparams[layer][3*ii+2] = num2str(0)
@@ -5113,7 +5107,7 @@ Function Moto_notebookoutput(notebookname,yWave,additionaloutputstr)
 		Display/N=Notebookaddgraph $ywaveStr vs $xwaveStr as "NotebookAddgraph"
 		Appendtograph/W=notebookaddgraph $fit_waveStr vs $fitx_waveStr
 		Label/W=notebookaddgraph left,"R"
-		Label/W=notebookaddgraph bottom,"Q /Å\S-1"
+		Label/W=notebookaddgraph bottom,"Q /Ã…\S-1"
 		ModifyGraph/W=notebookaddgraph mode($ywaveStr)=3,marker=8,msize=2
 		
 		if(plotyp==3 || plotyp==2)
