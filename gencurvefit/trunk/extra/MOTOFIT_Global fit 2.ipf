@@ -553,6 +553,12 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	elseif(isLevORgen==1)    //genetic 
 		funcname=funcname[1,strlen(funcname)]
 		if(itemsinlist(Operationlist("GENcurvefit",";","external"))==1)
+			if(strlen(newGF_HoldString)==0)
+				variable ii
+				for(ii=0;ii<numpnts(root:packages:MotofitGF:NewGlobalFit:MasterCoefs);ii+=1)
+					newGF_HoldString+="0"
+				endfor
+			endif
 			GEN_setlimitsforGENcurvefit(root:packages:MotofitGF:NewGlobalFit:MasterCoefs,newGF_HoldString,getdatafolder(1))
 			Command =  "GENcurvefit "
 			if (quiet)
@@ -4579,9 +4585,9 @@ Function MOTO_DoNewGlobalSim(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 		command = " MOTO_NewGlblFitFunc("
 	endif
 	Command += "root:packages:MotofitGF:NewGlobalFit:MasterCoefs, "
-	Command += "root:packages:MotofitGF:NewGlobalFit:FitY,"
+	Command += "root:packages:MotofitGF:NewGlobalFit:FitY"
 	if (isAllAtOnce)
-		Command += "root:packages:MotofitGF:NewGlobalFit:XCumData)"
+		Command += ",root:packages:MotofitGF:NewGlobalFit:XCumData)"
 	else
 		command +=")"
 	endif
