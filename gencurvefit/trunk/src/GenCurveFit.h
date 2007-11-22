@@ -10,6 +10,7 @@ GenCurvefit.c -- An XOP for curvefitting via Differential Evolution.
 
 //maximum dimension of fit
 #define MAX_MDFIT_SIZE 50
+#define kfitfuncStructVersion 1000 
 
 // Custom error codes
 #define REQUIRES_IGOR_500 1 + FIRST_XOP_ERR
@@ -44,197 +45,142 @@ GenCurvefit.c -- An XOP for curvefitting via Differential Evolution.
 #define USER_CHANGED_FITWAVE 30 + FIRST_XOP_ERR
 #define INCORRECT_COST_FUNCTION 31 + FIRST_XOP_ERR
 #define SUBRANGE_SPECIFIED_ASX 32 + FIRST_XOP_ERR
+#define NULL_STRUCTURE 33 + FIRST_XOP_ERR
+#define NEED_STRC 34 + FIRST_XOP_ERR
+
+
+#include "XOPStructureAlignmentTwoByte.h" 
+struct fitfuncStruct { 
+ waveHndl w;
+ waveHndl yy;
+ waveHndl xx[MAX_MDFIT_SIZE];
+ double numVarMD;
+ 
+ unsigned long version;     // Structure version. 
+ waveHndl otherNumWaves[50];
+ waveHndl otherTextWaves[10];
+ 
+ double var[5];
+ Handle str[5];
+ 
+ NVARRec nvars[5];
+ SVARRec svars[5];
+ void* funcRef[10];
+ 
+
+}; 
+typedef struct fitfuncStruct fitfuncStruct; 
+typedef struct fitfuncStruct* fitfuncStructPtr; 
+#include "XOPStructureAlignmentReset.h" 
 
 #include "XOPStructureAlignmentTwoByte.h"	// All structures passed to Igor are two-byte aligned.
-/*
-	Structures passed to the XOP from IGOR
-*/
 struct GenCurveFitRuntimeParams {
-
 	// Flag parameters.
-	
-	/*
-	what (bitwise)options do you want to use
-	bit 0: use initial guesses for starting fit, instead of random initialisation
-	*/
+
+	// Parameters for /STRC flag group.
+	int STRCFlagEncountered;
+	fitfuncStruct* STRCFlag_sp;
+	int STRCFlagParamsSet[1];
+
+	// Parameters for /OPT flag group.
 	int OPTFlagEncountered;
-	double opt;
+	double OPTFlag_opt;
 	int OPTFlagParamsSet[1];
 
-	/*
-	MAT - correlation matrix produced
-	*/
+	// Parameters for /MAT flag group.
 	int MATFlagEncountered;
-	
-	/*
-	Q - quiet mode
-	if this flag is specified then results aren't printed in the history window.
-	*/
-	int QFlagEncountered;
+	// There are no fields for this group because it has no parameters.
 
-	/*
-	N - no updates during fit.  This makes the fit faster
-	*/
+	// Parameters for /Q flag group.
+	int QFlagEncountered;
+	// There are no fields for this group because it has no parameters.
+
+	// Parameters for /N flag group.
 	int NFlagEncountered;
-	
-	/*
-	SEED - seed to initialise random number generator to have reproducible fit
-	*/
+	// There are no fields for this group because it has no parameters.
+
+	// Parameters for /SEED flag group.
 	int SEEDFlagEncountered;
 	double SEEDFlag_seed;
 	int SEEDFlagParamsSet[1];
-	
-	/*
-	L - Destination Length
-	this option specifies the length of the output wave (assuming the /D flag is not specified.
-	*/
+
+	// Parameters for /L flag group.
 	int LFlagEncountered;
-	double LFlag_destlen;
+	double LFlag_destLen;
 	int LFlagParamsSet[1];
 
-	/*
-	R - residual wave
-	the user can specify if a residual wave is to be created after the fit
-	The user can specify a residual wave to be used, but it must be the same length as the datawave
-	*/
+	// Parameters for /R flag group.
 	int RFlagEncountered;
 	waveHndl RFlag_resid;					// Optional parameter.
 	int RFlagParamsSet[1];
 
-	/*
-	METH - costfunction used.
-	Chi2, METH = 0
-	or
-	sum of absolute deviations, METH = 1
-	*/
+	// Parameters for /METH flag group.
 	int METHFlagEncountered;
 	double METHFlag_method;
 	int METHFlagParamsSet[1];
 
-	/*
-	X	-	xwaves for dataset (optional)
-	If this is not specified then fit uses dataWave scaling.
-	If the fit is multivariate then these must be specified.  For dimensions>1 then XFlagWaveH must be 
-	specified.
-	*/
+	// Parameters for /X flag group.
 	int XFlagEncountered;
 	waveHndl XFlag_xx;
 	waveHndl XFlagWaveH[49];				// Optional parameter.
 	int XFlagParamsSet[50];
 
-	/*
-	D	-	output from the fit
-	If the user specifies this option, then the supplied wave (outputwave) is filled with calculated values from the 
-	model fit.  
-	The supplied wave must be the same length as the dataWave, and be 1D.
-	*/
+	// Parameters for /D flag group.
 	int DFlagEncountered;
-	waveHndl outputwave;
+	waveHndl DFlag_outputwave;
 	int DFlagParamsSet[1];
 
-	/*
-	W	-	weighting wave
-	if specified this wave contains values for weighting the costfunction.
-	It must be 1D and the same length as the dataWave.
-	*/
+	// Parameters for /W flag group.
 	int WFlagEncountered;
-	waveHndl weights;
+	waveHndl WFlag_weighttype;
 	int WFlagParamsSet[1];
 
-	/*
-	I	-	what the weight wave contains
-	I=0 (default) means W contains weights.
-	I=1 means W contains standard deviations.
-	*/
+	// Parameters for /I flag group.
 	int IFlagEncountered;
-	double weighttype;
+	double IFlag_weighttype;
 	int IFlagParamsSet[1];
 
-	/* 
-	M	-	maskwave
-	If specified use this wave to mask points from the fit.
-	Set element = 0 or NaN to mask a point from the fit.  Wave must be 1D and same length as dataWave.
-	*/
+	// Parameters for /M flag group.
 	int MFlagEncountered;
-	waveHndl maskwave;
+	waveHndl MFlag_maskwave;
 	int MFlagParamsSet[1];
 
-	/*
-	K	-	Parameters for initialising genetic optimisation.
-	defaults:
-	iterations = 100 (legal range > 1)
-	popsize = 20	(legal rangle >1)
-	km = 0.5		(legal range 0 < km < 1)
-	recomb = 0.7	(legal range 0 < recomb <1)
-	To ensure global minima increase popsize,  decrease km and recomb.
-	*/
+	// Parameters for /K flag group.
 	int KFlagEncountered;
-	double iterations;
-	double popsize;
-	double km;
-	double recomb;
+	double KFlag_iterations;
+	double KFlag_popsize;
+	double KFlag_km;
+	double KFlag_recomb;
 	int KFlagParamsSet[4];
 
-	/*
-	TOL	-	tolerance for stopping fit.
-	If standard deviation of all the chi2 values for the different genetic strains is less then this value 
-	then the fit stops.
-	*/
+	// Parameters for /TOL flag group.
 	int TOLFlagEncountered;
-	double tol;
+	double TOLFlag_tol;
 	int TOLFlagParamsSet[1];
 
 	// Main parameters.
 
-	/*
-	fitfun	-	the user fit function
-	This may be:
-	normal (independent variables are passed to the user function as variables)
-	-or-
-	all-at-once (independent variables are passed to the user function as waves)
-	
-	Either may be multivariate, i.e. more than one independent variable
-	e.g. myfitfun(coefwave, ywave, xwave0,xwave1,xwave2) - specifies all-at-once fitfunction for 3 independent variables
-	*/
+	// Parameters for simple main group #0.
 	int fitfunEncountered;
 	char fitfun[MAX_OBJ_NAME+1];
 	int fitfunParamsSet[1];
 
-	/*
-	dataWave	-	data to be fitted
-	Must be single precision or double precision and 1D
-	*/
+	// Parameters for simple main group #1.
 	int dataWaveEncountered;
 	WaveRange dataWave;
 	int dataWaveParamsSet[1];
 
-	/*
-	coefs	-	starting coefficients to supply to fit function (fitfun)
-	*/
+	// Parameters for simple main group #2.
 	int coefsEncountered;
 	waveHndl coefs;
 	int coefsParamsSet[1];
 
-	/*
-	holdstring	-	specifies which parameters are to be held.
-	e.g. "1001110"
-	contains:
-	0 (vary)
-	-or- 
-	1 (hold)
-	Must be same length as coefs wave
-	*/
-	int HEncountered;
+	// Parameters for simple main group #3.
+	int holdstringEncountered;
 	Handle holdstring;
 	int holdstringParamsSet[1];
 
-	/*
-	limitswave - upper and lower bounds for each coefficient.
-	Has dimensions [numpnts(coefs)][2].  First column contains lower limit, second column contains upper limit.
-	Legal use:
-	lowerlimit[parameter1] < coefs[parameter1] < upperlimit[parameter1]
-	The check to see whether the coefficients are within the upper and lower limits is only performed if bit 0 of the /OPT flag is set.
-	*/
+	// Parameters for simple main group #4.
 	int limitswaveEncountered;
 	waveHndl limitswave;
 	int limitswaveParamsSet[1];
@@ -246,6 +192,7 @@ struct GenCurveFitRuntimeParams {
 typedef struct GenCurveFitRuntimeParams GenCurveFitRuntimeParams;
 typedef struct GenCurveFitRuntimeParams* GenCurveFitRuntimeParamsPtr;
 #include "XOPStructureAlignmentReset.h"		// Reset structure alignment to default.
+
 
 #include "XOPStructureAlignmentTwoByte.h"	// All structures passed to Igor are two-byte aligned.
 //this structure contains all the internal memory arrays necessary for the fit to proceed.
@@ -311,7 +258,10 @@ struct GenCurveFitInternals{
 	double ystart,ydelta;
 	//the function being fitted.
 	FunctionInfo fi;
-	//is it all at once?
+	//is it a structure fit?
+	fitfuncStruct* sp;
+
+	//is it all at once (normal fit func=0,AAO=1,Structfit=2)?
 	int isAAO;
 	//an estimated covariance Matrix
 	double **covarianceMatrix;
@@ -392,8 +342,8 @@ static int checkZeros(waveHndl ,long* );
 static void freeAllocMem(GenCurveFitInternalsPtr goiP);
 static int randomInteger(int upper);
 static double randomDouble(double lower, double upper);
-int calcModel(FunctionInfo*, waveHndl, waveHndl, double*, waveHndl[MAX_MDFIT_SIZE], double*,int,int);
-static int calcModelXY(FunctionInfo*, waveHndl , waveHndl , waveHndl[MAX_MDFIT_SIZE] , int ,int );
+int calcModel(FunctionInfo*, waveHndl, waveHndl, double*, waveHndl[MAX_MDFIT_SIZE], double*,int,int,fitfuncStruct*);
+static int calcModelXY(FunctionInfo*, waveHndl , waveHndl , waveHndl[MAX_MDFIT_SIZE] , int ,int ,fitfuncStruct*);
 static int insertVaryingParams(GenCurveFitInternalsPtr , GenCurveFitRuntimeParamsPtr );
 static int setPvectorFromPop(GenCurveFitInternalsPtr , int );
 static int findmin(double* , int );

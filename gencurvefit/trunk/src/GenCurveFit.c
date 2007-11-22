@@ -32,7 +32,12 @@ static int
 ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 {
 	/* the function that is called by IGOR. Here's where we farm the work out to different places.*/
-	
+	/*
+	 GenCurveFitInternals carries the internal data structures for doing the fitting.
+	 */
+	GenCurveFitInternals goi;
+	//initialise the structure to be zero
+		
 	/*
 	 err carries the errors for all the operations
 	 err2 carries the error code if we still want to return err, but we need to finish off
@@ -48,12 +53,6 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 	long lt1=0;
 	char note[200],note_buffer1[MAX_WAVE_NAME+1],note_buffer2[MAX_WAVE_NAME+1],cmd[MAXCMDLEN+1];
 	int output,ii,jj,isDisplayed;
-	
-	/*
-	 GenCurveFitInternals carries the internal data structures for doing the fitting.
-	 */
-	GenCurveFitInternals goi;
-	//initialise the structure to be zero
 	
 	memset(&goi, 0, sizeof(goi));
 	
@@ -73,9 +72,9 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 	}	
 	
 	/*
-	Genetic Optimisation uses a lot of random numbers, we are seeding the generator here.
-	If you want to seed the generator we can 
-	*/
+	 Genetic Optimisation uses a lot of random numbers, we are seeding the generator here.
+	 If you want to seed the generator we can 
+	 */
 	if(p->SEEDFlagEncountered){
 		srand( (unsigned int)p->SEEDFlag_seed );
 	} else {
@@ -231,9 +230,9 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 	 */
 	if(!p->QFlagEncountered && (!err || err == FIT_ABORTED) && lt1==0 ){
 		if(!err)
-			{output = sprintf(note,"_______________________________\rGenetic Optimisation Successful\r");XOPNotice(note);}
+		{output = sprintf(note,"_______________________________\rGenetic Optimisation Successful\r");XOPNotice(note);}
 		if(err == FIT_ABORTED)
-			{output = sprintf(note,"_______________________________\rGenetic Optimisation ABORTED\r");XOPNotice(note);}
+		{output = sprintf(note,"_______________________________\rGenetic Optimisation ABORTED\r");XOPNotice(note);}
 		WaveName(p->dataWave.waveH,note_buffer1);
 		
 		output = sprintf(note,"Fitting: %s to %s\r",note_buffer1,goi.fi.name);XOPNotice(note);
@@ -254,22 +253,23 @@ ExecuteGenCurveFit(GenCurveFitRuntimeParamsPtr p)
 	 this is ultra essential for no memory leaks.
 	 */
 done:
-	freeAllocMem(&goi);
+		freeAllocMem(&goi);
 	return err;
 }
-
 static int
-RegisterGenCurveFit(void){
+RegisterGenCurveFit(void)
+{
 	char* cmdTemplate;
 	char* runtimeNumVarList;
 	char* runtimeStrVarList;
-	
+
 	// NOTE: If you change this template, you must change the GenCurveFitRuntimeParams structure as well.
-	cmdTemplate = "GenCurveFit /opt=number:opt /MAT /q /n /SEED=number:seed /L=number:destLen /R[=Wave:resid] /meth=number:method /X={Wave:xx[,Wave[49]]}  /D=wave:outputwave /W=wave:weighttype /I=[number:weighttype] /M=wave:maskwave /k={number:iterations, number:popsize, number:km, number:recomb} /TOL=number:tol name:fitfun, waveRange:dataWave, wave:coefs, string:holdstring, wave:limitswave";
+	cmdTemplate = "GenCurveFit /STRC=structure:{sp,fitfuncStruct} /opt=number:opt /MAT /q /n /SEED=number:seed /L=number:destLen /R[=Wave:resid] /meth=number:method /X={Wave:xx[,Wave[49]]}  /D=wave:outputwave /W=wave:weighttype /I=[number:weighttype] /M=wave:maskwave /k={number:iterations, number:popsize, number:km, number:recomb}/TOL=number:tol name:fitfun, waveRange:dataWave, wave:coefs, string:holdstring, wave:limitswave";
 	runtimeNumVarList = "";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(GenCurveFitRuntimeParams), (void*)ExecuteGenCurveFit, 0);
 }
+
 
 static int
 RegisterOperations(void)		// Register any operations with Igor.
@@ -375,35 +375,65 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 			goto done;
 		
 		// function is not proper fitfunc
-		if(goiP->fi.totalNumParameters < 2 || goiP->fi.totalNumParameters > MAX_MDFIT_SIZE){
+		if(goiP->fi.totalNumParameters < 1 || goiP->fi.totalNumParameters > MAX_MDFIT_SIZE){
 			err = INVALID_FIT_FUNC;
 			goto done;
 		}
 		
-		//first argument is always a wave containing the coefficients.
-		requiredParameterTypes[0] = WAVE_TYPE;
-		
-		for(ii = 1 ; ii <goiP->fi.totalNumParameters ; ii+=1){
-			requiredParameterTypes[ii] = NT_FP64;
-		}
-		goiP->numVarMD = goiP->fi.totalNumParameters-1;
-		goiP->isAAO = 0;
-		err = CheckFunctionForm(&goiP->fi,goiP->fi.totalNumParameters,requiredParameterTypes,&badParameterNumber,-1);
-		
-		if(err){ //it may be all-at-once
-			for(ii = 0 ; ii <goiP->fi.totalNumParameters ; ii+=1)
-				requiredParameterTypes[ii] = WAVE_TYPE;
-			goiP->numVarMD = goiP->fi.totalNumParameters-2;
-			goiP->isAAO = 1;
-			if(err = CheckFunctionForm(&goiP->fi,goiP->fi.totalNumParameters,requiredParameterTypes,&badParameterNumber,-1)){
-				err = INVALID_FIT_FUNC;					
-				goto done;
-			}
-		}
-		//fit function always has to return a number, not complex or text, even if its all-at-once.
-		if(goiP->fi.returnType != NT_FP64){
-			err = FITFUNC_DOESNT_RETURN_NUMBER;
-			goto done;
+		switch(goiP->fi.totalNumParameters){
+			case 1:
+				if(p->STRCFlag_sp){
+					goiP->sp = p->STRCFlag_sp;
+					
+					if(p->STRCFlag_sp == NULL){
+						err = NULL_STRUCTURE;
+						goto done;
+					}
+					if (p->STRCFlag_sp->version != kfitfuncStructVersion) { 
+						err = INCOMPATIBLE_STRUCT_VERSION; 
+						goto done; 
+					} 
+				} else {
+					err = NEED_STRC;
+					goto done;
+				}
+				goiP->numVarMD = p->STRCFlag_sp->numVarMD;
+				goiP->sp->numVarMD = goiP->numVarMD;
+				
+				requiredParameterTypes[0] = FV_STRUCT_TYPE | FV_REF_TYPE;
+				if(err = CheckFunctionForm(&goiP->fi,goiP->fi.totalNumParameters,requiredParameterTypes,&badParameterNumber,-1)){
+					err = INVALID_FIT_FUNC;
+					goto done;
+				}
+					goiP->isAAO = 2;
+				break;
+			default:		//either normal fitfunc or all at once
+							//first argument is always a wave containing the coefficients.
+				requiredParameterTypes[0] = WAVE_TYPE;
+				
+				for(ii = 1 ; ii <goiP->fi.totalNumParameters ; ii+=1){
+					requiredParameterTypes[ii] = NT_FP64;
+				}
+					goiP->numVarMD = goiP->fi.totalNumParameters-1;
+				goiP->isAAO = 0;
+				err = CheckFunctionForm(&goiP->fi,goiP->fi.totalNumParameters,requiredParameterTypes,&badParameterNumber,-1);
+				
+				if(err){ //it may be all-at-once
+					for(ii = 0 ; ii <goiP->fi.totalNumParameters ; ii+=1)
+						requiredParameterTypes[ii] = WAVE_TYPE;
+					goiP->numVarMD = goiP->fi.totalNumParameters-2;
+					goiP->isAAO = 1;
+					if(err = CheckFunctionForm(&goiP->fi,goiP->fi.totalNumParameters,requiredParameterTypes,&badParameterNumber,-1)){
+						err = INVALID_FIT_FUNC;					
+						goto done;
+					}
+				}
+					//fit function always has to return a number, not complex or text, even if its all-at-once.
+					if(goiP->fi.returnType != NT_FP64){
+						err = FITFUNC_DOESNT_RETURN_NUMBER;
+						goto done;
+					}
+					break;
 		}
 	} else {
 		//no fit function was specified.
@@ -412,12 +442,12 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 	}
 	
 	if(p->LFlagEncountered){
-		if(IsNaN64(&p->LFlag_destlen) || IsINF64(&p->LFlag_destlen) || p->LFlag_destlen<1){
+		if(IsNaN64(&p->LFlag_destLen) || IsINF64(&p->LFlag_destLen) || p->LFlag_destLen<1){
 			err = BAD_FLAG_NUM;
 			goto done;
 		}
 	} else {
-		p->LFlag_destlen = 200;
+		p->LFlag_destLen = 200;
 	}
 	
 	if (p->dataWaveEncountered) {
@@ -505,40 +535,49 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 				goto done;
 			switch(numdimensions){
 				case 1:
-					if(p->XFlagParamsSet[goiP->numVarMD-1] == 0){
-						err =  SPARSE_INDEPENDENT_VARIABLE;
-						goto done;
+					ii=0;
+					while(p->XFlagParamsSet[ii] != 0){
+						ii+=1;
 					}
-					for(ii=0 ; ii < goiP->numVarMD-1 ; ii+=1){
-						if(p->XFlagWaveH[ii] == NULL){
-							err = NON_EXISTENT_WAVE;
+						if(ii != goiP->numVarMD){
+							err = SPARSE_INDEPENDENT_VARIABLE;
 							goto done;
 						}
-						//if the xwave isn't Double precision
-						if(!((WaveType(p->XFlagWaveH[ii]) == NT_FP64) || (WaveType(p->XFlagWaveH[ii]) == NT_FP32))){
-							err = REQUIRES_SP_OR_DP_WAVE;
+						
+						if(p->XFlagParamsSet[goiP->numVarMD-1] == 0){
+							err =  SPARSE_INDEPENDENT_VARIABLE;
 							goto done;
 						}
-						//check how many points are in the wave
-						if(err = MDGetWaveDimensions(p->XFlagWaveH[ii], &numdimensions,dimsize)) 
-							goto done;
-						//if the xwave isn't 1D then we can't fit it.
-						if(numdimensions>1){
-							err = INPUT_WAVES_NOT_1D;
-							goto done;
+						for(ii=0 ; ii < goiP->numVarMD-1 ; ii+=1){
+							if(p->XFlagWaveH[ii] == NULL){
+								err = NON_EXISTENT_WAVE;
+								goto done;
+							}
+							//if the xwave isn't Double precision
+							if(!((WaveType(p->XFlagWaveH[ii]) == NT_FP64) || (WaveType(p->XFlagWaveH[ii]) == NT_FP32))){
+								err = REQUIRES_SP_OR_DP_WAVE;
+								goto done;
+							}
+							//check how many points are in the wave
+							if(err = MDGetWaveDimensions(p->XFlagWaveH[ii], &numdimensions,dimsize)) 
+								goto done;
+							//if the xwave isn't 1D then we can't fit it.
+							if(numdimensions>1){
+								err = INPUT_WAVES_NOT_1D;
+								goto done;
+							}
+							//if it isn't the same size as the datawave abort.
+							if(dimsize[0] != goiP->dataPoints){
+								err = WAVES_NOT_SAME_LENGTH;
+								goto done;
+							}
+							//if the xwave contains NaN or INF, then stop.
+							if(err = checkNanInf(p->XFlagWaveH[ii])){
+								err = INPUT_WAVES_CONTAINS_NANINF; 
+								goto done;
+							}
 						}
-						//if it isn't the same size as the datawave abort.
-						if(dimsize[0] != goiP->dataPoints){
-							err = WAVES_NOT_SAME_LENGTH;
-							goto done;
-						}
-						//if the xwave contains NaN or INF, then stop.
-						if(err = checkNanInf(p->XFlagWaveH[ii])){
-							err = INPUT_WAVES_CONTAINS_NANINF; 
-							goto done;
-						}
-					}
-					break;
+						break;
 				case 2:
 					if(p->XFlagParamsSet[1] != 0){
 						err = SPARSE_INDEPENDENT_VARIABLE;
@@ -559,7 +598,11 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 					break;
 			}
 		} else {	//we are fitting 1D data
-					//if the xwave isn't Double precision
+			if(goiP->numVarMD != 1){
+				err = SPARSE_INDEPENDENT_VARIABLE;
+				goto done;
+			}
+			//if the xwave isn't Double precision
 			if(!((WaveType(p->XFlag_xx) == NT_FP64) || (WaveType(p->XFlag_xx) == NT_FP32))){
 				err = REQUIRES_SP_OR_DP_WAVE;
 				goto done;
@@ -600,24 +643,24 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 	// if no weight wave is specified then goiP->weighttype = -1.
 	if(p->IFlagEncountered){
 		if(p->IFlagParamsSet[0])
-			goiP->weighttype = p->weighttype;
+			goiP->weighttype = p->IFlag_weighttype;
 	}  else {
 		goiP->weighttype = 0;
 	}
 	
 	//was there a weight (sd) wave specified?
-	if (p->WFlagEncountered) {
-		if(p->weights == NULL){
+	if (p->WFlag_weighttype) {
+		if(p->WFlag_weighttype == NULL){
 			err = NON_EXISTENT_WAVE;
 			goto done;
 		}
 		//if the weightwave isn't Double precision
-		if(!((WaveType(p->weights) == NT_FP64) || (WaveType(p->weights) == NT_FP32))){
+		if(!((WaveType(p->WFlag_weighttype) == NT_FP64) || (WaveType(p->WFlag_weighttype) == NT_FP32))){
 			err = REQUIRES_SP_OR_DP_WAVE;
 			goto done;
 		}
 		//check how many points are in the wave
-		if(err = MDGetWaveDimensions(p->weights, &numdimensions,dimsize)) 
+		if(err = MDGetWaveDimensions(p->WFlag_weighttype, &numdimensions,dimsize)) 
 			goto done;
 		//if the weight wave isn't 1D then we can't fit it.
 		if(numdimensions>1){
@@ -630,14 +673,14 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 			goto done;
 		}
 		//check the weightwave for NaN/INF
-		if(err = checkNanInf(p->weights)){
+		if(err = checkNanInf(p->WFlag_weighttype)){
 			err = INPUT_WAVES_CONTAINS_NANINF;
 			goto done;
 		}
 		//check if there are any zeros in the weightwave
 		//this is because you will get a divide by zero error if chi2 uses the value
 		//as a denominator
-		if(err = checkZeros(p->weights, &numzeros))
+		if(err = checkZeros(p->WFlag_weighttype, &numzeros))
 			goto done;
 		if(goiP->weighttype == 1 && numzeros>0){
 			err = STANDARD_DEV_IS_ZERO;
@@ -649,17 +692,17 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 	
 	//was there a mask wave specified?  Set to 0 or NaN to mask points from a fit.
 	if (p->MFlagEncountered) {
-		if(p->maskwave == NIL){
+		if(p->MFlag_maskwave == NIL){
 			err = NON_EXISTENT_WAVE;
 			goto done;
 		}
 		//if the maskwave isn't Double precision
-		if(!((WaveType(p->maskwave) == NT_FP64) || (WaveType(p->maskwave) == NT_FP32))){
+		if(!((WaveType(p->MFlag_maskwave) == NT_FP64) || (WaveType(p->MFlag_maskwave) == NT_FP32))){
 			err = REQUIRES_SP_OR_DP_WAVE;
 			goto done;
 		}
 		//check how many points are in the wave
-		if(err = MDGetWaveDimensions(p->maskwave, &numdimensions,dimsize)) 
+		if(err = MDGetWaveDimensions(p->MFlag_maskwave, &numdimensions,dimsize)) 
 			goto done;
 		//if the weight wave isn't 1D then we can't fit it.
 		if(numdimensions>1){
@@ -699,27 +742,27 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 	//these parameters control how the differential evolution operates.
 	if (p->KFlagEncountered) {
 		//can't have duff genetic optimisation input
-		if(IsNaN64(&p->iterations) || IsINF64(&p->iterations) || p->iterations<1){
+		if(IsNaN64(&p->KFlag_iterations) || IsINF64(&p->KFlag_iterations) || p->KFlag_iterations<1){
 			err = GenCurveFit_PARS_INCORRECT;
 			goto done;
 		}
-		if(IsNaN64(&p->popsize) || IsINF64(&p->popsize) || p->popsize <1){
+		if(IsNaN64(&p->KFlag_popsize) || IsINF64(&p->KFlag_popsize) || p->KFlag_popsize <1){
 			err = GenCurveFit_PARS_INCORRECT;
 			goto done;
 		}
-		if(IsNaN64(&p->km) || IsINF64(&p->km) || p->km<=0 || p->km > 1){
+		if(IsNaN64(&p->KFlag_km) || IsINF64(&p->KFlag_km) || p->KFlag_km<=0 || p->KFlag_km > 1){
 			err = GenCurveFit_PARS_INCORRECT;
 			goto done;
 		}
-		if(IsNaN64(&p->recomb) || IsINF64(&p->recomb) || p->recomb<=0 || p->recomb>1){
+		if(IsNaN64(&p->KFlag_recomb) || IsINF64(&p->KFlag_recomb) || p->KFlag_recomb<=0 || p->KFlag_recomb>1){
 			err = GenCurveFit_PARS_INCORRECT;
 			goto done;
 		}
 	} else {
-		p->iterations = 100.;
-		p->popsize = 20.;
-		p->km = 0.5;
-		p->recomb = 0.7;
+		p->KFlag_iterations = 100.;
+		p->KFlag_popsize = 20.;
+		p->KFlag_km = 0.5;
+		p->KFlag_recomb = 0.7;
 	}
 	
 	//the cost function for minimisation is now specified.  
@@ -743,7 +786,7 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 	
 	//a holdstring is used to work out which parameters are being fitted.  i.e. "0001000111".
 	//0=fit, 1=hold
-	if (!p->HEncountered) {
+	if (!p->holdstring) {
 		//please specify holdstring
 		err = HOLDSTRING_NOT_SPECIFIED;
 		goto done;
@@ -812,12 +855,12 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 	
 	//the fractional tolerance for stopping the fit.
 	if (p->TOLFlagEncountered) {
-		if(IsNaN64(&p->tol) || IsINF64(&p->tol) || p->tol<0){
+		if(IsNaN64(&p->TOLFlag_tol) || IsINF64(&p->TOLFlag_tol) || p->TOLFlag_tol<0){
 			err = STOPPING_TOL_INVALID;
 			goto done;
 		}
 	} else {
-		p->tol = 0.0001;
+		p->TOLFlag_tol = 0.0001;
 	}
 	
 	// Main parameters.
@@ -886,7 +929,7 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 			val = atoi(comparison);
 			if(val==0){
 				//lowerlim must be < upperlim and param must be in between.
-				if(p->OPTFlagEncountered && (((long)p->opt) & (long)pow(2,0))){
+				if(p->OPTFlagEncountered && (((long)p->OPTFlag_opt) & (long)pow(2,0))){
 					if(*(dpC+ii)<*(dpL + ii) || *(dpC+ii) > *(dpL + ii+len) || *(dpL + ii+len) <*(dpL + ii)){
 						err = LIMITS_INVALID;
 						goto done;
@@ -907,42 +950,42 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 	
 	//DFlag will be the output
 	if(p->DFlagEncountered){
-		if(p->outputwave == NULL){
+		if(p->DFlag_outputwave == NULL){
 			err = NON_EXISTENT_WAVE;
 			goto done;
 		}
 		// the output wave has to be the same size as the input fit wave
-		if(WavePoints(p->outputwave) != WavePoints(p->dataWave.waveH)){
+		if(WavePoints(p->DFlag_outputwave) != WavePoints(p->dataWave.waveH)){
 			err = OUTPUT_WAVE_WRONG_SIZE;
 			goto done;
 		}
 		// the input waves and output wave shouldn't be the same
-		if(err = identicalWaves(p->outputwave,p->coefs,&sameWave)) goto done;
+		if(err = identicalWaves(p->DFlag_outputwave,p->coefs,&sameWave)) goto done;
 		if(sameWave == 1){
 			err = OUTPUT_WAVE_OVERWRITING_INPUT;
 			goto done;
 		}
-		if(err = identicalWaves(p->outputwave,p->dataWave.waveH,&sameWave))	goto done;
+		if(err = identicalWaves(p->DFlag_outputwave,p->dataWave.waveH,&sameWave))	goto done;
 		if(sameWave == 1){
 			err = OUTPUT_WAVE_OVERWRITING_INPUT;
 			goto done;
 		}
-		if(err = identicalWaves(p->outputwave,p->XFlag_xx,&sameWave))	goto done;
+		if(err = identicalWaves(p->DFlag_outputwave,p->XFlag_xx,&sameWave))	goto done;
 		if(sameWave == 1){
 			err = OUTPUT_WAVE_OVERWRITING_INPUT;
 			goto done;
 		}
-		if(err = identicalWaves(p->outputwave,p->limitswave,&sameWave))	goto done;
+		if(err = identicalWaves(p->DFlag_outputwave,p->limitswave,&sameWave))	goto done;
 		if(sameWave == 1){
 			err = OUTPUT_WAVE_OVERWRITING_INPUT;
 			goto done;
 		}
-		if(err = identicalWaves(p->outputwave,p->maskwave,&sameWave)) goto done;
+		if(err = identicalWaves(p->DFlag_outputwave,p->MFlag_maskwave,&sameWave)) goto done;
 		if(sameWave == 1){
 			err = OUTPUT_WAVE_OVERWRITING_INPUT;
 			goto done;
 		}
-		if(err = identicalWaves(p->outputwave,p->weights,&sameWave)) goto done;
+		if(err = identicalWaves(p->DFlag_outputwave,p->WFlag_weighttype,&sameWave)) goto done;
 		if(sameWave == 1){
 			err = OUTPUT_WAVE_OVERWRITING_INPUT;
 			goto done;
@@ -950,7 +993,7 @@ int checkInput(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr goiP){
 	}
 	// free all memory allocated during this function
 done:
-	if(comparison != NULL)
+		if(comparison != NULL)
 			free(comparison);
 	if(holdstr != NULL)
 		free(holdstr);
@@ -1185,8 +1228,8 @@ init_GenCurveFitInternals(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr
 	//initialise an array to hold the parameters that are going to be varied.
 	goiP->varparams = (int*) malloc(goiP->numvarparams*sizeof(int));
 	//the total number of vectors in the population
-	goiP->totalpopsize = goiP->numvarparams * (int)p->popsize;
-	
+	goiP->totalpopsize = goiP->numvarparams * (int)p->KFlag_popsize;
+
 	if(goiP->varparams == NULL){
 		err = NOMEM;
 		goto done;
@@ -1273,7 +1316,7 @@ init_GenCurveFitInternals(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr
 	 */
 	goiP->unMaskedPoints = WavePoints(p->dataWave.waveH);
 	if(p->MFlagEncountered){
-		if(err = MDGetDPDataFromNumericWave(p->maskwave, goiP->mask)) // Get copy.
+		if(err = MDGetDPDataFromNumericWave(p->MFlag_maskwave, goiP->mask)) // Get copy.
 			goto done;
 	} else {
 		//there was no mask wave specfied, use unit weighting
@@ -1416,7 +1459,7 @@ init_GenCurveFitInternals(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr
 	 if there is no weightwave specified then set the weight wave to unity
 	 */
 	if(p->WFlagEncountered){
-		if (err = MDGetDPDataFromNumericWave(p->weights, goiP->temp)) // Get copy.
+		if (err = MDGetDPDataFromNumericWave(p->WFlag_weighttype, goiP->temp)) // Get copy.
 			goto done;
 		jj=0;
 		for(ii=0;ii<WavePoints(p->dataWave.waveH);ii+=1){
@@ -1522,14 +1565,14 @@ init_GenCurveFitInternals(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr
 	
 	if(!p->DFlagEncountered){		//if there is no destination wave specified
 		if(goiP->numVarMD == 1){	//and if the data is 1D
-			dimensionSizes[0] = (long)p->LFlag_destlen;
+			dimensionSizes[0] = (long)p->LFlag_destLen;
 			outPutType = WaveType(p->dataWave.waveH);	//to save memory use datawaves type
 			if(err = MDMakeWave(&goiP->OUT_data,datawavename,goiP->cDF,dimensionSizes,outPutType, 1))
 				goto done;
 			minpos = findmin(goiP->allIndependentVariable,goiP->dataPoints);
 			maxpos = findmax(goiP->allIndependentVariable,goiP->dataPoints);
 			temp1 = *(goiP->allIndependentVariable+maxpos)-*(goiP->allIndependentVariable+minpos);
-			temp1 /= floor(p->LFlag_destlen)-1;
+			temp1 /= floor(p->LFlag_destLen)-1;
 			
 			if(err = MDSetWaveScaling(goiP->OUT_data, ROWS, &temp1,goiP->allIndependentVariable+minpos))
 				goto done;
@@ -1537,7 +1580,7 @@ init_GenCurveFitInternals(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr
 				goto done;
 			goiP->OUT_x[0] = goiP->tempWaveHndl_OUTx;
 			
-			for(ii=0 ; ii<(long)p->LFlag_destlen ; ii+=1){
+			for(ii=0 ; ii<(long)p->LFlag_destLen ; ii+=1){
 				indices[0] = ii;
 				value[0] = *(goiP->allIndependentVariable+minpos)+((double)ii)*temp1;
 				if(err = MDSetNumericWavePointValue(goiP->OUT_x[0], indices, value))
@@ -1553,7 +1596,7 @@ init_GenCurveFitInternals(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr
 	} else {		//destination wave specified
 		for(ii=0;  ii<MAX_MDFIT_SIZE ; ii+=1)
 			goiP->OUT_x[ii] = goiP->fullExtentOfData[ii];
-		goiP->OUT_data = p->outputwave;	
+		goiP->OUT_data = p->DFlag_outputwave;	
 	}
 	
 	if(p->RFlagEncountered){
@@ -1615,7 +1658,7 @@ init_GenCurveFitInternals(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr
 	//now deal with all the options flags
 	if(p->OPTFlagEncountered){
 		//bit 0 of p->opt is set, then the initial guesses are used for the fit.
-		if((long)p->opt & (long)pow(2,0)){
+		if((long)p->OPTFlag_opt & (long)pow(2,0)){
 			for(jj=0 ; jj<goiP->numvarparams ; jj+=1){
 				ii = *(goiP->varparams+jj);
 				goiP->gen_populationvector[0][jj] = *(goiP->gen_coefsCopy+ii);
@@ -1641,7 +1684,7 @@ init_GenCurveFitInternals(GenCurveFitRuntimeParamsPtr p, GenCurveFitInternalsPtr
 			goto done;
 		if(err = insertVaryingParams(goiP, p))
 			goto done;
-		if(err = calcModel(&goiP->fi,goiP->GenCurveFitCoefs,goiP->dataCalc,goiP->dataTemp,goiP->xcalc,goiP->independentVariable,goiP->numVarMD,goiP->isAAO))
+		if(err = calcModel(&goiP->fi,goiP->GenCurveFitCoefs,goiP->dataCalc,goiP->dataTemp,goiP->xcalc,goiP->independentVariable,goiP->numVarMD,goiP->isAAO,goiP->sp))
 			goto done;
 		switch(goiP->METH){//which cost function
 			case 0:
@@ -1714,7 +1757,7 @@ freeAllocMem(GenCurveFitInternalsPtr goiP){
 		free(goiP->gen_pvector);
 	if(goiP->covarianceMatrix!=NULL)
 		free(goiP->covarianceMatrix);
-	
+		
 	exists = FetchWaveFromDataFolder(goiP->cDF,"GenCurveFit_coefs");
 	if(exists != NULL)
 		err= KillWave(exists);	
@@ -1815,16 +1858,18 @@ extractVaryingParams(GenCurveFitInternalsPtr goiP, GenCurveFitRuntimeParamsPtr p
 	xpnts		-	array containing the x values (if you are using normal fit function)
 	ndims		-	the dimensionality of the fit (i.e. how many independent variables there are
 												   isAAO		-	is the fit all-at-once?
+												   sp			-	if its a structure fit then this will hold the users structure
 												   returns 0 if no error
 												   returns errorcode otherwise
 												   */
 int
-calcModel(FunctionInfo* fip, waveHndl coefs, waveHndl output, double* outputPtr, waveHndl xx[MAX_MDFIT_SIZE], double* xpnts, int ndims,int isAAO){
+calcModel(FunctionInfo *fip, waveHndl coefs, waveHndl output, double* outputPtr, waveHndl xx[MAX_MDFIT_SIZE], double* xpnts, int ndims,int isAAO,	fitfuncStruct* sp){
 	int err = 0, ii,jj;
 	int requiredParameterTypes[MAX_MDFIT_SIZE+2];
 	int badParameterNumber;
 	allFitFunc allParameters;
-	fitFunc parameters;
+	fitFunc parameters;	
+	
 	double result;
 	long numfitpoints = WavePoints(output);
 	
@@ -1896,6 +1941,43 @@ calcModel(FunctionInfo* fip, waveHndl coefs, waveHndl output, double* outputPtr,
 						if(err = MDGetDPDataFromNumericWave(output,outputPtr))
 							goto done;
 						break;
+		case 2:
+			if(sp == NULL){
+				err = NULL_STRUCTURE;
+				goto done;
+			}
+			(*sp).w = coefs;
+			(*sp).yy = output;
+			
+			requiredParameterTypes[0] = FV_STRUCT_TYPE | FV_REF_TYPE;
+			
+			for(ii=0 ; ii<ndims ; ii+=1){
+				if(xx[ii] == NULL){
+					err = UNSPECIFIED_ERROR;
+					goto done;
+				}
+				((*sp).xx[ii]) = (xx[ii]);
+			}
+
+			if (err = CheckFunctionForm(fip, 1, requiredParameterTypes,&badParameterNumber, -1))
+				goto done;
+			// call the users fit function and put the result in the output wave
+			if (err = CallFunction(fip, (fitfuncStruct*)&sp, &result))
+				goto done;
+			//don't want any dangling references to waves
+			sp->yy = NULL;
+			sp->w = NULL;
+			memset(sp->xx,0,sizeof(sp->xx));
+					
+			// the user may have changed the number of points in the output wave
+			if(output == NULL || WavePoints(output) != numfitpoints){
+				err = USER_CHANGED_FITWAVE;
+				goto done;
+			}
+			// get the output wave and put it into the output array
+			if(err = MDGetDPDataFromNumericWave(output,outputPtr))
+				goto done;
+			break;
 		default:
 			err = UNSPECIFIED_ERROR;
 			goto done;
@@ -1907,8 +1989,7 @@ calcModel(FunctionInfo* fip, waveHndl coefs, waveHndl output, double* outputPtr,
 		err = FITFUNC_RETURNED_NANINF;
 		goto done;
 	}
-done:
-		
+done:		
 		return err;
 }
 
@@ -1921,16 +2002,18 @@ done:
 	xx			-	wave containing the x values
 	ndims		-	the dimensionality of the fit (i.e. how many independent variables there are
 												   isAAO		-	is the fit all-at-once?
+												   sp			-	the structure for a structure fit
 												   returns 0 if no error
 												   returns errorcode otherwise
 												   */
 static int
-calcModelXY(FunctionInfo* fip, waveHndl coefs, waveHndl output, waveHndl xx[MAX_MDFIT_SIZE], int ndims,int isAAO){
+calcModelXY(FunctionInfo* fip, waveHndl coefs, waveHndl output, waveHndl xx[MAX_MDFIT_SIZE], int ndims,int isAAO, fitfuncStruct *sp){
 	int err = 0, ii,jj;
 	int requiredParameterTypes[MAX_MDFIT_SIZE+2];
 	int badParameterNumber;
 	allFitFunc allParameters;
 	fitFunc parameters;
+	
 	double result;
 	double *tempX = NULL;
 	double *tempY = NULL;
@@ -1953,7 +2036,7 @@ calcModelXY(FunctionInfo* fip, waveHndl coefs, waveHndl output, waveHndl xx[MAX_
 				err = NOMEM;
 				goto done;
 			}
-			tempY = (double*)malloc(numfitpoints*sizeof(double));
+				tempY = (double*)malloc(numfitpoints*sizeof(double));
 			if(tempY == NULL){
 				err = NOMEM;
 				goto done;
@@ -1967,7 +2050,7 @@ calcModelXY(FunctionInfo* fip, waveHndl coefs, waveHndl output, waveHndl xx[MAX_
 						goto done;
 				}
 				
-			parameters.waveH = coefs;
+				parameters.waveH = coefs;
 			requiredParameterTypes[0] = WAVE_TYPE;
 			for(ii=0 ; ii<ndims ; ii+=1)
 				requiredParameterTypes[ii+1] = NT_FP64;
@@ -2001,17 +2084,52 @@ calcModelXY(FunctionInfo* fip, waveHndl coefs, waveHndl output, waveHndl xx[MAX_
 				}
 				allParameters.waveX[ii] = xx[ii];
 			}
-				if (err = CheckFunctionForm(fip, ndims + 2, requiredParameterTypes,&badParameterNumber, -1))
-					goto done;
-				// call the users fit function and put the result in the output wave
-				if (err = CallFunction(fip, (void*)&allParameters, &result))
-					goto done;
-					// the user may have changed the number of points in the output wave
-					if(output == NULL || WavePoints(output) != numfitpoints){
-						err = USER_CHANGED_FITWAVE;
-						goto done;
-					}
+			if (err = CheckFunctionForm(fip, ndims + 2, requiredParameterTypes,&badParameterNumber, -1))
+				goto done;
+			// call the users fit function and put the result in the output wave
+			if (err = CallFunction(fip, (void*)&allParameters, &result))
+				goto done;
+			
+			// the user may have changed the number of points in the output wave
+			if(output == NULL || WavePoints(output) != numfitpoints){
+				err = USER_CHANGED_FITWAVE;
+				goto done;
+			}
 						break;
+		case 2:
+			if(sp == NULL){
+				err = NULL_STRUCTURE;
+				goto done;
+			}
+			(*sp).w = coefs;
+			(*sp).yy = output;
+			
+			requiredParameterTypes[0] = FV_STRUCT_TYPE | FV_REF_TYPE;
+			
+			for(ii=0 ; ii<ndims ; ii+=1){
+				if(xx[ii] == NULL){
+					err = UNSPECIFIED_ERROR;
+					goto done;
+				}
+				((*sp).xx[ii]) = (xx[ii]);
+			}
+
+			if (err = CheckFunctionForm(fip, 1, requiredParameterTypes,&badParameterNumber, -1))
+				goto done;
+			// call the users fit function and put the result in the output wave
+			if (err = CallFunction(fip, (fitfuncStruct*)&sp	, &result))
+				goto done;
+			//don't want any dangling references to waves
+			sp->yy = NULL;
+			sp->w = NULL;
+			memset(sp->xx,0,sizeof(sp->xx));
+			
+			// the user may have changed the number of points in the output wave
+			if(output == NULL || WavePoints(output) != numfitpoints){
+				err = USER_CHANGED_FITWAVE;
+				goto done;
+			}
+			break;
 		default:
 			err = UNSPECIFIED_ERROR;
 			goto done;
@@ -2025,8 +2143,9 @@ calcModelXY(FunctionInfo* fip, waveHndl coefs, waveHndl output, waveHndl xx[MAX_
 	}
 	
 done:
-		if(tempX != NULL)
-			free(tempX);
+			
+	if(tempX != NULL)
+		free(tempX);
 	if(tempY != NULL)
 		free(tempY);
 	
@@ -2081,8 +2200,8 @@ subtractTwoWaves(waveHndl wav1, waveHndl wav2){
 	
 	WaveHandleModified(wav1);
 done:
-	if(temp1!=NULL)
-		free(temp1);
+		if(temp1!=NULL)
+			free(temp1);
 	if(temp2!=NULL)
 		free(temp2);
 	
@@ -2249,8 +2368,8 @@ createTrialVector(GenCurveFitInternalsPtr goiP, GenCurveFitRuntimeParamsPtr p, i
 	int randomA,randomB,ii;
 	int fillpos,numvarparams,totalpopsize;
 	double km,recomb;
-	km = p->km;
-	recomb = p->recomb;
+	km = p->KFlag_km;
+	recomb = p->KFlag_recomb;
 	totalpopsize = goiP->totalpopsize;
 	numvarparams = goiP->numvarparams;
 	
@@ -2319,7 +2438,7 @@ optimiseloop(GenCurveFitInternalsPtr goiP, GenCurveFitRuntimeParamsPtr p){
 	}
 	
 	// the user sets how many times through the entire population
-	for(kk=0; kk<p->iterations ; kk+=1){
+	for(kk=0; kk<p->KFlag_iterations ; kk+=1){
 		goiP->V_numfititers = kk;
 		
 		//iterate over all the individual members of the population
@@ -2352,7 +2471,7 @@ optimiseloop(GenCurveFitInternalsPtr goiP, GenCurveFitRuntimeParamsPtr p){
 				return err;
 			if(err = insertVaryingParams(goiP, p))
 				return err;
-			if(err = calcModel(&goiP->fi,goiP->GenCurveFitCoefs,goiP->dataCalc,goiP->dataTemp,goiP->xcalc,goiP->independentVariable,goiP->numVarMD,goiP->isAAO))
+			if(err = calcModel(&goiP->fi,goiP->GenCurveFitCoefs,goiP->dataCalc,goiP->dataTemp,goiP->xcalc,goiP->independentVariable,goiP->numVarMD,goiP->isAAO,goiP->sp))
 				return err;
 			switch(goiP->METH){//which cost function
 				case 0:
@@ -2396,7 +2515,7 @@ optimiseloop(GenCurveFitInternalsPtr goiP, GenCurveFitRuntimeParamsPtr p){
 					 */
 					wavStats = getWaveStats(goiP->chi2Array,goiP->totalpopsize,1);
 					
-					if( wavStats.V_stdev/wavStats.V_avg < p->tol){	//if the fractional decrease is less and 0.5% stop.
+					if( wavStats.V_stdev/wavStats.V_avg < p->TOLFlag_tol){	//if the fractional decrease is less and 0.5% stop.
 						*(goiP->chi2Array) = chi2trial;
 						return err;
 					}
@@ -2429,19 +2548,19 @@ ReturnFit(GenCurveFitInternalsPtr goiP, GenCurveFitRuntimeParamsPtr p){
 	if(err = MDStoreDPDataInNumericWave(p->coefs,goiP->gen_coefsCopy))
 		return err;
 	WaveHandleModified(p->coefs);
-
+	
 	switch(goiP->numVarMD){
 		case 1:
 			if(p->DFlagEncountered && p->XFlagEncountered){
-				if(err = calcModelXY(&goiP->fi,p->coefs,goiP->OUT_data,goiP->fullExtentOfData,goiP->numVarMD, goiP->isAAO))
+				if(err = calcModelXY(&goiP->fi,p->coefs,goiP->OUT_data,goiP->fullExtentOfData,goiP->numVarMD, goiP->isAAO,goiP->sp))
 					return err;
 			} else {
-				if(err = calcModelXY(&goiP->fi,p->coefs,goiP->OUT_data,goiP->OUT_x,goiP->numVarMD, goiP->isAAO))
+				if(err = calcModelXY(&goiP->fi,p->coefs,goiP->OUT_data,goiP->OUT_x,goiP->numVarMD, goiP->isAAO,goiP->sp))
 					return err;
 			}
 			break;
 		default:
-			if(err = calcModelXY(&goiP->fi,p->coefs,goiP->OUT_data,goiP->fullExtentOfData,goiP->numVarMD, goiP->isAAO))
+			if(err = calcModelXY(&goiP->fi,p->coefs,goiP->OUT_data,goiP->fullExtentOfData,goiP->numVarMD, goiP->isAAO,goiP->sp))
 				return err;
 			break;
 	}
@@ -2449,7 +2568,7 @@ ReturnFit(GenCurveFitInternalsPtr goiP, GenCurveFitRuntimeParamsPtr p){
 	WaveHandleModified(goiP->OUT_data);
 	
 	if(p->RFlagEncountered){
-		if(err = calcModelXY(&goiP->fi,p->coefs,goiP->OUT_res,goiP->fullExtentOfData,goiP->numVarMD,goiP->isAAO))
+		if(err = calcModelXY(&goiP->fi,p->coefs,goiP->OUT_res,goiP->fullExtentOfData,goiP->numVarMD,goiP->isAAO,goiP->sp))
 			return err;
 		if(err = subtractTwoWaves(goiP->OUT_res,p->dataWave.waveH))
 			return err;
