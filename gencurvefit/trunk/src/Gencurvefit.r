@@ -6,12 +6,12 @@ GenCurveFit.c -- An XOP for curvefitting via Differential Evolution.
 
 resource 'vers' (1) {						// XOP version info.
 	0x01, 0x20, release, 0x00, 0,			// version bytes and country integer.
-	"1.",
+	"1.2",
 	"1, © andyfaff@gmail.com all rights reserved."
 };
 
 resource 'vers' (2) {						// Igor version info.
-	0x05, 0x00, release, 0x00, 0,			// Version bytes and country integer.
+	0x05, 0x04, release, 0x00, 0,			// Version bytes and country integer.
 	"5.00",
 	"(for Igor 5.00 or later)"
 };

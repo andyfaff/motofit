@@ -123,13 +123,13 @@ int partialDerivative(double** derivativeMatrix,int derivativeMatrixRow, GenCurv
 	value[0] = param + diff;
 	if(err = MDSetNumericWavePointValue(goiP->GenCurveFitCoefs,indices,value)) return err;
 	
-	if(err = calcModel(&goiP->fi,goiP->GenCurveFitCoefs,goiP->dataCalc,*(derivativeMatrix+derivativeMatrixRow),goiP->xcalc,goiP->independentVariable,goiP->numVarMD,goiP->isAAO))
+	if(err = calcModel(&goiP->fi,goiP->GenCurveFitCoefs,goiP->dataCalc,*(derivativeMatrix+derivativeMatrixRow),goiP->xcalc,goiP->independentVariable,goiP->numVarMD,goiP->isAAO,goiP->sp))
 				return err;
 				
 	value[0] = param - diff;	
 	if(err = MDSetNumericWavePointValue(goiP->GenCurveFitCoefs,indices,value)) return err;
 	
-	if(err = calcModel(&goiP->fi,goiP->GenCurveFitCoefs,goiP->dataCalc,goiP->dataTemp,goiP->xcalc,goiP->independentVariable,goiP->numVarMD,goiP->isAAO))
+	if(err = calcModel(&goiP->fi,goiP->GenCurveFitCoefs,goiP->dataCalc,goiP->dataTemp,goiP->xcalc,goiP->independentVariable,goiP->numVarMD,goiP->isAAO,goiP->sp))
 				return err;
 	
 	for(jj=0; jj<goiP->unMaskedPoints ; jj++){
