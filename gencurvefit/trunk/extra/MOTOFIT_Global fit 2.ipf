@@ -4585,13 +4585,9 @@ Function MOTO_DoNewGlobalSim(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 		command = " MOTO_NewGlblFitFunc("
 	endif
 	Command += "root:packages:MotofitGF:NewGlobalFit:MasterCoefs, "
-	Command += "root:packages:MotofitGF:NewGlobalFit:FitY"
-	if (isAllAtOnce)
-		Command += ",root:packages:MotofitGF:NewGlobalFit:XCumData)"
-	else
-		command +=")"
-	endif
-	
+	Command += "root:packages:MotofitGF:NewGlobalFit:FitY,"
+	Command += "root:packages:MotofitGF:NewGlobalFit:XCumData)"
+		
 	execute command
 	
 	rw = YW - FitY
