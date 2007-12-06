@@ -29,45 +29,80 @@
 Function ReduceXray()
 	//this function reduces data from a Pananalytical X-pert Pro system.  It could easily be modified to reduce data
 	//from any other machine.
+	
+	//check we have XMLutils
+	if(itemsinlist(functionlist("xmlopenfile",";","")) == 0)
+		abort "XMLutils XOP not installed"
+	endif
+	
+	variable fileID
 
-	//load the datawaves
-	loadwave/j/d/A/L={0,25,0,0,2}
-	String filename = S_fileName
-
-	if(V_Flag==0) //user pressed cancel
-		ABORT
+	open/d/a/t="????"/m="Please select an XRDML file" fileID	
+	
+	//user probably aborted
+	if(strlen(S_filename)==0)
+		return 0
+	endif
+	
+	String filepath,filename
+	
+	//xmlopenfile has to take a UNIX path
+	if(cmpstr(igorinfo(2),"Macintosh")==0)
+		filepath = parsefilepath(5,S_fileName,"\\",0,1)
+		filepath = removelistitem(0,filepath,"\\")
+		filepath = "\\"+filepath
+		filepath = replacestring("\\",filepath,"/")
+		
+		filename = parsefilepath(3,S_filename,":",0,0)
+	else
+		filepath = parsefilepath(5,S_fileName,"*",0,1)
+		filename = parsefilepath(3,S_filename,":",0,0)
 	endif
 
 	//make the names of the datawaves something nicer. 
 	String w0,w1,w2
-	w0 = CleanupName((S_fileName + "q"),0)
-	w1 = CleanupName((S_fileName + "R"),0)
-	w2 = CleanupName((S_fileName + "e"),0)
+	w0 = CleanupName((fileName + "_q"),0)
+	w1 = CleanupName((fileName + "_R"),0)
+	w2 = CleanupName((fileName + "_e"),0)
 
 	//you don't need to reduce the file if its already been done
 	if(exists(w0) !=0)
 		DoAlert 0,"This file has already been done"
-		KillWaves $w0,$w1
+		KillWaves/z $w0,$w1,$w2
 		ABORT
 	endif
 
-	//rename the datasets in IGOR using the filename of the file you opened
-	Rename wave0,$w0
-	Rename wave1,$w1
-	Duplicate $w1,$w2
-
-	Wave q=$w0,R=$w1,dR=$w2
-
-	//the error in reflectivity is the square root of the counts
-	dR=sqrt(dR)
-
-	//you need to know the wavelength
-	Variable CuKa=1.541
-	Prompt CuKa,"Wavelength"
-	Doprompt "X-ray wavelength",CuKa
-	if(V_Flag==1)
+	//open the XML file
+	fileID = xmlopenfile(filepath)
+	if(fileID == -1)
 		abort
 	endif
+		
+	//now need to load in the data
+	xmlwavefmxpath(fileID,"//xrdml:intensities","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," \n\r\t")
+	
+	Wave/t M_xmlcontent
+	make/o/d/n=(dimsize(M_xmlcontent,0)) $w0,$w1,$w2
+	Wave q=$w0,R=$w1,dR=$w2
+	
+	R = str2num(M_xmlcontent[p][0])
+	
+	variable start,stop
+	start = str2num(xmlstrfmxpath(fileID,"//xrdml:dataPoints/xrdml:positions[2]/xrdml:startPosition/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
+	stop = str2num(xmlstrfmxpath(fileID,"//xrdml:dataPoints/xrdml:positions[2]/xrdml:endPosition/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
+	
+	q = start + p*(stop-start)/(numpnts(q)-1)
+	
+	//the error in reflectivity is the square root of the counts
+	dR=sqrt(R)
+	
+	//you need to know the wavelength
+	Variable CuKa=1.541,CuKa1,CuKa2,ratio
+	CuKa1 = str2num(xmlstrfmxpath(fileID,"//xrdml:kAlpha1/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
+	CuKa2 = str2num(xmlstrfmxpath(fileID,"//xrdml:kAlpha2/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
+	ratio = str2num(xmlstrfmxpath(fileID,"//xrdml:ratioKAlpha2KAlpha1/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
+	CuKa = (CuKa1+ratio*CuKa2)/(1+ratio)
+	
 
 	variable ii
 	doalert 2,"Perform a footprint correction (assumes 1/32 slit + no knife edge)?"
@@ -83,12 +118,13 @@ Function ReduceXray()
 			for(ii=0;ii<numpnts(q);ii+=1)
 				beamarea = 0.1/sin(Pi*q/180)
 				if(beamarea>footprint)
-					R*=(beamarea/footprint)
+					R[ii]*=(beamarea/footprint)
 				endif
 			endfor
 		case 2:
 			break
 		case 3:
+			killwaves/z R,q,dR,M_xmlcontent,W_xmlcontentnodes
 			abort
 			break
 	endswitch
@@ -122,6 +158,7 @@ Function ReduceXray()
 		Doprompt "critical edge scale value",scale
 		if(V_flag==1)
 			Dowindow/K Setcriticaledge
+			killwaves/z R,q,dR,M_xmlcontent,W_xmlcontentnodes
 			abort
 		endif 
 		R/=scale
@@ -135,6 +172,7 @@ Function ReduceXray()
 		endif
 		if(V_flag==3)
 			Dowindow/K Setcriticaledge
+			killwaves/z R,q,dR,M_xmlcontent,W_xmlcontentnodes
 			abort
 		Endif
 
@@ -143,6 +181,7 @@ Function ReduceXray()
 	//now save the data, works with the demo version of IGOR as well.
 	SaveXraydata(filename)
 	Dowindow/K Setcriticaledge
+	killwaves/z R,q,dR,M_xmlcontent,W_xmlcontentnodes
 End
 
 Function UserCursorAdjust(grfName)
@@ -186,10 +225,10 @@ Function SaveXraydata(tempy)
 	string fname
 
 	String w0,w1,w2,w3
-	w0 = CleanupName((tempy + "q"),0)
-	w1 = CleanupName((tempy + "R"),0)
-	w2 = CleanupName((tempy + "e"),0)
-	w3 = CleanupName((tempy + "dQ"),0)
+	w0 = CleanupName((tempy + "_q"),0)
+	w1 = CleanupName((tempy + "_R"),0)
+	w2 = CleanupName((tempy + "_e"),0)
+	w3 = CleanupName((tempy + "_dQ"),0)
 
 	//the idea is that you can print to a wave, even if you don't have the full version of IGOR.
 	//this gets the filename for writing. but doesn't actually open it.
