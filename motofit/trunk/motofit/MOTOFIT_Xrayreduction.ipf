@@ -45,19 +45,16 @@ Function ReduceXray()
 	endif
 	
 	String filepath,filename
+	filepath = parsefilepath(5,S_fileName,"*",0,1)
 	
 	//xmlopenfile has to take a UNIX path
 	if(cmpstr(igorinfo(2),"Macintosh")==0)
-		filepath = parsefilepath(5,S_fileName,"\\",0,1)
-		filepath = removelistitem(0,filepath,"\\")
-		filepath = "\\"+filepath
-		filepath = replacestring("\\",filepath,"/")
-		
 		filename = parsefilepath(3,S_filename,":",0,0)
 	else
-		filepath = parsefilepath(5,S_fileName,"*",0,1)
-		filename = parsefilepath(3,S_filename,":",0,0)
+		filename = parsefilepath(3,filepath,"\\",0,0)
 	endif
+	
+	filename = cleanupname(filename,0)
 
 	//make the names of the datawaves something nicer. 
 	String w0,w1,w2
@@ -103,6 +100,7 @@ Function ReduceXray()
 	ratio = str2num(xmlstrfmxpath(fileID,"//xrdml:ratioKAlpha2KAlpha1/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
 	CuKa = (CuKa1+ratio*CuKa2)/(1+ratio)
 	
+	xmlclosefile(fileID,0)
 
 	variable ii
 	doalert 2,"Perform a footprint correction (assumes 1/32 slit + no knife edge)?"
@@ -164,7 +162,7 @@ Function ReduceXray()
 		R/=scale
 		dr/=scale
 		Setaxis/A
-
+		Doupdate
 		//you can continually adjust the lvel until you are happy with it.
 		Doalert 1,"Is it good?"
 		if(V_flag==1)
