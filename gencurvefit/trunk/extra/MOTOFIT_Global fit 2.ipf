@@ -291,6 +291,7 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	String saveDF = GetDataFolder(1)
 	SetDataFolder root:
 	//ARJN
+	Newdatafolder /o/s packages
 	NewDataFolder/O/S motofit
 	NewDataFolder/O/S MOTOFITGF
 	NewDataFolder/O NewGlobalFit
@@ -564,6 +565,7 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 			if (quiet)
 				Command += "/Q"
 			endif
+			Command += "/K={200,10,0.5,0.7}"
 			Command += "/X=XCumData"
 			Command += "/D=FitY "
 			Command += residstring
