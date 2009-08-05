@@ -30,7 +30,7 @@ Section "Motofit" Section1
 	SetOverwrite on
 	
 	SetOutPath "$INSTDIR/User Procedures/motofit/"
-	File "../Motofit_distribution/Motofit/*.*"
+	File "../motofit/Motofit/*.*"
 	File "../XOP Toolkit 5/IgorXOPs5/Abeles/VC6/Abeles.xop"
 	File "../XOP Toolkit 5/IgorXOPs5/Abeles/VC6/Abeles Help.ihf"
 
@@ -38,7 +38,7 @@ Section "Motofit" Section1
 	File "../../Platypus/FIZZY_SLIM/SLIM/*.*"
 
 	SetOutPath "$INSTDIR/User Procedures/motofit/data"
-	File "../Motofit_distribution/Data/*.*"
+	File "../motofit/Data/*.*"
 	
 
 	; Set Section Files and Shortcuts
