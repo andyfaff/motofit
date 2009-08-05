@@ -31,11 +31,11 @@ Section "Motofit" Section1
 	
 	SetOutPath "$INSTDIR/User Procedures/motofit/"
 	File "../motofit/Motofit/*.*"
-	File "../XOP Toolkit 5/IgorXOPs5/Abeles/VC6/Abeles.xop"
-	File "../XOP Toolkit 5/IgorXOPs5/Abeles/VC6/Abeles Help.ihf"
+	File "../../XOP Toolkit 5/IgorXOPs5/Abeles/VC6/Abeles.xop"
+	File "../../XOP Toolkit 5/IgorXOPs5/Abeles/VC6/Abeles Help.ihf"
 
 	SetOutPath "$INSTDIR/User Procedures/motofit/platypus"
-	File "../../Platypus/FIZZY_SLIM/SLIM/*.*"
+	File "../SLIM/*.*"
 
 	SetOutPath "$INSTDIR/User Procedures/motofit/data"
 	File "../motofit/Data/*.*"
@@ -43,36 +43,36 @@ Section "Motofit" Section1
 
 	; Set Section Files and Shortcuts
 	SetOutPath "$INSTDIR/User Procedures/motofit"
-	File "../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/GeneticOptimisation.ipf"
-	File "../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/MOTOFIT_Global fit 2.ipf"
+	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/GeneticOptimisation.ipf"
+	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/MOTOFIT_Global fit 2.ipf"
 
 	SetOutPath "$INSTDIR/User Procedures/motofit/GenCurvefit"
-	File "../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/win/GenCurveFit.xop"
-	File "../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/ExampleExperiment.pxp"
-	File "../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/GenCurveFit Help.ihf"
-	File "../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/ReleaseNotes.txt"
-	File "../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/Structurefitexample.pxp"
-	File "../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/license.txt"
+	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/win/GenCurveFit.xop"
+	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/ExampleExperiment.pxp"
+	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/GenCurveFit Help.ihf"
+	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/ReleaseNotes.txt"
+	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/Structurefitexample.pxp"
+	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/license.txt"
 	
 	SetOutPath "$INSTDIR/User Procedures/motofit/easyHttp"
-	File "../XOP Toolkit 5/IgorXOPs5/easyHttp/trunk/win/easyHttp.xop"
-	File "../XOP Toolkit 5/IgorXOPs5/easyHttp/trunk/win/easyHttp Help.ihf"
+	File "../../XOP Toolkit 5/IgorXOPs5/easyHttp/trunk/win/easyHttp.xop"
+	File "../../XOP Toolkit 5/IgorXOPs5/easyHttp/trunk/win/easyHttp Help.ihf"
 	
 	SetOutPath "$INSTDIR/User Procedures/motofit/multiopenfiles"
-	File "../XOP Toolkit 5/IgorXOPs5/multiopenfiles/trunk/win/multiopenfiles.xop"
-	File "../XOP Toolkit 5/IgorXOPs5/multiopenfiles/trunk/win/multiopenfiles Help.ihf"
+	File "../../XOP Toolkit 5/IgorXOPs5/multiopenfiles/trunk/win/multiopenfiles.xop"
+	File "../../XOP Toolkit 5/IgorXOPs5/multiopenfiles/trunk/win/multiopenfiles Help.ihf"
 	
 	SetOutPath "$INSTDIR/User Procedures/motofit/SOCKIT"
-	File "../XOP Toolkit 5/IgorXOPs5/SOCKIT/trunk/win/SOCKIT.xop"
-	File "../XOP Toolkit 5/IgorXOPs5/SOCKIT/trunk/win/SOCKIT Help.ihf"
+	File "../../XOP Toolkit 5/IgorXOPs5/SOCKIT/trunk/win/SOCKIT.xop"
+	File "../../XOP Toolkit 5/IgorXOPs5/SOCKIT/trunk/win/SOCKIT Help.ihf"
 	
 	SetOutPath "$INSTDIR/User Procedures/motofit/ZIP"
-	File "../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP.xop"
-	File "../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP Help.ihf"
+	File "../../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP.xop"
+	File "../../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP Help.ihf"
 	
 	SetOutPath "$INSTDIR/User Procedures/motofit/XMLutils"
-	File "../XOP Toolkit 5/IgorXOPs5/XMLutils/trunk/win/XMLutils.xop"
-	File "../XOP Toolkit 5/IgorXOPs5/XMLutils/trunk/win/XMLutils Help.ihf"
+	File "../../XOP Toolkit 5/IgorXOPs5/XMLutils/trunk/win/XMLutils.xop"
+	File "../../XOP Toolkit 5/IgorXOPs5/XMLutils/trunk/win/XMLutils Help.ihf"
 	
 	SetOutPath "$INSTDIR/Igor Extensions"
 	CreateShortCut "Shortcut to XMLutils.lnk" "$INSTDIR/User Procedures/motofit/XMLutils/XMLutils.xop"
