@@ -1,8 +1,0 @@
-To install Motofit follow these instructions.	
-1) Please update to the latest IGOR version.  (if you have the demo version, please download the most recent release).
-2) Remove any previous installation of Motofit.If you want to keep the previous version, and if you install Motofit using the following procedures, then all you will need to do is remove the shortcut in the "IGOR procedures" folder.  If you have made significant changes to the scattering length density database please back this up first.
-3) Put the "Motofit" folder into the IGOR Pro folder (rename it if you want to).
-4) Create a shortcut to that folder and place it in the "IGOR PROCEDURES" folder.  This action means that the reflectivity macros will initialise when you start IGOR up.
-5) Place the example datasets wherever you would like to access them.
-
-6) To make the fitting faster, by at least an order of magnitude install the AbelesXOP (optional). Please place the platform dependent Abeles.xop and the Abeles help.ihf files in the Motofit directory. You should then create a shortcut (or alias) to the Abeles.xop file and place the shortcut to Abeles.xop in the \Igor Pro Folder\Igor Extensions\ folder.
