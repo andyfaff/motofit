@@ -1597,183 +1597,183 @@ Function spliceFiles(pathName,runnumbers)
 	return err
 End
 
-Function Pla_splitfile(pathname, filename)
-	//split a single file with several frames into several files with 1 frame.
-	string pathname, filename
-	//splitfile("foobar:Users:anz:Desktop:test:","QKK0006492.nx.hdf")
-	variable ii,jj, kk, fileIDadd, fileIDcurrent, err=0, run_dims
-	string nodes = "",temp, addfile, cDF, nodename, attributes,filebase,filepath
-	
-	Struct HDF5DataInfo di
-	InitHDF5DataInfo(di)	// Initialize structure.
-
-	cDF = getdatafolder(1)
-	newdatafolder/o root:packages
-	newdatafolder/o root:packages:platypus
-	newdatafolder/o/s $"root:packages:platypus:temp"
-
-	newpath/o/q/z PATH_TO_DATA, pathname
-	pathinfo PATH_TO_DATA
-	filepath = S_path
-	if(!V_Flag)
-		print "ERROR while creating path (splitfile)"; abort
-	endif
-	//going to enumerate nodes that appear to grow with multiple frames.
-	//it's not clear from the file which ones do and which ones don't
-	nodes += "/entry1/data/hmm;"
-	nodes += "/entry1/data/run_number;"
-	
-	try
-		if(itemsinlist(filename)>1)
-			print "ERROR - do one file at a time (splitfile)";abort
-		endif
-		
-		filebase = removeending( stringfromlist(0,filename), ".nx.hdf")
-		temp = filebase +".nx.hdf"
-		
-		if(!doesnexusfileexist("PATH_TO_DATA", temp))
-			print "ERROR one of the filenames doesn't exist (splitfile)";abort	
-		endif
-		
-		//open the sourcefile as read-write
-		hdf5openfile/R/Z/P=PATH_TO_DATA fileIDcurrent as filename
-		if(V_Flag)
-			print "ERROR opening add file (splitfile)";abort
-		endif
-		
-		InitHDF5DataInfo(di)	// Initialize structure.
-		HDF5DatasetInfo(fileIDcurrent , "/entry1/data/hmm" , 0 , di ) 
-		run_dims = di.dims[0]
-
-		//now have to iterate through runnodes shrinking everything
-		for(ii = 0 ; ii < run_dims ; ii+=1)
-			print ii
-			//if its the first run copy the original file
-			//if it's subsequent just copy the 1st runnumber
-			if( ii == 0 )
-				copyfile/o filepath+filename as filepath+"temp.nx.hdf"
-				temp =  filepath+"temp.nx.hdf"
-				if(V_Flag)
-					print "ERROR copying file failed (splitfile)";abort
-				endif
-			else
-				copyfile/o filepath+filebase+"_0.nx.hdf" as filepath+filebase+"_"+num2istr(ii)+".nx.hdf"
-				temp =  filepath+filebase+"_"+num2istr(ii)+".nx.hdf"
-				if(V_Flag)
-					print "ERROR copying file failed (splitfile)";abort
-				endif				
-			endif
-			//open the datafile
-			hdf5openfile/Z fileIDadd as temp
-			if(V_Flag)
-				print "ERROR opening add file (splitfile)";abort
-			endif
-			
-			//now shrink the nodes
-			for(jj=0 ; jj<itemsinlist(nodes) ; jj+=1)
-				nodename = stringfromlist(jj, nodes)
-//				print jj,nodename
-				if(ii==0)
-					attributes = saveAttributes(fileIDcurrent, nodename)
-				endif
-
-				HDF5DatasetInfo(fileIDcurrent ,  nodename , 0 , di ) 
-
-				//the runnumber is the first slab of the wave
-				make/o/i/n=(di.ndims, 4) hyperslab
-				hyperslab[][0] = 0
-				hyperslab[][1] = 1
-				hyperslab[][2] = 1
-				hyperslab[][3] = di.dims[p]
-				hyperslab[0][3] = 1
-				hyperslab[0][0] = ii
-					
-				hdf5loaddata/q/z/o/slab=hyperslab fileIDcurrent, nodename
-				if(V_Flag)
-					print "ERROR while loading a dataset (splitfile)";abort
-				endif
-				Wave numwave1 = $stringfromlist(0, S_Wavenames)			
-
-				if(ii==0)
-					hdf5savedata/z/o numwave1, fileIDadd, nodename
-					if(V_Flag)
-						print "ERROR couldn't save added data to ADD file (splitfile)";abort
-					endif
-					restoreAttributes(fileIDadd, nodename, attributes)
-				else
-					hyperslab[][0] = 0
-					hyperslab[][1] = 1
-					hyperslab[][2] = 1
-					hyperslab[][3] = dimsize(numwave1,p)
-					hdf5savedata/z/o/slab=hyperslab numwave1, fileIDadd, nodename
-					if(V_Flag)
-						print "ERROR couldn't save added data to ADD file (splitfile)";abort
-					endif
-				endif				
-				killwaves/a/z
-			endfor
-			hdf5closefile/z fileIDadd
-			if(V_Flag)
-				print "ERROR couldn't close split file (splitfile)";abort
-			endif
-			
-			if( ii == 0 )
-				//if you're the first runthrough repack the h5file, otherwise the file is still large
-				String unixCmd, igorCmd
-				unixCmd = "/usr/local/bin/h5repack -v -f GZIP=1 "+HFStoPosix("",filepath+"temp.nx.hdf",1,1)  + " " +HFStoPosix("",filepath,1,1)+filebase+"_"+num2istr(ii)+".nx.hdf"
-				sprintf igorCmd, "do shell script \"%s\"", unixCmd	
-				print igorCmd
-				ExecuteScriptText igorCmd
-			endif
-		endfor
-	
-		hdf5closefile/Z fileIDcurrent
-		if(V_Flag)
-			print "ERROR couldn't close current file (splitfile)";abort
-		endif
-	catch
-		err = 1
-		hdf5closefile/z fileIDadd
-		hdf5closefile/z fileIDcurrent
-	endtry
-
-	setdatafolder $cDF
-	killdatafolder/z $"root:packages:platypus:temp"
-	return err
-End
-
-Function/t saveAttributes(fileID, nodename)
-//save the attributes of an HDF node in some waves
-	variable fileID
-	string nodename
-
-	variable ii
-	string wavenames = ""
-	HDF5ListAttributes/Z fileID , nodename
-
-	for(ii=0 ; ii<itemsinlist(S_HDF5ListAttributes) ; ii+=1)
-		HDF5loaddata/A=stringfromlist(ii, S_HDF5ListAttributes)/q/o/z fileID, nodename
-		wavenames +=  S_Wavenames
-	endfor
-
-	return wavenames
-End
-
-Function restoreAttributes(fileID, nodename, wavenames)
-//restore the attributes of an HDF node from some waves
-	variable fileID
-	string nodename
-	string wavenames
-	variable ii
-
-	for(ii = 0 ; ii<itemsinlist(wavenames); ii+=1)
-		Wave/t/z textwav = $(stringfromlist(ii,wavenames))
-		if(waveexists(textwav))
-			hdf5savedata/A=nameofwave(textwav)/Z/o textwav, fileID, nodename	
-		endif
-		Wave/t/z wav = $(stringfromlist(ii,wavenames))
-		if(waveexists(wav))
-			hdf5savedata/A=nameofwave(wav)/Z/o wav, fileID, nodename	
-		endif
-	endfor
-End
+//Function Pla_splitfile(pathname, filename)
+//	//split a single file with several frames into several files with 1 frame.
+//	string pathname, filename
+//	//splitfile("foobar:Users:anz:Desktop:test:","QKK0006492.nx.hdf")
+//	variable ii,jj, kk, fileIDadd, fileIDcurrent, err=0, run_dims
+//	string nodes = "",temp, addfile, cDF, nodename, attributes,filebase,filepath
+//	
+//	Struct HDF5DataInfo di
+//	InitHDF5DataInfo(di)	// Initialize structure.
+//
+//	cDF = getdatafolder(1)
+//	newdatafolder/o root:packages
+//	newdatafolder/o root:packages:platypus
+//	newdatafolder/o/s $"root:packages:platypus:temp"
+//
+//	newpath/o/q/z PATH_TO_DATA, pathname
+//	pathinfo PATH_TO_DATA
+//	filepath = S_path
+//	if(!V_Flag)
+//		print "ERROR while creating path (splitfile)"; abort
+//	endif
+//	//going to enumerate nodes that appear to grow with multiple frames.
+//	//it's not clear from the file which ones do and which ones don't
+//	nodes += "/entry1/data/hmm;"
+//	nodes += "/entry1/data/run_number;"
+//	
+//	try
+//		if(itemsinlist(filename)>1)
+//			print "ERROR - do one file at a time (splitfile)";abort
+//		endif
+//		
+//		filebase = removeending( stringfromlist(0,filename), ".nx.hdf")
+//		temp = filebase +".nx.hdf"
+//		
+//		if(!doesnexusfileexist("PATH_TO_DATA", temp))
+//			print "ERROR one of the filenames doesn't exist (splitfile)";abort	
+//		endif
+//		
+//		//open the sourcefile as read-write
+//		hdf5openfile/R/Z/P=PATH_TO_DATA fileIDcurrent as filename
+//		if(V_Flag)
+//			print "ERROR opening add file (splitfile)";abort
+//		endif
+//		
+//		InitHDF5DataInfo(di)	// Initialize structure.
+//		HDF5DatasetInfo(fileIDcurrent , "/entry1/data/hmm" , 0 , di ) 
+//		run_dims = di.dims[0]
+//
+//		//now have to iterate through runnodes shrinking everything
+//		for(ii = 0 ; ii < run_dims ; ii+=1)
+//			print ii
+//			//if its the first run copy the original file
+//			//if it's subsequent just copy the 1st runnumber
+//			if( ii == 0 )
+//				copyfile/o filepath+filename as filepath+"temp.nx.hdf"
+//				temp =  filepath+"temp.nx.hdf"
+//				if(V_Flag)
+//					print "ERROR copying file failed (splitfile)";abort
+//				endif
+//			else
+//				copyfile/o filepath+filebase+"_0.nx.hdf" as filepath+filebase+"_"+num2istr(ii)+".nx.hdf"
+//				temp =  filepath+filebase+"_"+num2istr(ii)+".nx.hdf"
+//				if(V_Flag)
+//					print "ERROR copying file failed (splitfile)";abort
+//				endif				
+//			endif
+//			//open the datafile
+//			hdf5openfile/Z fileIDadd as temp
+//			if(V_Flag)
+//				print "ERROR opening add file (splitfile)";abort
+//			endif
+//			
+//			//now shrink the nodes
+//			for(jj=0 ; jj<itemsinlist(nodes) ; jj+=1)
+//				nodename = stringfromlist(jj, nodes)
+////				print jj,nodename
+//				if(ii==0)
+//					attributes = saveAttributes(fileIDcurrent, nodename)
+//				endif
+//
+//				HDF5DatasetInfo(fileIDcurrent ,  nodename , 0 , di ) 
+//
+//				//the runnumber is the first slab of the wave
+//				make/o/i/n=(di.ndims, 4) hyperslab
+//				hyperslab[][0] = 0
+//				hyperslab[][1] = 1
+//				hyperslab[][2] = 1
+//				hyperslab[][3] = di.dims[p]
+//				hyperslab[0][3] = 1
+//				hyperslab[0][0] = ii
+//					
+//				hdf5loaddata/q/z/o/slab=hyperslab fileIDcurrent, nodename
+//				if(V_Flag)
+//					print "ERROR while loading a dataset (splitfile)";abort
+//				endif
+//				Wave numwave1 = $stringfromlist(0, S_Wavenames)			
+//
+//				if(ii==0)
+//					hdf5savedata/z/o numwave1, fileIDadd, nodename
+//					if(V_Flag)
+//						print "ERROR couldn't save added data to ADD file (splitfile)";abort
+//					endif
+//					restoreAttributes(fileIDadd, nodename, attributes)
+//				else
+//					hyperslab[][0] = 0
+//					hyperslab[][1] = 1
+//					hyperslab[][2] = 1
+//					hyperslab[][3] = dimsize(numwave1,p)
+//					hdf5savedata/z/o/slab=hyperslab numwave1, fileIDadd, nodename
+//					if(V_Flag)
+//						print "ERROR couldn't save added data to ADD file (splitfile)";abort
+//					endif
+//				endif				
+//				killwaves/a/z
+//			endfor
+//			hdf5closefile/z fileIDadd
+//			if(V_Flag)
+//				print "ERROR couldn't close split file (splitfile)";abort
+//			endif
+//			
+//			if( ii == 0 )
+//				//if you're the first runthrough repack the h5file, otherwise the file is still large
+//				String unixCmd, igorCmd
+//				unixCmd = "/usr/local/bin/h5repack -v -f GZIP=1 "+HFStoPosix("",filepath+"temp.nx.hdf",1,1)  + " " +HFStoPosix("",filepath,1,1)+filebase+"_"+num2istr(ii)+".nx.hdf"
+//				sprintf igorCmd, "do shell script \"%s\"", unixCmd	
+//				print igorCmd
+//				ExecuteScriptText igorCmd
+//			endif
+//		endfor
+//	
+//		hdf5closefile/Z fileIDcurrent
+//		if(V_Flag)
+//			print "ERROR couldn't close current file (splitfile)";abort
+//		endif
+//	catch
+//		err = 1
+//		hdf5closefile/z fileIDadd
+//		hdf5closefile/z fileIDcurrent
+//	endtry
+//
+//	setdatafolder $cDF
+//	killdatafolder/z $"root:packages:platypus:temp"
+//	return err
+//End
+//
+//Function/t saveAttributes(fileID, nodename)
+////save the attributes of an HDF node in some waves
+//	variable fileID
+//	string nodename
+//
+//	variable ii
+//	string wavenames = ""
+//	HDF5ListAttributes/Z fileID , nodename
+//
+//	for(ii=0 ; ii<itemsinlist(S_HDF5ListAttributes) ; ii+=1)
+//		HDF5loaddata/A=stringfromlist(ii, S_HDF5ListAttributes)/q/o/z fileID, nodename
+//		wavenames +=  S_Wavenames
+//	endfor
+//
+//	return wavenames
+//End
+//
+//Function restoreAttributes(fileID, nodename, wavenames)
+////restore the attributes of an HDF node from some waves
+//	variable fileID
+//	string nodename
+//	string wavenames
+//	variable ii
+//
+//	for(ii = 0 ; ii<itemsinlist(wavenames); ii+=1)
+//		Wave/t/z textwav = $(stringfromlist(ii,wavenames))
+//		if(waveexists(textwav))
+//			hdf5savedata/A=nameofwave(textwav)/Z/o textwav, fileID, nodename	
+//		endif
+//		Wave/t/z wav = $(stringfromlist(ii,wavenames))
+//		if(waveexists(wav))
+//			hdf5savedata/A=nameofwave(wav)/Z/o wav, fileID, nodename	
+//		endif
+//	endfor
+//End
