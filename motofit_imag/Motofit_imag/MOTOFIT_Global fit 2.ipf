@@ -291,10 +291,10 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	String saveDF = GetDataFolder(1)
 	SetDataFolder root:
 	//ARJN
-	Newdatafolder /o/s packages
-	NewDataFolder/O/S motofit
-	NewDataFolder/O/S MOTOFITGF
-	NewDataFolder/O NewGlobalFit
+	NewDataFolder/O/S root:packages
+	NewDataFolder/O/S root:packages:motofitgf
+	NewDataFolder/O/S root:packages:motofitgf:NewGlobalFit
+	
 	SetDataFolder $saveDF
 	
 	//added by ARJN
@@ -544,7 +544,7 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	SaveDF = GetDataFolder(1)
 	
 	//arjn
-	SetDataFolder root:packages:MotofitGF:NewGlobalFit
+	SetDataFolder root:packages:motofitgf:NewGlobalFit
 	Variable/G V_FitQuitReason, V_FitError=0
 	Variable/G V_FitNumIters
 	DoUpdate
@@ -1138,7 +1138,7 @@ static Function InitNewGlobalFitGlobals()
 	
 	NewDataFolder/O/S root:packages
 	NewDataFolder/O/S root:packages:motofitgf
-	NewDataFolder/O/S NewGlobalFit
+	NewDataFolder/O/S root:packages:motofitgf:NewGlobalFit
 	
 	Make/O/T/N=(1,4,2) NewGF_DataSetListWave = ""
 	SetDimLabel 1, 0, 'Y Waves', NewGF_DataSetListWave
@@ -1515,7 +1515,7 @@ end
 static Function/S NewGF_ListStoredSetups()
 
 	String SaveDF = GetDataFolder(1)
-	SetDataFolder root:packages:MotofitGF:
+	SetDataFolder root:packages:motofitgf:
 	
 	if (!DataFolderExists("NewGlobalFit_StoredSetups"))
 		SetDataFolder $saveDF
@@ -1546,7 +1546,7 @@ static Function NewGF_SaveSetupButtonProc(ctrlName) : ButtonControl
 
 	SVAR NewGF_NewSetupName = root:packages:MotofitGF:NewGlobalFit:NewGF_NewSetupName
 	String SaveDF = GetDataFolder(1)
-	SetDataFolder root:packages:MotofitGF:
+	SetDataFolder root:packages:motofitgf:
 	NewDataFolder/O/S NewGlobalFit_StoredSetups
 
 	if (CheckName(NewGF_NewSetupName, 11))
@@ -1614,7 +1614,7 @@ static Function NewGF_RestoreSetupMenuProc(PU_Struct) : PopupMenuControl
 	if (PU_Struct.eventCode == 2)			// mouse up
 		String saveDF = GetDataFolder(1)
 		
-		SetDataFolder root:packages:MotofitGF:NewGlobalFit_StoredSetups:$(PU_Struct.popStr)
+		SetDataFolder root:packages:motofitgf:NewGlobalFit_StoredSetups:$(PU_Struct.popStr)
 		Variable i = 0
 		do
 			Wave/Z w = WaveRefIndexed("", i, 4)
@@ -1642,7 +1642,7 @@ static Function NewGF_RestoreSetupMenuProc(PU_Struct) : PopupMenuControl
 			String/G root:packages:MotofitGF:NewGlobalFit:$strname = ss
 		endfor
 		
-		SetDataFolder root:packages:MotofitGF:NewGlobalFit
+		SetDataFolder root:packages:motofitgf:NewGlobalFit
 		NVAR DoConstraints
 		CheckBox NewGF_ConstraintsCheckBox,win=MotoGlobalFitPanel#NewGF_GlobalControlArea,value=DoConstraints
 		NVAR DoWeighting
@@ -3297,7 +3297,7 @@ static Function ConstraintsCheckProc(ctrlName,checked) : CheckBoxControl
 			endfor
 
 			String saveDF = GetDatafolder(1)
-			SetDatafolder root:packages:MotofitGF:NewGlobalFit
+			SetDatafolder root:packages:motofitgf:NewGlobalFit
 			
 			Wave/T/Z SimpleConstraintsListWave
 			if (!(WaveExists(SimpleConstraintsListWave) && (DimSize(SimpleConstraintsListWave, 0) == TotalParams)))
@@ -3470,7 +3470,7 @@ static Function NewGF_WeightingCheckProc(ctrlName,checked) : CheckBoxControl
 			return 0
 		else
 			String saveDF = GetDatafolder(1)
-			SetDatafolder root:packages:MotofitGF:NewGlobalFit
+			SetDatafolder root:packages:motofitgf:NewGlobalFit
 			
 			Wave/T/Z WeightingListWave
 			if (!(WaveExists(WeightingListWave) && (DimSize(WeightingListWave, 0) == NumSets)))
@@ -3815,7 +3815,7 @@ static Function NewGF_MaskingCheckProc(ctrlName,checked) : CheckBoxControl
 			return 0
 		else
 			String saveDF = GetDatafolder(1)
-			SetDatafolder root:packages:MotofitGF:NewGlobalFit
+			SetDatafolder root:packages:motofitgf:NewGlobalFit
 			
 			Wave/T/Z MaskingListWave
 			if (!(WaveExists(MaskingListWave) && (DimSize(MaskingListWave, 0) == NumSets)))
@@ -4434,9 +4434,10 @@ Function MOTO_DoNewGlobalSim(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	Variable i,j
 	String saveDF = GetDataFolder(1)
 	SetDataFolder root:
-	Newdatafolder/o/s motofit
-	NewDataFolder/O/S MOTOFITGF
-	NewDataFolder/O NewGlobalFit
+	NewDataFolder/O/S root:packages
+	NewDataFolder/O/S root:packages:motofitgf
+	NewDataFolder/O root:packages:motofitgf:NewGlobalFit
+
 	SetDataFolder $saveDF
 		
 	Variable err
@@ -4595,7 +4596,7 @@ Function MOTO_DoNewGlobalSim(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	rw = YW - FitY
 	
 	SaveDF = GetDataFolder(1)
-	SetDataFolder root:packages:MotofitGF:NewGlobalFit
+	SetDataFolder root:packages:motofitgf:NewGlobalFit
 		
 	NVAR/Z V_chisq
 	NVAR/Z fit_npnts = V_npnts
