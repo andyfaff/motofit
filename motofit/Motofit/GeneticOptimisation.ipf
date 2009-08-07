@@ -1139,7 +1139,7 @@ End
 End
 
 Function Gen_isSameWave(wav1,wav2)
-	Wave wav1,wav2
+	Wave/z wav1,wav2
 
 	if(!equalwaves(wav1,wav2,-1) || cmpstr(getWavesdatafolder(wav1,2),getwavesdatafolder(wav2,2)))
 		return 0

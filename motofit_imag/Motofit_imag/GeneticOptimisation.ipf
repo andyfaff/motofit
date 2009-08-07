@@ -1139,7 +1139,7 @@ End
 End
 
 Function Gen_isSameWave(wav1,wav2)
-	Wave wav1,wav2
+	Wave/z wav1,wav2
 
 	if(!equalwaves(wav1,wav2,-1) || cmpstr(getWavesdatafolder(wav1,2),getwavesdatafolder(wav2,2)))
 		return 0
@@ -2675,8 +2675,8 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB])
 			else
 				y_montecarlo[] = yy[p] + gnoise(ee[p])
 			endif	
-//			Gencurvefit/q/n/X=x_montecarlo/K={gen.GEN_generations, gen.GEN_popsize,gen.k_m, gen.GEN_recombination}/TOL=(gen.GEN_V_fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
-			Gencurvefit/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={gen.GEN_generations, gen.GEN_popsize,gen.k_m, gen.GEN_recombination}/TOL=(gen.GEN_V_fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+			Gencurvefit/q/n/X=x_montecarlo/K={gen.GEN_generations, gen.GEN_popsize,gen.k_m, gen.GEN_recombination}/TOL=(gen.GEN_V_fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+//			Gencurvefit/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={gen.GEN_generations, gen.GEN_popsize,gen.k_m, gen.GEN_recombination}/TOL=(gen.GEN_V_fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			M_montecarlo[ii][] = w[q]
 			W_chisq[ii] = V_chisq
 			print "montecarlo ", ii, " done - total time = ", datetime-timed
