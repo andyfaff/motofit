@@ -102,6 +102,9 @@ Function Genetic_Curvefitting()
 			if(!exists("resWAV"))
 				string/g resWAV = "_none_"
 			endif
+			if(!exists("useInitGuess"))
+				variable/g useInitGuess = 0
+			endif
 			if(!exists("tol"))
 				variable/g tol = 0.001
 			endif
@@ -286,6 +289,10 @@ End
 	SetVariable km_setvar_tab1,pos={377,286},size={173,17},disable=1,title="mutation constant"
 	SetVariable km_setvar_tab1,fSize=11
 	SetVariable km_setvar_tab1,limits={0,1,0},value= root:packages:motofit:gencurvefit:k_m,bodyWidth= 70
+	NVAR useInitGuess = root:packages:motofit:gencurvefit:useInitGuess
+	CheckBox initGuesses_setvar_tab1, pos={113,270},size={173,17},disable=1,title="use initial guesses as starting values?"
+	CheckBox initGuesses_setvar_tab1,fSize=11, variable = useInitGuess
+	
 	Button default_button_tab2,pos={522,92},size={42,20},proc=gen_defaultlims_buttonproc,title="default"
 	Button default_button_tab2,fSize=9
 	
@@ -633,6 +640,25 @@ End
 		if( !(gen_listselwave[ii][2]&2^4))
 			if(lowlim>upperlim)
 				Doalert 0, "lower limit for parameter: "+num2istr(ii)+ " is greater than the upper limit"
+				return 1
+			endif
+		Endif
+	endfor
+End
+
+ Function gen_isvalueinlimitboundaries()
+	Wave/T Gen_listwave = root:packages:motofit:gencurvefit:Gen_listwave
+	Wave Gen_listselwave = root:packages:motofit:gencurvefit:Gen_listselwave
+	variable ii
+	variable val,lowlim,upperlim
+	for(ii=0;ii<dimsize(gen_listwave,0);ii+=1)
+		val = str2num(gen_listwave[ii][1])
+		lowlim = str2num(gen_listwave[ii][3])
+		upperlim = str2num(gen_listwave[ii][4])
+		if( !(gen_listselwave[ii][2]&2^4))
+			if( val < lowlim || val > upperlim)
+				Doalert 0, "Because you selected use initial guesses parameter: "+num2istr(ii)+ " should be between the limits"
+				return 1
 			endif
 		Endif
 	endfor
@@ -688,12 +714,22 @@ End
 	nvar recomb = root:packages:motofit:gencurvefit:recomb
 	nvar k_m = root:packages:motofit:gencurvefit:k_m
 	Wave ywave = $ydataWav
-	
+	nvar useInitGuess = root:packages:motofit:gencurvefit:useInitGuess
+			
 	cmd = "gencurvefit "
 	if(cmpstr(xdataWav,"_calculated_") !=0)
 		cmd += "/X="+xdataWav
 	endif
-
+	
+	//you specified that you want to use the initial guess as starting parameters in the fit, instead of randomisation
+	//this means that you need to check that the values are in between the limits
+	if(useInitGuess)
+		if(gen_isvalueinlimitboundaries())
+			return 1
+		endif
+		cmd +="/OPT=1"
+	endif
+	
 	cmd += "/K={"+num2str(iterations)+","+num2str(popsize)+","+num2str(k_m)+","+num2str(recomb)+"}"
 	cmd += "/TOL="+num2str(tol)
 	
