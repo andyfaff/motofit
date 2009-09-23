@@ -72,7 +72,7 @@ Function plotCalcref()
 	newdatafolder/o root:packages:motofit:reflectivity
 	newdatafolder/o root:packages:motofit:reflectivity:tempwaves
 	
-	Variable num=228,qmin=0.005,qmax=0.4,res=5,SLDplotnum=500,plotyp=1
+	Variable num=500,qmin=0.005,qmax=0.5,res=5,SLDplotnum=500,plotyp=1
 	Prompt num, "Enter number of data points for model: "
 	Prompt qmin, "Enter minimum q-value (A^-1) for model: "
 	Prompt qmax, "Enter maximum q-value (A^-1) for model: "
@@ -2865,7 +2865,7 @@ Function Moto_Plottype(PU_Struct)
 			ModifyGraph logTicks(left)=10
 			break
 		case 3:
-			modifygraph log(left)=1
+			modifygraph log(left)=0
 			Label left "RQ\\S4"
 			ModifyGraph logLabel(left)=0
 			ModifyGraph logTicks(left)=10

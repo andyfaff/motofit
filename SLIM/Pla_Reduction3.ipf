@@ -74,6 +74,8 @@ Function downloadPlatypusData([pathname, lowFi, hiFi])
 		endif
 	endfor
 	print "Starting to download Platypus data."
+	string cmd= "easyHttp/PASS=\""+user+":"+password+"\"/FILE="+S_path+"data.zip \"http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi?lowFi="+num2istr(lowFi)+"&hiFi="+num2istr(hiFi)+"\""
+//	print cmd
 	easyHttp/PASS=user+":"+password/FILE=S_path+"data.zip" "http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi?lowFi="+num2istr(lowFi)+"&hiFi="+num2istr(hiFi)
 	if(V_Flag)
 		print "Error while downloading Platypus data (downloadPlatypusData)"
