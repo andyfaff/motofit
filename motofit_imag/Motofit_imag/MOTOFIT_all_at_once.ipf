@@ -1122,7 +1122,7 @@ Function Moto_Reflectivitypanel() : Panel
 	Button loaddatas,pos={253,130},size={140,50},proc=Moto_genericButtonControl,title="Load data"
 	Button loaddatas,fColor=(65280,32512,16384)
 	PopupMenu dataset,pos={431,42},size={179,21},proc=Motofit_PopMenuProc,title="dataset"
-	PopupMenu dataset,mode=2,bodyWidth= 139,popvalue="_none_",value= #"Listmatch(WaveList(\"*R\", \";\",\"\"),\"!coef*\")"
+	PopupMenu dataset,mode=2,bodyWidth= 139,popvalue="_none_",value= #"Listmatch(WaveList(\"*_R\", \";\",\"\"),\"!coef*\")"
 	CheckBox useerrors,pos={484,92},size={94,14},proc=Motofit_checkproc,title="use error wave?"
 	CheckBox useerrors,value= 0
 	CheckBox usedQwave,pos={484,74},size={87,14},proc=Motofit_checkproc,title="use dQ wave?"
