@@ -2,6 +2,13 @@
 #PRAGMA modulename = platypus
 #include <Image Line Profile>
 #pragma IgorVersion = 6.0
+
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
 //DEPENDENCIES
 //1) sockit.xop (www.igorexchange.com)
 //2) zip.xop (www.igorexchange.com)

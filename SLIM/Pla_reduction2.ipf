@@ -1,6 +1,12 @@
 #pragma rtGlobals=1		// Use modern global access method.
 //background offset is the separation between the specridge and the region taken to be background.
 constant BACKGROUNDOFFSET = 2
+
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
 	
 Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background)
 	Wave measurement	//the data from the NeXUS file

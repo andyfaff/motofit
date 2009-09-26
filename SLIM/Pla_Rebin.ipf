@@ -1,5 +1,11 @@
 #pragma rtGlobals=1		// Use modern global access method.
 
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
 Function Pla_2DintRebin(x_init,data,dataSD,x_rebin)
 	Wave x_init,data,dataSD,x_rebin
 

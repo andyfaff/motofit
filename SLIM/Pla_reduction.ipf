@@ -1,5 +1,11 @@
 #pragma rtGlobals=1		// Use modern global access method.
 
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
 //TODO all distances, chopper frequencies should be read from NeXUS file
 
 //opening of the choppers, in radians

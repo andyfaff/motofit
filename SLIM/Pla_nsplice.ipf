@@ -1,5 +1,11 @@
 #pragma rtGlobals=1		// Use modern global access method.
 
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
 Function GetScalingInOverlap(wave1q,wave1R,wave2q,wave2R)
 	Wave wave1q,wave1R,wave2q,wave2R		//1 = first dataset, 2= second dataset
 	

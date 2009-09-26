@@ -1,4 +1,11 @@
 #pragma rtGlobals=1		// Use modern global access method.
+
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
 Function Pla_findpeakDetails(ywave,xwave,[expected_centre,expected_width])//distance,profile)//y, x
 	Wave ywave,xwave
 	variable expected_centre,expected_width

@@ -1,6 +1,13 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IndependentModule=Pla_batchChecker
 
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
+
 Function Pla_checkBatchFile(listWave)
 	Wave/t listWave
 

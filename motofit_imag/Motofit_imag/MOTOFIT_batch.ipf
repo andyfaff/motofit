@@ -1,4 +1,11 @@
 #pragma rtGlobals=1		// Use modern global access method.
+
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
 Function FitRefToListOfWaves()
 	//this fits data in a batch, serial manner to a large number of datasets
 	//all the reflectivity waves are called :batchwaveN (Qdata), batchwaveN+1 (Rdata), batchwaveN+2 (Edata)

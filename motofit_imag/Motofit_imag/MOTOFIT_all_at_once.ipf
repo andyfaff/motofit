@@ -2,6 +2,12 @@
 #pragma IGORVersion=5.02
 	constant kMotoToImag=0
 
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
 	// Use modern global access method.
 	///MOTOFIT is a program that fits neutron and X-ray reflectivity profiles :written by Andrew Nelson
 	//Copyright (C) 2005 Andrew Nelson and Australian Nuclear Science and Technology Organisation
@@ -4622,9 +4628,7 @@ Function Moto_AboutPanel()
 
 	DrawText 11,216,"Analysis of multiple contrast X-ray and"
 	DrawText 11,236,"Neutron Reflectometry data"
-	DrawText 11,230,"              "
-	DrawText 11,250," "
-	DrawText 11,265,"             "
+	DrawText 11,256,"Motofit version: " + " $Rev$"
 	DrawPict 270,110,1,1,ProcGlobal#moto
 	
 end

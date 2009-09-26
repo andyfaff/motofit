@@ -1,6 +1,12 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #include <Image Line Profile>
 
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
 Menu "Platypus"
 	"SLIM - data Reduction", reducerpanel()
 	"Download Platypus Data", downloadPlatypusData()

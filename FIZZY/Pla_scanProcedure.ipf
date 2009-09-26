@@ -1,6 +1,13 @@
 #pragma rtGlobals=1		// Use modern global access presettype.
 #PRAGMA modulename = platypus
 
+
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
 Function/c findthecentre(position,tempY,tempE)
 	Wave position,tempY,tempE
 	variable/c centre
