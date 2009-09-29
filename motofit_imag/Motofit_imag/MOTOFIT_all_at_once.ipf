@@ -1838,10 +1838,10 @@ Function Moto_fit_Levenberg()
 	e=cleanupname(dataset+"_E",0)
 	dx=cleanupname(dataset+"_dq",0)
 	
-	Wave a=$x
-	Wave b=$y
-	Wave c=$e
-	Wave d=$dx
+	Wave/z a=$x
+	Wave/z b=$y
+	Wave/z c=$e
+	Wave/z d=$dx
 
 
 	if(waveexists(a)==0 | waveexists(b)==0)						//if the waves you entered aren't valid then there is no 
@@ -2118,10 +2118,10 @@ Function Moto_fit_GenLM()
 	e=cleanupname(dataset+"_E",0)
 	dx=cleanupname(dataset+"_dq",0)
 	
-	Wave a=$x
-	Wave b=$y
-	Wave c=$e
-	Wave d=$dx
+	Wave/z a=$x
+	Wave/z b=$y
+	Wave/z c=$e
+	Wave/z d=$dx
 	
 	//the name of the coefficient wave
 	coefwavestr = Moto_coefficientfocus()
@@ -2440,10 +2440,10 @@ Function Moto_fit_GenMC()
 		e=cleanupname(dataset+"_E",0)
 		dx=cleanupname(dataset+"_dq",0)
 	
-		Wave a=$x
-		Wave b=$y
-		Wave c=$e
-		Wave d=$dx
+		Wave/z a=$x
+		Wave/z b=$y
+		Wave/z c=$e
+		Wave/z d=$dx
 	
 		//the name of the coefficient wave
 		String coefwavestr = Moto_coefficientfocus()
