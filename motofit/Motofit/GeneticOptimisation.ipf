@@ -1,5 +1,12 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName= GEN_optimise
+
+// SVN date:    $Date$
+// SVN author:  $Author$
+// SVN rev.:    $Revision$
+// SVN URL:     $HeadURL$
+// SVN ID:      $Id$
+
 ///GeneticOptimisation is a IGOR PRO procedure that fits data using a Genetic Algorithm method :written by Andrew Nelson
 //Copyright (C) 2006 Andrew Nelson and Australian Nuclear Science and Technology Organisation
 //
