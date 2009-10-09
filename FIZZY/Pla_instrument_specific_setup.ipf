@@ -237,6 +237,9 @@ Function setExperimentalMode(mode)
 		case "DB":
 			cmd +="DB"
 			break
+		case "POL":
+			cmd +="POL"
+			break
 		default:
 			print "ERROR: mode "+mode+" is not allowed.  It should be one of MT,FOC,SB,DB (setExperimentalMode)"
 			err=1
@@ -1777,8 +1780,8 @@ Function createHTML()
 		endif
 	
 		text +="<TR><TD>datafilename</TD><TD>"+ gethipaval("/experiment/file_name") + "</TD></TR>\r"
-		text +="<TR><TD>Reactor Power (MW)</TD><TD>"+ gethipaval("/instrument/source/power") + "</TD></TR>\r"	
-		text +="<TR><TD>CNS temp (K)</TD><TD>"+ gethipaval("/instrument/source/cns_inlet_temp") +"</TD></TR>\r"
+//		text +="<TR><TD>Reactor Power (MW)</TD><TD>"+ gethipaval("/instrument/source/power") + "</TD></TR>\r"	
+//		text +="<TR><TD>CNS temp (K)</TD><TD>"+ gethipaval("/instrument/source/cns_inlet_temp") +"</TD></TR>\r"
 		text +="<TR><TD>Secondary Shutter</TD><TD>"+ UpperStr(gethipaval("/instrument/status/secondary")) + "</TD></TR>\r"
 		text +="<TR><TD>Tertiary Shutter</TD><TD>"+ UpperStr(gethipaval("/instrument/status/tertiary")) + "</TD></TR>\r"
 	
@@ -1927,7 +1930,7 @@ Function/t createFizzyCommand(type)
 	//sics
 	string cmd=""
 
-	string motor="",motorlist="", samplename="", sicscmd=""
+	string motor="",motorlist="", samplename="", sicscmd="",mode
 	variable position=0, ii, timer = 0, omega=0.5, twotheta=1, s1=0,s2=0,s3=0,s4=0
 
 	strswitch(type)
@@ -2026,6 +2029,11 @@ Function/t createFizzyCommand(type)
 			prompt s4, "slit 4 (mm):"
 			doprompt "Please enter values for all the slit vertical gaps", s1, s2, s3, s4
 			sprintf cmd, "vslits(%g, %g, %g, %g)", s1, s2, s3, s4
+			break
+		case "setexperimentalmode":
+			prompt mode, "Which mode did you want?", popup, "MT;FOC;POL;SB;DB"
+			doprompt "Please enter the mode", mode
+			sprintf cmd, "setexperimentalmode(\"%s\")", mode
 			break
 		case "_none_":
 		default:
