@@ -151,15 +151,15 @@ Function Pla_peakCentroid(xwave,ywave,[x0,x1])
 		duplicate/o ywave, W_tempy
 		duplicate/o xwave, W_tempx
 		Sort xwave, xwave,ywave
-		deletepoints 0, x0-1,W_tempy,W_tempx
 		deletepoints x1+1,numpnts(W_tempy),W_tempy,W_tempx
+		deletepoints 0, x0-1,W_tempy,W_tempx
 	endif
 	
 	duplicate/o W_tempx, W_integrate,W_integratex
 	W_integrate = 0
 	
 	variable ii
-	for(ii=0 ; ii<numpnts(xwave); ii+=1)
+	for(ii=0 ; ii<numpnts(W_tempx); ii+=1)
 			W_integrate[ii] = AreaXY(W_tempx,W_tempy,W_tempx[0],W_tempx[ii])
 	endfor
 	

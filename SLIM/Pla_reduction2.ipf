@@ -217,7 +217,7 @@ Function findSpecRidge(ytWave, searchIncrement , tolerance, expected_centre, exp
 			endif	
 			
 			if(ii>0 && abs((peakCentre[ii]-peakCentre[ii-1])/peakCentre[ii]) < tolerance && abs((peakFWHM[ii]-peakFWHM[ii-1])/peakFWHM[ii]) < tolerance)
-				retval = cmplx(W_peakInfo[6],2.35482*W_peakInfo[7]/sqrt(2))
+				retval = cmplx(W_peakInfo[6], 2.35482*W_peakInfo[7]/sqrt(2))
 				break
 			endif	
 		endfor
@@ -231,7 +231,7 @@ Function findSpecRidge(ytWave, searchIncrement , tolerance, expected_centre, exp
 	killwaves/z subSection, subsectionX,W_peakinfo,peakCentre,peakFWHM
 
 	if(imag(retval) >  expected_width || abs(real(retval) - expected_centre) >  expected_width)
-		print "ERROR, there was no significant specular beam detected (findspecularridge)"
+		print "ERROR, there was no significant specular beam detected: ", Getwavesdatafolder(ytwave,0) , "(findspecularridge)"
 		retval = cmplx(NaN,NaN)
 		return 1
 	endif
@@ -567,11 +567,11 @@ Wave w;variable x
 	return w[0]+w[1]*exp(-((w[2]-x)/w[3])^2)
 end
 
-Function correct_for_gravity(data, dataSD, lambda, trajectory)
+Function correct_for_gravity(data, dataSD, lambda, trajectory, lowLambda, highLambda,loBin,hiBin)
 	Wave data, dataSD, lambda
-	variable trajectory
+	variable trajectory,  lowLambda,highLambda, loBin, hiBin
 	//this function provides a gravity corrected yt plot, given the data, its associated errors, the wavelength corresponding to each of the time
-	//bins, and the trajectory of the neutrons
+	//bins, and the trajectory of the neutrons.  Low lambda and high Lambda are wavelength cutoffs to igore.
 	
 	
 	//output:
@@ -596,13 +596,17 @@ Function correct_for_gravity(data, dataSD, lambda, trajectory)
 		//find out the correct travel_distance to do.  This is empirical
 		//find out where the specular ridge is, as a fn of wavelength
 		//this is only likely to work for reasonable wavelengths
-		centre_wavelength(data)
+		//will fall over if two beams hit the detector
+		centre_wavelength(data, loBin, hiBin)
 		Wave W_centrewavelength
 		
 		duplicate/o lambda, W_mask
 		//if the wavelength is ridiculous mask the point
+		W_mask = W_mask<lowlambda ? NaN : W_mask[p]
+		W_mask = W_mask>highLambda ? NaN : W_mask[p]
 		W_mask = W_mask<2 ? NaN : W_mask[p]
 		W_mask = W_mask>18 ? NaN : W_mask[p]
+
 		//if the centre isn't within a reasonable range of detector pixels ignore it.
 		W_mask[] = W_centrewavelength[p] < 30 ? NaN : W_mask[p]
 		W_mask[] = W_centrewavelength[p] > 190 ? NaN : W_mask[p]
@@ -660,6 +664,9 @@ Function deflection(lambda, travel_distance, trajectory)
 
 	variable pp, trajRad
 
+if(lambda>10)
+	variable aa=10
+endif
 	trajRad = trajectory*Pi/180
 	pp = travel_distance/1000 * tan(trajRad)
 	pp -= 9.81*(travel_distance/1000)^2*(lambda/1e10)^2 / (2*cos(trajRad)*cos(trajRad)*(P_MN)^2)
@@ -677,8 +684,9 @@ Function deflec(w, lambda):fitfunc
 	return deflection(lambda,w[0],w[2])/Y_PIXEL_SPACING + w[1]
 End
 
-Function centre_wavelength(data)
+Function centre_wavelength(data, lobin, hibin)
 	Wave data
+	variable lobin, hibin
 	//finds out where the spectral ridge is for each time bin in a yt plot.
 	make/o/d/n=(dimsize(data,0)) W_centreWavelength = NaN
 	variable ii
@@ -691,7 +699,7 @@ Function centre_wavelength(data)
 		imagetransform/g=(ii) getRow data
 		Wave W_extractedRow
 		
-		W_centrewavelength[ii] = Pla_peakcentroid(xdata, W_extractedrow)
+		W_centrewavelength[ii] = Pla_peakcentroid(xdata, W_extractedrow, x0= loBin, x1 = hiBin)
 		//		curvefit/n=1/q/NTHR=2 gauss  data[ii][]
 		//		Wave W_coef
 		//		if(!V_fiterror)

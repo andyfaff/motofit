@@ -883,17 +883,7 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 		histtopoint(W_lambdaHIST)
 		Wave W_point
 		duplicate/o W_point, $(tempDF+":W_lambda")
-		
-		//if you are a direct beam do a gravity correction
-		if(isDirect)
-			correct_for_gravity(detector, detectorSD, W_lambda, 0)
-			Wave M_gravitycorrected, M_gravitycorrectedSD
-			duplicate/o M_gravitycorrected, $(tempDF+":Detector")
-			duplicate/o M_gravitycorrectedSD, $(tempDF+":DetectorSD")
-			killwaves/z M_gravitycorrected, M_gravitycorrectedSD
-		endif
-		
-		
+
 		//now we need to find out where the beam hits the detector
 		variable/c peak_params
 		if(manual || findspecridge(detector, 50, 0.01, expected_centre,expected_width,peak_params) || numtype(real(peak_params)) || numtype(imag(peak_params)))
@@ -908,6 +898,21 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 			//			peak_params = cmplx(expected_centre, calculated_width)
 			killwaves/z W_sumcols,xx
 		endif
+								
+		//if you are a direct beam do a gravity correction, but have to recalculate centre.
+		if(isDirect)
+			variable lobin = (real(peak_params)-4 - 1.3*imag(peak_params)/2) , hiBin = (real(peak_params)+4 + 1.3*imag(peak_params)/2)
+			correct_for_gravity(detector, detectorSD, W_lambda, 0, loLambda, hiLambda, lobin, hiBin)
+			Wave M_gravitycorrected, M_gravitycorrectedSD
+			duplicate/o M_gravitycorrected, $(tempDF+":Detector")
+			duplicate/o M_gravitycorrectedSD, $(tempDF+":DetectorSD")
+			killwaves/z M_gravitycorrected, M_gravitycorrectedSD
+			if(findspecridge(detector, 50, 0.01, expected_centre,expected_width, peak_params) || numtype(real(peak_params)) || numtype(imag(peak_params)))
+			//use the following procedure to find the specular ridge
+				userSpecifiedArea(detector, peak_Params)
+			endif	
+		endif
+
 				
 		//someone provided a wavelength spectrum BIN EDGES to rebin to.
 		variable hiPoint, loPoint
