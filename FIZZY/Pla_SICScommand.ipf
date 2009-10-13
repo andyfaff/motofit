@@ -292,7 +292,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 1: //mouse down
 			if(lba.eventmod & 2^4)
-				popupcontextualmenu "acquire;omega_2theta;run;vslits;samplename;igor;wait;attenuate;sics"
+				popupcontextualmenu "acquire;omega_2theta;run;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode"
 				listwave[row][col] = createFizzyCommand(S_Selection)
 			endif
 			break
