@@ -11,6 +11,7 @@ Menu "Platypus"
 	"SLIM - data Reduction", reducerpanel()
 	"Download Platypus Data", downloadPlatypusData()
 	"MADD - Add files together", addFilesTogether()
+	"Reduce X'Pert Pro data", ReduceXray()
 End
 
 Function addFilesTogether()
@@ -1060,7 +1061,8 @@ End
 Function createSpecBeamAdjustmentPanel(detector, ordProj)
 	Wave detector, ordProj
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(150,50,883,506)/n=specBeamAdjustmentPanel
+	string filename = getwavesdatafolder(detector, 0)
+	NewPanel /W=(150,50,883,506)/n=specBeamAdjustmentPanel as filename
 	Button Continue_Button,pos={465,407},size={161,43},proc=killSpecBeamAdjustmentPanel,title="Continue"
 	SetVariable pixelsToInclude_setvar,pos={449,275},size={185,19},proc=adjustAOI,title="TOF Pixels to include"
 	SetVariable pixelsToInclude_setvar,fSize=12

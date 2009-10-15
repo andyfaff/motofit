@@ -222,7 +222,7 @@ Function findSpecRidge(ytWave, searchIncrement , tolerance, expected_centre, exp
 			endif	
 		endfor
 	catch
-		print "ERROR whilst finding specular ridge (findSpecRidge)"
+		print "PROBLEM whilst finding specular ridge (findSpecRidge)"
 		killwaves/z subSection, subsectionX,W_peakinfo,peakCentre,peakFWHM
 	
 		return 1
@@ -231,7 +231,7 @@ Function findSpecRidge(ytWave, searchIncrement , tolerance, expected_centre, exp
 	killwaves/z subSection, subsectionX,W_peakinfo,peakCentre,peakFWHM
 
 	if(imag(retval) >  expected_width || abs(real(retval) - expected_centre) >  expected_width)
-		print "ERROR, there was no significant specular beam detected: ", Getwavesdatafolder(ytwave,0) , "(findspecularridge)"
+		print "PROBLEM, there was no significant specular beam detected: ", Getwavesdatafolder(ytwave,0) , "(findspecularridge)"
 		retval = cmplx(NaN,NaN)
 		return 1
 	endif

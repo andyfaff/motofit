@@ -44,11 +44,6 @@ Menu "Motofit"
 	"Change Q range of theoretical data", Moto_changeQrangeprompt()
 	"SLD calculator", Moto_SLDdatabase()
 	"create local chi2map for requested parameter",Moto_localchi2()
-	Submenu "Fit batch data"
-		"Load batch data", LoadAndGraphAll ("")
-		"Fit batch data", FitRefToListOfWaves()
-		//	                        "Extract trends", Trends()
-	End
 	Submenu "reduction"
 		"reduce Xray", ReduceXray()
 	end
@@ -170,33 +165,35 @@ Function plotCalcref()
 	moto_thicknesstabProc(TC_Struct)
 		
 	//make a nice graph
-	Display/K=1/N=reflectivitygraph/w=(10,10,550,350) theoretical_R vs theoretical_q
-	controlbar/T/W=reflectivitygraph 35
-	PopupMenu plottype,pos={140,6},size={220,21},proc=Moto_Plottype,title="Plot type"
-	PopupMenu plottype,mode=plotyp,bodyWidth= 100,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
-	Button Autoscale title="Autoscale",size={80,24},pos={12,7},proc=Moto_genericButtonControl
-	Button ChangeQrange title="Q range",proc=Moto_genericButtonControl,size={100,24}
-	Button Snapshot title="snapshot",proc=Moto_genericButtonControl,size={70,24},pos={380,6}
-	Button restore title="restore",proc=Moto_genericButtonControl,size={70,24},pos={460,6},fsize=10
-		
-	Label bottom "Q /A\\S-1\\M"
-	Label left "R"
-	ModifyGraph log(bottom)=0,mode=0
-	ModifyGraph log(left)=(logg)
-	DoWindow/T reflectivitygraph,"reflectivity graph"
-	Display/Host=#/N=SLDplot/W=(0.6,0,1,0.5) sld vs zed
-
-	//This section pulls up a graph of the (real SLD profile). 
-	// It automatically updates whenever you change the fit parameters
+	if(!itemsinlist(winlist("reflectivitygraph", ";", "WIN:1")))
+		Display/K=1/N=reflectivitygraph/w=(10,10,550,350) theoretical_R vs theoretical_q
+		controlbar/T/W=reflectivitygraph 35
+		PopupMenu plottype,pos={140,6},size={220,21},proc=Moto_Plottype,title="Plot type"
+		PopupMenu plottype,mode=plotyp,bodyWidth= 100,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
+		Button Autoscale title="Autoscale",size={80,24},pos={12,7},proc=Moto_genericButtonControl
+		Button ChangeQrange title="Q range",proc=Moto_genericButtonControl,size={100,24}
+		Button Snapshot title="snapshot",proc=Moto_genericButtonControl,size={70,24},pos={380,6}
+		Button restore title="restore",proc=Moto_genericButtonControl,size={70,24},pos={460,6},fsize=10
+			
+		Label bottom "Q /A\\S-1\\M"
+		Label left "R"
+		ModifyGraph log(bottom)=0,mode=0
+		ModifyGraph log(left)=(logg)
+		DoWindow/T reflectivitygraph,"reflectivity graph"
+		Display/Host=#/N=SLDplot/W=(0.6,0,1,0.5) sld vs zed
 	
-	Label left "\Z08\\f02\\F'Symbol'r\\F'Arial'   \\f00/10\\S-6\\M Å\\S-2 "
-	ModifyGraph lblPos(left)=42; 
-	Modifygraph fSize(left)=8
-	Label bottom "\Z06<<-- TOP          \Z08z /Å       \Z06 BOTTOM-->>"
-	ModifyGraph lblPos(bottom)=30; 
-	Modifygraph fSize(bottom)=8
-	Modifygraph rgb(sld)=(0,0,52224)
-	Setactivesubwindow Reflectivitygraph
+		//This section pulls up a graph of the (real SLD profile). 
+		// It automatically updates whenever you change the fit parameters
+		
+		Label left "\Z08\\f02\\F'Symbol'r\\F'Arial'   \\f00/10\\S-6\\M Å\\S-2 "
+		ModifyGraph lblPos(left)=42; 
+		Modifygraph fSize(left)=8
+		Label bottom "\Z06<<-- TOP          \Z08z /Å       \Z06 BOTTOM-->>"
+		ModifyGraph lblPos(bottom)=30; 
+		Modifygraph fSize(bottom)=8
+		Modifygraph rgb(sld)=(0,0,52224)
+		Setactivesubwindow Reflectivitygraph
+	endif
 
 	//start up the SLD database and populate it with a specific database in igorpro/motofit
 	Moto_SLDdatabase()
@@ -309,39 +306,7 @@ return 0
 End
 
 
-Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
-	string &ywave,&xwave,&sldwave,&zedwave
-	
-	string snapStr = "snapshot"
-	prompt snapStr, "Name: "
-
-	do
-		doprompt "Enter a unique name for the snapshot", snapstr
-		if(V_flag)
-			return 1
-		endif
-		ywave = cleanupname(snapstr+"_R",0)
-		xwave = cleanupname(snapstr+"_q",0)
-		sldwave = cleanupname("SLD_"+snapstr,0)
-		zedwave = cleanupname("zed_"+snapstr,0)
-		
-		if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1) || checkname(zedwave,1))
-			Doalert 0, "One of the snapshot waves did not have a unique name"
-			continue
-		else
-			break
-		endif
-	while(1)
-
-	Duplicate/o root:theoretical_R, root:$ywave
-	Duplicate/o root:theoretical_q, root:$xwave
-	Duplicate/o root:sld, root:$sldwave
-	Duplicate/o root:zed, root:$zedwave
-	setformula root:$sldwave,""
-	
-	return 0
-End
-
+Function Moto_snapshot(ywave,xwave,sldwave,zedwave)	string &ywave,&xwave,&sldwave,&zedwave		string snapStr = "snapshot"	prompt snapStr, "Name: "	do		doprompt "Enter a unique name for the snapshot", snapstr		if(V_flag)			return 1		endif		ywave = cleanupname(snapstr+"_R",0)		xwave = cleanupname(snapstr+"_q",0)		sldwave = cleanupname("SLD_"+snapstr,0)		zedwave = cleanupname("zed_"+snapstr,0)				if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1) || checkname(zedwave,1))			Doalert 2, "One of the snapshot waves did not have a unique name, did you want to overwrite it?"			if(V_Flag == 1)				break			elseif(V_Flag == 2)				continue			elseif(V_Flag == 3)				return 0			endif		else			break		endif	while(1)	Duplicate/o root:theoretical_R, root:$ywave	Duplicate/o root:theoretical_q, root:$xwave	Duplicate/o root:sld, root:$sldwave	Duplicate/o root:zed, root:$zedwave	setformula root:$sldwave,""		return 0End
 
 Function Moto_ChangeQrangebutton(B_Struct)
 	STRUCT WMButtonAction &B_Struct

@@ -49,9 +49,6 @@ Menu "Motofit"
 		"Fit batch data", FitRefToListOfWaves()
 		//	                        "Extract trends", Trends()
 	End
-	Submenu "reduction"
-		"reduce Xray", ReduceXray()
-	end
 	"About",Moto_AboutPanel()
 	"-"
 End
@@ -170,33 +167,35 @@ Function plotCalcref()
 	moto_thicknesstabProc(TC_Struct)
 	
 	//make a nice graph
-	Display/K=1/N=reflectivitygraph/w=(10,10,550,350) theoretical_R vs theoretical_q
-	controlbar/T/W=reflectivitygraph 35
-	PopupMenu plottype,pos={140,6},size={220,21},proc=Moto_Plottype,title="Plot type"
-	PopupMenu plottype,mode=plotyp,bodyWidth= 100,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
-	Button Autoscale title="Autoscale",size={80,24},pos={12,7},proc=Moto_genericButtonControl,fsize=10
-	Button ChangeQrange title="Q range",proc=Moto_genericButtonControl,size={100,24},fsize=10
-	Button Snapshot title="snapshot",proc=Moto_genericButtonControl,size={70,24},pos={380,6},fsize=10
-	Button restore title="restore",proc=Moto_genericButtonControl,size={70,24},pos={460,6},fsize=10
+	if(!itemsinlist(winlist("reflectivitygraph", ";", "WIN:1")))
+		Display/K=1/N=reflectivitygraph/w=(10,10,550,350) theoretical_R vs theoretical_q
+		controlbar/T/W=reflectivitygraph 35
+		PopupMenu plottype,pos={140,6},size={220,21},proc=Moto_Plottype,title="Plot type"
+		PopupMenu plottype,mode=plotyp,bodyWidth= 100,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
+		Button Autoscale title="Autoscale",size={80,24},pos={12,7},proc=Moto_genericButtonControl,fsize=10
+		Button ChangeQrange title="Q range",proc=Moto_genericButtonControl,size={100,24},fsize=10
+		Button Snapshot title="snapshot",proc=Moto_genericButtonControl,size={70,24},pos={380,6},fsize=10
+		Button restore title="restore",proc=Moto_genericButtonControl,size={70,24},pos={460,6},fsize=10
 		
-	Label bottom "Q /A\\S-1\\M"
-	Label left "R"
-	ModifyGraph log(bottom)=0,mode=0
-	ModifyGraph log(left)=(logg)
-	DoWindow/T reflectivitygraph,"reflectivity graph"
-	Display/Host=#/N=SLDplot/W=(0.6,0,1,0.5) sld vs zed
+		Label bottom "Q /A\\S-1\\M"
+		Label left "R"
+		ModifyGraph log(bottom)=0,mode=0
+		ModifyGraph log(left)=(logg)
+		DoWindow/T reflectivitygraph,"reflectivity graph"
+		Display/Host=#/N=SLDplot/W=(0.6,0,1,0.5) sld vs zed
 
-	//This section pulls up a graph of the (real SLD profile). 
-	// It automatically updates whenever you change the fit parameters
-	
-	Label left "\Z08\\f02\\F'Symbol'r\\F'Arial'   \\f00/10\\S-6\\M Ã…\\S-2 "
-	ModifyGraph lblPos(left)=42; 
-	Modifygraph fSize(left)=8
-	Label bottom "\Z06<<-- TOP          \Z08z /       \Z06 BOTTOM-->>"
-	ModifyGraph lblPos(bottom)=30; 
-	Modifygraph fSize(bottom)=8
-	Modifygraph rgb(sld)=(0,0,52224)
-	Setactivesubwindow Reflectivitygraph
+		//This section pulls up a graph of the (real SLD profile). 
+		// It automatically updates whenever you change the fit parameters
+		
+		Label left "\Z08\\f02\\F'Symbol'r\\F'Arial'   \\f00/10\\S-6\\M Ã…\\S-2 "
+		ModifyGraph lblPos(left)=42; 
+		Modifygraph fSize(left)=8
+		Label bottom "\Z06<<-- TOP          \Z08z /       \Z06 BOTTOM-->>"
+		ModifyGraph lblPos(bottom)=30; 
+		Modifygraph fSize(bottom)=8
+		Modifygraph rgb(sld)=(0,0,52224)
+		Setactivesubwindow Reflectivitygraph
+	endif
 
 	//start up the SLD database and populate it with a specific database in igorpro/motofit
 	Moto_SLDdatabase()
@@ -222,7 +221,7 @@ Function Moto_genericButtonControl(B_Struct)
 			break
 		case "snapshot":
 			string ywave ="",xwave="",sldwave="",zedwave=""
-			if(!Moto_snapshot(ywave,xwave,sldwave,zedwave))
+			if(!Moto_snapshot(ywave, xwave, sldwave, zedwave))
 				if(Findlistitem(ywave,tracenamelist("reflectivitygraph",";",1))==-1)
 					appendtograph/w=reflectivitygraph $("root:"+ywave) vs $("root:"+xwave)
 				endif
@@ -325,8 +324,14 @@ Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
 		zedwave = cleanupname("zed_"+snapstr,0)
 		
 		if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1) || checkname(zedwave,1))
-			Doalert 0, "One of the snapshot waves did not have a unique name"
-			continue
+			Doalert 2, "One of the snapshot waves did not have a unique name, did you want to overwrite it?"
+			if(V_Flag == 1)
+				break
+			elseif(V_Flag == 2)
+				continue
+			elseif(V_Flag == 3)
+				return 0
+			endif
 		else
 			break
 		endif
