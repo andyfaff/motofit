@@ -58,7 +58,6 @@ Function interestProcessor(w,x)
 	//have to change the axeslist colour if the motor is moving.  THis is done by changing the value of the background col plane in selaxeslist
 	Wave/t axeslist = root:packages:platypus:SICS:axeslist
 	Wave selaxeslist = root:packages:platypus:sics:selAxesList
-	
 	items = parseReply(w[x][0],str1,str2)
 //	print x, "                ", w[x][0]
 	//this code should parse upper and lower limit changes, as well as position changes.
@@ -211,7 +210,6 @@ Threadsafe Function DetectorSentinel()
 	do
 		temp = SOCKITPeek(sock_sics)
 		msg = SOCKITpeek(sock_bmon3)
-
 		for(ii=0 ; ii<itemsinlist(msg, "\n") ; ii+=1)
 			sscanf stringfromlist(ii, msg, "\n"), "%d:%d:%g ( %g), %d (%d),%g ( %g, %g, %g)" , val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
 			bmon3_rate = val6

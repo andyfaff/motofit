@@ -1442,6 +1442,8 @@ Function Instrumentlayout_panel()
 	TitleBox dz,fSize=10
 	TitleBox sth,pos={127,177},size={28,21},title="sth="
 	TitleBox sth,labelBack=(65535,65535,65535),fSize=10
+	TitleBox sz,pos={127,203},size={28,21},title="sz="
+	TitleBox sz,labelBack=(65535,65535,65535),fSize=10
 	TitleBox dy,pos={3,139},size={25,21},title="dy=",labelBack=(65535,65535,65535)
 	TitleBox dy,fSize=10
 
@@ -1541,7 +1543,7 @@ Function Instrumentlayout_panel()
 	//print the chopper status
 	Button printchopspeed,pos={569,105},size={100,40},proc=printCHopSpeedBTN,title="Print Chopper\rStatus"
 	Button printchopspeed,fSize=10
-	
+	doupdate
 End
 
 Function printCHopSpeedBTN(ba) : ButtonControl

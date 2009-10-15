@@ -261,10 +261,13 @@ Function button_SICScmdpanel(ba) : ButtonControl
 					killwaves/z qwertyfied
 					break
 				case "clearbatch_tab3":
-					Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
-					Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
-					batchfile = ""
-					sel_batchfile[][2] = 2^5
+					Doalert 1, "Are you sure you want to clear the batch file?"
+					if(V_flag == 1) 
+						Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
+						Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
+						batchfile = ""
+						sel_batchfile[][2] = 2^5
+					endif
 					break
 				case "selectAllBatch_tab3":
 					Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
@@ -405,10 +408,10 @@ Function startSICS()
 	DoXOPIdle
 	//setup experimental details
 	experimentDetailsWizard()
-	
+
 	//create a layout graph of all the motors
 	Instrumentlayout_panel()
-	
+		
 	//ok, now get current list of SICS axis positions, then register the interestProcessor on the socket.
 	//this function creates root:packages:platypus:SICS:axeslist
 	err = createAxisListAndPopulate(SOCK_interest)
