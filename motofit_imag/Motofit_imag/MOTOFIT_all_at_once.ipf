@@ -44,9 +44,11 @@ Menu "Motofit"
 	"Change Q range of theoretical data", Moto_changeQrangeprompt()
 	"SLD calculator", Moto_SLDdatabase()
 	"create local chi2map for requested parameter",Moto_localchi2()
-	Submenu "reduction"
-		"reduce Xray", ReduceXray()
-	end
+	Submenu "Fit batch data"
+		"Load batch data", LoadAndGraphAll ("")
+		"Fit batch data", FitRefToListOfWaves()
+		//	                        "Extract trends", Trends()
+	End
 	"About",Moto_AboutPanel()
 	"-"
 End
@@ -306,7 +308,45 @@ return 0
 End
 
 
-Function Moto_snapshot(ywave,xwave,sldwave,zedwave)	string &ywave,&xwave,&sldwave,&zedwave		string snapStr = "snapshot"	prompt snapStr, "Name: "	do		doprompt "Enter a unique name for the snapshot", snapstr		if(V_flag)			return 1		endif		ywave = cleanupname(snapstr+"_R",0)		xwave = cleanupname(snapstr+"_q",0)		sldwave = cleanupname("SLD_"+snapstr,0)		zedwave = cleanupname("zed_"+snapstr,0)				if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1) || checkname(zedwave,1))			Doalert 2, "One of the snapshot waves did not have a unique name, did you want to overwrite it?"			if(V_Flag == 1)				break			elseif(V_Flag == 2)				continue			elseif(V_Flag == 3)				return 0			endif		else			break		endif	while(1)	Duplicate/o root:theoretical_R, root:$ywave	Duplicate/o root:theoretical_q, root:$xwave	Duplicate/o root:sld, root:$sldwave	Duplicate/o root:zed, root:$zedwave	setformula root:$sldwave,""		return 0End
+Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
+	string &ywave,&xwave,&sldwave,&zedwave
+	
+	string snapStr = "snapshot"
+	prompt snapStr, "Name: "
+
+	do
+		doprompt "Enter a unique name for the snapshot", snapstr
+		if(V_flag)
+			return 1
+		endif
+		ywave = cleanupname(snapstr+"_R",0)
+		xwave = cleanupname(snapstr+"_q",0)
+		sldwave = cleanupname("SLD_"+snapstr,0)
+		zedwave = cleanupname("zed_"+snapstr,0)
+		
+		if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1) || checkname(zedwave,1))
+			Doalert 2, "One of the snapshot waves did not have a unique name, did you want to overwrite it?"
+			if(V_Flag == 1)
+				break
+			elseif(V_Flag == 2)
+				continue
+			elseif(V_Flag == 3)
+				return 0
+			endif
+		else
+			break
+		endif
+	while(1)
+
+	Duplicate/o root:theoretical_R, root:$ywave
+	Duplicate/o root:theoretical_q, root:$xwave
+	Duplicate/o root:sld, root:$sldwave
+	Duplicate/o root:zed, root:$zedwave
+	setformula root:$sldwave,""
+	
+	return 0
+End
+
 
 Function Moto_ChangeQrangebutton(B_Struct)
 	STRUCT WMButtonAction &B_Struct
