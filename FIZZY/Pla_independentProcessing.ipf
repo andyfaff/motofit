@@ -1,7 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma independentmodule=Ind_Process
 
-
 // SVN date:    $Date$
 // SVN author:  $Author$
 // SVN rev.:    $Revision$
@@ -23,9 +22,31 @@ static function parseReply(msg,lhs,rhs)
 	return items
 end
 
+Function/t removeAllChars(str, char)
+	string str, char
+	string retStr = ""
+	variable pos, lastpos = 0
+	
+	if(strlen(str) == 0)
+		return retStr
+	endif
+	do
+		pos = strsearch(str, char, lastpos)
+		if(pos == -1)
+			retstr += str[lastpos, strlen(str)]
+		else
+			retStr += str[lastpos, pos-1]
+		endif
+		lastpos = pos+1
+	while(strsearch(str, char, lastpos) > -1)
+	return retStr
+End
+
 Function cmdProcessor(w,x)
 	Wave/t w
 	variable x
+
+	w[x][0] = removeAllChars(w[x][0], num2char(0))
 	if(itemsinlist(winlist("sicscmdpanel",";","")))
 		notebook sicscmdpanel#NB0_tab0, selection = {endoffile,endoffile}, textRGB = (0,0,0),fstyle=0
 		notebook sicscmdpanel#NB0_tab0, selection={endoffile,endoffile}, text="\t"+w[x][0]+"\r"
@@ -52,6 +73,8 @@ Function interestProcessor(w,x)
 
 	//list of all the hipadaba paths and their values
 	Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
+	
+	w[x][0] = removeAllChars(w[x][0], num2char(0))
 	
 	//first see if it's a position that has changed?
 	//the list of current motor positions is kept in axeslist
@@ -172,6 +195,13 @@ Function processBMON3rate(w,x)
 	NVAR bmon3_rate = root:packages:platypus:SICS:bmon3_rate
 	NVAR bmon3_counts = root:packages:platypus:SICS:bmon3_counts
 	string rateStr
+	
+	if(strsearch(w[x][0], num2char(0), 0) > -1 )
+		print "GOT THE NULL", w[x][0]
+		w[x][0] = replacestring(num2char(0), w[x][0], "")
+	endif
+
+	
 	rateStr = w[x][0]
 	variable val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
 	sscanf rateStr,"%d:%d:%g ( %g), %d (%d),%g ( %g, %g, %g)" , val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
