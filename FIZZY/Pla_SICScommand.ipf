@@ -335,7 +335,10 @@ Function startSICS()
 
 	Newpath/o/q Homepath,Home
 	PauseUpdate; Silent 1		// building window...
+	
+	//close all the open TCP sockets
 	sockitcloseconnection(-1)
+	
 	string cDF = getdatafolder(1)
 	
 	//set up the datafolders
@@ -479,7 +482,7 @@ Function startSICS()
 		TabControl sicstab value=0,tabLabel(0)="SICS Console + Axis Positions",tabLabel(1)="Runscan",tabLabel(2)="Current Detector",tabLabel(3)="Batch Scan"
 
 		Button SICSclose_tab0,pos={184,674},size={137,28},proc=button_SICScmdpanel,title="close"
-		Button Estop_tab0,pos={39,674},size={137,28},proc=button_SICScmdpanel,title="STOP"
+		Button Estop_tab0,pos={39,674},size={137,28},proc=button_SICScmdpanel,title="E-STOP"
 		Button Estop_tab0,labelBack=(65535,65535,65535),fColor=(65535,16385,16385)
 		
 		
