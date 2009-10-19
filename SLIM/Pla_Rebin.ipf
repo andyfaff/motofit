@@ -36,6 +36,7 @@ Function Pla_2DintRebin(x_init,data,dataSD,x_rebin)
 		return 1
 	endif
 
+	//iterate through the columns and rebin each of them
 	for(ii = 0 ; ii<dimsize(data,1) ; ii+=1)
 		imagetransform/g=(ii) getcol data
 		duplicate/o W_extractedcol tempCol
@@ -62,6 +63,9 @@ Function Pla_intRebin(x_init, y_init,s_init, x_rebin)
 	// Precision will normally be lost.  
 	// It does not make sense to rebin to smaller bin boundaries.
 	
+	//when we calculate the standard deviation on the intensity carry the variance through the calculation
+	//and convert to SD at the end.
+	
 	if(checkSorted(x_rebin) || checkSorted(x_init))
 		print "The x_rebin and x_init must be monotonically increasing (Pla_intRebin)"
 		return 1
@@ -84,7 +88,6 @@ Function Pla_intRebin(x_init, y_init,s_init, x_rebin)
 	variable lowlim,upperlim
 	
 	for(ii=0; ii< numpnts(x_rebin)-1 ; ii+=1)
-
 		//this gives the approximate position of where the new bin would start in the old bin		
 		lowlim = binarysearchinterp(x_init,x_rebin[ii])
 		upperlim = binarysearchinterp(x_init,x_rebin[ii+1])	
@@ -118,12 +121,11 @@ Function Pla_intRebin(x_init, y_init,s_init, x_rebin)
 			
 			W_RebinSD[ii]  = (s_init[trunc(lowlim)]*(ceil(lowlim) - lowlim))^2
 			W_RebinSD[ii] += (s_init[trunc(upperlim)]*(upperlim - trunc(upperlim)))^2
-			W_RebinSD[ii] = sqrt(W_RebinSD[ii])
 		else
 			//the upper and lower limits are in the same binned cell.  Need to work out
 			//what proportion of the original cell is occupied by the difference between the limits
 			W_rebin[ii] =	y_init[trunc(lowlim)]*(upperlim-lowlim)
-			W_RebinSD[ii] =	s_init[trunc(lowlim)]*(upperlim-lowlim)
+			W_RebinSD[ii] =	(s_init[trunc(lowlim)]*(upperlim-lowlim))^2
 		endif
 		
 		//if the upper and lower limits span several of the original data, then you need to add counts 
@@ -133,8 +135,9 @@ Function Pla_intRebin(x_init, y_init,s_init, x_rebin)
 				W_rebin[ii] += y_init[ceil(lowlim) + kk]
 				W_RebinSD[ii] += (s_init[ceil(lowlim) + kk])^2
 			endfor
-			W_RebinSD[ii] = sqrt(W_RebinSD[ii])
 		endif
+		
+		W_RebinSD[ii] = sqrt(W_RebinSD[ii])
 	endfor
 	
 	return 0

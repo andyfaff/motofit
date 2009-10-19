@@ -81,7 +81,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	//writes out the file in Q <tab> R <tab> dR <tab> dQ format.
 	
 	string tempStr,cDF,directDF,angle0DF, alreadyLoaded="", toSplice="", direct = "", angle0="",tempDF, reductionCmd
-	variable ii,D_S2, D_S3, D_SAMPLE,domega, spliceFactor, bmon1_counts_Direct, bmon1_counts_angle0,temp, isDirect, aa,bb,cc,dd,jj
+	variable ii,D_S2, D_S3, D_SAMPLE,domega, spliceFactor, bmon1_counts_Direct, bmon1_counts_angle0,temp, isDirect, aa,bb,cc,dd,jj,kk
 	
 	cDF = getdatafolder(1)
 	
@@ -299,9 +299,15 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			
 			//now normalise the counts in the reflected beam by the direct beam spectrum
 			//this gives a reflectivity
-			//and propagate the errors, leaving the variance (dr/r)^2
+			//and propagate the errors, leaving the fractional variance (dr/r)^2
+			//this step probably produces negative reflectivities, or NaN if W_specD is 0.
+			//ALSO, 
+			//M_refSD has the potential to be NaN is M_topandtailA0 or W_specD is 0.
 			M_ref[][] = M_topandtailA0[p][q] / W_specD[p]
-			M_refSD[][] = (M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2 + (W_specDSD[p] / W_specD[p])^2 
+//			M_refSD[][] =   (M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2 +(W_specDSD[p] / W_specD[p])^2 
+			M_refSD = 0	
+			M_refSD[][] += numtype((M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2) ? 0 : (M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2
+			M_refSD[][] += numtype((W_specDSD[p] / W_specD[p])^2) ? 0 : (W_specDSD[p] / W_specD[p])^2						
 			
 			//now calculate the Q values for the detector pixels.  Each pixel has different 2theta and different wavelength, ASSUME that they have the same angle of incidence
 			M_qz[][]  = 2 * Pi * (1 / W_lambda[p]) * (sin(M_twotheta[p][q] - omega[p]) + sin(M_omega[p][q]))
@@ -328,8 +334,9 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			M_qzSD *= M_qz
 			
 			//scale reflectivity by scale factor
+			// because refSD is stil fractional variance (dr/r)^2 have to divide by scale factor squared.
 			M_ref /= scalefactor
-			M_refSD /= abs(scalefactor)
+			M_refSD /= (scalefactor)^2
 			
 			//correct for the beam monitor one counts.  This assumes that the direct beam was measured with the same
 			//slit characteristics as the reflected beam.  This assumption is normally ok for the first angle.  One can only hope that everyone
@@ -344,7 +351,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 					bmon1_counts_angle0 = bmon1_angle0[0]
 					temp =  ((sqrt(bmon1_counts_direct)/bmon1_counts_direct)^2 + (sqrt(bmon1_counts_angle0)/bmon1_counts_angle0)^2) //(dratio/ratio)^2
 					
-					M_refSD += temp
+					M_refSD += temp		//M_refSD is still fractional variance at this point.
 					M_ref *= bmon1_counts_direct/bmon1_counts_angle0
 				endif
 			endif

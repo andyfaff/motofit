@@ -50,10 +50,8 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 		M_topAndTail[][] = measurement[p][q]
 		
 		//make an error wave
-		duplicate/o M_topAndTail,M_topAndTailSD
-		M_topAndTailSD= measurementSD
+		duplicate/o measurementSD, M_topAndTailSD
 		
-	
 		//do the background subtraction
 		if(background)
 			backgroundWidth = 2*peak_FWHM
