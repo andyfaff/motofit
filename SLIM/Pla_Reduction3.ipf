@@ -95,7 +95,7 @@ End
 Function  reducerpanel() : Panel
 	PauseUpdate; Silent 1		// building window...
 	Dowindow/k SLIM
-	NewPanel /W=(384,163,1085,607)/N=SLIM/k=1
+	NewPanel /W=(384,163,1085,607)/N=SLIM/k=1 as "SLIM - (C) Andrew Nelson 2009"
 	
 	
 	Newdatafolder/o root:packages

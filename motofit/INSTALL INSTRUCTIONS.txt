@@ -1,3 +1,0 @@
-1) All the source code to Motofit can be found in the IGOR procedure files
-2) THe sourcecode for Gencurvefit can be downloaded from the Gencurvefit section on the motofit webpage.
-3) The sourcecode for XMLutils may be found at www.igorexchange.com.
