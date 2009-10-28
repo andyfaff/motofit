@@ -988,14 +988,14 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 			duplicate/o W_lambda, $(tempDF+":W_beampos")
 			Wave W_beampos = $(tempDF+":W_beampos")
 			
-			//			W_beampos = deflec(W_gravCorrCoefs, W_lambda)	
+			W_beampos = deflec(W_gravCorrCoefs, W_lambda)	
 			
 			//the following correction assumes that the directbeam neutrons are falling from a point position W_gravCorrCoefs[1] before the detector
 			//At the sample stage (W_gravcorrcoefs[1] - detectorpos[0]) they have a certain vertical velocity, assuming that the neutrons had an initial vertical velocity of 0
 			// Although the motion past the sample stage will be parabolic, assume that the neutrons travel in a straight line after that (i.e. the tangent of the parabolic motion at the sample stage)
 			// this should give an idea of the direction of the true incident beam, as experienced by the sample
 			//Factor of 2 is out the front to give an estimation of the increase in 2theta of the reflected beam.
-			W_beampos[] = W_gravCorrCoefs[1] -2 * ((1/Y_PIXEL_SPACING) * 1000 * 9.81 * ((W_gravCorrCoefs[0] - detectorPos[scanpoint])/1000) * (detectorPos[scanpoint]/1000) * W_lambda[p]^2/((P_MN*1e10)^2))
+	//		W_beampos[] = W_gravCorrCoefs[1] -2 * ((1/Y_PIXEL_SPACING) * 1000 * 9.81 * ((W_gravCorrCoefs[0] - detectorPos[scanpoint])/1000) * (detectorPos[scanpoint]/1000) * W_lambda[p]^2/((P_MN*1e10)^2))
 			
 			W_beampos = W_beampos*Y_PIXEL_SPACING
 		else
