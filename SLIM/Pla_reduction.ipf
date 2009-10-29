@@ -169,6 +169,8 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			//start off by processing the direct beam run
 			if(whichlistitem(direct,alreadyLoaded)==-1)	//if you've not loaded the direct beam for that angle do so.
 				isDirect = 1
+				
+				
 				if(loadNexusfile(S_path, direct))
 					print "ERROR couldn't load direct beam run (reduce)";abort
 				endif
@@ -995,7 +997,7 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 			// Although the motion past the sample stage will be parabolic, assume that the neutrons travel in a straight line after that (i.e. the tangent of the parabolic motion at the sample stage)
 			// this should give an idea of the direction of the true incident beam, as experienced by the sample
 			//Factor of 2 is out the front to give an estimation of the increase in 2theta of the reflected beam.
-	//		W_beampos[] = W_gravCorrCoefs[1] -2 * ((1/Y_PIXEL_SPACING) * 1000 * 9.81 * ((W_gravCorrCoefs[0] - detectorPos[scanpoint])/1000) * (detectorPos[scanpoint]/1000) * W_lambda[p]^2/((P_MN*1e10)^2))
+		//	W_beampos[] = W_gravCorrCoefs[1] -2 * ((1/Y_PIXEL_SPACING) * 1000 * 9.81 * ((W_gravCorrCoefs[0] - detectorPos[scanpoint])/1000) * (detectorPos[scanpoint]/1000) * W_lambda[p]^2/((P_MN*1e10)^2))
 			
 			W_beampos = W_beampos*Y_PIXEL_SPACING
 		else
@@ -1791,3 +1793,55 @@ End
 //		endif
 //	endfor
 //End
+
+
+//A wrapper script to reduce many X-ray files
+
+Function reduceManyXrayFiles()
+
+	variable err, ii, jj
+	string cDF = getdatafolder(1)
+	string aFile, theFiles, base
+	try
+		Newdatafolder/o root:packages
+		Newdatafolder /o/s root:packages:Xpert
+		multiopenfiles/M="Please select all specular Xpert Pro files"/F=".xrdml;"
+		if(V_flag)
+			return 0
+		endif
+		theFiles = S_filename
+		
+		for(ii = 0 ; ii<itemsinlist(theFiles) ; ii+=1)
+			aFile = Stringfromlist(ii, theFiles)
+			print "reducing: ", aFile
+			
+			if(cmpstr(igorinfo(2),"Macintosh")==0)
+				base = parsefilepath(3, aFile, ":", 0, 0)
+			else
+				base = parsefilepath(3, aFile, "\\", 0, 0)
+			endif	
+			base = cleanupname(base, 0)
+			
+			do
+				multiopenfiles/M="Please select up to two background runs for "+base/F=".xrdml;"
+				if(V_flag)
+					S_filename = ""
+				endif
+			while(itemsinlist(S_filename)>2)
+		
+			//if there is no problem reducing it, then try to save it
+			if(!reduceXpertPro(afile, bkg1=stringfromlist(0, S_filename), bkg2 = stringfromlist(1, S_filename)))
+				SaveXraydata(base)		
+			else
+				//someone somewhere aborted the whole thing
+				print "ERROR aborted in (reduceManyXrayFiles)"
+				abort
+			endif
+		endfor
+	catch
+		err = 1
+	endtry
+
+	setdatafolder $cDF
+	return err
+End

@@ -11,7 +11,7 @@ Menu "Platypus"
 	"SLIM - data Reduction", reducerpanel()
 	"Download Platypus Data", downloadPlatypusData()
 	"MADD - Add files together", addFilesTogether()
-	"Reduce X'Pert Pro data", ReduceXray()
+	"Reduce X'Pert Pro data files", reduceManyXrayFiles()
 End
 
 Function addFilesTogether()
@@ -379,7 +379,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					endif	
 					
 					//find the files with the new multiopenfiles XOP
-					multiopenfiles/P=PATH_TO_DATA/M="Select the files you wish to view"/F=".hdf;.xml;.itx;"
+					multiopenfiles/P=PATH_TO_DATA/M="Select the files you wish to view"/F=".hdf;.xml;.itx;.xrdml;"
 					if(V_Flag!=0)
 						return 0
 					endif
@@ -475,7 +475,15 @@ Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expecte
 				return 1
 			endif
 			return 0
-		endif		
+		endif
+		
+		if(stringmatch(".xrdml",tempfilenamestr[strlen(tempfilenamestr)-6,strlen(tempfilenamestr)-1]))	
+			if(SLIM_plot_xrdml(pathName,filenames))
+				print "ERROR while trying to plot XRDML data (SLIM_PLOT)"
+				return 1
+			endif
+			return 0
+		endif
 		
 		//now try to plot NeXUS data
 		if(!stringmatch(".nx.hdf",tempfilenamestr[strlen(tempfilenamestr)-7,strlen(tempfilenamestr)-1]))
@@ -594,7 +602,6 @@ Function SLIM_plot_scans(pathName,filenames)
 		setdatafolder $cDF
 		return 0
 	endtry
-	
 End
 
 Function SLIM_plot_reduced(pathName,filenames)
@@ -692,6 +699,65 @@ Function SLIM_plot_reduced(pathName,filenames)
 	endtry
 End
 
+Function SLIM_plot_xrdml(pathName,filenames)
+string pathName, filenames
+variable err
+	variable ii,numwaves,jj
+	string loadedWavenames
+	string cDF = getdatafolder(1)
+	string theFile, base
+	newdatafolder/o root:packages
+	newdatafolder/o root:packages:platypus
+	newdatafolder/o root:packages:platypus:data
+	newdatafolder/o root:packages:platypus:data:Reducer
+	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
+
+	Newpath/o/q/z PATH_TO_DATA pathName
+	pathinfo PATH_TO_DATA
+	if(!V_flag)//path doesn't exist
+		print "ERROR please set valid path (SLIM_PLOT_reduced)"
+		return 1	
+	endif
+	
+	try
+		dowindow/k SLIM_PLOTwin
+		display/K=1 as "SLIM plot (C) Andrew Nelson + ANSTO 2008"
+		dowindow/c SLIM_PLOTwin
+		controlbar/W=SLIM_PLOTwin 30
+		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Refresh",size={100,20}, fColor=(0,52224,26368)
+		setwindow SLIM_PLOTwin, userdata=removeending(filenames, ";")
+		
+
+		for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
+			base = removeending(stringfromlist(ii, filenames), ".xrdml")		
+			theFile = S_path + stringfromlist(ii, filenames)
+			
+			if(reduceXpertPro(theFile, scalefactor=1, footprint=NaN))
+				abort
+			endif
+			wave RR = $("root:packages:Xpert:"+base + "_R")
+			wave qq = $("root:packages:Xpert:"+base + "_q")
+			wave EE = $("root:packages:Xpert:"+base + "_E")
+			//puts files into  root:packages:Xpert
+			appendtograph/w=SLIM_PLOTwin RR vs qq
+			ErrorBars/T=0 $nameofwave(RR) Y,wave=(EE,EE)
+			ModifyGraph log(left)=1
+		endfor
+		CommonColors("SLIM_PLOTwin")
+		Legend/C/N=text0/A=MC
+		cursor/A=1/W=SLIM_PLOTwin/H=1/F/P A $(stringfromlist(0,tracenamelist("SLIM_PLOTwin",";",1))) 0.5,0.5
+		showinfo
+		setdatafolder $cDF
+		return 0
+	catch
+		err = 1
+	endtry
+	
+	setdatafolder $cDF
+	return err
+ENd
+
+
 Function button_SLIM_PLOT(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 
@@ -730,7 +796,7 @@ Function button_SLIM_PLOT(ba) : ButtonControl
 					//					endif
 
 					SLIM_plot(pathName,fileNames,lowLambda,highLambda, background, rebinning = rebinning)
-					if(!stringmatch(stringfromlist(0,filenames),"*.xml"))
+					if(!stringmatch(stringfromlist(0,filenames),"*.xml") && !stringmatch(stringfromlist(0,filenames),"*.xrdml"))
 						SLIM_redisplay(type,isLog)
 					endif
 					break
