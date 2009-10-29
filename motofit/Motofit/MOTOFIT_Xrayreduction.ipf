@@ -33,176 +33,235 @@
 //The routines have not been tested on earlier versions of IGOR.
 
 
-Function ReduceXray()
-	//this function reduces data from a Pananalytical X-pert Pro system.  It could easily be modified to reduce data
-	//from any other machine.
-	
-	//check we have XMLutils
-	if(itemsinlist(functionlist("xmlopenfile",";","")) == 0)
-		abort "XMLutils XOP not installed"
-	endif
-	
-	variable fileID
+Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
+	string ref_fname, bkg1, bkg2
+	variable scalefactor, footprint
 
-	open/d/a/t="????"/m="Please select an XRDML file" fileID	
+	string base, w0,w1,w2, w3	
+	string cDF = getdatafolder(1)
+	string namespace = "xrdml=http://www.xrdml.com/XRDMeasurement/1.0"
+	variable fileID, bkg1_fileID, bkg2_fileID, err = 0, err2 = 0
+	Variable CuKa, CuKa1,CuKa2,ratio, countTime
+	variable start,stop, ii,  w_HWHM_direct_beam
+	variable t_m = 0.108	//value at which the beam falls to zero
+	variable T_r = 0.0365		//real thickness of the beam at the sample location
 	
-	//user probably aborted
-	if(strlen(S_filename)==0)
-		return 0
-	endif
-	
-	String filepath,filename
-	filepath = parsefilepath(5,S_fileName,"*",0,1)
-	
-	//xmlopenfile has to take a UNIX path
-	if(cmpstr(igorinfo(2),"Macintosh")==0)
-		filename = parsefilepath(3,S_filename,":",0,0)
-	else
-		filename = parsefilepath(3,filepath,"\\",0,0)
-	endif
-	
-	filename = cleanupname(filename,0)
+	Newdatafolder/o root:packages
+	Newdatafolder /o/s root:packages:Xpert
 
-	//make the names of the datawaves something nicer. 
-	String w0,w1,w2, w3
-	w0 = CleanupName((fileName + "_q"),0)
-	w1 = CleanupName((fileName + "_R"),0)
-	w2 = CleanupName((fileName + "_e"),0)
-	w3 = CleanupName((fileName + "_dq"),0)
-	
-	//you don't need to reduce the file if its already been done
-	if(exists(w0) !=0)
-		DoAlert 0,"This file has already been done"
-		KillWaves/z $w0,$w1,$w2, $w3
-		ABORT
-	endif
+	try
+		//xmlopenfile has to take a UNIX path
+		if(cmpstr(igorinfo(2),"Macintosh")==0)
+			base = parsefilepath(3, ref_fname, ":", 0, 0)
+		else
+			base = parsefilepath(3, ref_fname, "\\", 0, 0)
+		endif	
+		base = cleanupname(base, 0)
 
-	//open the XML file
-	fileID = xmlopenfile(filepath)
-	if(fileID == -1)
-		abort
-	endif
+		//make the names of the datawaves something nicer. 
+		w0 = CleanupName((base + "_q"),0)
+		w1 = CleanupName((base + "_R"),0)
+		w2 = CleanupName((base + "_e"),0)
+		w3 = CleanupName((base + "_dq"),0)
+
+		//open the XML file
+		fileID = xmlopenfile(ref_fname)
+		if(! (fileID  > 0))
+			print "The file you tried to open didn't exist: ", ref_fname, " (reduceXpertPro)"
+			abort
+		endif
+
+		//now need to load in the data for the reflected intensity and the background intensities
+		if(xmlwavefmxpath(fileID,"//xrdml:intensities",namespace," \n\r\t"))
+			print "ERROR while loading intensities, is this an XRDML file?  (reduceXpertPro)"
+			abort
+		endif
+		Wave/t M_xmlcontent
+		make/o/d/n=(dimsize(M_xmlcontent,0)) $w0, $w1, $w2, $w3, bkg_I=0, bkg_SD=0
+		Wave qq = $w0, R = $w1, dR = $w2, dq = $w3
+	
+		R = str2num(M_xmlcontent)
+		dR = sqrt(R)
+		countTime = str2num(XMLstrFmXpath(fileID,"//xrdml:commonCountingTime",namespace,""))
+		R /= countTime
+		dR /=countTime
 		
-	//now need to load in the data
-	xmlwavefmxpath(fileID,"//xrdml:intensities","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," \n\r\t")
-	
-	Wave/t M_xmlcontent
-	make/o/d/n=(dimsize(M_xmlcontent,0)) $w0,$w1,$w2, $w3
-	Wave qq = $w0, R = $w1, dR = $w2, dq = $w3
-	
-	R = str2num(M_xmlcontent[p][0])
-	
-	variable start,stop
-	start = str2num(xmlstrfmxpath(fileID,"//xrdml:dataPoints/xrdml:positions[2]/xrdml:startPosition/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
-	stop = str2num(xmlstrfmxpath(fileID,"//xrdml:dataPoints/xrdml:positions[2]/xrdml:endPosition/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
-	
-	qq = start + p*(stop-start)/(numpnts(qq)-1)
-	
-	//the error in reflectivity is the square root of the counts
-	dR=sqrt(R)
-	
-	//you need to know the wavelength
-	Variable CuKa=1.541,CuKa1,CuKa2,ratio
-	CuKa1 = str2num(xmlstrfmxpath(fileID,"//xrdml:kAlpha1/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
-	CuKa2 = str2num(xmlstrfmxpath(fileID,"//xrdml:kAlpha2/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
-	ratio = str2num(xmlstrfmxpath(fileID,"//xrdml:ratioKAlpha2KAlpha1/text()","xrdml=http://www.xrdml.com/XRDMeasurement/1.0"," "))
-	CuKa = (CuKa1+ratio*CuKa2)/(1+ratio)
-	
-	xmlclosefile(fileID,0)
-
-	variable ii
-	doalert 2,"Perform a footprint correction (assumes 1/32 slit + no knife edge)?"
-	switch(V_Flag)
-		case 1:
-			//correction taken from Gibaud et al., Acta Crystallographica, A49, 642-648
-			Variable L = 100 //sample length in mm
-			variable t_m = 0.108	//value at which the beam falls to zero
-			variable T_r = 0.0365		//real thickness of the beam at the sample location
-
-			Prompt L, "sample footprint (mm)"
-			Doprompt "sample footprint correction", L
-			if(V_Flag == 1)
+		//load the background files
+		if(!paramisdefault(bkg1) && strlen(bkg1))
+			bkg1_fileID = xmlopenfile(bkg1)
+			if(bkg1_fileID < 1)
+				print "ERROR you tried to open a non-existent background file (reduceXpertPro)"
 				abort
 			endif
-			variable correctionfactor
-			make/d/o w_gausscoefs={1, 0, T_r/2}
-			for(ii=0 ; ii<numpnts(qq); ii+=1)
-				correctionfactor = integrate1D(myga, 0, L*sin(qq[ii]*Pi/180)*0.5)/ integrate1D(myga, 0, t_m)
-				R[ii] /= correctionfactor
-			endfor
-		case 2:
-			break
-		case 3:
-			killwaves/z R,qq,dR,M_xmlcontent,W_xmlcontentnodes,R,qq,dR, dq
-			abort
-			break
-	endswitch
-	
-	//make the dq wave
-	//correction taken from Gibaud et al., Acta Crystallographica, A49, 642-648
-	variable w_HWHM_direct_beam = 0.025*(Pi/180)
-	dq = 2* (2*Pi/CuKa)* w_HWHM_direct_beam * cos(qq * Pi/180)
+			if(xmlwavefmxpath(bkg1_fileID,"//xrdml:intensities",namespace," \n\r\t"))
+				print "ERROR while loading intensities, is this an XRDML file?  (reduceXpertPro)"
+				abort
+			endif
+			Wave/t M_xmlcontent
+			make/o/d/n=(dimsize(M_xmlcontent,0)) bkg1_I, bkg1_SD
+			bkg1_I = str2num(M_xmlcontent)
+			bkg1_SD = sqrt(bkg1_I)
+			if(numpnts(R) != numpnts(bkg1_I))
+				print "ERROR background run and specular run must have the same number of points (reduceXpertPro)"
+			endif
+			countTime = str2num(XMLstrFmXpath(bkg1_fileID, "//xrdml:commonCountingTime", namespace, ""))
+			bkg_I += bkg1_I/ countTime
+			bkg_SD += (bkg1_SD / countTime)^2
+		endif
 
-	//definition of Q wave vector
-	qq = real(Moto_angletoQ(qq,2*qq,CuKa))
+		if(!paramisdefault(bkg2) && strlen(bkg2))
+			bkg2_fileID = xmlopenfile(bkg2)
+			if(bkg2_fileID < 1)
+				print "ERROR you tried to open a non-existent background file (reduceXpertPro)"
+				abort
+			endif
+			if(xmlwavefmxpath(bkg2_fileID,"//xrdml:intensities",namespace," \n\r\t"))
+				print "ERROR while loading intensities, is this an XRDML file?  (reduceXpertPro)"
+				abort
+			endif
+			Wave/t M_xmlcontent
+			make/o/d/n=(dimsize(M_xmlcontent,0)) bkg2_I, bkg2_SD
+			bkg2_I = str2num(M_xmlcontent)
+			bkg2_SD = sqrt(bkg2_I)
+			if(numpnts(R) != numpnts(bkg2_I))
+				print "ERROR background run and specular run must have the same number of points (reduceXpertPro)"
+			endif
+			countTime = str2num(XMLstrFmXpath(bkg2_fileID, "//xrdml:commonCountingTime", namespace, ""))
+			bkg_I += bkg2_I/ countTime
+			bkg_SD += (bkg2_SD / countTime)^2
+		endif				
+		//do the background subtraction
+		if(bkg2_fileID > 0 || bkg1_fileID > 0)
+			if(bkg2_fileID>0 && bkg1_fileID>0)
+				bkg_I /=2
+				bkg_SD /=2
+			endif
+			R -= bkg_I
+			dR = sqrt(dR^2 + bkg_SD)
+		endif
 
-	//pull up a graph showiing the data, with the error bars
-	Display/K=1 R vs QQ
-	Modifygraph log(left)=1,mode=3
-	ErrorBars $w1 Y,wave=($w2,$w2)
-	Doupdate
+		start = str2num(xmlstrfmxpath(fileID,"//xrdml:dataPoints/xrdml:positions[2]/xrdml:startPosition/text()",namespace," "))
+		stop = str2num(xmlstrfmxpath(fileID,"//xrdml:dataPoints/xrdml:positions[2]/xrdml:endPosition/text()",namespace," "))
+		qq = start + p*(stop-start)/(numpnts(qq)-1)	
+		CuKa1 = str2num(xmlstrfmxpath(fileID,"//xrdml:kAlpha1/text()",namespace," "))
+		CuKa2 = str2num(xmlstrfmxpath(fileID,"//xrdml:kAlpha2/text()",namespace," "))
+		ratio = str2num(xmlstrfmxpath(fileID,"//xrdml:ratioKAlpha2KAlpha1/text()",namespace," "))
+		CuKa = (CuKa1+ratio*CuKa2)/(1+ratio)
 
-	//rename the graph, and put a freely moving cursor on the graph.
-	string Rwav=nameofwave(R)
-	Cursor /f/h=1 A $Rwav 0.01,1
-	DoWindow/C Setcriticaledge
-	showinfo
-	variable allgood
-
-	//this loop creates a window, with a pause for user command
-	//this allows you to adjust the cursors, such that you estimate the correct
-	//level for the critical edge.  Once you are happy with that level, you press continue in the Panel,
-	//which enables the rest of the function to continue.
-	//The data is multiplied by the scale factor, to get the critical edge at R=1.
-	do
-
-		variable err
-		err = UserCursorAdjust("Setcriticaledge")
-		if(err == 1)
-			Dowindow/K Setcriticaledge
-			killwaves/z R,qq,dR,M_xmlcontent,W_xmlcontentnodes,R,qq,dR, dq
-			abort
+		//correction taken from Gibaud et al., Acta Crystallographica, A49, 642-648
+		if(paramisdefault(footprint))
+			doalert 2,"Perform a footprint correction (assumes 1/32 slit + no knife edge)?"
+			switch(V_Flag)
+				case 1:
+					footprint = 100
+					Prompt footprint, "sample footprint (mm)"
+					Doprompt "sample footprint correction", footprint
+					if(V_Flag == 1)
+						abort
+					endif
+					break
+				case 2:
+					footprint = NaN
+					break
+				case 3:
+					killwaves/z M_xmlcontent,W_xmlcontentnodes
+					abort
+					break
+			endswitch
 		endif
 		
-		Variable scale=vcsr(A)
-		Prompt scale, "critical edge scale value"
-		Doprompt "critical edge scale value",scale
-		if(V_flag==1)
-			Dowindow/K Setcriticaledge
-			killwaves/z R,qq,dR,M_xmlcontent,W_xmlcontentnodes,R,qq,dR, dq
-			abort
-		endif 
-		R/=scale
-		dr/=scale
-		Setaxis/A
-		Doupdate
-		//you can continually adjust the lvel until you are happy with it.
-		Doalert 1,"Is it good?"
-		if(V_flag==1)
-			allgood=1
+		if(!numtype(footprint))		
+			if(footprint <0 || footprint>100)
+				print "ERROR footprint value is crazy (reduceXpertPro)"
+			endif	
+			variable correctionfactor
+			make/d/o w_gausscoefs = {1, 0, T_r/2}
+			for(ii=0 ; ii<numpnts(qq); ii+=1)
+				correctionfactor = integrate1D(myga, 0, footprint*sin(qq[ii]*Pi/180)*0.5)/ integrate1D(myga, 0, t_m)
+				R[ii] /= correctionfactor
+				dR[ii] /= correctionfactor
+			endfor
 		endif
-		if(V_flag==3)
+		
+		//make the dq wave
+		//correction taken from Gibaud et al., Acta Crystallographica, A49, 642-648
+		w_HWHM_direct_beam = 0.025*(Pi/180)
+		dq = 2* (2*Pi/CuKa)* w_HWHM_direct_beam * cos(qq * Pi/180)
+
+		//definition of Q wave vector
+		qq = real(Moto_angletoQ(qq, 2*qq, CuKa))
+		
+		if(paramisdefault(scalefactor))
+			//pull up a graph showiing the data, with the error bars
+			Display/K=1 R vs QQ
+			Modifygraph log(left)=1,mode=3
+			ErrorBars $w1 Y,wave=($w2,$w2)
+			Doupdate
+
+			//rename the graph, and put a freely moving cursor on the graph.
+			string Rwav=nameofwave(R)
+			Cursor /f/h=1 A $Rwav 0.01,1
+			DoWindow/C Setcriticaledge
+			showinfo
+			variable allgood
+
+			//this loop creates a window, with a pause for user command
+			//this allows you to adjust the cursors, such that you estimate the correct
+			//level for the critical edge.  Once you are happy with that level, you press continue in the Panel,
+			//which enables the rest of the function to continue.
+			//The data is multiplied by the scale factor, to get the critical edge at R=1.
+			do
+				err2 = UserCursorAdjust("Setcriticaledge")
+				if(err2 == 1)
+					Dowindow/K Setcriticaledge
+					killwaves/z R,qq,dR,M_xmlcontent,W_xmlcontentnodes,R,qq,dR, dq
+					abort
+				endif
+		
+				scalefactor=vcsr(A)
+				Prompt scalefactor, "critical edge scale value"
+				Doprompt "critical edge scale value",scalefactor
+				if(V_flag==1)
+					Dowindow/K Setcriticaledge
+					abort
+				endif 
+				R /= scalefactor
+				dR /= scalefactor
+				allGood = 1
+//				Setaxis/A
+//				Doupdate
+//				//you can continually adjust the lvel until you are happy with it.
+//				Doalert 1,"Is it good?"
+//				if(V_flag==1)
+//					allgood=1
+//				endif
+//				if(V_flag==3)
+//					Dowindow/K Setcriticaledge
+//					abort
+//				Endif
+			while(allgood==0)
 			Dowindow/K Setcriticaledge
-			killwaves/z R, qq, dR, M_xmlcontent, W_xmlcontentnodes, R, qq, dR, dq
-			abort
-		Endif
-
-	while(allgood==0)
-
-	//now save the data, works with the demo version of IGOR as well.
-	SaveXraydata(filename)
-	Dowindow/K Setcriticaledge
-	killwaves/z R,qq,dR,M_xmlcontent,W_xmlcontentnodes, dq
+			print "Scalefactor for ", base, " is ", scalefactor
+		else
+			R /= scalefactor
+			dR /= scalefactor
+		endif
+	catch
+		err = 1
+	endtry
+	
+	if(fileID>0)
+		xmlclosefile(fileID, 0)
+	endif
+	if(bkg1_fileID>0)
+		xmlclosefile(bkg1_fileID, 0)
+	endif
+	if(bkg2_fileID>0)
+		xmlclosefile(bkg2_fileID, 0)
+	endif
+	
+	setdatafolder $cDF
+	return err
 End
 
 Function myga(xx)
