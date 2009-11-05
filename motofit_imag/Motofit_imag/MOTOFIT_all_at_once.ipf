@@ -2751,14 +2751,12 @@ Function Moto_toLogLin(Q,R,dR,x)
 		case 0:
 			R=alog(R)
 			if(waveexists(dR)==1)
-				dR=alog(dR)
-				dR*=R
-				dR-=R
+                dR *= R * ln(10)
 			endif
 			break
 		case 1:
 			if(waveexists(dR)==1)
-				dR=log((dR+R)/R)	
+				dR = dR / (R*ln(10))	
 			endif
 			R=log(R)
 			break
