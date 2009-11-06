@@ -731,6 +731,7 @@ variable err
 		for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
 			base = removeending(stringfromlist(ii, filenames), ".xrdml")		
 			theFile = S_path + stringfromlist(ii, filenames)
+			theFile = parsefilepath(5, theFile, "*", 0, 0)
 			
 			if(reduceXpertPro(theFile, scalefactor=1, footprint=NaN))
 				abort
