@@ -316,6 +316,8 @@ Function LoadAndGraphAll (pathname)
 	for(ii=0;ii<itemsinlist(All_names);ii+=1)
 		filename=StringFromList(ii,All_Names,";")
 		LoadWave /q/a/J/D/O/P=$pathName fileName
+//		LoadWave/q/a/J/D/K=0/V={"\t, "," $",0,0}/L={0,1,0,0,3}/P=$pathname filename
+		
 	//	LoadWave/a/J/D/K=0/l={0,120,0,1,3}/V={" "," ",0,0}/P=$pathname filename
 		if (V_flag==0)  //No waves loaded. Perhaps user cancelled
 			ABORT

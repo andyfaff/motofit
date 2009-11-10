@@ -919,7 +919,7 @@ End
 	svar functionstr = root:packages:motofit:gencurvefit:functionstr
 	svar destWav = root:packages:motofit:gencurvefit:destWav
 	nvar destlen = root:packages:motofit:gencurvefit:destLen
-	
+	variable wasOffset = 0
 	switch( ba.eventCode )
 		case 2: // mouse up
 			if(cmpstr(ydataWav,"_none_")==0)
@@ -1000,6 +1000,12 @@ End
 			execute/q cmd
 			err = whichlistitem(output,(tracenamelist(winname(0,1),";",1)))
 			if(err!=-1)
+				string thetrace = traceinfo(winname(0,1), output, 0)
+				string offset = greplist(theTrace, "^offset")
+				string muloffset = greplist(theTrace, "^muloffset")
+				offset = removeending(replacestring("x", offset, output), ";")
+				muloffset = removeending(replacestring("x", muloffset, output), ";")
+				wasOffset = 1
 				removefromgraph/w=$(winname(0,1)) $output
 			endif
 			if(cmpstr(xdataWav,"_calculated_")==0)
@@ -1007,6 +1013,12 @@ End
 			else
 				Wave xwave = $(fullxwavepath)
 				appendtograph/w=$(winname(0,1)) outputWav vs xwave 
+			endif
+			if(wasOffset ==1)
+				cmd = "modifygraph/W=" + winname(0,1) + " " + muloffset
+				execute/q cmd
+				cmd = "modifygraph/W=" + winname(0,1) + " " + offset
+				execute/q cmd
 			endif
 	endswitch
 
