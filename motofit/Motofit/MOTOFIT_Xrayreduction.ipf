@@ -361,9 +361,9 @@ Function SaveXraydata(tempy)
 	wave dQ=$w3
 
 	if(waveexists(dQ))
-		wfprintf refnum, "%g \t %g \t %g \t %g \r",$w0,$w1,$w2,$w3	 //this prints the wave to file.
+		wfprintf refnum, "%g \t %g \t %g \t %g \n",$w0,$w1,$w2,$w3	 //this prints the wave to file.
 	else
-		wfprintf refnum, "%g \t %g \t %g \r",$w0,$w1,$w2	//this prints the coefwave to file.
+		wfprintf refnum, "%g \t %g \t %g \n",$w0,$w1,$w2	//this prints the coefwave to file.
 	endif
 
 	close refnum

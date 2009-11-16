@@ -499,10 +499,11 @@ Function Motofit(w,y,z) :Fitfunc
 				
 					logxtemp=(start)+p*(abs(start-finish))/(interpnum)
 					xtemp=alog(logxtemp)
-
 					//calculate the theoretical curve with a lot of datapoints	
+//					variable timer = startmstimer
 					AbelesAll(w, ytemp, xtemp)
-						
+	//				print stopmstimer(timer)
+
 					//do the resolution convolution
 					setscale/I x,start,logxtemp[numpnts(logxtemp)-1],ytemp
 					convolve/A gausswave ytemp

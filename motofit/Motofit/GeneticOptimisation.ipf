@@ -142,6 +142,7 @@ Function Genetic_Curvefitting()
 		endif
 		Execute "Gen_curvefitpanel_init()"
 	else
+		Dowindow/F gencurvefitpanel
 	endif
 	gen_setstatus()
 	setdatafolder $cdf
