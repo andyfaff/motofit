@@ -15,8 +15,7 @@ Function jarek_monolayer(coefs,rr,qq):fitfunc
 	// i.e. 
 	// coefs[4*p + 7] =  thickness of layer p (layer 0 is closest to incident beam)
 	//coefs[4*p + 8] =  number of electrons of layer p material
-	//coefs[4*p + 9] =  molecular volume of layer p material, this is needed to account for space filling/water ingress.
-	//coefs[4*p+10] = roughness of layer (p-1)/p
+	//coefs[4*p+9] = roughness of layer (p-1)/p
 	
 	monolayertoRef(coefs)
 	Wave W_forReflectivity
@@ -42,8 +41,7 @@ Function monolayertoRef(coefs)
 	// i.e. 
 	// coefs[4*p + 7] =  thickness of layer p (layer 0 is closest to incident beam)
 	//coefs[4*p + 8] =  number of electrons of layer p material
-	//coefs[4*p + 9] =  molecular volume of layer p material, this is needed to account for space filling/water ingress.
-	//coefs[4*p+10] = roughness of layer (p-1)/p
+	//coefs[4*p+9] = roughness of layer (p-1)/p
 
 	make/o/d/n=(coefs[5]*4+6) W_forReflectivity
 
@@ -60,16 +58,13 @@ Function monolayertoRef(coefs)
 
 		//now work out the SLD of each layer.
 		//the volume fraction of material in the layer
-		variable phiMaterial = coefs[4*ii+9] /(coefs[6]  * coefs[4*ii+6]) // phi = (molecular volume of material in layer p)/(Area * thickness of layer)
-		variable SLDofMaterial = coefs[4*p + 8] *28.179/ coefs[4*ii+9]	// SLD = Z * r_e / molvolume, where r_e is the Compton radius		
-
-		W_forReflectivity[4*ii + 7] = (phiMaterial * SLDofMaterial) + (1-phiMaterial) * coefs[2]
+		// SLD = Z * r_e / volume, where r_e is the Compton radius		
+		W_forReflectivity[4*ii + 7] =  coefs[4*p + 8] *28.179/ (coefs[4*ii+7] * coefs[6])
 		
 		//water ingress is accounted for in the SLD.
 		W_forReflectivity[4*ii + 8] = 0
 		
 		//the roughness of the layer
-		W_forReflectivity[4*ii + 9] = coefs[4*ii + 10]
+		W_forReflectivity[4*ii + 9] = coefs[4*ii + 9]
 	endfor
-
 End

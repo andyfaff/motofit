@@ -471,8 +471,8 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			string fname = cutfilename(angle0)
 			open/P=path_to_data/z=1 fileID as fname+".dat"
 			if(V_flag==0)
-				fprintf fileID, "Q (1/A)\t Ref\t dRef\t dq(1/A)\r"
-				wfprintf fileID, "%g\t %g\t %g\t %g\r" W_q,W_ref,W_refSD,W_qSD
+				fprintf fileID, "Q (1/A)\t Ref\t dRef\t dq(1/A)\n"
+				wfprintf fileID, "%g\t %g\t %g\t %g\n" W_q,W_ref,W_refSD,W_qSD
 				close fileID
 			endif
 			pathinfo path_to_data
