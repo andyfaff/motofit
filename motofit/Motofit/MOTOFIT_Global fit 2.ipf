@@ -565,7 +565,7 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 			if (quiet)
 				Command += "/Q"
 			endif
-			Command += "/K={200,10,0.5,0.7}"
+			Command += "/K={200,10,0.7,0.5}"
 			Command += "/X=XCumData"
 			Command += "/D=FitY "
 			Command += residstring

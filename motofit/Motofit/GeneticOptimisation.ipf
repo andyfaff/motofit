@@ -2047,11 +2047,11 @@ End
 Static Function GEN_searchparams(gen)
 	Struct GEN_optimisation &gen
 	Variable GEN_popsize=20
-	Variable k_m=0.5
-	Variable GEN_recombination=0.7
+	Variable k_m=0.7
+	Variable GEN_recombination=0.5
 	Variable GEN_generations=100
 	Variable GEN_V_fittol=0.0005
-	prompt k_m,"mutation constant, e.g.0.5"
+	prompt k_m,"mutation constant, e.g.0.7"
 	prompt GEN_recombination,"enter the recombination constant"
 	prompt GEN_generations,"how many generations do you want to use?"
 	prompt GEN_popsize,"enter the population size multiplier e.g. 10"
@@ -2196,19 +2196,14 @@ Static Function GEN_trialvector(gen)
 	
 	do
 		random_b=round(abs(enoise(popsize-0.50000001)))
-	while (random_a == random_b )	
+	while (random_a == random_b  || random_b == gen.GEN_currentpvector)	
                 
-	for(ii=0 ; ii<size ; ii+=1)
-		gen.GEN_bprime[ii] = gen.GEN_populationvector[ii][0] + k_m*(gen.GEN_populationvector[ii][random_a] - gen.GEN_populationvector[ii][random_b]);
-	endfor
-	
-	for(ii=0 ; ii<size ; ii+=1)
-		gen.GEN_trial[ii] = gen.GEN_populationvector[ii][gen.GEN_currentpvector]
-	endfor
+	gen.GEN_bprime[ii] = gen.GEN_populationvector[p][0] + k_m*(gen.GEN_populationvector[p][random_a] - gen.GEN_populationvector[p][random_b]);
+	gen.GEN_trial[ii] = gen.GEN_populationvector[p][gen.GEN_currentpvector]
                 
 	variable counter = 0
 	do
-		if ((abs(enoise(1)) < recomb) || (counter == size))
+		if ((abs(enoise(1)) < recomb) || (counter == size -1))
 			gen.GEN_trial[fillpos] = gen.GEN_bprime[fillpos]
 		endif
 		fillpos+=1
