@@ -89,6 +89,11 @@ ${EndIf}
 	
 	ReadRegStr $1 HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Igor.exe" "Path"
 	
+	SetOutPath $1
+	File "../../XOP Toolkit 5/IgorXOPs5/pthreads-w32-2-8-0-release/pthreadVC2.dll"
+	File "../../XOP Toolkit 5/IgorXOPs5/pthreads-w32-2-8-0-release/COPYING.txt"
+	File "../../XOP Toolkit 5/IgorXOPs5/pthreads-w32-2-8-0-release/COPYING.lib"
+	
 	SetOutPath "$1\Igor Extensions"
 	CreateShortCut "Shortcut to SOCKIT.lnk" "$INSTDIR\motofit\SOCKIT\SOCKIT.xop"
 	CreateShortCut "Shortcut to ZIP.lnk" "$INSTDIR\motofit\ZIP\ZIP.xop"
