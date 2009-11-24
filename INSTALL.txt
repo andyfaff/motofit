@@ -21,6 +21,7 @@ Essential:
 http://www.igorexchange.com/project/gencurvefit
 http://www.igorexchange.com/project/abeles
 http://www.igorexchange.com/project/XMLutils
+
 Only need if installing SLIM data reduction:
 http://www.igorexchange.com/project/easyHttp
 http://www.igorexchange.com/project/SOCKIT
@@ -29,6 +30,6 @@ http://www.igorexchange.com/project/ZIP
 Each of these packages has both OS X and Windows plugins. I suggest placing the XOP's in a motofit subdirectory e.g. "/Igor Pro Folder/User Procedures/motofit/gencurvefit".  THen create a shortcut/alias to each XOP file and place the shortcuts in "/Igor Pro Folder/Igor Extensions/". Please note that the sourcecode for each of the plugins is available in each download.
 
 ** On windows the abeles.xop and sockit.xop plugins require the pthreadVC2.dll file to be placed in "C:/Program Files/Wavemetrics/Igor Pro Folder", otherwise IGOR will not load them.
-
+	 
 Uninstallation:  
 1) If you use the automated installer the Motofit files will be contained in "/Igor Pro Folder/User Procedures/motofit".  If you wish to delete motofit, simply delete this directory.  If you install manually simply delete the Motofit procedure files from whereever you placed them, then delete the shortcuts you placed in "/Igor Pro Folder/Igor Procedures/" and "/Igor Pro Folder/Igor Extensions/".
