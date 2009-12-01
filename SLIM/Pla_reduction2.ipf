@@ -292,6 +292,7 @@ Function ChoDCalculator(fileName, omega, two_theta [,pairing, scanpoint])
 	strswitch(mode[scanpoint])
 		case "FOC":
 			//FALL THROUGH INTO MT, the two are the same
+		case "POL":
 		case "MT":
 			chod += sample_distance[scanpoint]
 			chod += DetectorPos[scanpoint] / cos(Pi * two_theta / 180)
