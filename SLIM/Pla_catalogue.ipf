@@ -22,6 +22,9 @@ Function catalogueNexusdata()
 	prompt start,"start"
 	prompt finish,"finish"
 	Doprompt "Enter the start and end files",start, finish
+	If(V_flag)
+		abort
+	endif
 	catalogue(S_path,start=start,finish=finish)
 	print "file:///"+S_path+"catalogue.xml" 
 End

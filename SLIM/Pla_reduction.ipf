@@ -1440,8 +1440,8 @@ Function delrefpoints(pathname, filename, pointlist)
 	endif
 End
 
-Function spliceFiles(pathName,runnumbers)
-	string pathName,runnumbers
+Function spliceFiles(pathName,runnumbers, [factors])
+	string pathName,runnumbers, factors
 	
 	string cDF = getdatafolder(1)
 	string fname
@@ -1506,8 +1506,15 @@ Function spliceFiles(pathName,runnumbers)
 			else
 				//splice with propagated error in the splice factor
 				variable/c compSplicefactor
-				compSplicefactor = GetweightedScalingInoverlap(tempQQ,tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)		
-
+				if(paramisdefault(factors))
+					compSplicefactor = GetweightedScalingInoverlap(tempQQ,tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)		
+				else
+					if(itemsinlist(factors) <= ii)
+						compSplicefactor = cmplx(str2num(stringfromlist(ii-1, factors)), 0)
+					else
+						compSplicefactor = GetweightedScalingInoverlap(tempQQ,tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)								
+					endif
+				endif
 				if(numtype(REAL(compspliceFactor)))
 					print "ERROR while splicing into combineddataset (spliceFiles)";abort
 				endif
