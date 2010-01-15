@@ -274,6 +274,7 @@ Function HISTMEM_preparedetector(presettype,preset)
 	//set up the preset type. SICS requires that the presettype is "time" not "TIME"
 	sics_cmd_sync("histmem mode "+ presettype)
 	sics_cmd_sync("histmem preset "+num2str(preset))
+
 	sics_cmd_sync("histmem pause")
 End
 

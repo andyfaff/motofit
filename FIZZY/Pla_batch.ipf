@@ -9,7 +9,33 @@ Function batchScan(batchfile)
 	Wave/t batchfile
 	
 	string msg
+	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
 	
+	//if the tertiary shutter is closed, it might be a good idea to open it.
+	if(stringmatch(gethipaval("/instrument/status/tertiary"), "*Closed*"))
+		doalert 1, "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons, do you want to continue?"
+		if(V_Flag==2)
+			abort
+		endif
+	endif
+	
+	//see if attenuator is going
+	sockitsendnrecv SOCK_sync, "bat\n", msg
+	msg = replacestring(" = ",msg, "=")
+      msg = removeending(msg, "\n")
+     	if(str2num(stringfromlist(1, msg, "="))  > 1)
+		doalert 1, "WARNING, beam attenuator appears to be running, do you want to continue?"
+		if(V_Flag==2)
+			abort
+		endif
+	endif
+     	if(getpos("bz")  > 10)
+		doalert 1, "WARNING, beam shade appears to be in, do you want to continue?"
+		if(V_Flag==2)
+			abort
+		endif
+	endif
+		
 	if(dimsize(batchfile,1)!=3)
 		print "Batchbuffer must have 3 columns"
 		return 1
@@ -97,6 +123,10 @@ Function batchScanStop()
 		stopwait()
 	endif
 	string/g root:batchstackInfo = getrtstackinfo(3)+time()
+	
+	NVAR currentpoint = root:packages:platypus:data:batchScan:currentpoint
+	Wave/t list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
+	list_batchbuffer[currentpoint][1] = "Stopped"
 	
 	Ctrlnamedbackground batchScan, kill=1
 	NVAR userPaused = root:packages:platypus:data:batchScan:userPaused	//reset the pause status

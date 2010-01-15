@@ -116,6 +116,32 @@ Function gHistogram()		//suitable for 7mm HG with FOC
 	sics_cmd_interest("::chopper::ready?")
 End
 
+
+
+
+Function hHistogram()	
+//suitable for hslits(44,40,37,44) which gives a 40mm widebeam onto sample with FOC guide.
+//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
+	oat_table("X",54.5,-54.5,1)
+	oat_table("Y",110.5,109.5,221)
+	oat_table("T",0,43,999,freq=23)
+	sics_cmd_interest("::chopper::ready?")
+End
+
+Function iHistogram() //Bills SAW, hslits(10,4,4,20)
+	oat_table("X",5.5,-5.5,1)
+	oat_table("Y",110.5,109.5,221)
+	oat_table("T",0,43,999,freq=23)
+	sics_cmd_interest("::chopper::ready?")
+End
+
+Function jHistogram()		//suitable for hslits(44,35,35,43) "SB"
+	oat_table("X",35,-35,1)
+	oat_table("Y",110.5,109.5,221)
+	oat_table("T",0,43,999,freq=23)
+	sics_cmd_interest("::chopper::ready?")
+End
+
 Function hnotify_registration()
 	//the purpose of this function is to ask SICS to notify FIZZY when anything changes on the instrument.
 	//normally one can use hnotify / , which notifies us of all changes.  However, when the attenuator is oscillating
@@ -1782,8 +1808,8 @@ Function createHTML()
 		endif
 	
 		text +="<TR><TD>datafilename</TD><TD>"+ gethipaval("/experiment/file_name") + "</TD></TR>\r"
-//		text +="<TR><TD>Reactor Power (MW)</TD><TD>"+ gethipaval("/instrument/source/power") + "</TD></TR>\r"	
-//		text +="<TR><TD>CNS temp (K)</TD><TD>"+ gethipaval("/instrument/source/cns_inlet_temp") +"</TD></TR>\r"
+		text +="<TR><TD>Reactor Power (MW)</TD><TD>"+ gethipaval("/instrument/source/power") + "</TD></TR>\r"	
+		text +="<TR><TD>CNS temp (K)</TD><TD>"+ gethipaval("/instrument/source/cns_inlet_temp") +"</TD></TR>\r"
 		text +="<TR><TD>Secondary Shutter</TD><TD>"+ UpperStr(gethipaval("/instrument/status/secondary")) + "</TD></TR>\r"
 		text +="<TR><TD>Tertiary Shutter</TD><TD>"+ UpperStr(gethipaval("/instrument/status/tertiary")) + "</TD></TR>\r"
 	
@@ -1922,6 +1948,7 @@ End
 Function/t createFizzyCommand(type)
 	string type
 	//run
+	//rel
 	//acquire
 	//omega_2theta
 	//samplename
@@ -1952,6 +1979,22 @@ Function/t createFizzyCommand(type)
 				return ""
 			endif
 			sprintf cmd, "run(\"%s\",%f)", motor, position
+			break
+		case "rel":
+			Wave/t axeslist = root:packages:platypus:SICS:axeslist
+			motorlist = ""
+			for(ii=0 ; ii<dimsize(axeslist,0) ; ii+=1)
+				motorlist += axeslist[ii][0] + ";"
+			endfor
+
+			prompt motor, "motor:", popup, motorlist
+			prompt position, "position:"
+			doprompt "Select motor and desired relative motion", motor, position
+			if(V_Flag)
+				return ""
+			endif
+			sprintf cmd, "rel(\"%s\",%f)", motor, position
+			break
 			break
 		case "acquire":
 			string presettypelist="time;MONITOR_1;unlimited;count;frame;"

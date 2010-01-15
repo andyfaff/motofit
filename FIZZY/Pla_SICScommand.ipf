@@ -295,7 +295,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 1: //mouse down
 			if(lba.eventmod & 2^4)
-				popupcontextualmenu "acquire;omega_2theta;run;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode"
+				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode"
 				listwave[row][col] = createFizzyCommand(S_Selection)
 			endif
 			break
@@ -2244,7 +2244,7 @@ Function/t sics_cmd_sync(cmd)
 	//send a sics command to sics
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
 	cmd += "\n"
-	SOCKITsendnrecv/SMAL/time=2 SOCK_sync, cmd
+	SOCKITsendnrecv/SMAL/time=2.0 SOCK_sync, cmd
 	if(V_flag)
 		print "Error while sending SICScmd (sics)"
 		return ""

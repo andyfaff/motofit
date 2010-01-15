@@ -1,12 +1,14 @@
 #pragma rtGlobals=1		// Use modern global access presettype.
 #PRAGMA modulename = platypus
 
-
 // SVN date:    $Date$
 // SVN author:  $Author$
 // SVN rev.:    $Revision$
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
+
+STATIC CONSTANT SAWDEVICE = 0		//only set to one if you have more than one entry in the BAT TABLE
+										//typically when operating WHA SAW device.
 
 Function/c findthecentre(position,tempY,tempE)
 	Wave position,tempY,tempE
@@ -126,7 +128,7 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	endif
 	
 	//if the tertiary shutter is closed, it might be a good idea to open it.
-	if(stringmatch(gethipaval("instrument/status/tertiary"), "*Closed*"))
+	if(stringmatch(gethipaval("/instrument/status/tertiary"), "*Closed*"))
 		print "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons (fpx)"
 		//if auto is set, then its probably an automatic scan, so don't ask if you want to stop
 		//if auto is NOT set, then you probably want to open the shutter, so ask if you want to continue.
@@ -294,9 +296,16 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	if(!paramisDefault(samplename))
 		sics_cmd_interest("samplename " + samplename)
 	endif
-	if(sics_cmd_interest("save 0"))
-		print "ERROR whilst speaking to SICS (fpx)3"
-		return 1
+	
+	if(SAWDEVICE)
+		if(sics_cmd_interest("\nhmm configure read_data_period_number 0\nsave 0\nhmm configure read_data_period_number 1\nsave 1\n"))//+num2str(currentpoint)))
+			print "problem while autosaving (fpx)"
+		endif
+	else
+		if(sics_cmd_interest("save 0"))
+			print "ERROR whilst speaking to SICS (fpx)3"
+			return 1
+		endif
 	endif
 	
 	sockitsendmsg/time=1 SOCK_interest,"datafilename\n"
@@ -387,11 +396,18 @@ Function scanBkgTask(s)
 	if( hmstatus )
 		if(mod(round(str2num(gethipaval("/instrument/detector/time"))/60),3)==0 && !autosave)
 			//save every 3 minutes
-			print "AUTOSAVED"
-			if(sics_cmd_interest("save "+num2str(currentpoint)))
-				print "problem while autosaving (fpx)"
-			endif
+			print "AUTOSAVED ", gethipaval("/experiment/file_name")
 			
+			if(SAWDEVICE)
+				if(sics_cmd_interest("\nhmm configure read_data_period_number 0\nsave 0\nhmm configure read_data_period_number 1\nsave 1\n"))//+num2str(currentpoint)))
+					print "problem while autosaving (fpx)"
+				endif
+			else
+				if(sics_cmd_interest("save "+num2str(currentpoint)))
+					print "problem while autosaving (fpx)"
+				endif
+			endif
+					
 			//see if the scan is ready to be finished
 			if(scanReadyToBeStopped(currentPoint))
 				sics_cmd_interest("histmem stop")
@@ -437,10 +453,17 @@ Function scanBkgTask(s)
 			if( hmstatus )//SICS hasn't finished updating.
 				return 0
 			endif
-			if(sics_cmd_interest("save "+num2str(currentpoint)))
-				print "problem while saving (fpx)"
+			
+			if(SAWDEVICE)
+				if(sics_cmd_interest("\nhmm configure read_data_period_number 0\nsave 0\nhmm configure read_data_period_number 1\nsave 1\n"))//+num2str(currentpoint)))
+					print "problem while autosaving (fpx)"
+				endif
+			else
+				if(sics_cmd_interest("save "+num2str(currentpoint)))
+					print "problem while saving (fpx)"
+				endif
 			endif
-	
+		
 			fillScanStats(counts, currentpoint, 1)
 			print "Position:\t" + num2str(position[currentpoint]) + "\t\tCounts:\t" + num2str(counts[currentpoint][0])			
 			
@@ -531,6 +554,8 @@ Function finishScan(status)
 	NVAR dontSave = root:packages:platypus:data:scan:dontSave	
 	//	scan point that you are on
 	NVAR currentpoint = root:packages:platypus:data:scan:currentpoint
+	//     FIZscan number
+	NVAR/z FIZscanFileNumber = root:packages:platypus:data:scan:FIZscanFileNumber
 
 	NVAR userPaused = root:packages:platypus:data:scan:userPaused	//reset the pause status
 	userPaused = 0
@@ -565,18 +590,31 @@ Function finishScan(status)
 	DoXOPIdle
 
 	//if you want to save, then we must save the data.
-	if(sics_cmd_interest("save "+num2str(currentpoint)))
-		print "ERROR while saving data (fpxScan)"
+	if(SAWDEVICE)
+		if(sics_cmd_interest("\nhmm configure read_data_period_number 0\nsave 0\nhmm configure read_data_period_number 1\nsave 1\n"))//+num2str(currentpoint)))
+			print "problem while autosaving (fpx)"
+		endif
+	else
+		if(sics_cmd_interest("save " + num2str(currentpoint)))
+			print "ERROR while saving data (finishScan)"
+		endif
 	endif
-		
+
 	//save the scan itself, not the overall data, just counts vs position
 	Newpath/o/q/z PATH_TO_DATA, PATH_TO_DATA
 	PATHinfo PATH_TO_DATA
 	if(V_flag)
-		string files = greplist(IndexedFile(PATH_TO_DATA,-1,".itx","IGR0"),"^FIZscan")	// all Igor text files
-		string fname =  "FIZscan"+num2str(itemsinlist(files)+1)+".itx"
+		if(!NVAR_exists(FIZscanFileNumber))
+			string files = greplist(IndexedFile(PATH_TO_DATA,-1,".itx","IGR0"),"^FIZscan")	// all Igor text files
+			Variable/g root:packages:platypus:data:scan:FIZscanFileNumber = itemsinlist(files)+1
+			NVAR/z FIZscanFileNumber = root:packages:platypus:data:scan:FIZscanFileNumber
+		else
+			FIZscanFileNumber += 1
+		endif
+		string fname =  "FIZscan"+num2str(FIZscanFileNumber)+".itx"
 		save/o/t/p=PATH_TO_DATA position,counts as fname
 		print "FPXscan (position vs counts) saved to ", parsefilepath(5, S_Path+fname, "*", 0, 1)
+		print "file saved as: ", gethipaval("/experiment/file_name")
 	endif
 	
 	//display the scan in an easy to killgraph
