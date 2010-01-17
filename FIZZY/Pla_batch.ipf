@@ -140,7 +140,7 @@ Function batchScanStop()
 	endif
 	Button/z stopbatch_tab3 win=sicscmdpanel,disable=1		
 	Button/z pausebatch_tab3 win=sicscmdpanel,disable=1		
-	print "FINISHED BATCH MODE"
+	print "FINISHED BATCH MODE at:    ", Secs2Time(DateTime,2)
 	print "______________________________________________________"
 
 End
@@ -221,7 +221,7 @@ Function executenextbatchpoint(batchbuffer, currentpoint)
 	//this function executes a row of the batch buffer.  Will need to do some parsing here!!!!
 	print batchbuffer[currentpoint][0]
 	if(strlen(batchbuffer[currentpoint][0])>0 && (sel_batchbuffer[currentpoint][2] & 2^4))
-		print "STARTED POINT: "+num2str(currentpoint)+" of batch Scan"
+		print "STARTED POINT: "+num2str(currentpoint)+" of batch Scan at:    ", Secs2Time(DateTime,2)
 		batchbuffer[currentpoint][1] = "Executing"
 		execute batchbuffer[currentpoint][0]
 	endif
