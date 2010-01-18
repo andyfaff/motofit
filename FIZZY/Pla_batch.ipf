@@ -122,11 +122,11 @@ Function batchScanStop()
 	if(waitStatus())
 		stopwait()
 	endif
-	string/g root:batchstackInfo = getrtstackinfo(3)+time()
+	string/g root:batchstackInfo = getrtstackinfo(3) + time()
 	
 	NVAR currentpoint = root:packages:platypus:data:batchScan:currentpoint
 	Wave/t list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
-	list_batchbuffer[currentpoint][2] = "Stopped"
+	list_batchbuffer[currentpoint][3] = "Stopped"
 	
 	Ctrlnamedbackground batchScan, kill=1
 	NVAR userPaused = root:packages:platypus:data:batchScan:userPaused	//reset the pause status
@@ -177,16 +177,16 @@ Function batchbkgtask(s)
 	if(batchScanReadyForNextPoint() == 1)
 		return 0
 	endif
-	if(currentpoint >=0 && (sel_batchbuffer[currentpoint][3] & 2^4))
-		list_batchbuffer[currentpoint][2] = "DONE"
+	if(currentpoint >=0 && (sel_batchbuffer[currentpoint][2] & 2^4))
+		list_batchbuffer[currentpoint][3] = "DONE"
 	endif
-	for(; currentpoint<dimsize(list_batchbuffer,0) ; )
+	for( ; currentpoint < dimsize(list_batchbuffer,0) ; )
 		currentpoint += 1
-		if(currentpoint == dimsize(list_batchbuffer,0))
+		if(currentpoint == dimsize(list_batchbuffer, 0))
 			batchScanStop()
 			return 1
 		endif
-		if(sel_batchbuffer[currentpoint][3] & 2^4)	
+		if(sel_batchbuffer[currentpoint][2] & 2^4)	
 			//see if it's a comment line
 			tempstr = replacestring(" ", list_batchbuffer[currentpoint][1], "")
 			if(grepstring(tempstr, "^//"))
@@ -220,9 +220,9 @@ Function executenextbatchpoint(batchbuffer, currentpoint)
 
 	//this function executes a row of the batch buffer.  Will need to do some parsing here!!!!
 	print batchbuffer[currentpoint][1]
-	if(strlen(batchbuffer[currentpoint][1])>0 && (sel_batchbuffer[currentpoint][3] & 2^4))
+	if(strlen(batchbuffer[currentpoint][1])>0 && (sel_batchbuffer[currentpoint][2] & 2^4))
 		print "STARTED POINT: "+num2str(currentpoint)+" of batch Scan at:    ", Secs2Time(DateTime,2)
-		batchbuffer[currentpoint][2] = "Executing"
+		batchbuffer[currentpoint][3] = "Executing"
 		execute batchbuffer[currentpoint][1]
 	endif
 End
@@ -283,8 +283,8 @@ Function goto(labelsStr, loopNum)
 
 	if(labeller < loopNum-1)
 		findvalue/S=0/TEXT="labels(\""+labelsStr+"\")" list_batchbuffer
-		variable col=floor(V_value/dimsize(list_batchbuffer,0))
-		variable row=V_value-col*dimsize(list_batchbuffer,0)
+		variable col=floor(V_value/dimsize(list_batchbuffer, 0))
+		variable row=V_value-col*dimsize(list_batchbuffer ,0)
 		
 		if(V_Value>-1)
 			labeller += 1
