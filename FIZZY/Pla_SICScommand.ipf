@@ -275,6 +275,12 @@ Function button_SICScmdpanel(ba) : ButtonControl
 					batchfile[][2] = "1"
 					sel_batchfile[][2] = 2^5+2^4
 					break
+				case "deselectAllBatch_tab3":
+					Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
+					Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
+					batchfile[][2] = "0"
+					sel_batchfile[][2] = 2^5
+					break
 			endswitch		
 			break
 	endswitch
@@ -580,6 +586,7 @@ Function startSICS()
 		Button checkbatch_tab3,pos={514,415},size={100,30},title="Check Batch File",proc=button_SICScmdpanel
 		Button clearbatch_tab3,pos={514,455},size={100,30},title="Clear Batch File",proc=button_SICScmdpanel
 		Button selectAllBatch_tab3,pos={514,495},size={100,30},title="Select all",proc=button_SICScmdpanel
+		Button deselectAllBatch_tab3,pos={514,535},size={100,30},title="Deselect all",proc=button_SICScmdpanel
 		
 		setwindow sicscmdpanel hook(winhook)=sicscmdpanelwinhook 
 		//		Modifypanel/W=SICScmdpanel noedit=1
