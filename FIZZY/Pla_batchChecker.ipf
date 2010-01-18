@@ -16,6 +16,8 @@ Function Pla_checkBatchFile(listWave)
 	
 	//first part is to write the listWave to a procedure file
 	duplicate/o/t listwave, batchFileChecker
+	deletepoints/M=1 0, 1, batchFIleChecker
+	
 	redimension/n=(-1,0)  batchfileChecker
 	insertpoints 0,2,batchfilechecker
 	batchfileChecker[0] = "#pragma rtGlobals=1    // Use modern global access method."

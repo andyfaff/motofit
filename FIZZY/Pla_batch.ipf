@@ -36,11 +36,11 @@ Function batchScan(batchfile)
 		endif
 	endif
 		
-	if(dimsize(batchfile,1)!=3)
+	if(dimsize(batchfile,1)!=4)
 		print "Batchbuffer must have 3 columns"
 		return 1
 	endif
-	batchfile[][1] = ""
+	batchfile[][2] = ""
 	
 	if(SICSstatus(msg))
 		print "Cannot start batch, because SICS is doing something (batchScan)"
@@ -67,7 +67,7 @@ Function batchScan(batchfile)
 	variable/g root:packages:platypus:data:batchscan:userPaused = 0		//says whether you are currently in a user paused situation
 	
 	//start the scan task
-	CtrlNamedBackground  batchScan period=120,proc=batchbkgtask, dialogsOK =0
+	CtrlNamedBackground  batchScan period=120, proc=batchbkgtask,  dialogsOK =0
 	CtrlNamedBackground  batchScan start
 	print "______________________________________________________"
 	print "STARTING BATCH MODE"
@@ -126,7 +126,7 @@ Function batchScanStop()
 	
 	NVAR currentpoint = root:packages:platypus:data:batchScan:currentpoint
 	Wave/t list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
-	list_batchbuffer[currentpoint][1] = "Stopped"
+	list_batchbuffer[currentpoint][2] = "Stopped"
 	
 	Ctrlnamedbackground batchScan, kill=1
 	NVAR userPaused = root:packages:platypus:data:batchScan:userPaused	//reset the pause status
@@ -177,8 +177,8 @@ Function batchbkgtask(s)
 	if(batchScanReadyForNextPoint() == 1)
 		return 0
 	endif
-	if(currentpoint >=0 && (sel_batchbuffer[currentpoint][2] & 2^4))
-		list_batchbuffer[currentpoint][1] = "DONE"
+	if(currentpoint >=0 && (sel_batchbuffer[currentpoint][3] & 2^4))
+		list_batchbuffer[currentpoint][2] = "DONE"
 	endif
 	for(; currentpoint<dimsize(list_batchbuffer,0) ; )
 		currentpoint += 1
@@ -186,13 +186,13 @@ Function batchbkgtask(s)
 			batchScanStop()
 			return 1
 		endif
-		if(sel_batchbuffer[currentpoint][2] & 2^4)	
+		if(sel_batchbuffer[currentpoint][3] & 2^4)	
 			//see if it's a comment line
-			tempstr = replacestring(" ", list_batchbuffer[currentpoint][0], "")
+			tempstr = replacestring(" ", list_batchbuffer[currentpoint][1], "")
 			if(grepstring(tempstr, "^//"))
 				continue
 			endif
-			switch(strlen(list_batchbuffer[currentpoint][0]))
+			switch(strlen(list_batchbuffer[currentpoint][1]))
 				case 0:
 					break
 				default:
@@ -219,11 +219,11 @@ Function executenextbatchpoint(batchbuffer, currentpoint)
 	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
 
 	//this function executes a row of the batch buffer.  Will need to do some parsing here!!!!
-	print batchbuffer[currentpoint][0]
-	if(strlen(batchbuffer[currentpoint][0])>0 && (sel_batchbuffer[currentpoint][2] & 2^4))
+	print batchbuffer[currentpoint][1]
+	if(strlen(batchbuffer[currentpoint][1])>0 && (sel_batchbuffer[currentpoint][3] & 2^4))
 		print "STARTED POINT: "+num2str(currentpoint)+" of batch Scan at:    ", Secs2Time(DateTime,2)
-		batchbuffer[currentpoint][1] = "Executing"
-		execute batchbuffer[currentpoint][0]
+		batchbuffer[currentpoint][2] = "Executing"
+		execute batchbuffer[currentpoint][1]
 	endif
 End
 
@@ -283,9 +283,12 @@ Function goto(labelsStr, loopNum)
 
 	if(labeller < loopNum-1)
 		findvalue/S=0/TEXT="labels(\""+labelsStr+"\")" list_batchbuffer
+		variable col=floor(V_value/dimsize(list_batchbuffer,0))
+		variable row=V_value-col*dimsize(list_batchbuffer,0)
+		
 		if(V_Value>-1)
 			labeller += 1
-			currentpoint = V_Value
+			currentpoint = row
 			executenextbatchpoint(list_batchbuffer, currentpoint)
 		endif
 	else

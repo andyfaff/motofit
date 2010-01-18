@@ -244,8 +244,8 @@ Function button_SICScmdpanel(ba) : ButtonControl
 					LoadWave/q/J/K=0/V={"\t"," $",0,0}/N=qwertyfiable/L={0,0,0,0,1}		
 					if(V_flag)
 						Wave/t qwertyfiable0
-						batchfile[][0] = selectstring(p > dimsize(qwertyfiable0,0)-1, qwertyfiable0[p], "")
-						batchfile[][1]=""
+						batchfile[][1] = selectstring(p > dimsize(qwertyfiable0,0)-1, qwertyfiable0[p], "")
+						batchfile[][2]=""
 						killwaves/z qwertyfiable0
 					endif
 					break
@@ -256,6 +256,7 @@ Function button_SICScmdpanel(ba) : ButtonControl
 				case "savebatch_tab3":
 					Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
 					duplicate/o/t batchfile,qwertyfied
+					deletepoints/m=1 0, 1, qwertyfied
 					redimension/n=(-1,0) qwertyfied
 					Save/G qwertyfied as "batchbuffer.txt"
 					killwaves/z qwertyfied
@@ -265,21 +266,21 @@ Function button_SICScmdpanel(ba) : ButtonControl
 					if(V_flag == 1) 
 						Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
 						Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
-						batchfile = ""
-						sel_batchfile[][2] = 2^5
+						batchfile[][1] = ""
+						sel_batchfile[][3] = 2^5
 					endif
 					break
 				case "selectAllBatch_tab3":
 					Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
 					Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
-					batchfile[][2] = "1"
-					sel_batchfile[][2] = 2^5+2^4
+					batchfile[][3] = "1"
+					sel_batchfile[][3] = 2^5+2^4
 					break
 				case "deselectAllBatch_tab3":
 					Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
 					Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
-					batchfile[][2] = "0"
-					sel_batchfile[][2] = 2^5
+					batchfile[][3] = "0"
+					sel_batchfile[][3] = 2^5
 					break
 			endswitch		
 			break
@@ -307,9 +308,9 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 2:
 			variable ii
-			listwave[row][2] = ""
-			if(selwave[row][2] & 2^4)
-				listwave[row][2] = "1"
+			listwave[row][3] = ""
+			if(selwave[row][3] & 2^4)
+				listwave[row][3] = "1"
 			endif
 			break
 		case 3: // double click
@@ -469,12 +470,15 @@ Function startSICS()
 	SetDimLabel 2,1,backColors,selaxeslist
 	
 
-	make/n=(600,3)/t/o root:packages:platypus:data:batchScan:list_batchbuffer = ""	
-	make/n=(600,3)/o root:packages:platypus:data:batchScan:sel_batchbuffer
+	make/n=(600,4)/t/o root:packages:platypus:data:batchScan:list_batchbuffer = ""	
+	make/n=(600,4)/o root:packages:platypus:data:batchScan:sel_batchbuffer
 	Wave sel_batchbuffer = root:packages:platypus:data:batchScan:sel_batchbuffer
-	sel_batchbuffer[][0] = 2^1
+	wave list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
+	list_batchbuffer[][0] = num2istr(p)
 	sel_batchbuffer[][1] = 0
-	sel_batchbuffer[][2] = 2^5
+	sel_batchbuffer[][1] = 2^1
+	sel_batchbuffer[][2] = 0
+	sel_batchbuffer[][3] = 2^5
 
 	//panel for the SICS command window
 	if(itemsinlist(winlist("SICScmdpanel",";",""))==0)
