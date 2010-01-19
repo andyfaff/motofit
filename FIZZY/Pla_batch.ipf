@@ -157,6 +157,15 @@ Function batchScanPause(pauseORrestart)
 	endif
 End
 
+Function forcebatchBkgTask()
+Struct WMBackgroundStruct s
+	if(batchscanstatus() > 0)
+		if(batchbkgtask(s))
+			ctrlnamedbackground batchScan, kill
+		endif
+	endif
+End
+
 Function batchbkgtask(s)
 	STRUCT WMBackgroundStruct &s
 	Wave/t list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
