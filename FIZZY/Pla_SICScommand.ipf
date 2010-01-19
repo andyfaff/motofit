@@ -1767,7 +1767,7 @@ Function spawngraph(ba) : ButtonControl
 			
 			variable dims = itemsinlist(dataaxes)
 			if(dims>1)
-				prompt type,  "which graph?",popup "2D;ordinate projection;abscissa projection"
+				prompt type,  "which graph?",popup "2D;ordinate projection (bottom left);abscissa projection (bottom right)"
 			else
 				prompt type,  "which graph?",popup "1D"
 			endif
@@ -1775,11 +1775,11 @@ Function spawngraph(ba) : ButtonControl
 			if(V_Flag)
 				return 0
 			endif
-			
+
 			if(type == 1 && dims==1)
 				wave display1Dord = root:packages:platypus:data:RAW:displayed:display1Dord
 				display/n=spawngraph display1Dord
-				label/w=spawngraph0 bottom	 stringfromlist(0,order)
+				label/w=spawngraph0 bottom	 stringfromlist(0,dataAxes)
 				setwindow spawngraph0 hook(mytesthook)=spawncursorhook1D,hookevents =7
 				controlbar/t/w=spawngraph0 30
 				curvefit/q/n gauss display1Dord /D
@@ -1804,7 +1804,7 @@ Function spawngraph(ba) : ButtonControl
 						ModifyImage displayed2D ctab= {1e-10,*,Rainbow,1}
 						ModifyImage displayed2D minRGB=(0,0,0),maxRGB=0
 		
-						label left stringfromlist(1,order)
+						label left stringfromlist(1,dataAxes)
 						Button imaglineprofile_spawn, win=spawngraph0, pos={20,2},size={90,15},title="lineprofile"
 						Button imaglineprofile_spawn proc=spawnimagelineprofile
 						setwindow spawngraph0 hook(mytesthook)=spawncursorhook2D,hookevents =4
@@ -1825,7 +1825,7 @@ Function spawngraph(ba) : ButtonControl
 							appendtograph/w=spawngraph0 fit_displayed2Dordproj
 							ModifyGraph/w=spawngraph0 rgb(fit_displayed2Dordproj)=(0,0,0)
 						endif
-						label bottom stringfromlist(1,order)
+						label bottom stringfromlist(1,dataAxes)
 						break
 					case 3:
 						appendtograph/w=spawngraph0 displayed2DabsProj
@@ -1841,7 +1841,7 @@ Function spawngraph(ba) : ButtonControl
 							appendtograph/w=spawngraph0 fit_displayed2Dabsproj
 							ModifyGraph/w=spawngraph0 rgb(fit_displayed2Dabsproj)=(0,0,0)
 						endif
-						label bottom stringfromlist(0,order)						
+						label bottom stringfromlist(0,dataAxes)						
 						break
 				endswitch	
 				
