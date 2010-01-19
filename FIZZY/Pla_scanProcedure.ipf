@@ -93,6 +93,17 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	//
 	//e.g. fpx("sphi",0.5,11,presettype="TIME",preset=5)
 	Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
+	NVAR/z	Grange =  root:packages:platypus:SICS:range
+	NVAR/z Gpreset = root:packages:platypus:SICS:preset
+	NVAR/z Gnumpoints = root:packages:platypus:SICS:numpoints
+	//		for sending sics commands that will be displayed
+	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
+	//		for sending an emergency stop command
+	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
+	//		for sending commands that won't be displayed, but to also get current axis information as it changes.
+	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
+	//		a string that is send on SOCK_cmd channel for user commands
+	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
 	
 	if(paramisDefault(auto))
 		auto = 0
@@ -111,16 +122,12 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 		samplename = ""
 	endif
 	
-	Dowindow/k fpxScan
+	//set the display variable to those sent to the function
+	Grange = rangeVal
+	Gpreset = preset
+	Gnumpoints = points
 	
-	//		for sending sics commands that will be displayed
-	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
-	//		for sending an emergency stop command
-	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
-	//		for sending commands that won't be displayed, but to also get current axis information as it changes.
-	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
-	//		a string that is send on SOCK_cmd channel for user commands
-	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
+	Dowindow/k fpxScan
 	
 	if( fpxStatus() )	//if the scan is running we can't continue
 		print "scan is already running (fpx)"
@@ -326,14 +333,23 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	ValDisplay/z progress_tab1,win=SICScmdpanel,value= #"root:packages:platypus:data:scan:pointProgress"
 	label/W=SICScmdPanel#G0_tab1/z bottom, motorstr
 	doupdate
-	DoXOPIdle
+//	DoXOPIdle
 
 	print "Beginning scan"
 
 	//start the scan task
-	CtrlNamedBackground  scanTask period=20,proc=scanBkgTask, burst=0, dialogsOK =0
+	CtrlNamedBackground  scanTask period=120, proc=scanBkgTask, burst=0, dialogsOK =0
 	CtrlNamedBackground  scanTask start
 	return 0
+End
+
+Function forceScanBkgTask()
+Struct WMBackgroundStruct s
+	if(fpxstatus() > 0)
+		if(scanBkgTask(s))
+			ctrlnamedbackground scantask, kill
+		endif
+	endif
 End
 
 Function scanBkgTask(s)
@@ -371,7 +387,7 @@ Function scanBkgTask(s)
 	variable status,temp, hmstatus=0
 	
 	//flush the buffered TCP/IP messages, this will update counts, etc.
-	DOXOPIdle
+//	DOXOPIdle
 	
 	//in the last call to this function we may have asked the histo to start acquiring
 	//sometimes it takes a while for SICS to emit the hmcontrol message.
@@ -587,7 +603,7 @@ Function finishScan(status)
 	endif
 	
 	print "scan finished"
-	DoXOPIdle
+//	DoXOPIdle
 
 	//if you want to save, then we must save the data.
 	if(SAWDEVICE)
@@ -677,7 +693,7 @@ Function finishScan(status)
 			return 1
 		endif
 		sleep/q/S 2
-		DoXOPIdle	
+//		DoXOPIdle	
 	else		//no auto alignment, ask the user
 		Prompt var,"which variable",popup,"counts;"
 		Prompt whichStat,"which statistic",popup,"gaussian;centroid;graph cursors"

@@ -245,7 +245,7 @@ Function button_SICScmdpanel(ba) : ButtonControl
 					if(V_flag)
 						Wave/t qwertyfiable0
 						batchfile[][1] = selectstring(p > dimsize(qwertyfiable0,0)-1, qwertyfiable0[p], "")
-						batchfile[][2]=""
+						batchfile[][3]=""
 						killwaves/z qwertyfiable0
 					endif
 					break
@@ -267,20 +267,20 @@ Function button_SICScmdpanel(ba) : ButtonControl
 						Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
 						Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
 						batchfile[][1] = ""
-						sel_batchfile[][3] = 2^5
+						sel_batchfile[][2] = 2^5
 					endif
 					break
 				case "selectAllBatch_tab3":
 					Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
 					Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
-					batchfile[][3] = "1"
-					sel_batchfile[][3] = 2^5+2^4
+					batchfile[][2] = "1"
+					sel_batchfile[][2] = 2^5+2^4
 					break
 				case "deselectAllBatch_tab3":
 					Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
 					Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
-					batchfile[][3] = "0"
-					sel_batchfile[][3] = 2^5
+					batchfile[][2] = "0"
+					sel_batchfile[][2] = 2^5
 					break
 			endswitch		
 			break
@@ -308,9 +308,9 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 2:
 			variable ii
-			listwave[row][3] = ""
-			if(selwave[row][3] & 2^4)
-				listwave[row][3] = "1"
+			listwave[row][2] = ""
+			if(selwave[row][2] & 2^4)
+				listwave[row][2] = "1"
 			endif
 			break
 		case 3: // double click
@@ -473,12 +473,12 @@ Function startSICS()
 	make/n=(600,4)/t/o root:packages:platypus:data:batchScan:list_batchbuffer = ""	
 	make/n=(600,4)/o root:packages:platypus:data:batchScan:sel_batchbuffer
 	Wave sel_batchbuffer = root:packages:platypus:data:batchScan:sel_batchbuffer
-	wave list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
+	wave/t list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
 	list_batchbuffer[][0] = num2istr(p)
 	sel_batchbuffer[][1] = 0
 	sel_batchbuffer[][1] = 2^1
-	sel_batchbuffer[][2] = 0
-	sel_batchbuffer[][3] = 2^5
+	sel_batchbuffer[][2] = 2^5
+	sel_batchbuffer[][3] = 0
 
 	//panel for the SICS command window
 	if(itemsinlist(winlist("SICScmdpanel",";",""))==0)
@@ -577,7 +577,7 @@ Function startSICS()
 		ListBox buffer_tab3,pos={54,45},size={383,637}
 		ListBox buffer_tab3,listWave=root:packages:platypus:data:batchScan:list_batchbuffer
 		ListBox buffer_tab3,selWave=root:packages:platypus:data:batchScan:sel_batchbuffer
-		ListBox buffer_tab3,row= 1,mode= 7,editStyle= 2,widths={70,24,6}
+		ListBox buffer_tab3,row= 1,mode= 7,editStyle= 2,widths={10,70,6,24}
 		ListBox buffer_tab3,userColumnResize= 0,proc=RebuildBatchListBoxProc
 		Button runbatch_tab3,pos={510,53},size={101,101},title=""
 		Button runbatch_tab3,picture= ProcGlobal#go_pict, proc=button_SICScmdpanel
@@ -1940,12 +1940,12 @@ Function SICSstatus(msg)
 	msg = sicsstatus
 	string left
 	
-	DoXOPIdle
-	sockitsendnrecv/time=2/smal sock_sync,"\n"
-	sockitsendnrecv/time=2/smal sock_sync,"status\n"
-	msg = S_tcp
-	parsereply(S_tcp,left,msg)
-	msg=replacestring("\n",msg,"")
+//	DoXOPIdle
+//	sockitsendnrecv/time=2/smal sock_sync,"\n"
+//	sockitsendnrecv/time=2/smal sock_sync,"status\n"
+//	msg = S_tcp
+//	parsereply(S_tcp,left,msg)
+//	msg=replacestring("\n",msg,"")
 	
 //	if(cmpstr(sicsstatus,"Eager to execute commands")==0)
 	if(stringmatch(msg,"Eager to execute commands"))

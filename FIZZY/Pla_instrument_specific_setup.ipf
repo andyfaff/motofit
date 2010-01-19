@@ -1470,6 +1470,8 @@ Function Instrumentlayout_panel()
 	TitleBox sth,labelBack=(65535,65535,65535),fSize=10
 	TitleBox sz,pos={127,203},size={28,21},title="sz="
 	TitleBox sz,labelBack=(65535,65535,65535),fSize=10
+	TitleBox sx,pos={127,229},size={28,21},title="sz="
+	TitleBox sx,labelBack=(65535,65535,65535),fSize=10
 	TitleBox dy,pos={3,139},size={25,21},title="dy=",labelBack=(65535,65535,65535)
 	TitleBox dy,fSize=10
 

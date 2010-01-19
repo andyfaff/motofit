@@ -1,6 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma independentmodule=Ind_Process
-
 // SVN date:    $Date$
 // SVN author:  $Author$
 // SVN rev.:    $Revision$
@@ -70,7 +69,8 @@ Function interestProcessor(w,x)
 
 	variable num,col,row,items,pos
 	string str,str1,str2
-
+	Struct WMBackgroundStruct s
+	
 	//list of all the hipadaba paths and their values
 	Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
 	
@@ -99,6 +99,7 @@ Function interestProcessor(w,x)
 						selaxeslist[row][][1] = 1
 					endif
 				endif
+				execute "ProcGlobal#Platypus#forceScanBkgTask()"
 				
 				break
 			case "FINISH":		//this is listening to the statemon finishing an axis
@@ -116,6 +117,11 @@ Function interestProcessor(w,x)
 						selaxeslist[row][][1] = 0
 					endif
 				endif
+				
+				//cause any scans to see if they need updating
+				execute "ProcGlobal#Platypus#forceScanBkgTask()"
+				execute "ProcGlobal#forcebatchbkgtask()"
+
 				break
 			case "status":
 				sicsstatus = str2
@@ -126,6 +132,13 @@ Function interestProcessor(w,x)
 					SetVariable/Z sicsstatus win=instrumentlayout, valueBackColor=(65280,0,0)
 					SetVariable/Z sicsstatus_tab0 win=SICScmdPanel, valueBackColor=(65280,0,0)
 				endif
+				
+				if(stringmatch(str2, "Eager to execute commands"))
+					//cause any scans to see if they need updating
+					execute "ProcGlobal#Platypus#forceScanBkgTask()"
+					execute "ProcGlobal#forcebatchbkgtask()"
+				endif
+								
 				break
 			case "/sample/name":
 				sampleName = str2
