@@ -101,7 +101,7 @@ Function batchScanReadyForNextPoint()
 	NVAR userPaused = root:packages:platypus:data:batchscan:userPaused
 	Wave/t statemon = root:packages:platypus:SICS:statemon
 	
-	DoXOPIdle
+//	DoXOPIdle
 	if(userPaused)
 		return 2
 	elseif(fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus() || dimsize(statemon,0)>0 || SICSstatus(msg))
