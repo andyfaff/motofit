@@ -27,6 +27,7 @@
 	Constant 	MOXA2serverPort = 4002
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
+	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
 	
 	
 	//these motors are removed from the list displayed in the instrument panel.
