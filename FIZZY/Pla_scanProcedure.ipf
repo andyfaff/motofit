@@ -332,13 +332,19 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, points*preset, 0}
 	ValDisplay/z progress_tab1,win=SICScmdpanel,value= #"root:packages:platypus:data:scan:pointProgress"
 	label/W=SICScmdPanel#G0_tab1/z bottom, motorstr
+	PopupMenu/z motor_tab1, win=SICScmdpanel, fSize=10, mode=1, popvalue = motorStr, value = #"motorlist()"
+	findvalue/TEXT=motorStr/z/txop=4 root:packages:platypus:SICS:axeslist
+	if(V_Value > 0)
+		SetVariable currentpos_tab1,limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist[V_Value][2]
+	else
+		SetVariable currentpos_tab1,limits={-inf,inf,0},value=NaN
+	endif
+	
 	doupdate
 //	DoXOPIdle
-
 	print "Beginning scan"
-
 	//start the scan task
-	CtrlNamedBackground  scanTask period=120, proc=scanBkgTask, burst=0, dialogsOK =0
+	CtrlNamedBackground  scanTask period=600, proc=scanBkgTask, burst=0, dialogsOK =0
 	CtrlNamedBackground  scanTask start
 	return 0
 End
