@@ -330,11 +330,11 @@ Function UserDefinedEstopBehaviour()
 	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 
 	sockitsendmsg sock_interupt,"INT1712 3\n"
-	doxopidle
+//	doxopidle
 	sleep/t 20
-	sockitsendmsg SOCK_interest,"bat send oscd=0\n"
-	sockitsendmsg SOCK_interest,"run ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\n"
-	sockitsendmsg SOCK_interest,"run bz 250\n"
+	sockitsendmsg SOCK_interest,"bat send oscd=0\nrun ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\ndrive bz 250\n"
+//	sockitsendmsg SOCK_interest,"run ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\n"
+//	sockitsendmsg SOCK_interest,"run bz 250\n"
 	print "performing Estop - stopping motors, stopping acquisitions, closing slits, putting attenuator in"
 	fpxstop()
 	batchScanStop()
