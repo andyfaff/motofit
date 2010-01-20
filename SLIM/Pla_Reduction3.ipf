@@ -736,9 +736,9 @@ variable err
 			if(reduceXpertPro(theFile, scalefactor=1, footprint=NaN))
 				abort
 			endif
-			wave RR = $("root:packages:Xpert:"+base + "_R")
-			wave qq = $("root:packages:Xpert:"+base + "_q")
-			wave EE = $("root:packages:Xpert:"+base + "_E")
+			wave RR = $("root:packages:Xpert:"+ cleanupname(base, 0) + "_R")
+			wave qq = $("root:packages:Xpert:" + cleanupname(base, 0) + "_q")
+			wave EE = $("root:packages:Xpert:" + cleanupname(base, 0) + "_E")
 			//puts files into  root:packages:Xpert
 			appendtograph/w=SLIM_PLOTwin RR vs qq
 			ErrorBars/T=0 $nameofwave(RR) Y,wave=(EE,EE)

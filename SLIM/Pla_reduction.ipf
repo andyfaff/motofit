@@ -44,7 +44,6 @@
 	Constant CHOPPER1_PHASE_OFFSET = -0.7903
 	Constant CHOPPAIRING = 3
 		
-	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:commissioning:"
 	//StrConstant PATH_TO_DATA = "Macintosh HDD:Users:andrew:Documents:Andy:Platypus:TEMP:"
 
 
@@ -491,7 +490,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 
 		//THey are spliced from file, rather from memory, this is because one may want to delete individual points using
 		//delrefpoints.  If you want to do this then do the reduction, delrefpoints, then call splicefiles again.
-		print "splicefiles(\""+pathname+"\", \""+toSplice+"\")"
+		print "splicefiles(\""+replacestring("\\",pathname,"\\\\")+"\", \""+toSplice+"\")"
 		if(spliceFiles(pathName,toSplice))
 			print "ERROR while splicing (reduce)";abort
 		endif		
