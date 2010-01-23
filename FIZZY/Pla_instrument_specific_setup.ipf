@@ -1900,7 +1900,7 @@ Function createHTML()
 			text +="<CAPTION>Command buffer</CAPTION>\r"
 			text += "<TR>\r<TH>#</TH><TH>cmd</TH><TH>status</TH><TH>will run?</TH>\r</TR>\r"
 			for(ii=0 ; ii < dimsize(batchfile,0) ; ii+=1)
-				text += "<TR><TD>"+num2istr(ii)+"</TD><TD>"+ batchfile[ii][0] + "</TD><TD>"+ batchfile[ii][1] + "</TD><TD> " + batchfile[ii][2]+"</TD></TR>\r"
+				text += "<TR><TD>"+ batchfile[ii][0] + "</TD><TD>"+ batchfile[ii][1] + "</TD><TD> " + batchfile[ii][2]+"</TD><TD>" + batchfile[ii][3] + "</TD></TR>\r"
 			endfor
 			text +="</TABLE>\r"
 			fbinwrite fileID, text
