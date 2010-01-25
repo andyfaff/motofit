@@ -1,12 +1,12 @@
 #pragma rtGlobals=1		// Use modern global access method.
 //background offset is the separation between the specridge and the region taken to be background.
-constant BACKGROUNDOFFSET = 2
+	constant BACKGROUNDOFFSET = 2
 
-// SVN date:    $Date$
-// SVN author:  $Author$
-// SVN rev.:    $Revision$
-// SVN URL:     $HeadURL$
-// SVN ID:      $Id$
+	// SVN date:    $Date$
+	// SVN author:  $Author$
+	// SVN rev.:    $Revision$
+	// SVN URL:     $HeadURL$
+	// SVN ID:      $Id$
 	
 Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background)
 	Wave measurement	//the data from the NeXUS file
@@ -451,24 +451,24 @@ Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
 		endif
 	endfor
 
-//	Make/o/DF/N=(dimsize(image,0)) dfw
-//	Variable t0= StopMSTimer(-2)
-//	MultiThread dfw= Pla_linbkgworker(image, imageSD, W_mask, p,  y0, y1, y2, y3)
-//	t0= StopMSTimer(-2) - t0
-//	
-//	print "worker took ",t0*1e-6," seconds"
-//	
-//	DFREF df= dfw[0]
-//	
-//	Duplicate/O df:W_templine, M_imagebkg
-//	Duplicate/O df:W_templineSD, M_imagebkgSD
-//	Variable nmax=dimsize(image,0)
-//	for(ii=1;ii<nmax;ii+=1)
-//		df= dfw[ii]
-//		Concatenate {df:W_templine}, M_imagebkg
-//		Concatenate {df:W_templineSD}, M_imagebkgSD
-//	endfor
-//	KillWaves dfw
+	//	Make/o/DF/N=(dimsize(image,0)) dfw
+	//	Variable t0= StopMSTimer(-2)
+	//	MultiThread dfw= Pla_linbkgworker(image, imageSD, W_mask, p,  y0, y1, y2, y3)
+	//	t0= StopMSTimer(-2) - t0
+	//	
+	//	print "worker took ",t0*1e-6," seconds"
+	//	
+	//	DFREF df= dfw[0]
+	//	
+	//	Duplicate/O df:W_templine, M_imagebkg
+	//	Duplicate/O df:W_templineSD, M_imagebkgSD
+	//	Variable nmax=dimsize(image,0)
+	//	for(ii=1;ii<nmax;ii+=1)
+	//		df= dfw[ii]
+	//		Concatenate {df:W_templine}, M_imagebkg
+	//		Concatenate {df:W_templineSD}, M_imagebkgSD
+	//	endfor
+	//	KillWaves dfw
 
 
 	M_imagebkg*=-1
@@ -557,12 +557,12 @@ Function Pla_calcDerivs(fitfunction,xx, params, dyda, epsilon)
 end
 
 Threadsafe Function myline(w,x):fitfunc
-Wave w;variable x
+	Wave w;variable x
 	return w[0]+w[1]*x
 end
 
 Threadsafe Function myGAUSS(w,x):fitfunc
-Wave w;variable x
+	Wave w;variable x
 	return w[0]+w[1]*exp(-((w[2]-x)/w[3])^2)
 end
 
@@ -663,9 +663,9 @@ Function deflection(lambda, travel_distance, trajectory)
 
 	variable pp, trajRad
 
-if(lambda>10)
-	variable aa=10
-endif
+	if(lambda>10)
+		variable aa=10
+	endif
 	trajRad = trajectory*Pi/180
 	pp = travel_distance/1000 * tan(trajRad)
 	pp -= 9.81*(travel_distance/1000)^2*(lambda/1e10)^2 / (2*cos(trajRad)*cos(trajRad)*(P_MN)^2)
@@ -708,4 +708,36 @@ Function centre_wavelength(data, lobin, hibin)
 		//		endif
 	endfor
 	killwaves/z W_coef, xdata
+End
+
+Function Pla_beam_width(w, zz, d1, d2): fitfunc
+	wave w, zz, d1, d2
+
+	variable L12,  L2D, detcloud, scalefactor, ii
+
+	L12 = 2834.5   //distance between the slits
+	L2D = 2785.7	//distance from slits to point of interest
+
+	detCloud = w[0]
+	scalefactor = w[1]
+
+	make/n=(dimsize(d1,0))/d/free x1, x2
+
+	make/n=1000/o/d/free detresponse, beamProfile
+	setscale/P x -50, 0.1, detresponse, beamprofile
+
+	detresponse = gauss(x, 0, detCloud)
+
+	x1 =  d2/2 + (((d1 - d2)*L2D) / (2 * L12)) 
+	x2 = (((d1 + d2)*L2D) / (2 * L12)) + d2/2
+
+	for(ii = 0 ; ii< dimsize(d1, 0) ; ii+=1)
+		beamprofile = 0
+		beamprofile[] = (abs(pnt2x(beamprofile, p)) <= x1[ii]) ? 1 : 0
+		beamprofile[] = (abs(pnt2x(beamprofile, p)) >= x1[ii] && abs(pnt2x(beamprofile, p)) <= x2[ii]) ? (abs(pnt2x(beamprofile, p)) - x2[ii])/(x1[ii] - x2[ii]) : beamprofile[p]
+		convolve/a detresponse, beamprofile
+		beamprofile *= 0.1
+		findlevel/q beamprofile, 0.02
+		zz[ii] = scalefactor * abs(2*V_levelX)
+	endfor
 End
