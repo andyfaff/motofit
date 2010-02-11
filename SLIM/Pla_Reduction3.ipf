@@ -82,7 +82,7 @@ Function downloadPlatypusData([pathname, lowFi, hiFi])
 	endfor
 	print "Starting to download Platypus data."
 	string cmd= "easyHttp/PASS=\""+user+":"+password+"\"/FILE="+S_path+"data.zip \"http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi?lowFi="+num2istr(lowFi)+"&hiFi="+num2istr(hiFi)+"\""
-//	print cmd
+	//	print cmd
 	easyHttp/PASS=user+":"+password/FILE=S_path+"data.zip" "http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi?lowFi="+num2istr(lowFi)+"&hiFi="+num2istr(hiFi)
 	if(V_Flag)
 		print "Error while downloading Platypus data (downloadPlatypusData)"
@@ -104,8 +104,8 @@ Function  reducerpanel() : Panel
 	//directory for the reduction package
 	Newdatafolder /o root:packages:platypus:data:Reducer
 	
-	make/n=(100,8)/o root:packages:platypus:data:Reducer:angledata_sel
-	make/n=(100,8)/o/t root:packages:platypus:data:Reducer:angledata_list
+	make/n=(100,10)/o root:packages:platypus:data:Reducer:angledata_sel
+	make/n=(100,10)/o/t root:packages:platypus:data:Reducer:angledata_list
 	string/g root:packages:platypus:data:Reducer:pathName
 	variable/g root:packages:platypus:data:Reducer:lowLambda=2.8
 	variable/g root:packages:platypus:data:Reducer:highLambda=18
@@ -120,18 +120,22 @@ Function  reducerpanel() : Panel
 
 	Wave/t angledata_list = root:packages:platypus:data:Reducer:angledata_list
 	Wave angledata_sel= root:packages:platypus:data:Reducer:angledata_sel
-	setdimlabel 1,0,scalefactor,angledata_list
-	setdimlabel 1,1,reflectangle1,angledata_list
-	setdimlabel 1,2,reflectangle2,angledata_list
-	setdimlabel 1,3,reflectangle3,angledata_list
-	setdimlabel 1,4,directangle1,angledata_list
-	setdimlabel 1,5,directangle2,angledata_list
-	setdimlabel 1,6,directangle3,angledata_list
-	setdimlabel 1,7,waterrun,angledata_list
+	setdimlabel 1,0,reduce,angledata_list
+	setdimlabel 1,1,dontoverwrite,angledata_list
+	setdimlabel 1,2,scalefactor,angledata_list
+	setdimlabel 1,3,reflectangle1,angledata_list
+	setdimlabel 1,4,reflectangle2,angledata_list
+	setdimlabel 1,5,reflectangle3,angledata_list
+	setdimlabel 1,6,directangle1,angledata_list
+	setdimlabel 1,7,directangle2,angledata_list
+	setdimlabel 1,8,directangle3,angledata_list
+	setdimlabel 1,9,waterrun,angledata_list
 
 	angledata_sel=0x02
-
-	ListBox whichangles,pos={13,77},size={677,353}
+	angledata_sel[][0] = 2^5
+	angledata_sel[][1] = 2^5
+	
+	ListBox whichangles,pos={13,77},size={677,353}, widths = {7,11,12}
 	ListBox whichangles,listWave=root:packages:platypus:data:Reducer:angledata_list
 	ListBox whichangles,selWave=root:packages:platypus:data:Reducer:angledata_sel
 	ListBox whichangles,mode= 6,editStyle= 2,proc=SLIM_listproc
@@ -146,7 +150,6 @@ Function  reducerpanel() : Panel
 	//	checkbox rebinning_tab0,pos={574,30},title="rebin?",fsize=10
 	checkbox bkgsub_tab0,pos={574,35},title="background sub?",fsize=10
 	checkbox manbeamfind_tab0,pos={574,55},title="manual beam find?",fsize=10
-
 
 	Button showreducervariables_tab0,pos={381,52},size={152,16},proc=SLIM_buttonproc,title="show reducer variables"
 	Button showreducervariables_tab0,fSize=9
@@ -246,6 +249,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 			NVAR lowLambda = root:packages:platypus:data:Reducer:lowLambda
 			NVAR highLambda = root:packages:platypus:data:Reducer:highLambda
 			Wave/t angledata_list = root:packages:platypus:data:Reducer:angledata_list
+			Wave angledata_sel= root:packages:platypus:data:Reducer:angledata_sel
 			SVAR pathName = root:packages:platypus:data:Reducer:pathName
 			NVAR expected_centre = root:packages:platypus:data:Reducer:expected_centre
 			NVAR rebinpercent = root:packages:platypus:data:Reducer:rebinpercent
@@ -284,9 +288,13 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					endif
 					
 					
-					for(ii=0 ; strlen(angledata_list[ii][1])>0 ; ii+=1)
+					for(ii=0 ; ii < dimsize(angledata_list, 0) ; ii+=1)
+						if(strlen(angledata_list[ii][3]) == 0 || (angledata_sel[ii][0] & 2^4))
+							continue
+						endif
+						
 						fileNameList = ""
-						for(jj = 1 ;  strlen(angledata_list[ii][jj])>0 && jj < 4 ; jj+=1)
+						for(jj = 3 ;  strlen(angledata_list[ii][jj])>0 && jj < 6 ; jj+=1)
 							if(expandStrIntoPossibleFileName(angledata_list[ii][jj], righteousFileName)) //add in the reflected beam run
 								print "ERROR - file name is incorrect (SLIM_buttonproc)",  angledata_list[ii][jj];	return 1
 							endif
@@ -294,38 +302,38 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							fileNameList += righteousfileName+":"
 
 							//check we have at least one direct beam run
-							if(jj==1 && strlen(angledata_list[ii][4]) == 0)	
+							if(jj==3 && strlen(angledata_list[ii][6]) == 0)	
 								print "ERROR we need at least one direct beam run (SLIM_buttonproc)";	return 1
 							endif						
 							//if no direct beam is specified, assume it's the same as the first.
-							if(strlen(angledata_list[ii][jj+3]) == 0)			
-								angledata_list[ii][jj+3] = angledata_list[ii][4]
+							if(strlen(angledata_list[ii][jj+5]) == 0)			
+								angledata_list[ii][jj+5] = angledata_list[ii][6]
 							endif
 							//add in the direct beam run
-							if(expandStrIntoPossibleFileName(angledata_list[ii][jj+3], righteousFileName)) 
-								print "ERROR - a direct beam filename is incorrect (SLIM_buttonproc)", angledata_list[ii][jj+3];	return 1
+							if(expandStrIntoPossibleFileName(angledata_list[ii][jj+5], righteousFileName)) 
+								print "ERROR - a direct beam filename is incorrect (SLIM_buttonproc)", angledata_list[ii][jj+5];	return 1
 							else
-								angledata_list[ii][jj+3] = righteousFileName
+								angledata_list[ii][jj+5] = righteousFileName
 								fileNameList += righteousFileName + ";"
 							endif			
 						endfor
 						//is there a water run?
-						if(strlen(angledata_list[ii][7]) > 0 )
-							if(expandStrIntoPossibleFileName(angledata_list[ii][7], righteousFileName)) 
-								print "ERROR - the water beam filename is incorrect (SLIM_buttonproc) ", angledata_list[ii][7];	return 1
+						if(strlen(angledata_list[ii][9]) > 0 )
+							if(expandStrIntoPossibleFileName(angledata_list[ii][9], righteousFileName)) 
+								print "ERROR - the water beam filename is incorrect (SLIM_buttonproc) ", angledata_list[ii][9];	return 1
 							endif
 							water = righteousFileName
 						endif
 						
-						if(numtype(str2num(angledata_list[ii][0])))
-							angledata_list[ii][0] = "1"
-							print "Warning setting scale factor to 1 ", angledata_list[ii][1]
+						if(numtype(str2num(angledata_list[ii][2])))
+							angledata_list[ii][2] = "1"
+							print "Warning setting scale factor to 1 ", angledata_list[ii][3]
 						endif
 						
-						sprintf cmd, " reduce(\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g)",pathName, angledata_list[ii][0], fileNameList,lowLambda,highLambda, rebinning,  background,water, expected_centre, manual
+						sprintf cmd, " reduce(\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g)",pathName, angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  background,water, expected_centre, manual
 						cmdToHistory(cmd)
 						
-						if(reduce(pathName, str2num(angledata_list[ii][0]), fileNameList,lowLambda,highLambda, rebinning, background = background, water = water, expected_centre = expected_centre, manual=manual))
+						if(reduce(pathName, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = background, water = water, expected_centre = expected_centre, manual=manual))
 							print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
 						endif
 					endfor
@@ -388,10 +396,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					strswitch(UpperStr(IgorInfo(2)))
 						case "MACINTOSH":
 							pathSep = ":"
-						break
+							break
 						case "WINDOWS":
 							pathSep = "\\"
-						break
+							break
 					endswitch
 										
 					pathName = Parsefilepath(1, Stringfromlist(0, S_filename), pathSep, 1, 0)
@@ -416,8 +424,9 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					endif
 					break
 				case "clear_tab0":
-					Wave/t angledata_list = root:packages:platypus:data:Reducer:angledata_list
 					angledata_list=""
+					angledata_sel[][0] = 2^5
+					angledata_sel[][1] = 2^5				
 					break
 				case "changedatasource_tab0":
 					newpath/z/q/o path_to_data
@@ -700,8 +709,8 @@ Function SLIM_plot_reduced(pathName,filenames)
 End
 
 Function SLIM_plot_xrdml(pathName,filenames)
-string pathName, filenames
-variable err
+	string pathName, filenames
+	variable err
 	variable ii,numwaves,jj
 	string loadedWavenames
 	string cDF = getdatafolder(1)
@@ -1077,51 +1086,51 @@ End
 ////////////////////////////////////////////////////////
 
 Function userSpecifiedArea(detector, peakParams)
-Wave detector
-variable/C &peakParams
+	Wave detector
+	variable/C &peakParams
 
-try
-	NVAR/z TOFpixels = root:packages:platypus:data:reducer:TOFpixels
-	if(!NVAR_exists(TOFpixels))
-		variable/g root:packages:platypus:data:reducer:TOFpixels = 100
-	endif
-	NVAR TOFpixels = root:packages:platypus:data:reducer:TOFpixels
+	try
+		NVAR/z TOFpixels = root:packages:platypus:data:reducer:TOFpixels
+		if(!NVAR_exists(TOFpixels))
+			variable/g root:packages:platypus:data:reducer:TOFpixels = 100
+		endif
+		NVAR TOFpixels = root:packages:platypus:data:reducer:TOFpixels
 
-	NVAR/z width = root:packages:platypus:data:reducer:width
-	if(!NVAR_exists(width)	)
-		variable/g root:packages:platypus:data:reducer:width =40
-	endif
-	NVAR width = root:packages:platypus:data:reducer:width
+		NVAR/z width = root:packages:platypus:data:reducer:width
+		if(!NVAR_exists(width)	)
+			variable/g root:packages:platypus:data:reducer:width =40
+		endif
+		NVAR width = root:packages:platypus:data:reducer:width
 	
-	variable/g root:packages:platypus:data:reducer:expected_centre
-	NVAR/z position = root:packages:platypus:data:reducer:expected_centre
+		variable/g root:packages:platypus:data:reducer:expected_centre
+		NVAR/z position = root:packages:platypus:data:reducer:expected_centre
 	
-	variable/g root:packages:platypus:data:reducer:true_position
-	variable/g root:packages:platypus:data:reducer:true_width
-	NVAR/z true_position = root:packages:platypus:data:reducer:true_position
-	NVAR/z true_width = root:packages:platypus:data:reducer:true_width
+		variable/g root:packages:platypus:data:reducer:true_position
+		variable/g root:packages:platypus:data:reducer:true_width
+		NVAR/z true_position = root:packages:platypus:data:reducer:true_position
+		NVAR/z true_width = root:packages:platypus:data:reducer:true_width
 
 	
-	duplicate/o detector,root:packages:platypus:data:reducer:tempDetector
-	Wave tempDetector = root:packages:platypus:data:reducer:tempDetector
-	deletepoints/m=0 0, dimsize(tempdetector,0)-tofpixels, tempdetector
-	deletepoints/m=1 ceil(position+width/2)+1,  dimsize(tempdetector,1), tempdetector
-	deletepoints/m=1 0, floor(position-width/2), tempdetector
+		duplicate/o detector,root:packages:platypus:data:reducer:tempDetector
+		Wave tempDetector = root:packages:platypus:data:reducer:tempDetector
+		deletepoints/m=0 0, dimsize(tempdetector,0)-tofpixels, tempdetector
+		deletepoints/m=1 ceil(position+width/2)+1,  dimsize(tempdetector,1), tempdetector
+		deletepoints/m=1 0, floor(position-width/2), tempdetector
 
-	imagetransform sumallcols tempDetector
-	Wave W_sumcols
-	duplicate/o W_sumcols, root:packages:platypus:data:reducer:ordProj 
-	killwaves W_sumcols
-	Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
-	setscale/i x,  floor(position-width/2), ceil(position+width/2), ordProj 
-	createSpecBeamAdjustmentPanel(detector, ordProj)
-	pauseforuser specBeamAdjustmentPanel
+		imagetransform sumallcols tempDetector
+		Wave W_sumcols
+		duplicate/o W_sumcols, root:packages:platypus:data:reducer:ordProj 
+		killwaves W_sumcols
+		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
+		setscale/i x,  floor(position-width/2), ceil(position+width/2), ordProj 
+		createSpecBeamAdjustmentPanel(detector, ordProj)
+		pauseforuser specBeamAdjustmentPanel
 
-	peakParams = cmplx(true_position, true_width)
-catch
+		peakParams = cmplx(true_position, true_width)
+	catch
 
-endtry
-killwaves/z W_coef, fit_ordproj, tempdetector
+	endtry
+	killwaves/z W_coef, fit_ordproj, tempdetector
 
 End
 
@@ -1185,29 +1194,29 @@ End
 
 Function myAOI(s):setvariablecontrol
 	STRUCT WMSetVariableAction &s
-//this function puts a gaussian on the specbeamadjustment plot, with a user specified centre + FWHM.
-//Normally the user relies on a fitted gaussian produced by adjustAOI.  However, there may be some circumstances where they want to manually set the centre + FWHM.
+	//this function puts a gaussian on the specbeamadjustment plot, with a user specified centre + FWHM.
+	//Normally the user relies on a fitted gaussian produced by adjustAOI.  However, there may be some circumstances where they want to manually set the centre + FWHM.
 
-if(s.eventcode>-1)
-	wave imageWave = ImageNameToWaveRef("specBeamAdjustmentPanel#detector", stringfromlist(0,imagenamelist("specBeamAdjustmentPanel#detector",";")) )
-	Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
+	if(s.eventcode>-1)
+		wave imageWave = ImageNameToWaveRef("specBeamAdjustmentPanel#detector", stringfromlist(0,imagenamelist("specBeamAdjustmentPanel#detector",";")) )
+		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
 	
-	NVAR/z true_position = root:packages:platypus:data:reducer:true_position
-	NVAR/z true_width = root:packages:platypus:data:reducer:true_width
+		NVAR/z true_position = root:packages:platypus:data:reducer:true_position
+		NVAR/z true_width = root:packages:platypus:data:reducer:true_width
 
-	Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
+		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
 	
-	setactivesubwindow specBeamAdjustmentPanel#detectorADD
+		setactivesubwindow specBeamAdjustmentPanel#detectorADD
 	
-	make/n=4/d/o root:packages:platypus:data:reducer:W_coef
-	Wave W_coef =  root:packages:platypus:data:reducer:W_coef
-	W_coef[2] = true_position
-	W_coef[3] = sqrt(2) * true_width /(2*sqrt(2*ln(2)))
+		make/n=4/d/o root:packages:platypus:data:reducer:W_coef
+		Wave W_coef =  root:packages:platypus:data:reducer:W_coef
+		W_coef[2] = true_position
+		W_coef[3] = sqrt(2) * true_width /(2*sqrt(2*ln(2)))
 	
-	CurveFit/q/W=0/n/H="0011" gauss, kwCWave = W_coef, ordProj/D
-	Modifygraph/z /W=specBeamAdjustmentPanel#detectorADD rgb(fit_ordProj)=(0,0,0)
+		CurveFit/q/W=0/n/H="0011" gauss, kwCWave = W_coef, ordProj/D
+		Modifygraph/z /W=specBeamAdjustmentPanel#detectorADD rgb(fit_ordProj)=(0,0,0)
 	
-	setactivesubwindow specBeamAdjustmentPanel
+		setactivesubwindow specBeamAdjustmentPanel
 
 	endif
 End
@@ -1215,50 +1224,50 @@ End
 Function adjustAOI(s):setvariablecontrol
 	STRUCT WMSetVariableAction &s
 
-if(s.eventcode>-1)
-	wave imageWave = ImageNameToWaveRef("specBeamAdjustmentPanel#detector", stringfromlist(0,imagenamelist("specBeamAdjustmentPanel#detector",";")) )
-	Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
+	if(s.eventcode>-1)
+		wave imageWave = ImageNameToWaveRef("specBeamAdjustmentPanel#detector", stringfromlist(0,imagenamelist("specBeamAdjustmentPanel#detector",";")) )
+		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
 
-	variable tofbins, ypixels
-	tofbins = dimsize(imagewave,0)
-	ypixels = dimsize(imagewave,1)
+		variable tofbins, ypixels
+		tofbins = dimsize(imagewave,0)
+		ypixels = dimsize(imagewave,1)
 		
-	nvar tofpixels =  root:packages:platypus:data:reducer:TOFpixels
-	nvar width = root:packages:platypus:data:reducer:width
-	nvar expected_centre = root:packages:platypus:data:reducer:expected_centre
+		nvar tofpixels =  root:packages:platypus:data:reducer:TOFpixels
+		nvar width = root:packages:platypus:data:reducer:width
+		nvar expected_centre = root:packages:platypus:data:reducer:expected_centre
 	
-	NVAR/z true_position = root:packages:platypus:data:reducer:true_position
-	NVAR/z true_width = root:packages:platypus:data:reducer:true_width
+		NVAR/z true_position = root:packages:platypus:data:reducer:true_position
+		NVAR/z true_width = root:packages:platypus:data:reducer:true_width
 	
-	setdrawlayer/k/w=specBeamAdjustmentPanel#detector progfront
-	SetDrawLayer/w=specBeamAdjustmentPanel#detector ProgFront
-	SetDrawEnv/w=specBeamAdjustmentPanel#detector linefgc= (65535,65535,0),fillpat= 0,xcoord= bottom,ycoord= left, save
+		setdrawlayer/k/w=specBeamAdjustmentPanel#detector progfront
+		SetDrawLayer/w=specBeamAdjustmentPanel#detector ProgFront
+		SetDrawEnv/w=specBeamAdjustmentPanel#detector linefgc= (65535,65535,0),fillpat= 0,xcoord= bottom,ycoord= left, save
 	
-	//we are the wrong way around with this rectangle
-	drawrect/w=specBeamAdjustmentPanel#detector tofbins-tofpixels,expected_centre - width/2,tofbins, (expected_centre+width/2)
+		//we are the wrong way around with this rectangle
+		drawrect/w=specBeamAdjustmentPanel#detector tofbins-tofpixels,expected_centre - width/2,tofbins, (expected_centre+width/2)
 	
-	duplicate/o imageWave, root:packages:platypus:data:reducer:tempDetector
-	Wave tempDetector = root:packages:platypus:data:reducer:tempDetector
+		duplicate/o imageWave, root:packages:platypus:data:reducer:tempDetector
+		Wave tempDetector = root:packages:platypus:data:reducer:tempDetector
 	
-	deletepoints/m=0 0, dimsize(tempdetector,0)-tofpixels, tempdetector
-	deletepoints/m=1 ceil(expected_centre+width/2)+1,  dimsize(tempdetector,1), tempdetector
-	deletepoints/m=1 0, floor(expected_centre-width/2), tempdetector
+		deletepoints/m=0 0, dimsize(tempdetector,0)-tofpixels, tempdetector
+		deletepoints/m=1 ceil(expected_centre+width/2)+1,  dimsize(tempdetector,1), tempdetector
+		deletepoints/m=1 0, floor(expected_centre-width/2), tempdetector
 	
-	imagetransform sumallcols tempDetector
-	Wave W_sumcols
-	duplicate/o W_sumcols, root:packages:platypus:data:reducer:ordProj 
-	killwaves W_sumcols
-	Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
-	setscale/i x,  floor(expected_centre-width/2), ceil(expected_centre+width/2), ordProj 
+		imagetransform sumallcols tempDetector
+		Wave W_sumcols
+		duplicate/o W_sumcols, root:packages:platypus:data:reducer:ordProj 
+		killwaves W_sumcols
+		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
+		setscale/i x,  floor(expected_centre-width/2), ceil(expected_centre+width/2), ordProj 
 	
-	setactivesubwindow specBeamAdjustmentPanel#detectorADD
-	CurveFit/q/W=0/n gauss, ordProj/D
-	Modifygraph/z /W=specBeamAdjustmentPanel#detectorADD rgb(fit_ordProj)=(0,0,0)
+		setactivesubwindow specBeamAdjustmentPanel#detectorADD
+		CurveFit/q/W=0/n gauss, ordProj/D
+		Modifygraph/z /W=specBeamAdjustmentPanel#detectorADD rgb(fit_ordProj)=(0,0,0)
 
-	setactivesubwindow specBeamAdjustmentPanel
-	Wave W_coef
-	true_position = W_coef[2]
-	true_width = 2*sqrt(2*ln(2))*W_coef[3]/sqrt(2)
+		setactivesubwindow specBeamAdjustmentPanel
+		Wave W_coef
+		true_position = W_coef[2]
+		true_width = 2*sqrt(2*ln(2))*W_coef[3]/sqrt(2)
 
 
 	endif

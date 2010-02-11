@@ -54,13 +54,13 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 		
 		//do the background subtraction
 		if(background)
-			backgroundWidth = 2*peak_FWHM
+			backgroundWidth = 1.7*peak_FWHM
 		else
 			backgroundwidth = 0
 		endif
 
 		variable loPx, hiPx
-		foregroundwidth = peak_FWHM *1.3
+		foregroundwidth = peak_FWHM *1.7
 		loPx = floor(peak_centre - foregroundwidth/2)
 		hiPx = ceil(peak_centre + foregroundwidth/2)
 		
