@@ -239,85 +239,125 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument","","slits","",1))
 		abort
 	endif
+	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","first","",1))
+		abort
+	endif
+	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first","","vertical","",1))
+		abort
+	endif
+	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first","","horizontal","",1))
+		abort
+	endif
+	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","second","",1))
+		abort
+	endif
+	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second","","vertical","",1))
+		abort
+	endif
+	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second","","horizontal","",1))
+		abort
+	endif
+	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","third","",1))
+		abort
+	endif
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third","","vertical","",1))
+		abort
+	endif
+	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third","","horizontal","",1))
+		abort
+	endif
+	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","fourth","",1))
+		abort
+	endif
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth","","vertical","",1))
+		abort
+	endif
+	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth","","horizontal","",1))
+		abort
+	endif
  
-	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/first_horizontal_gap"
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/first/horizontal/gap"
 	if(!V_flag)
-		Wave first_horizontal_gap
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","first_horizontal_gap",num2str(first_horizontal_gap[0]),1))
+		Wave gap
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first/horizontal","","gap",num2str(gap[0]),1))
 			abort
 		endif
 	endif
-	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/first_vertical_gap"
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/first/vertical/gap"
 	if(!V_flag)
-		Wave first_vertical_gap
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","first_vertical_gap",num2str(first_horizontal_gap[0]),1))
+		Wave gap
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
+		tempstr = num2str(gap[0]) + ", "
 	endif
 	 
-	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/second_horizontal_gap"
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/second/horizontal/gap"
 	if(!V_flag)
-		Wave second_horizontal_gap
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","second_horizontal_gap",num2str(second_horizontal_gap[0]),1))
+		Wave gap
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second/horizontal","","gap",num2str(gap[0]),1))
 			abort
 		endif
 	endif
 
-	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/second_vertical_gap"
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/second/vertical/gap"
 	if(!V_flag)
-		Wave second_vertical_gap
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","second_vertical_gap",num2str(second_vertical_gap[0]),1))
+		Wave gap
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
+		tempstr += num2str(gap[0]) +", "
 	endif
 	 
-	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third_horizontal_gap"
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third/horizontal/gap"
 	if(!V_flag)
-		Wave third_horizontal_gap
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","third_horizontal_gap",num2str(third_horizontal_gap[0]),1))
+		Wave gap
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third/horizontal","","gap",num2str(gap[0]),1))
 			abort
 		endif
 	endif
 	
-	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third_vertical_gap"
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third/vertical/gap"
 	if(!V_flag)
-		Wave third_vertical_gap
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","third_vertical_gap",num2str(third_vertical_gap[0]),1))
+		Wave gap
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
+		tempstr += num2str(gap[0]) +", "
 	endif
  
-	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third_vertical_st3vt"
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third/vertical/st3vt"
 	if(!V_flag)
-		Wave third_vertical_st3vt
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","third_vertical_st3vt",num2str(third_vertical_st3vt[0]),1))
+		Wave st3vt
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third/vertical","","st3vt",num2str(st3vt[0]),1))
 			abort
 		endif
 	endif  
-	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth_horizontal_gap"
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth/horizontal/gap"
 	if(!V_flag)
-		Wave fourth_horizontal_gap
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","fourth_horizontal_gap",num2str(fourth_horizontal_gap[0]),1))
+		Wave gap
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth/horizontal","","gap",num2str(gap[0]),1))
 			abort
 		endif
 	endif
 
-	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth_vertical_gap"
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth/vertical/gap"
 	if(!V_flag)
-		Wave fourth_vertical_gap
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","fourth_vertical_gap",num2str(fourth_vertical_gap[0]),1))
+		Wave gap
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
+		tempstr += num2str(gap[0])
 	endif
 
-	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth_vertical_st4vt"
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth/vertical/st4vt"
 	if(!V_flag)
-		Wave fourth_vertical_st4vt
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","third_vertical_st3vt",num2str(fourth_vertical_st4vt[0]),1))
+		Wave st4vt
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth/vertical","","st4vt",num2str(st4vt[0]),1))
 			abort
 		endif
 	endif 
-	sprintf tempstr,"%0.2f, %0.2f, %0.2f, %0.2f",first_vertical_gap[0], second_vertical_gap[0], third_vertical_gap[0], fourth_vertical_gap[0]
+//	sprintf tempstr,"%0.2f, %0.2f, %0.2f, %0.2f",first_vertical_gap[0], second_vertical_gap[0], third_vertical_gap[0], fourth_vertical_gap[0]
 //	tempStr = "("+num2str(first_vertical_gap[0])+","
 //	tempStr += num2str(second_vertical_gap[0])+","
 //	tempStr += num2str(third_vertical_gap[0])+","
@@ -399,5 +439,4 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 			abort
 		endif 
 	endif
- 
 End

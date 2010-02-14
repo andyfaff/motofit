@@ -289,7 +289,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					
 					
 					for(ii=0 ; ii < dimsize(angledata_list, 0) ; ii+=1)
-						if(strlen(angledata_list[ii][3]) == 0 || (angledata_sel[ii][0] & 2^4))
+						if(strlen(angledata_list[ii][3]) == 0 || !(angledata_sel[ii][0] & 2^4))
 							continue
 						endif
 						
@@ -306,14 +306,14 @@ Function SLIM_buttonproc(ba) : ButtonControl
 								print "ERROR we need at least one direct beam run (SLIM_buttonproc)";	return 1
 							endif						
 							//if no direct beam is specified, assume it's the same as the first.
-							if(strlen(angledata_list[ii][jj+5]) == 0)			
-								angledata_list[ii][jj+5] = angledata_list[ii][6]
+							if(strlen(angledata_list[ii][jj+3]) == 0)			
+								angledata_list[ii][jj+3] = angledata_list[ii][6]
 							endif
 							//add in the direct beam run
-							if(expandStrIntoPossibleFileName(angledata_list[ii][jj+5], righteousFileName)) 
-								print "ERROR - a direct beam filename is incorrect (SLIM_buttonproc)", angledata_list[ii][jj+5];	return 1
+							if(expandStrIntoPossibleFileName(angledata_list[ii][jj+3], righteousFileName)) 
+								print "ERROR - a direct beam filename is incorrect (SLIM_buttonproc)", angledata_list[ii][jj+3];	return 1
 							else
-								angledata_list[ii][jj+5] = righteousFileName
+								angledata_list[ii][jj+3] = righteousFileName
 								fileNameList += righteousFileName + ";"
 							endif			
 						endfor

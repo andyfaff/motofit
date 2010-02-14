@@ -321,13 +321,13 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			M_qzSD[][] = (W_lambdaSD[p] / W_lambda[p])^2
 			
 			//angular part of uncertainty
-			Wave ss2vg = $(angle0DF+":instrument:slits:second_vertical_gap")
-			Wave ss3vg = $(angle0DF+":instrument:slits:third_vertical_gap")
+			Wave ss2vg = $(angle0DF+":instrument:slits:second:vertical:gap")
+			Wave ss3vg = $(angle0DF+":instrument:slits:third:vertical:gap")
 			Wave slit2_distance = $(angle0DF+":instrument:parameters:slit2_distance")
 			Wave slit3_distance = $(angle0DF+":instrument:parameters:slit3_distance")
 			D_S2 = slit2_distance[0]
 			D_S3 = slit3_distance[0]
-			domega = 0.68*sqrt((ss2vg[0]^2+ss3vg[0]^2)/((D_S3-D_S2)^2))
+			domega = 0.68 * sqrt((ss2vg[0]^2 + ss3vg[0]^2) / ((D_S3 - D_S2)^2))
 			
 			//now calculate the full uncertainty in Q for each Q pixel
 			M_qzSD += (domega/omega[p])^2
@@ -780,8 +780,8 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 		
 		//work out what the total expected width of the beam is
 		//from De Haan1995
-		Wave  ss2vg = $(tempDF+":instrument:slits:second_vertical_gap")
-		Wave ss3vg = $(tempDF+":instrument:slits:third_vertical_gap")
+		Wave  ss2vg = $(tempDF+":instrument:slits:second:vertical:gap")
+		Wave ss3vg = $(tempDF+":instrument:slits:third:vertical:gap")
 		Wave sample_distance = $(tempDF+":instrument:parameters:sample_distance")
 		Wave slit3_distance = $(tempDF+":instrument:parameters:slit3_distance")
 		Wave slit2_distance = $(tempDF+":instrument:parameters:slit2_distance")
