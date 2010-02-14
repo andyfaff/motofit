@@ -292,7 +292,11 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						if(strlen(angledata_list[ii][3]) == 0 || !(angledata_sel[ii][0] & 2^4))
 							continue
 						endif
-						dontoverwrite = angledata_sel[ii][0] & 2^4
+						if(angledata_sel[ii][1] & 2^4)
+							dontoverwrite = 1
+						else
+							dontoverwrite = 0
+						endif
 						
 						fileNameList = ""
 						for(jj = 3 ;  strlen(angledata_list[ii][jj])>0 && jj < 6 ; jj+=1)

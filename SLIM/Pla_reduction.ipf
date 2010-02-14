@@ -487,7 +487,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			writeXML(S_path,angle0, dontoverwrite)
 			
 			//write a 2D XMLfile for the offspecular data
-			write2DXML(S_path, angle0, dontoverwrite)
+//			write2DXML(S_path, angle0, dontoverwrite)
 			
 			Sort/R W_q,W_q,W_ref,W_refSD,W_qSD
 		endfor
