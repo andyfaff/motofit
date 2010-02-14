@@ -47,13 +47,13 @@
 	//StrConstant PATH_TO_DATA = "Macintosh HDD:Users:andrew:Documents:Andy:Platypus:TEMP:"
 
 
-Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual])
+Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual, dontoverwrite])
 	string pathName
 	variable scalefactor
 	string runfilenames
 	variable lowLambda,highLambda, rebin
 	string water
-	variable background, expected_centre, manual
+	variable background, expected_centre, manual, dontoverwrite
 	
 	//produces a reflectivity curve for a given set of angles
 	//returns 0 if successful, non zero otherwise
@@ -68,7 +68,8 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	//background = whether you want to subtract background (1=TRUE, 0 = FALSE)
 	//expected_centre = where you expect to see the specular ridge, in detector pixels
 	//manual = 1 if you would like to manually choose beam centres/FWHM, otherwise it is done automatically
-		
+	//dontoverwrite = 1 if you want to create unique names everytime you reduce the file. (default == 0)
+	
 	//this function must load the data using loadNexusfile, then call processNexusfile which produces datafolders containing
 	//containing the spectrum (W_spec, W_specSD, W_lambda, W_lambdaSD,W_specTOFHIST,W_specTOF,W_LambdaHIST)
 
@@ -102,13 +103,15 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	if(paramisdefault(expected_centre))
 		expected_centre = ROUGH_BEAM_POSITION
 	endif
-	
 	if(paramisdefault(manual))
 		manual = 0
 	endif
+	if(paramisdefault(dontoverwrite))
+		dontoverwrite = 0
+	endif
 	
 	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
-	sprintf reductionCmd, "reduce(\"%s\",%g,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g)",pathName, scalefactor, runfilenames,lowLambda,highLambda, rebin,  background,water, expected_centre, manual
+	sprintf reductionCmd, "reduce(\"%s\",%g,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g)",pathName, scalefactor, runfilenames,lowLambda,highLambda, rebin,  background,water, expected_centre, manual, dontoverwrite
 	
 	try
 		setdatafolder "root:packages:platypus:data:Reducer"
@@ -466,20 +469,25 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			//therefore SORT->WRITE->REVERSE SORT
 			//
 			Sort W_q,W_q,W_ref,W_refSD,W_qSD
+
 			variable fileID
-			string fname = cutfilename(angle0)
-			open/P=path_to_data/z=1 fileID as fname+".dat"
+			string fname = cutfilename(angle0) + ".dat"
+			if(dontoverwrite)
+				fname = uniqueFileName(S_path, fname, ".dat")
+			endif
+			open/P=path_to_data/z=1 fileID as fname
+			
 			if(V_flag==0)
-				fprintf fileID, "Q (1/A)\t Ref\t dRef\t dq(1/A)\n"
+				fprintf fileID, "Q (1/A)\t Ref\t dRef (SD)\t dq(FWHM, 1/A)\n"
 				wfprintf fileID, "%g\t %g\t %g\t %g\n" W_q,W_ref,W_refSD,W_qSD
 				close fileID
 			endif
 			pathinfo path_to_data
 			//this only writes XML for a single file
-			writeXML(S_path,angle0)
+			writeXML(S_path,angle0, dontoverwrite)
 			
 			//write a 2D XMLfile for the offspecular data
-			write2DXML(S_path, angle0)
+			write2DXML(S_path, angle0, dontoverwrite)
 			
 			Sort/R W_q,W_q,W_ref,W_refSD,W_qSD
 		endfor
@@ -490,11 +498,10 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 
 		//THey are spliced from file, rather from memory, this is because one may want to delete individual points using
 		//delrefpoints.  If you want to do this then do the reduction, delrefpoints, then call splicefiles again.
-		print "splicefiles(\""+replacestring("\\",pathname,"\\\\")+"\", \""+toSplice+"\")"
-		if(spliceFiles(pathName,toSplice))
+		print "splicefiles(\"" + replacestring("\\", pathname, "\\\\") + "\", \"" + toSplice + "\",  dontoverwrite = " + num2istr(dontoverwrite) + ")"
+		if(spliceFiles(pathName, toSplice, dontoverwrite = dontoverwrite))
 			print "ERROR while splicing (reduce)";abort
 		endif		
-		
 	catch
 		killwaves/z W_q,W_ref,W_qSD,W_refSD, M_reftemp, M_refSDtemp
 		
@@ -541,6 +548,25 @@ Function/t cutFileName(filename)
 		endif
 	endfor
 	return ret
+End
+
+Function/t uniqueFileName(pathStr, filename, ext)
+	string pathStr, filename, ext
+		string theFiles, theUniqueName = ""
+		variable ii
+		Newpath/o/q/z PATH_TO_DATA, pathStr
+		PATHinfo PATH_TO_DATA
+		if(!V_flag)
+			print "ERROR pathname not valid (uniqueFileName)";abort
+		endif
+		
+		theFiles = indexedFile(PATH_TO_DATA, -1, ext)
+		theUniqueName = filename
+		//the file already exists, increment a number
+		for(ii=1; whichListItem(theUniqueName, theFiles) > -1 ; ii+=1)
+			theUniqueName = "o" + num2istr(ii) + "_" + filename
+		endfor 
+		return theUniqueName
 End
 
 Function expandStrIntoPossibleFileName(fileStub, righteousFileName)
@@ -1049,14 +1075,16 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 End
 
 
-Function writeXML(pathName,runnumbers)
+Function writeXML(pathName, runnumbers, dontoverwrite)
 	string pathName,runnumbers
+	variable dontoverwrite
+	 
 	//a function to write an XML description of the reduced dataset.
 	variable fileID,ii,jj
 	string df = "root:packages:platypus:data:Reducer:"
-	string qqStr="",RRstr="",dRStr="",dqStr="",filename,prefix=""
+	string qqStr="",RRstr="",dRStr="", dqStr = "",filename, prefix = ""
 
-	if(itemsinlist(runnumbers)==0)
+	if(itemsinlist(runnumbers) == 0)
 		print "ERROR, no runs to write (writeXML)"
 		return 1
 	endif
@@ -1066,7 +1094,7 @@ Function writeXML(pathName,runnumbers)
 			return 1
 		endif
 	endfor
-	filename = cutfilename(stringfromlist(0,runnumbers))
+	filename = cutfilename(stringfromlist(0, runnumbers)) + ".xml"
 	
 	pathinfo PATH_TO_DATA
 	if(!V_FLAG)
@@ -1075,10 +1103,14 @@ Function writeXML(pathName,runnumbers)
 	endif
 	
 	if(itemsinlist(runnumbers)>1)
-		prefix = "c_"
+		filename = "c_"+filename
 	endif
 	
-	fileID = XMLcreatefile(S_Path+prefix+filename+".xml","REFroot","","")
+	if(dontoverwrite)
+		filename = uniqueFileName(S_path, filename, ".xml")
+	endif
+
+	fileID = XMLcreatefile(S_Path + filename,"REFroot","","")
 
 	xmladdnode(fileID,"//REFroot","","REFentry","",1)
 	XMLsetattr(fileID,"//REFroot/REFentry[1]","","time",Secs2Date(DateTime,0) + " "+Secs2Time(DateTime,3))
@@ -1149,8 +1181,10 @@ Function writeXML(pathName,runnumbers)
 	xmlclosefile(fileID,1)
 End
 
-Function write2DXML(pathName,runnumbers)
+Function write2DXML(pathName,runnumbers, dontoverwrite)
 	string pathName,runnumbers
+	variable dontoverwrite
+	
 	//a function to write an XML description of the reduced dataset.
 	variable fileID,ii,jj
 	string df = "root:packages:platypus:data:Reducer:"
@@ -1165,7 +1199,7 @@ Function write2DXML(pathName,runnumbers)
 		print "ERROR one or more of the runs doesn't exist (write2DXML)"
 		return 1
 	endif
-	filename = cutfilename(stringfromlist(0,runnumbers))
+	filename = "off_" + cutfilename(stringfromlist(0, runnumbers)) + ".xml"
 	
 	pathinfo PATH_TO_DATA
 	if(!V_FLAG)
@@ -1173,9 +1207,11 @@ Function write2DXML(pathName,runnumbers)
 		return 1
 	endif
 	
-	prefix = "off_"
-	
-	fileID = XMLcreatefile(S_Path+prefix+filename+".xml","REFroot","","")
+	if(dontoverwrite)
+		filename = uniqueFileName(S_path, filename, ".xml")
+	endif
+		
+	fileID = XMLcreatefile(S_Path + filename, "REFroot", "", "")
 
 	xmladdnode(fileID,"//REFroot","","REFentry","",1)
 	XMLsetattr(fileID,"//REFroot/REFentry[1]","","time",Secs2Date(DateTime,0) + " "+Secs2Time(DateTime,3))
@@ -1439,8 +1475,9 @@ Function delrefpoints(pathname, filename, pointlist)
 	endif
 End
 
-Function spliceFiles(pathName,runnumbers, [factors])
+Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite])
 	string pathName,runnumbers, factors
+	variable dontoverwrite
 	
 	string cDF = getdatafolder(1)
 	string fname
@@ -1448,6 +1485,10 @@ Function spliceFiles(pathName,runnumbers, [factors])
 	string qqStr="",RRstr="",dRStr="",dqStr="",filename,prefix=""
 	
 	variable fileID,ii,fileIDcomb, err=0, jj
+	
+	if(paramisdefault(dontoverwrite))
+		dontoverwrite = 0
+	endif
 	
 	try
 		newdatafolder/o root:packages
@@ -1464,9 +1505,9 @@ Function spliceFiles(pathName,runnumbers, [factors])
 		endif
 		
 		//load in each of the files
-		for(ii=0 ; ii<itemsinlist(runnumbers) ; ii+=1)
-			fileID = xmlopenfile(S_path+stringfromlist(ii,runnumbers)+".xml")
-			if(fileID<1)
+		for(ii = 0 ; ii < itemsinlist(runnumbers) ; ii += 1)
+			fileID = xmlopenfile(S_path + stringfromlist(ii, runnumbers) + ".xml")
+			if(fileID < 1)
 				print "ERROR couldn't open individual file (spliceFiles)";abort
 			endif
 			
@@ -1534,24 +1575,31 @@ Function spliceFiles(pathName,runnumbers, [factors])
 			endif
 		endfor
 		
-		fname = cutfilename(stringfromlist(0,runnumbers))
-		open/P=PATH_TO_DATA/z=1 fileIDcomb as "c_"+fname+".dat"
+		fname = "c_" + cutfilename(stringfromlist(0, runnumbers)) + ".dat"
+		if(dontoverwrite)
+			fname = uniqueFileName(S_path, fname, ".dat")
+		endif
+		
+		open/P=PATH_TO_DATA/z=1 fileIDcomb as fname
 		if(V_flag)
 			print "ERROR writing combined file (aplicefiles)";	 abort
 		endif
 		
-		fprintf fileIDcomb, "Q (1/A)\t Ref\t dRef\t dq(1/A)\r"
-		wfprintf fileIDcomb, "%g\t %g\t %g\t %g\r", tempQQ,tempRR,tempDR,tempDQ
+		fprintf fileIDcomb, "Q (1/A)\t Ref\t dRef (SD)\t dq(FWHM, 1/A)\r"
+		wfprintf fileIDcomb, "%g\t %g\t %g\t %g\r", tempQQ, tempRR, tempDR, tempDQ
 		close fileIDcomb
 		
 		//now write an XML file
 		fname = "c_" + cutfilename(stringfromlist(0,runnumbers)) + ".xml"
-		fileID = XMLcreatefile(S_Path+fname,"REFroot","","")
-		if(fileID<1)
+		if(dontoverwrite)
+			fname = uniquefilename(S_path, fname, ".xml")
+		endif
+		fileID = XMLcreatefile(S_Path + fname, "REFroot", "", "")
+		if(fileID < 1)
 			print "ERROR while creating XML combined file (spliceFiles)";abort
 		endif
 		
-		xmladdnode(fileID,"//REFroot","","REFentry","",1)
+		xmladdnode(fileID, "//REFroot", "", "REFentry", "", 1)
 		XMLsetattr(fileID,"//REFroot/REFentry[1]","","time",Secs2Date(DateTime,0) + " "+Secs2Time(DateTime,3))
 
 		xmladdnode(fileID,"//REFroot/REFentry[1]","","Title","",1)

@@ -254,7 +254,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 			NVAR expected_centre = root:packages:platypus:data:Reducer:expected_centre
 			NVAR rebinpercent = root:packages:platypus:data:Reducer:rebinpercent
 			
-			variable rebinning,background,ii,jj, manual
+			variable rebinning,background,ii,jj, manual, dontoverwrite = 0
 			string tempDF,filenames, water = ""
 			string fileNameList="", righteousFileName = ""	
 			string cmd
@@ -292,6 +292,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						if(strlen(angledata_list[ii][3]) == 0 || !(angledata_sel[ii][0] & 2^4))
 							continue
 						endif
+						dontoverwrite = angledata_sel[ii][0] & 2^4
 						
 						fileNameList = ""
 						for(jj = 3 ;  strlen(angledata_list[ii][jj])>0 && jj < 6 ; jj+=1)
@@ -329,11 +330,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							angledata_list[ii][2] = "1"
 							print "Warning setting scale factor to 1 ", angledata_list[ii][3]
 						endif
-						
-						sprintf cmd, " reduce(\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g)",pathName, angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  background,water, expected_centre, manual
+						sprintf cmd, " reduce(\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g)", replacestring("\\", pathname, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  background,water, expected_centre, manual, dontoverwrite
 						cmdToHistory(cmd)
 						
-						if(reduce(pathName, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = background, water = water, expected_centre = expected_centre, manual=manual))
+						if(reduce(pathName, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = background, water = water, expected_centre = expected_centre, manual=manual, dontoverwrite = dontoverwrite))
 							print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
 						endif
 					endfor
