@@ -201,14 +201,14 @@ Function vslits(s1,s2,s3,s4)
 	if(checkDrive("ss1vg",s1) || checkDrive("ss2vg",s2) || checkDrive("ss3vg",s3)	|| checkDrive("ss4vg",s4))
 		abort "One of the requested slit positions is not within the limits (slits)" 		
 	endif
-	cmd = "run ss2u "+num2str(s2/2)+"\n"
-	cmd += "run ss2d "+num2str(-s2/2)+"\n"
-	cmd += "run ss3u "+num2str(s3/2)+"\n"
-	cmd += "run ss3d "+num2str(-s3/2)+"\n"
-	cmd += "run ss4u "+num2str(s4/2)+"\n"
-	cmd += "run ss4d "+num2str(-s4/2)+"\n"
-	cmd += "run ss1u "+num2str(s1/2)+"\n"
-	cmd += "run ss1d "+num2str(-s1/2)+"\n"
+	cmd = "run ss2u "+num2str(s2/2)+" "
+	cmd += "ss2d "+num2str(-s2/2)+" "
+	cmd += "ss3u "+num2str(s3/2)+" "
+	cmd += "ss3d "+num2str(-s3/2)+" "
+	cmd += "ss4u "+num2str(s4/2)+" "
+	cmd += "ss4d "+num2str(-s4/2)+" "
+	cmd += "ss1u "+num2str(s1/2)+" "
+	cmd += "ss1d "+num2str(-s1/2)+"\n"
 	
 	SOCKITsendmsg sock_interest,cmd
 	if(V_flag)
@@ -231,11 +231,14 @@ Function hslits(s1,s2,s3,s4)
 		abort "One of the requested slit positions is not within the limits (slits)" 		
 	endif
 	
-	cmd= "run ss2hg "+num2str(s2)+"\n"
-	cmd+= "run ss3hg "+num2str(s3)+"\n"
-	cmd+= "run ss4hg "+num2str(s4)+"\n"
-	cmd+= "run ss1hg "+num2str(s1)+"\n"
-	
+	cmd = "run ss2r " + num2str(s2/2)+" "
+	cmd += "ss2l " + num2str(-s2/2)+" "
+	cmd += "ss3r " + num2str(s3/2)+" "
+	cmd += "ss3l " + num2str(-s3/2)+" "
+	cmd += "ss4r " + num2str(s4/2)+" "
+	cmd += "ss4l " + num2str(-s4/2)+" "
+	cmd += "ss1r " + num2str(s1/2)+" "
+	cmd += "ss1l " + num2str(-s1/2)+"\n"
 	
 	SOCKITsendmsg sock_interest,cmd
 	if(V_flag)
@@ -281,7 +284,7 @@ Function setExperimentalMode(mode)
 	return err
 End
 
-Function omega_2theta(omega,twotheta)
+Function omega_2theta(omega, twotheta)
 	variable omega,twotheta
 	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
 	if(numtype(omega) || numtype(twotheta || omega<0 || twotheta<0))
@@ -332,7 +335,7 @@ Function UserDefinedEstopBehaviour()
 	sockitsendmsg sock_interupt,"INT1712 3\n"
 //	doxopidle
 	sleep/t 20
-	sockitsendmsg SOCK_interest,"bat send oscd=0\nrun ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\ndrive bz 250\n"
+	sockitsendmsg SOCK_interest,"bat send oscd=0\nrun ss1vg 0 ss2vg 0 ss3vg 0 ss4vg 0\ndrive bz 250\n"
 //	sockitsendmsg SOCK_interest,"run ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\n"
 //	sockitsendmsg SOCK_interest,"run bz 250\n"
 	print "performing Estop - stopping motors, stopping acquisitions, closing slits, putting attenuator in"
