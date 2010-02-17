@@ -37,10 +37,10 @@ Function batchScan(batchfile)
 	endif
 		
 	if(dimsize(batchfile,1)!=4)
-		print "Batchbuffer must have 3 columns"
+		print "Batchbuffer must have 4 columns"
 		return 1
 	endif
-	batchfile[][2] = ""
+	batchfile[][3] = ""
 	
 	if(SICSstatus(msg))
 		print "Cannot start batch, because SICS is doing something (batchScan)"
@@ -100,16 +100,26 @@ Function batchScanReadyForNextPoint()
 	string msg
 	NVAR userPaused = root:packages:platypus:data:batchscan:userPaused
 	Wave/t statemon = root:packages:platypus:SICS:statemon
-	
-//	DoXOPIdle
-	if(userPaused)
-		return 2
-	elseif(fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus() || dimsize(statemon,0)>0 || SICSstatus(msg))
+
+	DoXOPIDLE	
+//	execute/p/q	"DoXOPIdle"
 //		print "SICSSTATUS "+num2str(SICSstatus(msg))
 //		print "FPXSTATUS "+num2str(fpxstatus())
 //		print "CURRENTACQSTATUS "+num2str(currentAcquisitionStatus(msg))
+//		print "hmcontrol", statemonstatus("hmcontrol")
+//		print "HISTOGRAMMEMORY", statemonstatus ("HistogramMemory")
+//print "statemon", dimsize(statemon, 0)
+//if(dimsize(statemon, 0) ==0)
+//	SICSstatus(msg)
+//	print msg
+//endif
+	
+	if(userPaused)
+		return 2
+	elseif(fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus() || dimsize(statemon,0)>0 || SICSstatus(msg))
 		return 1
-	else 
+	else
+//		print "FPX:",fpxstatus(),"hmm:",statemonstatus("hmcontrol"), "STATEMON:",dimsize(statemon,0), "SICS:",SICSstatus(msg)
 		return 0
 	endif
 End

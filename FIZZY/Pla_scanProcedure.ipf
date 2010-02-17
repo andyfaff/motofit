@@ -329,15 +329,22 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	//check that we know what presettype we have, and what the preset is.
 	sics_cmd_interest("hget /instrument/detector/mode\nhget /instrument/detector/preset")
 	
-	ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, points*preset, 0}
+	strswitch(presettype)
+		case "unlimited":
+			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, inf, 0}
+		break
+		default:
+			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, points*preset, 0}
+		break
+	endswitch
 	ValDisplay/z progress_tab1,win=SICScmdpanel,value= #"root:packages:platypus:data:scan:pointProgress"
 	label/W=SICScmdPanel#G0_tab1/z bottom, motorstr
 	PopupMenu/z motor_tab1, win=SICScmdpanel, fSize=10, mode=1, popvalue = motorStr, value = #"motorlist()"
 	findvalue/TEXT=motorStr/z/txop=4 root:packages:platypus:SICS:axeslist
 	if(V_Value > 0)
-		SetVariable currentpos_tab1,limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist[V_Value][2]
+		SetVariable currentpos_tab1, win=sicscmdpanel, limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist[V_Value][2]
 	else
-		SetVariable currentpos_tab1,limits={-inf,inf,0},value=NaN
+		SetVariable currentpos_tab1,win=sicscmdpanel, limits={-inf,inf,0},value=NaN
 	endif
 	
 	doupdate
@@ -393,7 +400,7 @@ Function scanBkgTask(s)
 	variable status,temp, hmstatus=0
 	
 	//flush the buffered TCP/IP messages, this will update counts, etc.
-//	DOXOPIdle
+//	execute/P/Q "DOXOPIdle"
 	
 	//in the last call to this function we may have asked the histo to start acquiring
 	//sometimes it takes a while for SICS to emit the hmcontrol message.
@@ -453,7 +460,7 @@ Function scanBkgTask(s)
 				pointprogress += str2num(gethipaval("/monitor/bm1_counts"))
 			break
 			case "unlimited":
-				pointprogress = 0
+				pointprogress = round(str2num(gethipaval("/instrument/detector/time")))
 			break
 			case "count":
 				pointprogress += str2num(gethipaval("/instrument/detector/total_counts"))

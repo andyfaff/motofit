@@ -99,8 +99,11 @@ Function interestProcessor(w,x)
 						selaxeslist[row][][1] = 1
 					endif
 				endif
-				execute "ProcGlobal#Platypus#forceScanBkgTask()"
-				
+				if(stringmatch(str2, "hmcontrol") || stringmatch(str2, "HistogramMemory"))
+//					execute/P/Q "DoXOPIdle"
+					execute/Q "ProcGlobal#Platypus#forceScanBkgTask()"
+					execute/P/Q "DoXOPIdle"
+				endif
 				break
 			case "FINISH":		//this is listening to the statemon finishing an axis
 				Findvalue/Text=str2/TXOP=4 statemon
@@ -119,9 +122,12 @@ Function interestProcessor(w,x)
 				endif
 				
 				//cause any scans to see if they need updating
-				execute "ProcGlobal#Platypus#forceScanBkgTask()"
-				execute "ProcGlobal#forcebatchbkgtask()"
-
+//				execute/P/Q "DoXOPIdle"
+//				execute/P/Q "ProcGlobal#Platypus#forceScanBkgTask()"
+//				execute/P/Q "DoXOPIdle"
+//				execute/P/Q "ProcGlobal#forcebatchbkgtask()"
+//				execute/P/Q "DoXOPIdle"
+								
 				break
 			case "status":
 				sicsstatus = str2
@@ -135,8 +141,11 @@ Function interestProcessor(w,x)
 				
 				if(stringmatch(str2, "Eager to execute commands"))
 					//cause any scans to see if they need updating
-					execute "ProcGlobal#Platypus#forceScanBkgTask()"
-					execute "ProcGlobal#forcebatchbkgtask()"
+//					execute/P/Q "DoXOPIdle"
+					execute/Q "ProcGlobal#Platypus#forceScanBkgTask()"
+					execute/P/Q "DoXOPIdle"
+//					execute/P/Q "ProcGlobal#forcebatchbkgtask()"
+//					execute/P/Q "DoXOPIdle"
 				endif
 								
 				break

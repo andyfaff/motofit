@@ -816,7 +816,7 @@ Function motor_tab1menuproc(pa) : PopupMenuControl
 			if(V_Value !=-1)
 				col = floor(V_Value/dimsize(axeslist,0))
 				row = V_Value-col*dimsize(axeslist,0)
-				setvariable currentpos_tab1 value = axeslist[row][2]
+				setvariable/z currentpos_tab1, win=sicscmdpanel, value = axeslist[row][2]
 			endif
 			break
 	endswitch
@@ -902,7 +902,7 @@ Function sics_tabcontrol(tca) : TabControl
 				setvariable sicsstatus_tab0,win=sicscmdpanel, disable=2
 			endif
 			if(tab==1)
-				setvariable currentpos_tab1 win=sicscmdpanel,disable=2
+				setvariable/z currentpos_tab1, win=sicscmdpanel,disable=2
 				if(numberbykey("RUN",S_info))	//if the scan is running we need to have the right buttons
 					Button Stop_tab1,win=sicscmdpanel,disable=0
 					Button Pause_tab1,win=sicscmdpanel,disable=0
@@ -1941,11 +1941,12 @@ Function SICSstatus(msg)
 	string left
 	
 //	DoXOPIdle
-//	sockitsendnrecv/time=2/smal sock_sync,"\n"
-//	sockitsendnrecv/time=2/smal sock_sync,"status\n"
-//	msg = S_tcp
-//	parsereply(S_tcp,left,msg)
-//	msg=replacestring("\n",msg,"")
+	sockitsendnrecv/time=2/smal sock_sync,"\n"
+	sockitsendnrecv/time=2/smal sock_sync,"status\n"
+	msg = S_tcp
+	parsereply(S_tcp,left,msg)
+	msg=replacestring("\n",msg,"")
+	sicsstatus = msg
 	
 //	if(cmpstr(sicsstatus,"Eager to execute commands")==0)
 	if(stringmatch(msg,"Eager to execute commands"))
