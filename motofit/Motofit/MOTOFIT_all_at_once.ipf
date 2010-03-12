@@ -312,7 +312,7 @@ Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
 	
 	string snapStr = "snapshot"
 	prompt snapStr, "Name: "
-
+	string coefwave
 	do
 		doprompt "Enter a unique name for the snapshot", snapstr
 		if(V_flag)
@@ -322,6 +322,7 @@ Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
 		xwave = cleanupname(snapstr+"_q",0)
 		sldwave = cleanupname("SLD_"+snapstr,0)
 		zedwave = cleanupname("zed_"+snapstr,0)
+		coefwave = cleanupname("coef_"+snapstr,0)
 		
 		if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1) || checkname(zedwave,1))
 			Doalert 2, "One of the snapshot waves did not have a unique name, did you want to overwrite it?"
@@ -337,6 +338,7 @@ Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
 		endif
 	while(1)
 
+	Duplicate/o root:coef_cref, root:$coefwave
 	Duplicate/o root:theoretical_R, root:$ywave
 	Duplicate/o root:theoretical_q, root:$xwave
 	Duplicate/o root:sld, root:$sldwave
@@ -500,9 +502,9 @@ Function Motofit(w,y,z) :Fitfunc
 					logxtemp=(start)+p*(abs(start-finish))/(interpnum)
 					xtemp=alog(logxtemp)
 					//calculate the theoretical curve with a lot of datapoints	
-//					variable timer = startmstimer
+	//				variable timer = startmstimer
 					AbelesAll(w, ytemp, xtemp)
-	//				print stopmstimer(timer)
+		//			print stopmstimer(timer)
 
 					//do the resolution convolution
 					setscale/I x,start,logxtemp[numpnts(logxtemp)-1],ytemp
@@ -2872,7 +2874,7 @@ Function Moto_Plottype(PU_Struct)
 			ModifyGraph logTicks(left)=10
 			break
 		case 3:
-			modifygraph log(left)=0
+			modifygraph log(left)=1
 			Label left "RQ\\S4"
 			ModifyGraph logLabel(left)=0
 			ModifyGraph logTicks(left)=10
