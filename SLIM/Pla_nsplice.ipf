@@ -6,7 +6,7 @@
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
 
-Function GetScalingInOverlap(wave1q,wave1R,wave2q,wave2R)
+Function Pla_GetScalingInOverlap(wave1q,wave1R,wave2q,wave2R)
 	Wave wave1q,wave1R,wave2q,wave2R		//1 = first dataset, 2= second dataset
 	
 	sort wave1q,wave1q,wave1R
@@ -46,7 +46,7 @@ Function GetScalingInOverlap(wave1q,wave1R,wave2q,wave2R)
 End
 
 
-Function/c GetWeightedScalingInOverlap(wave1q,wave1R, wave1dR, wave2q,wave2R, wave2dR)
+Function/c Pla_GetWeightedScalingInOverlap(wave1q,wave1R, wave1dR, wave2q,wave2R, wave2dR)
 	Wave wave1q,wave1R, wave1dR, wave2q,wave2R, wave2dR	//1 = first dataset, 2= second dataset
 	
 	sort wave1q,wave1q,wave1R,wave1dR

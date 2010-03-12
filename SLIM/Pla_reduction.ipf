@@ -1547,12 +1547,12 @@ Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite])
 				//splice with propagated error in the splice factor
 				variable/c compSplicefactor
 				if(paramisdefault(factors))
-					compSplicefactor = GetweightedScalingInoverlap(tempQQ,tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)		
+					compSplicefactor = Pla_GetweightedScalingInoverlap(tempQQ,tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)		
 				else
 					if(itemsinlist(factors) <= ii)
 						compSplicefactor = cmplx(str2num(stringfromlist(ii-1, factors)), 0)
 					else
-						compSplicefactor = GetweightedScalingInoverlap(tempQQ,tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)								
+						compSplicefactor = Pla_GetweightedScalingInoverlap(tempQQ,tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)								
 					endif
 				endif
 				if(numtype(REAL(compspliceFactor)))
