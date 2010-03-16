@@ -412,7 +412,7 @@ Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
 	for(ii=0 ; ii<dimsize(image,1); ii+=1)
 		if((ii>=y0 && ii < y1)||(ii > y2 && ii<=y3))
 			W_mask[ii] = 1
-			degfree+=1
+			degfree += 1
 		else
 			W_mask[ii] = 0
 		endif
@@ -423,11 +423,11 @@ Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
 	for(ii=0 ; ii<dimsize(image,0);ii+=1)
 		imagetransform/g=(ii) getrow image
 		Wave W_extractedRow
-	
+		
 		W_coef[0] = W_extractedRow[y0]
 		W_coef[1] = (W_extractedRow[y3]-W_extractedRow[y0])/(y3-y0)
 		duplicate/o W_extractedRow W_templine
-	
+
 		imagetransform/g=(ii) getrow imageSD
 		duplicate/o W_extractedRow W_templineSD
 	
@@ -450,27 +450,24 @@ Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
 			M_imagebkgSD[ii][] = 0.5*(UP_W_templine(q)-LP_W_templine(q))		
 		endif
 	endfor
-
-	//	Make/o/DF/N=(dimsize(image,0)) dfw
-	//	Variable t0= StopMSTimer(-2)
-	//	MultiThread dfw= Pla_linbkgworker(image, imageSD, W_mask, p,  y0, y1, y2, y3)
-	//	t0= StopMSTimer(-2) - t0
-	//	
-	//	print "worker took ",t0*1e-6," seconds"
-	//	
-	//	DFREF df= dfw[0]
-	//	
-	//	Duplicate/O df:W_templine, M_imagebkg
-	//	Duplicate/O df:W_templineSD, M_imagebkgSD
-	//	Variable nmax=dimsize(image,0)
-	//	for(ii=1;ii<nmax;ii+=1)
-	//		df= dfw[ii]
-	//		Concatenate {df:W_templine}, M_imagebkg
-	//		Concatenate {df:W_templineSD}, M_imagebkgSD
-	//	endfor
-	//	KillWaves dfw
-
-
+//		duplicate/o M_imagebkg, pink
+//	
+//		Make/o/DF/N=(dimsize(image,0))/free dfw
+//		MultiThread dfw= Pla_linbkgworker(image, imageSD, W_mask, p,  y0, y1, y2, y3)
+//		DFREF df= dfw[0]		
+//		Duplicate/O df:W_templine, M_imagebkg
+//		Duplicate/O df:W_templineSD, M_imagebkgSD
+//		Variable nmax=dimsize(image,0)
+//		for(ii=1;ii<nmax;ii+=1)
+//			df= dfw[ii]
+//			Concatenate {df:W_templine}, M_imagebkg
+//			Concatenate {df:W_templineSD}, M_imagebkgSD
+//		endfor
+//		KillWaves dfw
+//		matrixtranspose M_imagebkg
+//		matrixtranspose M_imagebkgSD
+//		duplicate/o M_imagebkg, ponk
+//
 	M_imagebkg*=-1
 	M_imagebkg+=image
 	M_imagebkgSD *= M_imagebkgSD
@@ -480,6 +477,53 @@ Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
 	killwaves/z W_extractedrow,W_Coef,W_mask,W_sigma,W_templine,W_templineSD,M_Covar,W_paramconfidenceinterval,UP_W_templine,LP_W_templine
 	return 0
 End
+
+//Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2, y3)
+//		Wave image, imageSD, W_mask
+//		variable  pp,  y0, y1, y2, y3
+//		string tempSTr
+//		variable temp
+//
+//		DFREF dfSav= GetDataFolderDFR()
+//		// Create a free data folder to hold the extracted and filtered plane 
+//		DFREF dfFree= NewFreeDataFolder()
+//		SetDataFolder dfFree
+//
+//		imagetransform/g=(pp) getrow image
+//		Wave W_extractedRow
+//		
+//		make/o/d/n=2/free W_coef
+//		W_coef[0] = W_extractedRow[y0]
+//		W_coef[1] = (W_extractedRow[y3]-W_extractedRow[y0])/(y3-y0)
+//		duplicate/o W_extractedRow W_templine
+//	
+//		imagetransform/g=(pp) getrow imageSD
+//		duplicate/o W_extractedRow W_templineSD
+//	
+//		W_templineSD[] = (W_templineSD[p]==0) ? 1 : W_templineSD[p]
+//		//the best and most correct way to propagate the errors will be by using PLA_cpInterval.
+//		//However, it is quicker to estimate the error from a linear interpolation of the prediction band
+//		//this is entirely permissible for background subtraction within the spec beam area
+//		//but will not be correct outside the background+foreground regions.
+//		//In which case use funcfit and Pla_CPInterval, it'll just be slower.
+//		variable v_fiterror=0
+//		CurveFit/n/q line  W_templine /M=W_mask /I=1 /W=W_templineSD /D /F={0.683000, 2}
+//		
+//		if(getrterror(0))
+//			tempStr = GetRTErrMessage()
+//			W_templine = 0
+//			W_templineSD = 0
+//			temp = GetRTError(1)
+//		else
+//			Wave UP_W_templine,LP_W_templine
+//			W_templine = W_coef[0] + p*W_coef[1]
+//			W_templineSD = 0.5*(UP_W_templine(p)-LP_W_templine(p))
+//		endif
+//
+//		SetDataFolder dfSav
+//		// Return a reference to the free data folder containing M_ImagePlane
+//		return dfFree
+//End
 
 Function Pla_CPInterval(fitfunction,xx, covar, params, conflevel, DegFree)
 	//confidence level should be between 0 and 100

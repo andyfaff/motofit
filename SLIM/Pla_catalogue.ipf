@@ -276,6 +276,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 		abort
 	endif
  
+ 	tempstr = ""
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/first/horizontal/gap"
 	if(!V_flag)
 		Wave gap
@@ -286,10 +287,10 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/first/vertical/gap"
 	if(!V_flag)
 		Wave gap
+		tempStr += num2str(gap[0])+", "
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
-		tempstr = num2str(gap[0]) + ", "
 	endif
 	 
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/second/horizontal/gap"
@@ -303,10 +304,10 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/second/vertical/gap"
 	if(!V_flag)
 		Wave gap
+		tempStr += num2str(gap[0])+", "
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
-		tempstr += num2str(gap[0]) +", "
 	endif
 	 
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third/horizontal/gap"
@@ -320,10 +321,10 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third/vertical/gap"
 	if(!V_flag)
 		Wave gap
+		tempStr += num2str(gap[0])+", "
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
-		tempstr += num2str(gap[0]) +", "
 	endif
  
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third/vertical/st3vt"
@@ -344,10 +345,10 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth/vertical/gap"
 	if(!V_flag)
 		Wave gap
+		tempStr += num2str(gap[0])
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
-		tempstr += num2str(gap[0])
 	endif
 
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth/vertical/st4vt"

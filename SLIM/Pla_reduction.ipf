@@ -33,13 +33,13 @@
 
 	//Physical Constants
 	Constant PLANCK = 6.624e-34
-	Constant NEUTRONMASS = 4.6749286e-27
+	Constant NEUTRONMASS = 1.6749286e-27
 	Constant P_MN = 3.9548e-7
 	
 	//the constants below may change frequently
 	Constant Y_PIXEL_SPACING = 1.177	//in mm
 	Constant CHOPFREQ = 23		//Hz
-	Constant ROUGH_BEAM_POSITION = 128.5		//Rough direct beam position
+	Constant ROUGH_BEAM_POSITION = 150		//Rough direct beam position
 	constant ROUGH_BEAM_WIDTH = 10
 	Constant CHOPPER1_PHASE_OFFSET = -0.7903
 	Constant CHOPPAIRING = 3
@@ -171,8 +171,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			//start off by processing the direct beam run
 			if(whichlistitem(direct,alreadyLoaded)==-1)	//if you've not loaded the direct beam for that angle do so.
 				isDirect = 1
-				
-				
+
 				if(loadNexusfile(S_path, direct))
 					print "ERROR couldn't load direct beam run (reduce)";abort
 				endif
@@ -185,6 +184,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 						print "ERROR while processing a direct beam run (reduce)" ; abort
 					endif				
 				endif
+
 				alreadyLoaded += direct+";"	
 			endif
 			
@@ -210,6 +210,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 				print "ERROR couldn't load a reflected beam run, "+angle0 + " (reduce)";
 				abort
 			endif
+
 			//when you process the reflected nexus file you have to use the lambda spectrum from the direct beamrun
 			if(processNeXUSfile(angle0, background, lowLambda, highLambda, water = water, isDirect = 0, expected_centre = expected_centre, rebinning = W_lambdaHISTD, manual=manual))
 				print "ERROR while processing a reflected beam run (reduce)" ; abort
@@ -271,7 +272,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			Wave M_ref =  $(angle0DF + ":M_ref")
 			Wave M_refSD =  $(angle0DF + ":M_refSD")
 			Wave W_qHIST = $(angle0DF + ":W_qHIST")
-			
+	
 			variable loPx, hiPx
 			loPx = numberbykey( "loPx", note(M_topandtailA0))
 			hiPx = numberbykey("hiPx", note(M_topandtailA0))
@@ -280,26 +281,26 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 				case "FOC":
 				case "MT":
 					//					omega = Pi*sth[0]/180
-					omega = atan(((W_beamposA0 + DetectorHeightA0[0]) - (W_directbeampos + DetectorHeightD[0]))/DetectorposA0[0])/2
-					M_twotheta[][] = atan((( (q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (W_directbeampos[p] + DetectorHeightD[0]))/DetectorposA0[0])
+					multithread	 omega = atan(((W_beamposA0 + DetectorHeightA0[0]) - (W_directbeampos + DetectorHeightD[0]))/DetectorposA0[0])/2
+					multithread M_twotheta[][] = atan((( (q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (W_directbeampos[p] + DetectorHeightD[0]))/DetectorposA0[0])
 					break
 				case "SB":
 					//					Wave m1ro =  $(angle0DF+":instrument:collimator:rotation");ABORTonRTE
 					//					omega = m1ro[0]
-					omega = atan(((W_beamposA0 + DetectorHeightA0[0]) - (W_directbeampos + DetectorHeightD[0]))/(2*DetectorposA0[0]))
-					M_twotheta[][] = omega[p] + atan((((q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (W_directbeampos[p] + DetectorHeightD[0]) - (DetectorposA0[0] * tan(omega[p])))/DetectorposA0[0])
+					multithread omega = atan(((W_beamposA0 + DetectorHeightA0[0]) - (W_directbeampos + DetectorHeightD[0]))/(2*DetectorposA0[0]))
+					multithread M_twotheta[][] = omega[p] + atan((((q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (W_directbeampos[p] + DetectorHeightD[0]) - (DetectorposA0[0] * tan(omega[p])))/DetectorposA0[0])
 					break
 				case "DB":		//angle of incidence for DB is always 4.8
 					//					omega = 4.8 * Pi/180
-					omega = atan(((W_beamposA0 + DetectorHeightA0[0]) - (W_directbeampos + DetectorHeightD[0]))/(2*DetectorposA0[0]))
-					M_twotheta[][] = omega[p] + atan((((q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (W_directbeampos[p] + DetectorHeightD[0]) - (DetectorposA0[0] * tan(omega[p])))/DetectorposA0[0])
+					multithread omega = atan(((W_beamposA0 + DetectorHeightA0[0]) - (W_directbeampos + DetectorHeightD[0]))/(2*DetectorposA0[0]))
+					multithread M_twotheta[][] = omega[p] + atan((((q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (W_directbeampos[p] + DetectorHeightD[0]) - (DetectorposA0[0] * tan(omega[p])))/DetectorposA0[0])
 					break
 			endswitch
 			print "corrected angle of incidence for ",angle0, " is: ~",180*omega[0]/pi
 
 			//within the specular band omega changes slightly
 			//used for constant Q integration.
-			M_omega = M_twotheta/2
+			multithread M_omega = M_twotheta/2
 			
 			//now normalise the counts in the reflected beam by the direct beam spectrum
 			//this gives a reflectivity
@@ -307,21 +308,21 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			//this step probably produces negative reflectivities, or NaN if W_specD is 0.
 			//ALSO, 
 			//M_refSD has the potential to be NaN is M_topandtailA0 or W_specD is 0.
-			M_ref[][] = M_topandtailA0[p][q] / W_specD[p]
+			multithread M_ref[][] = M_topandtailA0[p][q] / W_specD[p]
 //			M_refSD[][] =   (M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2 +(W_specDSD[p] / W_specD[p])^2 
 			M_refSD = 0	
-			M_refSD[][] += numtype((M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2) ? 0 : (M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2
-			M_refSD[][] += numtype((W_specDSD[p] / W_specD[p])^2) ? 0 : (W_specDSD[p] / W_specD[p])^2						
+			multithread M_refSD[][] += numtype((M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2) ? 0 : (M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2
+			multithread M_refSD[][] += numtype((W_specDSD[p] / W_specD[p])^2) ? 0 : (W_specDSD[p] / W_specD[p])^2						
 			
 			//now calculate the Q values for the detector pixels.  Each pixel has different 2theta and different wavelength, ASSUME that they have the same angle of incidence
-			M_qz[][]  = 2 * Pi * (1 / W_lambda[p]) * (sin(M_twotheta[p][q] - omega[p]) + sin(M_omega[p][q]))
-			M_qy[][] = 2 * Pi * (1 / W_lambda[p]) * (cos(M_twotheta[p][q] - omega[p]) - cos(M_omega[p][q]))
+			multithread M_qz[][]  = 2 * Pi * (1 / W_lambda[p]) * (sin(M_twotheta[p][q] - omega[p]) + sin(M_omega[p][q]))
+			multithread M_qy[][] = 2 * Pi * (1 / W_lambda[p]) * (cos(M_twotheta[p][q] - omega[p]) - cos(M_omega[p][q]))
 
 			//work out the uncertainty in Q.
 			//the wavelength contribution is already in W_LambdaSD
 			//now have to work out the angular part and add in quadrature.
 			Wave W_lambdaSD = $(angle0DF+":W_lambdaSD"); AbortOnRTE
-			M_qzSD[][] = (W_lambdaSD[p] / W_lambda[p])^2
+			multithread M_qzSD[][] = (W_lambdaSD[p] / W_lambda[p])^2
 			
 			//angular part of uncertainty
 			Wave ss2vg = $(angle0DF+":instrument:slits:second:vertical:gap")
@@ -333,14 +334,14 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			domega = 0.68 * sqrt((ss2vg[0]^2 + ss3vg[0]^2) / ((D_S3 - D_S2)^2))
 			
 			//now calculate the full uncertainty in Q for each Q pixel
-			M_qzSD += (domega/omega[p])^2
-			M_qzSD = sqrt(M_qzSD)
-			M_qzSD *= M_qz
+			multithread M_qzSD += (domega/omega[p])^2
+			multithread M_qzSD = sqrt(M_qzSD)
+			multithread M_qzSD *= M_qz
 			
 			//scale reflectivity by scale factor
 			// because refSD is stil fractional variance (dr/r)^2 have to divide by scale factor squared.
-			M_ref /= scalefactor
-			M_refSD /= (scalefactor)^2
+			multithread M_ref /= scalefactor
+			multithread M_refSD /= (scalefactor)^2
 			
 			//correct for the beam monitor one counts.  This assumes that the direct beam was measured with the same
 			//slit characteristics as the reflected beam.  This assumption is normally ok for the first angle.  One can only hope that everyone
@@ -355,13 +356,13 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 					bmon1_counts_angle0 = bmon1_angle0[0]
 					temp =  ((sqrt(bmon1_counts_direct)/bmon1_counts_direct)^2 + (sqrt(bmon1_counts_angle0)/bmon1_counts_angle0)^2) //(dratio/ratio)^2
 					
-					M_refSD += temp		//M_refSD is still fractional variance at this point.
-					M_ref *= bmon1_counts_direct/bmon1_counts_angle0
+					multithread M_refSD += temp		//M_refSD is still fractional variance at this point.
+					multithread M_ref *= bmon1_counts_direct/bmon1_counts_angle0
 				endif
 			endif
 			//M_refSD is still (dr/r)^2
-			M_refSD = sqrt(M_refSD)
-			M_refSD *= M_ref
+			multithread M_refSD = sqrt(M_refSD)
+			multithread M_refSD *= M_ref
 			
 			//now cut out the pixels that aren't in the reflected beam
 //			deletepoints/M=1 hiPx+1, dimsize(M_ref,1), M_ref,M_refSD, M_qz, M_qzSD, M_omega, M_twotheta
@@ -488,7 +489,6 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			
 			//write a 2D XMLfile for the offspecular data
 //			write2DXML(S_path, angle0, dontoverwrite)
-			
 			Sort/R W_q,W_q,W_ref,W_refSD,W_qSD
 		endfor
 		
@@ -738,11 +738,11 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 			abort
 		endif
 		make/o/i/u/n=(dimsize(hmm,1),dimsize(hmm,2),dimsize(hmm,3)) detector
-		detector[][][] = hmm[scanpoint][p][q][r]
+		multithread detector[][][] = hmm[scanpoint][p][q][r]
 		imagetransform sumplanes, detector
 		duplicate/o M_sumplanes, detector
 		duplicate/o detector, detectorSD
-		detectorSD = sqrt(detectorSD)
+		multithread detectorSD = sqrt(detectorSD)
 		killwaves/z M_sumplanes
 		
 		//check the waterrun is loaded
@@ -768,14 +768,14 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 			endif
 			
 			for(ii=0; ii<dimsize(detector,0) ; ii += 1)
-				detectorSD[ii][] = (detectorSD[ii][q]/detector[ii][q])^2+(W_waternormSD[q]/W_waternorm[q])^2
-				detector[ii][] /= W_waternorm[q]
-				detectorSD[ii][] = sqrt(detectorSD[ii][q]) * (detector[ii][q])
+				multithread detectorSD[ii][] = (detectorSD[ii][q]/detector[ii][q])^2+(W_waternormSD[q]/W_waternorm[q])^2
+				multithread detector[ii][] /= W_waternorm[q]
+				multithread detectorSD[ii][] = sqrt(detectorSD[ii][q]) * (detector[ii][q])
 			endfor
 			//this step could've created INFs and NaN, as there are divide by 0 when you divide by detector[ii][q]
-			detectorSD = numtype(detectorSD[p][q]) ? 0 : detectorSD[p][q]
+			multithread detectorSD = numtype(detectorSD[p][q]) ? 0 : detectorSD[p][q]
 		endif
-	
+
 		if(paramisdefault(manual))
 			manual = 0
 		endif
@@ -946,8 +946,7 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 				userSpecifiedArea(detector, peak_Params)
 			endif	
 		endif
-
-				
+		
 		//someone provided a wavelength spectrum BIN EDGES to rebin to.
 		variable hiPoint, loPoint
 		if(!paramisdefault(rebinning) && waveexists(rebinning))		
@@ -990,7 +989,6 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 				deletepoints 0, loPoint+1, W_lambdaHIST, detector, detectorSD, W_specTOFHIST
 			endif
 		endif
-
 		
 		//convert histogrammed TOF and lambda to their point counterparts
 		histTOPoint(W_specTOFHIST)
@@ -1030,7 +1028,7 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 			Wave W_beampos = $(tempDF+":W_beampos")
 			W_beampos = (real(peak_params) * Y_PIXEL_SPACING)
 		endif
-
+	
 		if(topAndTail(detector, detectorSD, real(peak_params), imag(peak_params), background))
 			print "ERROR while topandtailing (processNexusdata)"
 			abort
@@ -1381,6 +1379,22 @@ Function madd(pathname, filenames)
 	return err
 End
 
+Function delReducedPoints()
+	variable theFile
+	Open/R/D/M="Please select the XML file to remove points from."/T=".xml" theFile
+	if(strlen(S_filename) > 0)
+		string pathInStr = ParseFilePath(1, S_filename, ":", 1, 0)
+		string fileInStr = ParseFilePath(0, S_filename, ":", 1, 0)
+		string pointsToDelete = ""
+		prompt pointsToDelete, ""
+		string help = "Please enter individual points numbers, or ranges.  A typical string is \"0; 20-31\" which would delete point 0 and points 20 to 31"
+		Doprompt/help = help "Enter the points to delete", pointsToDelete
+		if(!V_flag)
+			delrefpoints(pathInStr, fileInStr, pointsToDelete)
+		endif
+	endif
+End
+
 Function delrefpoints(pathname, filename, pointlist)
 	string pathname, filename, pointlist
 
@@ -1389,43 +1403,43 @@ Function delrefpoints(pathname, filename, pointlist)
 
 	try
 		fileID = xmlopenfile(pathname+filename)
-		if(fileID<1)
+		if(fileID < 1)
 			print "ERROR couldn't open XML file";abort
 		endif
-		pointlist = sortlist(pointlist,";",3)
+		pointlist = sortlist(pointlist, ";", 3)
 		pointlist = lowerstr(pointlist)
-		if(grepstring(pointlist,"[a-z]+"))
+		if(grepstring(pointlist, "[a-z]+"))
 			print "ERROR list of points should only contain numbers";abort
 		endif
 		
-		xmlwavefmXPATH(fileID,"//REFdata[1]/Qz","","")
+		xmlwavefmXPATH(fileID, "//REFdata[1]/Qz", "", "")
 		Wave/t M_xmlcontent
-		make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl0
+		make/o/d/n=(dimsize(M_xmlcontent, 0)) asdfghjkl0
 		asdfghjkl0 = str2num(M_xmlcontent[p][0])
 			
-		xmlwavefmXPATH(fileID,"//REFdata[1]/R","","")
+		xmlwavefmXPATH(fileID, "//REFdata[1]/R","","")
 		Wave/t M_xmlcontent
 		make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl1
 		asdfghjkl1 = str2num(M_xmlcontent[p][0])
 
-		xmlwavefmXPATH(fileID,"//REFdata[1]/dR","","")
+		xmlwavefmXPATH(fileID, "//REFdata[1]/dR", "", "")
 		Wave/t M_xmlcontent
 		make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl2
 		asdfghjkl2 = str2num(M_xmlcontent[p][0])
 
-		xmlwavefmXPATH(fileID,"//REFdata[1]/dQz","","")
+		xmlwavefmXPATH(fileID, "//REFdata[1]/dQz", "", "")
 		Wave/t M_xmlcontent
-		make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl3
+		make/o/d/n=(dimsize(M_xmlcontent, 0)) asdfghjkl3
 		asdfghjkl3 = str2num(M_xmlcontent[p][0])
 			
-		sort asdfghjkl0,asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3
+		sort asdfghjkl0, asdfghjkl0, asdfghjkl1, asdfghjkl2, asdfghjkl3
 		
-		for(ii=0; ii<itemsinlist(pointlist);ii+=1)
-			numtoremove = str2num(stringfromlist(ii,pointlist,";"))
-			if(!numtype(numtoremove) && strsearch(pointlist, "-",0) == -1)
-				deletepoints numtoremove,1,asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3
+		for(ii = 0 ; ii < itemsinlist(pointlist) ; ii += 1)
+			temp=stringfromlist(ii, pointlist)
+			numtoremove = str2num(stringfromlist(ii, pointlist ,";"))
+			if(!numtype(numtoremove) && strsearch(temp, "-", 0) == -1)
+				deletepoints numtoremove, 1, asdfghjkl0, asdfghjkl1, asdfghjkl2, asdfghjkl3
 			else	
-				temp=stringfromlist(ii,pointlist)
 				sscanf temp, "%d-%d",lower,upper
 				if(V_Flag!=2)
 					print "ERROR parsing range of values to delete (delrefpoints)";abort
@@ -1436,32 +1450,24 @@ Function delrefpoints(pathname, filename, pointlist)
 					upper = numtoremove
 				endif
 				numtoremove = upper-lower+1
-				deletepoints lower, numtoremove,asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3
+				deletepoints lower, numtoremove, asdfghjkl0, asdfghjkl1, asdfghjkl2, asdfghjkl3
 			endif
 		endfor
 		
 		data = ""
-		for(ii=0 ; ii<dimsize(asdfghjkl0,0) ; ii+=1)
-			data += num2str(asdfghjkl0[ii])+" "
-		endfor
+		SOCKITwavetoString/TXT asdfghjkl0, data
 		xmlsetnodestr(fileID, "//REFdata[1]/Qz", "", data)
 	
 		data = ""
-		for(ii=0 ; ii<dimsize(asdfghjkl1,0) ; ii+=1)
-			data += num2str(asdfghjkl1[ii])+" "
-		endfor
+		SOCKITwavetoString/TXT asdfghjkl1, data
 		xmlsetnodestr(fileID, "//REFdata[1]/R", "", data)
 
 		data = ""
-		for(ii=0 ; ii<dimsize(asdfghjkl2,0) ; ii+=1)
-			data += num2str(asdfghjkl2[ii])+" "
-		endfor
+		SOCKITwavetoString/TXT asdfghjkl2, data
 		xmlsetnodestr(fileID, "//REFdata[1]/dR", "", data)
 
 		data = ""
-		for(ii=0 ; ii<dimsize(asdfghjkl3,0) ; ii+=1)
-			data += num2str(asdfghjkl3[ii])+" "
-		endfor		
+		SOCKITwavetoString/TXT asdfghjkl3, data
 		xmlsetnodestr(fileID, "//REFdata[1]/dQz", "", data)
 
 	catch
@@ -1470,6 +1476,9 @@ Function delrefpoints(pathname, filename, pointlist)
 			fileID=0
 		endif
 	endtry
+	killwaves/z asdfghjkl0, asdfghjkl1, asdfghjkl2, asdfghjkl3, M_xmlcontent, W_xmlcontentnodes
+	
+	print "NOW please remember to resplice individual angles (delRefpoints)"
 	if(fileID>0)
 		xmlclosefile(fileID,1)
 	endif

@@ -8,9 +8,12 @@
 // SVN ID:      $Id$
 
 Menu "Platypus"
-	"SLIM - data Reduction", reducerpanel()
-	"Download Platypus Data", downloadPlatypusData()
-	"MADD - Add files together", addFilesTogether()
+	Submenu "SLIM"
+		"Reduction", reducerpanel()
+		"Download Platypus Data", downloadPlatypusData()
+		"MADD - Add files together", addFilesTogether()
+		 "Delete points from reduced files", delReducedPoints()
+	End
 	"Reduce X'Pert Pro data files", reduceManyXrayFiles()
 End
 
