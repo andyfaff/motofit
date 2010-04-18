@@ -1669,11 +1669,13 @@ Function Moto_fit_Genetic()
 		endif
 	endif
 	
-	//get initialisation parameters for genetic optimisation
-	struct GEN_optimisation gen
-	gen.GEN_Callfolder = cDF
-	GEN_optimise#GEN_Searchparams(gen)
-	
+	GEN_setlimitsforGENcurvefit($coefwaveStr, holdstring,  cDF)
+	NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
+	NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
+	NVAR recomb =  root:packages:motofit:old_genoptimise:recomb
+	NVAR k_m =  root:packages:motofit:old_genoptimise:k_m
+	NVAR fittol = root:packages:motofit:old_genoptimise:fittol
+		
 	//now set up the command for optimisation
 	cmd ="GENcurvefit"
 	cmd += 	"/x="+nameofwave(a)
@@ -1682,8 +1684,8 @@ Function Moto_fit_Genetic()
 	endif
 	cmd += "/D="+fitdestination+" "
 		
-	options = "/k={"+num2str(gen.GEN_generations)+","+num2str(gen.GEN_popsize)+","+num2str(gen.k_m)+","+num2str(gen.GEN_recombination)+"}"
-	options += "/TOL = "+num2str(gen.GEN_V_fittol)
+	options = "/k={"+num2str(iterations)+","+num2str(popsize)+","+num2str(k_m)+","+num2str(recomb)+"}"
+	options += "/TOL = "+num2str(fittol)
 	cmd += options
 	cmd += " motofit"
 	cmd += ","+nameofwave(b)
@@ -1692,9 +1694,6 @@ Function Moto_fit_Genetic()
 	endif
 	cmd += ","+coefwavestr
 	cmd += ",\""+holdstring+"\""
-		
-	//get limits wave
-	GEN_setlimitsforGENcurvefit($coefwavestr,holdstring,cDF)
 	cmd += ",root:packages:motofit:old_genoptimise:GENcurvefitlimits"
 	
 	//optimise with genetic optimisation
@@ -2104,7 +2103,7 @@ Function Moto_fit_GenLM()
 	Moto_holdstring("",0)
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
 		
-	Wave coef_Cref,coef_multiCref
+	Wave/z coef_Cref,coef_multiCref
 	Wave zed,SLD
 	
 	Variable ii,nlayers,npars,jj,usedqwave,usecursors,useerrors,useconstraint
@@ -2206,17 +2205,19 @@ Function Moto_fit_GenLM()
 	//break the SLD relationship with zed, otherwise it can slow the fit down
 	setformula SLD,""
 	
-	//get initialisation parameters for genetic optimisation
-	struct GEN_optimisation gen
-	gen.GEN_Callfolder = savDF
-	GEN_optimise#GEN_Searchparams(gen)
+	GEN_setlimitsforGENcurvefit($coefwaveStr, holdstring,  savDF)
+	NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
+	NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
+	NVAR recomb =  root:packages:motofit:old_genoptimise:recomb
+	NVAR k_m =  root:packages:motofit:old_genoptimise:k_m
+	NVAR fittol = root:packages:motofit:old_genoptimise:fittol
 	
 	cmd ="GENcurvefit"
 	cmd += 	"/q/x="+x
 	cmd += "/D="+fitdestination
 		
-	options = "/k={"+num2str(gen.GEN_generations)+","+num2str(gen.GEN_popsize)+","+num2str(gen.k_m)+","+num2str(gen.GEN_recombination)+"}"
-	options += "/TOL = "+num2str(gen.GEN_V_fittol)
+	options = "/k={"+num2str(iterations)+","+num2str(popsize)+","+num2str(k_m)+","+num2str(recomb)+"}"
+	options += "/TOL = "+num2str(fittol)
 	cmd += options
 		
 	if(useerrors)
@@ -2229,9 +2230,6 @@ Function Moto_fit_GenLM()
 	endif
 	cmd += ","+coefwavestr
 	cmd += ",\""+holdstring+"\""
-		
-	//get limits wave
-	GEN_setlimitsforGENcurvefit($coefwavestr,holdstring,savdf)
 	cmd += ",root:packages:motofit:old_genoptimise:GENcurvefitlimits"
 	
 	Moto_backupModel() //make a backup of the model before you start the fit, so that you can roll back.
@@ -2386,7 +2384,7 @@ Function Moto_fit_GenLM()
 	colour=replacestring("x",colour,fitdestination)
 	cmd="modifygraph "+colour
 	Execute/Z cmd
-	Modifygraph lsize($fitdestination)=1
+	Modifygraph lsize($fitdestination)=1, mode($fitdestination)=0
 
 	//figure out what the SLD and Zed and coef waves should be called.  Use a stub of the
 	//data wave.

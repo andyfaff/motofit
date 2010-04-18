@@ -6,8 +6,8 @@
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
 
-Function Pla_2DintRebin(x_init,data,dataSD,x_rebin)
-	Wave x_init,data,dataSD,x_rebin
+Function Pla_2DintRebin(x_init, data, dataSD, x_rebin)
+	Wave x_init, data, dataSD, x_rebin
 
 	//Rebins 2D histogrammed data into boundaries set by xy_rebin.
 	//makes the waves M_rebin and M_RebinSD.
@@ -37,21 +37,52 @@ Function Pla_2DintRebin(x_init,data,dataSD,x_rebin)
 	endif
 
 	//iterate through the columns and rebin each of them
-	for(ii = 0 ; ii<dimsize(data,1) ; ii+=1)
-		imagetransform/g=(ii) getcol data
-		duplicate/o W_extractedcol tempCol
-		imagetransform/g=(ii) getcol dataSD
-		duplicate/o W_extractedcol tempColSD
-		Pla_intRebin(x_init,tempCol,tempColSD,x_rebin)
-		Wave W_rebin,W_rebinSD
-		imagetransform/D=W_rebin/G=(ii) putcol M_rebin
-		imagetransform/D=W_rebinSD/G=(ii) putcol M_rebinSD
-	endfor
+//	for(ii = 0 ; ii<dimsize(data,1) ; ii+=1)
+//		imagetransform/g=(ii) getcol data
+//		duplicate/o W_extractedcol tempCol
+//		imagetransform/g=(ii) getcol dataSD
+//		duplicate/o W_extractedcol tempColSD
+//		Pla_intRebin(x_init,tempCol,tempColSD,x_rebin)
+//		Wave W_rebin,W_rebinSD
+//		imagetransform/D=W_rebin/G=(ii) putcol M_rebin
+//		imagetransform/D=W_rebinSD/G=(ii) putcol M_rebinSD
+//	endfor
+
+	Make/o/DF/N=(dimsize(data, 1))/free dfw
+	MultiThread dfw = Pla_2DintRebinWorker(x_init, data, dataSD, x_rebin, p)
+	DFREF df
+	for(ii = 0 ; ii < dimsize(data, 1) ; ii+=1)
+		df = dfw[ii]
+		imagetransform/D=df:W_rebin/G=(ii) putcol M_rebin
+		imagetransform/D=df:W_rebinSD/G=(ii) putcol M_rebinSD
+	endfor	
 	
-	killwaves/z tempcol,W_extractedcol,W_rebin,W_rebinSD, tempcolSD
+	killwaves/z tempcol,W_extractedcol,W_rebin,W_rebinSD, tempcolSD, dfw
 end
 
-Function Pla_intRebin(x_init, y_init,s_init, x_rebin)
+Threadsafe Function/DF Pla_2DintRebinWorker(x_init, data, dataSD, x_rebin, qq)
+	Wave x_init, data, dataSD, x_rebin
+	variable qq
+	//a parallelised way of doing a wavelength rebin, called by Pla_2
+	DFREF dfSav= GetDataFolderDFR()
+	// Create a free data folder to hold the extracted and filtered plane 
+	DFREF dfFree= NewFreeDataFolder()
+	SetDataFolder dfFree
+		
+	imagetransform/g=(qq) getcol data
+	Wave W_extractedcol
+	duplicate/o W_extractedcol, tempCol
+	imagetransform/g=(qq) getcol dataSD
+	duplicate/o W_extractedcol tempColSD
+	Pla_intRebin(x_init, tempCol, tempColSD, x_rebin)
+	Wave W_rebin, W_rebinSD
+
+	SetDataFolder dfSav
+	// Return a reference to the free data folder containing M_ImagePlane
+	return dfFree	
+End
+
+Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
 	Wave x_init, y_init, s_init,x_rebin
 
 	//Rebins histogrammed data into boundaries set by x_rebin.
@@ -65,7 +96,7 @@ Function Pla_intRebin(x_init, y_init,s_init, x_rebin)
 	
 	//when we calculate the standard deviation on the intensity carry the variance through the calculation
 	//and convert to SD at the end.
-	
+			
 	if(checkSorted(x_rebin) || checkSorted(x_init))
 		print "The x_rebin and x_init must be monotonically increasing (Pla_intRebin)"
 		return 1
@@ -139,8 +170,6 @@ Function Pla_intRebin(x_init, y_init,s_init, x_rebin)
 		
 		W_RebinSD[ii] = sqrt(W_RebinSD[ii])
 	endfor
-	
-	return 0
 End
 
 Function Pla_histogram(W_bins, W_q, W_R, W_Rsd)
@@ -187,7 +216,7 @@ Function Pla_unavghistogrambin(histobin,offset)
 
 End
 
-Function checkSorted(aWave)
+Threadsafe Function checkSorted(aWave)
 	Wave aWave
 	variable ii
 	for(ii=dimsize(awave,0)-1 ; ii>= 0 ; ii-=1)

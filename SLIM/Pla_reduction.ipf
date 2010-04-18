@@ -160,18 +160,16 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			make/o/d/n= (round(log(highlambda/lowlambda)/log(1+rebin/100))+1) W_rebinBoundaries
 			W_rebinboundaries = lowlambda * (1+rebin/100)^p
 		endif
-		
 		for(ii=0 ;  ii< itemsinlist(runfilenames) ; ii+=1)
 			angle0 = stringfromlist(0, stringfromlist(ii,runfilenames), ":")
 			direct = stringbykey(angle0, runfilenames)
 			if(strlen(angle0)==0 || strlen(direct)==0)
 				print "ERROR parsing the runfilenamesstring (reduce)"; abort
 			endif
-			
+
 			//start off by processing the direct beam run
 			if(whichlistitem(direct,alreadyLoaded)==-1)	//if you've not loaded the direct beam for that angle do so.
 				isDirect = 1
-
 				if(loadNexusfile(S_path, direct))
 					print "ERROR couldn't load direct beam run (reduce)";abort
 				endif
@@ -347,7 +345,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			//slit characteristics as the reflected beam.  This assumption is normally ok for the first angle.  One can only hope that everyone
 			//have done this for the following angles.
 			//multiply by bmon1_direct/bmon1_angle0
-			
+
 			if(exists(angle0DF+":monitor:bm1_counts")==1 && exists(directDF+":monitor:bm1_counts")==1)
 				Wave/z bmon1_Direct = $(directDF+":monitor:bm1_counts")
 				Wave/z bmon1_angle0 = $(angle0DF+":monitor:bm1_counts")
@@ -378,7 +376,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 //			Wavestats/q/m=1 beam_profile
 //			beam_profile /= (V_sum)
 //			M_ref[][] *= (beam_profile[q])
-	
+
 /////////////////////////////
 /////////////////////////////
 			//constant wavelength binning, comment out if performing constant Q
@@ -464,7 +462,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 //			deletepoints/M=0 0, hiQcutoff, W_beamposA0, W_specA0, W_specA0SD, W_specTOF, M_topandtailA0
 //			deletepoints/M=0 0, hiQcutoff, M_topandtailA0SD, W_lambdaSD, omega, M_qz, M_ref, M_refSD, M_qzSD, M_omega, M_twotheta
 //			deletepoints/M=0 0, hiQcutoff, W_qHIST, W_specTOFHIST, W_lambdaHIST		
-			
+
 			//
 			//now write the individual wave out to a file.  It is reverse sorted in q, sorted in lambda, and we want to keep that.
 			//therefore SORT->WRITE->REVERSE SORT
@@ -491,7 +489,6 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 //			write2DXML(S_path, angle0, dontoverwrite)
 			Sort/R W_q,W_q,W_ref,W_refSD,W_qSD
 		endfor
-		
 		//at this point, outside the for block, one should have reduced all the individual angles
 		//the runnames to splice are in the variable toSplice.
 		//splice these, sort them and write to a combined file.
@@ -946,7 +943,7 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 				userSpecifiedArea(detector, peak_Params)
 			endif	
 		endif
-		
+
 		//someone provided a wavelength spectrum BIN EDGES to rebin to.
 		variable hiPoint, loPoint
 		if(!paramisdefault(rebinning) && waveexists(rebinning))		

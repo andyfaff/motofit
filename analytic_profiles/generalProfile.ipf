@@ -32,8 +32,8 @@ Function modelWrapper(w,y,x):fitfunc
 
 
 
-Abelesall(forRef,y,x)
-y = log(y)
+Motofit(forRef,y,x)
+//y = log(y)
 End
 
 

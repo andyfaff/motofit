@@ -2557,50 +2557,144 @@ Static Function GEN_chromosome(n)
 	GEN_colourtable[][n]=256*abs(GEN_populationvector[p][n]-GEN_limits[p][0])/abs(GEN_limits[p][1]-GEN_limits[p][0])		
 End
 
-
-Function GEN_setlimitsforGENcurvefit(coefs,holdstring,GEN_calldatafolder)
+Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 	Wave coefs
-	String holdstring,GEN_Calldatafolder
-    
-	variable ok=1,ii,numvarparam=0,jj
-    
-	for(ii=0;ii<numpnts(coefs);ii+=1) 
-		if(cmpstr(holdstring[ii],"0")==0)
-			numvarparam+=1
-		endif
-	endfor
-    
-	Newdatafolder/o root:packages
+	string holdstring
+	string cDF
+	wave/z limits
+	//sets the limits as 	root:packages:motofit:old_genoptimise:GENcurvefitlimits
+
+	newdatafolder/o root:packages
 	newdatafolder/o root:packages:motofit
-	newdatafolder/o root:packages:motofit:old_genoptimise
-	    
-	String/g root:packages:motofit:old_genoptimise:callfolder = GEN_calldatafolder
-	do
-		try    //the user may want to abort the fit at this stage and we need to return to the right DF
-			GEN_setlimitwaveGENcurvefit(coefs,holdstring,numvarparam) 
-			Wave/z GENcurvefitdummylimits = root:packages:motofit:old_genoptimise:GENcurvefitdummylimits
-			Wave/z GENcurvefitdummycoefs = root:packages:motofit:old_genoptimise:GENcurvefitdummycoefs
-			ok = GEN_checkinitiallimits(GENcurvefitdummylimits, GENcurvefitdummycoefs) 
-		catch
-			setdatafolder $GEN_calldatafolder
-			ABORT
-		endtry
-	while(ok==1)
-    
-	make/n=(numpnts(coefs),2)/o root:packages:motofit:old_genoptimise:GENcurvefitlimits
-	Wave GENcurvefitlimits = root:packages:motofit:old_genoptimise:GENcurvefitlimits 
-	jj=0
-	for(ii=0;ii<numpnts(coefs);ii+=1)
-		if(cmpstr(holdstring[ii],"0")==0)
-			GENcurvefitlimits[ii][0] = GENcurvefitdummylimits[jj][0]
-			GENcurvefitlimits[ii][1] = GENcurvefitdummylimits[jj][1] 
-			coefs[ii] = GENcurvefitdummycoefs[jj]
-			jj+=1
-		else
-			GENcurvefitlimits[ii][0] = -1
-			GENcurvefitlimits[ii][1] = -1
+	newdatafolder/o/s root:packages:motofit:old_genoptimise
+
+	NVAR/z iterations, popsize, recomb, k_m, fittol
+	variable ii, numbeingvaried=0
+
+
+	if(!NVAR_exists(iterations))
+		variable/g iterations = 100
+	endif
+	if(!NVAR_exists(popsize))
+		variable/g popsize = 100
+	endif
+	if(!NVAR_exists(recomb))
+		variable/g recomb = 0.5
+	endif
+	if(!NVAR_exists(k_m))
+		variable/g k_m = 0.7
+	endif
+	if(!NVAR_exists(fittol))
+		variable/g fittol = 0.001
+	endif
+
+	//work out number being held.
+	make/o/n = 0 thosebeingvaried
+	for(ii = 0 ; ii < strlen(holdstring) ; ii+=1)
+		if(stringmatch(holdstring[ii], "0"))
+			redimension/n=(dimsize(thosebeingvaried,0) + 1) thosebeingvaried
+			thosebeingvaried[ii] = ii
+			numbeingvaried +=1
 		endif
 	endfor
+	
+	make/o/n=(numbeingvaried, 4) limitsdialog_selwave
+	make/o/t/n=(numbeingvaried, 4) limitsdialog_listwave
+	setdimlabel 1, 0, Param_number, limitsdialog_listwave
+	setdimlabel 1, 1, coef_value, limitsdialog_listwave
+	setdimlabel 1, 2, lower_lim, limitsdialog_listwave
+	setdimlabel 1, 3, upper_lim, limitsdialog_listwave
+	
+	limitsdialog_listwave[][0] = num2istr(thosebeingvaried[p])
+	limitsdialog_listwave[][1] = num2str(coefs[thosebeingvaried[p]])
+	limitsdialog_selwave[][2] = 2
+	limitsdialog_selwave[][3] = 2
+
+	//limits for those being varied
+	Wave/z limitsForThoseBeingVaried = root:packages:motofit:old_genoptimise:limitsForThoseBeingVaried
+	if(!waveexists(limitsForThoseBeingVaried))
+		make/o/n=(numbeingvaried, 2) limitsForThoseBeingVaried = 0
+	else 
+		redimension/n=(numbeingvaried,-1) limitsForThoseBeingVaried
+	endif	
+	
+	if(paramisdefault(limits))
+		Wave/z limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
+		if(!waveexists(limits) || dimsize(limits, 0) != dimsize(coefs, 0))
+			make/o/n=(dimsize(coefs, 0), 2) root:packages:motofit:old_genoptimise:GENcurvefitlimits = 0
+			Wave/z limits =root:packages:motofit:old_genoptimise:GENcurvefitlimits
+			limits[][0] = coefs[thosebeingvaried[p]] < 0 ? 2* coefs[thosebeingvaried[p]] : 0
+			limits[][1] = coefs[thosebeingvaried[p]] > 0 ? 2* coefs[thosebeingvaried[p]] : 0		
+		endif
+		
+		//thosebeingvaried may be the same as previous
+		if(dimsize(limitsForThoseBeingVaried, 0) == numbeingvaried)
+			doalert 1, "Do you want to use the previous limits?"
+			if(V_flag == 2)
+				limitsforthosebeingvaried[][0] = coefs[thosebeingvaried[p]] < 0 ? 2* coefs[thosebeingvaried[p]] : 0
+				limitsforthosebeingvaried[][1] = coefs[thosebeingvaried[p]] > 0 ? 2* coefs[thosebeingvaried[p]] : 0
+			endif
+		endif
+	else
+		limitsforthosebeingvaried[][0] = limits[thosebeingvaried[p]]
+		limitsforthosebeingvaried[][1] = limits[thosebeingvaried[p]] 
+	endif
+
+	limitsdialog_listwave[][2] = num2str(limitsforthosebeingvaried[p][0])
+	limitsdialog_listwave[][3] = num2str(limitsforthosebeingvaried[p][1])
+	
+	do
+		variable thoseOK = 0
+		NewPanel /W=(445,64,774,410) as "Gencurvefit limits"
+		Dowindow/c GCF_dialog
+		ListBox list0,pos={11,130},size={307,167}
+		ListBox list0,listWave=root:packages:motofit:old_genoptimise:limitsdialog_listwave
+		ListBox list0,selWave=root:packages:motofit:old_genoptimise:limitsdialog_selwave
+		SetVariable setvar0,pos={11,8},size={216,19},title="iterations",fSize=12
+		SetVariable setvar0,limits={1,inf,10},value= root:packages:motofit:old_genoptimise:iterations
+		SetVariable setvar1,pos={12,32},size={215,19},title="population size",fSize=12
+		SetVariable setvar1,limits={1,inf,4},value= root:packages:motofit:old_genoptimise:popsize
+		SetVariable setvar2,pos={12,56},size={216,19},title="mutation constant",fSize=12
+		SetVariable setvar2,limits={0,1,0.05},value=root:packages:motofit:old_genoptimise:k_m
+		SetVariable setvar3,pos={12,80},size={216,19},title="recombination constant"
+		SetVariable setvar3,fSize=12
+		SetVariable setvar3,limits={0,1,0.05},value= root:packages:motofit:old_genoptimise:recomb
+		SetVariable setvar4,pos={12,104},size={215,19},title="fit tolerance",fSize=12
+		SetVariable setvar4,limits={1e-7,1e-1,0.001},value= root:packages:motofit:old_genoptimise:fittol
+		Button button0,pos={30,310},size={266,25},proc=GCF_dialogProc,title="Continue"
+	
+		PauseForUser GCF_dialog
+
+		limitsforthosebeingvaried[][0] = str2num(limitsdialog_listwave[p][2])
+		limitsforthosebeingvaried[][1] = str2num(limitsdialog_listwave[p][3])
+	
+		for(ii=0 ; ii < numbeingvaried ; ii+=1)
+			limits[thosebeingvaried[ii]][0] = limitsforthosebeingvaried[ii][0] 
+			limits[thosebeingvaried[ii]][1] = limitsforthosebeingvaried[ii][1] 
+			if(limits[thosebeingvaried[ii]][0] < limits[thosebeingvaried[ii]][1])
+				thoseOK+=1
+			endif
+		endfor
+		if(thoseOK != numbeingvaried)
+			Doalert 0, "Lower limit needs to be less than upper limit"
+		endif
+	while (thoseOK != numbeingvaried)
+	
+	setdatafolder $cDF
+End
+
+
+Function GCF_dialogProc(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+			// click code here
+			dowindow/k $ba.win
+			break
+	endswitch
+
+	return 0
 End
 
 Function GEN_setlimitwaveGENcurvefit(coefs,holdstring,numvarparam) 
@@ -2689,14 +2783,15 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB])
 	newdatafolder/o root:packages:motofit:old_genoptimise
 
 	try
-		//get initialisation parameters for genetic optimisation
-		struct GEN_optimisation gen
-		gen.GEN_Callfolder = cDF
-		GEN_optimise#GEN_Searchparams(gen)
-	
-		//get limits
-		GEN_setlimitsforGENcurvefit(w, holdstring, cDF)
+		//get limits wave, also sets default parameters.
+		GEN_setlimitsforGENcurvefit(w,holdstring,cDF)
 		Wave limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
+
+		NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
+		NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
+		NVAR recomb =  root:packages:motofit:old_genoptimise:recomb
+		NVAR k_m =  root:packages:motofit:old_genoptimise:k_m
+		NVAR fittol = root:packages:motofit:old_genoptimise:fittol
 	
 		//make the montecarlo waves that you will actually fit
 		duplicate/o yy, root:packages:motofit:old_genoptimise:y_montecarlo
@@ -2726,7 +2821,7 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB])
 			else
 				y_montecarlo[] = yy[p] + gnoise(ee[p])
 			endif	
-			Gencurvefit/q/n/X=x_montecarlo/K={gen.GEN_generations, gen.GEN_popsize,gen.k_m, gen.GEN_recombination}/TOL=(gen.GEN_V_fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 //			Gencurvefit/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={gen.GEN_generations, gen.GEN_popsize,gen.k_m, gen.GEN_recombination}/TOL=(gen.GEN_V_fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			M_montecarlo[ii][] = w[q]
 			W_chisq[ii] = V_chisq

@@ -88,8 +88,9 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 		//now create the SD of the integrated, background subtracted TOF spectrum
 		duplicate/o W_spec,W_specSD
 		variable count1,count2
-		count1=dimsize(W_specSD,0)
-		count2 = dimsize(tempSD,1)
+		count1=dimsize(W_specSD, 0)
+		count2 = dimsize(tempSD, 1)
+
 		for(ii=0 ; ii < count1 ; ii+=1)
 			for(jj=0 ; jj<count2 ; jj+=1)
 				W_specSD[ii] += (tempSD[ii][jj]^2)
@@ -384,7 +385,6 @@ Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
 	variable loPx, hiPx, backgroundwidth
 	
 	//background offset must NEVER be negative
-
 	variable y0,y1,y2,y3
 	string tempStr=""
 	variable temp
@@ -418,112 +418,111 @@ Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
 		endif
 	endfor
 
-	variable/g V_FitOptions=4
-	make/o/d/n=2 W_coef
-	for(ii=0 ; ii<dimsize(image,0);ii+=1)
-		imagetransform/g=(ii) getrow image
-		Wave W_extractedRow
-		
-		W_coef[0] = W_extractedRow[y0]
-		W_coef[1] = (W_extractedRow[y3]-W_extractedRow[y0])/(y3-y0)
-		duplicate/o W_extractedRow W_templine
-
-		imagetransform/g=(ii) getrow imageSD
-		duplicate/o W_extractedRow W_templineSD
+	//	variable/g V_FitOptions=4
+	//	make/o/d/n=2 W_coef
+	//	for(ii=0 ; ii<dimsize(image,0);ii+=1)
+	//		imagetransform/g=(ii) getrow image
+	//		Wave W_extractedRow
+	//		
+	//		W_coef[0] = W_extractedRow[y0]
+	//		W_coef[1] = (W_extractedRow[y3]-W_extractedRow[y0])/(y3-y0)
+	//		duplicate/o W_extractedRow W_templine
+	//
+	//		imagetransform/g=(ii) getrow imageSD
+	//		duplicate/o W_extractedRow W_templineSD
+	//	
+	//		W_templineSD[] = (W_templineSD[p]==0) ? 1 : W_templineSD[p]
+	//		//the best and most correct way to propagate the errors will be by using PLA_cpInterval.
+	//		//However, it is quicker to estimate the error from a linear interpolation of the prediction band
+	//		//this is entirely permissible for background subtraction within the spec beam area
+	//		//but will not be correct outside the background+foreground regions.
+	//		//In which case use funcfit and Pla_CPInterval, it'll just be slower.
+	//		variable v_fiterror=0
+	//		CurveFit/n/q/NTHR=0 line  W_templine /M=W_mask /I=1 /W=W_templineSD /D /F={0.683000, 2}
+	//		if(getrterror(0))
+	//			tempStr = GetRTErrMessage()
+	//			M_imagebkg[ii][] = 0
+	//			M_imagebkgSD[ii][] = 0
+	//			temp = GetRTError(1)
+	//		else
+	//			Wave UP_W_templine,LP_W_templine
+	//			M_imagebkg[ii][] = W_coef[0] + q*W_coef[1]
+	//			M_imagebkgSD[ii][] = 0.5*(UP_W_templine(q)-LP_W_templine(q))		
+	//		endif
+	//	endfor
 	
-		W_templineSD[] = (W_templineSD[p]==0) ? 1 : W_templineSD[p]
-		//the best and most correct way to propagate the errors will be by using PLA_cpInterval.
-		//However, it is quicker to estimate the error from a linear interpolation of the prediction band
-		//this is entirely permissible for background subtraction within the spec beam area
-		//but will not be correct outside the background+foreground regions.
-		//In which case use funcfit and Pla_CPInterval, it'll just be slower.
-		variable v_fiterror=0
-		CurveFit/n/q/NTHR=0 line  W_templine /M=W_mask /I=1 /W=W_templineSD /D /F={0.683000, 2}
-		if(getrterror(0))
-			tempStr = GetRTErrMessage()
-			M_imagebkg[ii][] = 0
-			M_imagebkgSD[ii][] = 0
-			temp = GetRTError(1)
-		else
-			Wave UP_W_templine,LP_W_templine
-			M_imagebkg[ii][] = W_coef[0] + q*W_coef[1]
-			M_imagebkgSD[ii][] = 0.5*(UP_W_templine(q)-LP_W_templine(q))		
-		endif
+	Make/o/DF/N=(dimsize(image,0))/free dfw
+	MultiThread dfw= Pla_linbkgworker(image, imageSD, W_mask, p,  y0, y1, y2, y3)
+	DFREF df= dfw[0]		
+	Duplicate/O df:W_templine, M_imagebkg
+	Duplicate/O df:W_templineSD, M_imagebkgSD
+	Variable nmax=dimsize(image,0)
+	for(ii=1;ii<nmax;ii+=1)
+		df= dfw[ii]
+		Concatenate {df:W_templine}, M_imagebkg
+		Concatenate {df:W_templineSD}, M_imagebkgSD
 	endfor
-//		duplicate/o M_imagebkg, pink
-//	
-//		Make/o/DF/N=(dimsize(image,0))/free dfw
-//		MultiThread dfw= Pla_linbkgworker(image, imageSD, W_mask, p,  y0, y1, y2, y3)
-//		DFREF df= dfw[0]		
-//		Duplicate/O df:W_templine, M_imagebkg
-//		Duplicate/O df:W_templineSD, M_imagebkgSD
-//		Variable nmax=dimsize(image,0)
-//		for(ii=1;ii<nmax;ii+=1)
-//			df= dfw[ii]
-//			Concatenate {df:W_templine}, M_imagebkg
-//			Concatenate {df:W_templineSD}, M_imagebkgSD
-//		endfor
-//		KillWaves dfw
-//		matrixtranspose M_imagebkg
-//		matrixtranspose M_imagebkgSD
-//		duplicate/o M_imagebkg, ponk
-//
+	KillWaves/z dfw
+	matrixtranspose M_imagebkg
+	matrixtranspose M_imagebkgSD
+
 	M_imagebkg*=-1
 	M_imagebkg+=image
 	M_imagebkgSD *= M_imagebkgSD
 	M_imagebkgSD += imageSD^2
 	M_imagebkgSD = sqrt(M_imagebkgSD)
 
-	killwaves/z W_extractedrow,W_Coef,W_mask,W_sigma,W_templine,W_templineSD,M_Covar,W_paramconfidenceinterval,UP_W_templine,LP_W_templine
-	return 0
+	killwaves/z W_extractedrow,W_Coef,W_mask,W_sigma,W_templine,W_templineSD,M_Covar,W_paramconfidenceinterval
+	killwaves/z UC_W_templine, LC_W_templine, UP_W_templine, LP_W_templine
+	return 0 
 End
 
-//Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2, y3)
-//		Wave image, imageSD, W_mask
-//		variable  pp,  y0, y1, y2, y3
-//		string tempSTr
-//		variable temp
-//
-//		DFREF dfSav= GetDataFolderDFR()
-//		// Create a free data folder to hold the extracted and filtered plane 
-//		DFREF dfFree= NewFreeDataFolder()
-//		SetDataFolder dfFree
-//
-//		imagetransform/g=(pp) getrow image
-//		Wave W_extractedRow
-//		
-//		make/o/d/n=2/free W_coef
-//		W_coef[0] = W_extractedRow[y0]
-//		W_coef[1] = (W_extractedRow[y3]-W_extractedRow[y0])/(y3-y0)
-//		duplicate/o W_extractedRow W_templine
-//	
-//		imagetransform/g=(pp) getrow imageSD
-//		duplicate/o W_extractedRow W_templineSD
-//	
-//		W_templineSD[] = (W_templineSD[p]==0) ? 1 : W_templineSD[p]
-//		//the best and most correct way to propagate the errors will be by using PLA_cpInterval.
-//		//However, it is quicker to estimate the error from a linear interpolation of the prediction band
-//		//this is entirely permissible for background subtraction within the spec beam area
-//		//but will not be correct outside the background+foreground regions.
-//		//In which case use funcfit and Pla_CPInterval, it'll just be slower.
-//		variable v_fiterror=0
-//		CurveFit/n/q line  W_templine /M=W_mask /I=1 /W=W_templineSD /D /F={0.683000, 2}
-//		
-//		if(getrterror(0))
-//			tempStr = GetRTErrMessage()
-//			W_templine = 0
-//			W_templineSD = 0
-//			temp = GetRTError(1)
-//		else
-//			Wave UP_W_templine,LP_W_templine
-//			W_templine = W_coef[0] + p*W_coef[1]
-//			W_templineSD = 0.5*(UP_W_templine(p)-LP_W_templine(p))
-//		endif
-//
-//		SetDataFolder dfSav
-//		// Return a reference to the free data folder containing M_ImagePlane
-//		return dfFree
-//End
+Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2, y3)
+	Wave image, imageSD, W_mask
+	variable  pp,  y0, y1, y2, y3
+	string tempSTr
+	variable temp
+
+	DFREF dfSav= GetDataFolderDFR()
+	// Create a free data folder to hold the extracted and filtered plane 
+	DFREF dfFree= NewFreeDataFolder()
+	SetDataFolder dfFree
+
+	imagetransform/g=(pp) getrow image
+	Wave W_extractedRow
+		
+	make/o/d/n=2 W_coef
+	W_coef[0] = W_extractedRow[y0]
+	W_coef[1] = (W_extractedRow[y3]-W_extractedRow[y0])/(y3-y0)
+	duplicate/o W_extractedRow W_templine
+	
+	imagetransform/g=(pp) getrow imageSD
+	duplicate/o W_extractedRow W_templineSD
+	
+	W_templineSD[] = (W_templineSD[p]==0) ? 1 : W_templineSD[p]
+	//the best and most correct way to propagate the errors will be by using PLA_cpInterval.
+	//However, it is quicker to estimate the error from a linear interpolation of the prediction band
+	//this is entirely permissible for background subtraction within the spec beam area
+	//but will not be correct outside the background+foreground regions.
+	//In which case use funcfit and Pla_CPInterval, it'll just be slower.
+	variable v_fiterror=0
+	CurveFit/n/q line, kwCWave=W_coef,  W_templine /M=W_mask /I=1 /W=W_templineSD /D /F={0.683000, 2}
+		
+	if(getrterror(0))
+		tempStr = GetRTErrMessage()
+		W_templine = 0
+		W_templineSD = 0
+		temp = GetRTError(1)
+	else
+		Wave UP_W_templine,LP_W_templine
+		W_templine = W_coef[0] + p*W_coef[1]
+		W_templineSD = 0.5*(UP_W_templine(p)-LP_W_templine(p))
+	endif
+
+	SetDataFolder dfSav
+	// Return a reference to the free data folder containing M_ImagePlane
+	return dfFree
+End
 
 Function Pla_CPInterval(fitfunction,xx, covar, params, conflevel, DegFree)
 	//confidence level should be between 0 and 100
@@ -664,12 +663,13 @@ Function correct_for_gravity(data, dataSD, lambda, trajectory, lowLambda, highLa
 		endif
 		travel_distance = W_coef[0]
 		duplicate/o W_coef, W_gravCorrCoefs
-						
+		
+				
 		//now rebin the detector accounting for the gravity correction
 		for(ii=0 ; ii<dimsize(lambda,0) ; ii+=1)
 			totaldeflection = deflection(lambda[ii], travel_distance, trajectory)/Y_PIXEL_SPACING
 			Xsection_px_rebin = Xsection_px + totaldeflection
-	
+
 			//extract a row
 			imagetransform/g=(ii) getRow data
 			Wave W_extractedRow
@@ -688,7 +688,6 @@ Function correct_for_gravity(data, dataSD, lambda, trajectory, lowLambda, highLa
 			M_gravitycorrected[ii][] = W_rebin[q]
 			M_gravitycorrectedSD[ii][] = W_rebinSD[q]
 		endfor
-
 	catch
 
 	endtry
@@ -736,23 +735,55 @@ Function centre_wavelength(data, lobin, hibin)
 		
 	make/o/n=(dimsize(data,1)) xdata = p
 	
-	for(ii=0 ; ii <dimsize(data,0) ; ii+=1)
-		//extract a row
-		variable V_fiterror = 0
-		imagetransform/g=(ii) getRow data
-		Wave W_extractedRow
-		
-		W_centrewavelength[ii] = Pla_peakcentroid(xdata, W_extractedrow, x0= loBin, x1 = hiBin)
-		//		curvefit/n=1/q/NTHR=2 gauss  data[ii][]
-		//		Wave W_coef
-		//		if(!V_fiterror)
-		//			W_centrewavelength[ii] = W_coef[2]
-		//		else
-		//			W_centrewavelength[ii] = NaN
-		//		endif
-	endfor
-	killwaves/z W_coef, xdata
+//	for(ii=0 ; ii <dimsize(data,0) ; ii+=1)
+//		//extract a row
+//		variable V_fiterror = 0
+//		imagetransform/g=(ii) getRow data
+//		Wave W_extractedRow
+//		
+//		W_centrewavelength[ii] = Pla_peakcentroid(xdata, W_extractedrow, x0= loBin, x1 = hiBin)
+//		//		curvefit/n=1/q/NTHR=2 gauss  data[ii][]
+//		//		Wave W_coef
+//		//		if(!V_fiterror)
+//		//			W_centrewavelength[ii] = W_coef[2]
+//		//		else
+//		//			W_centrewavelength[ii] = NaN
+//		//		endif
+//	endfor
+	
+	Make/o/DF/N=(dimsize(data, 0))/free dfw
+	 dfw = Pla_centre_wavelengthworker(xdata, data, p, loBin, hiBin)
+	DFREF df
+	for(ii = 0 ; ii < dimsize(data, 0) ; ii+=1)
+		df = dfw[ii]
+		Wave theResult = df:theResult
+		W_centrewavelength[ii] = theResult[0]
+	endfor	
+	
+	killwaves/z W_coef, xdata, dfw
 End
+
+Threadsafe Function/DF Pla_centre_wavelengthworker(xdata, data, pp, loBin, hiBin)
+	Wave xdata, data
+	variable pp, lobin, hibin
+	
+	//a parallelised way of doing a wavelength rebin, called by Pla_2
+	DFREF dfSav= GetDataFolderDFR()
+	// Create a free data folder to hold the extracted and filtered plane 
+	DFREF dfFree= NewFreeDataFolder()
+	SetDataFolder dfFree
+		
+	make/n=1/d theResult
+	imagetransform/g=(pp) getRow data
+	Wave W_extractedRow
+		
+	theResult[0] = Pla_peakcentroid(xdata, W_extractedrow, x0= loBin, x1 = hiBin)
+	
+	SetDataFolder dfSav
+	// Return a reference to the free data folder containing M_ImagePlane
+	return dfFree	
+End
+
 
 Function Pla_beam_width(w, zz, d1, d2): fitfunc
 	wave w, zz, d1, d2

@@ -560,12 +560,19 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 					newGF_HoldString+="0"
 				endfor
 			endif
-			GEN_setlimitsforGENcurvefit(root:packages:MotofitGF:NewGlobalFit:MasterCoefs,newGF_HoldString,getdatafolder(1))
+			//get limits wave, also sets default parameters.
+			GEN_setlimitsforGENcurvefit(root:packages:MotofitGF:NewGlobalFit:MasterCoefs, newGF_HoldString, getdatafolder(1))
+			NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
+			NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
+			NVAR recomb =  root:packages:motofit:old_genoptimise:recomb
+			NVAR k_m =  root:packages:motofit:old_genoptimise:k_m
+			NVAR fittol = root:packages:motofit:old_genoptimise:fittol
+
 			Command =  "GENcurvefit "
 			if (quiet)
 				Command += "/Q"
 			endif
-			Command += "/K={200,10,0.7,0.5}"
+			Command += "/K={"+num2str(iterations)+","+num2str(popsize)+","+num2str(k_m)+","+num2str(recomb)+"}"
 			Command += "/X=XCumData"
 			Command += "/D=FitY "
 			Command += residstring

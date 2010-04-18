@@ -131,7 +131,7 @@ Function Pla_findpeak(distance, profile,centre,sd)
 	Killwaves/z W_temp_dif,W_temp_dif_dif,W_temp,W_tempx,W_findlevels,W_tempx
 End
 
-Function Pla_peakCentroid(xwave,ywave,[x0,x1])
+Threadsafe Function Pla_peakCentroid(xwave,ywave,[x0,x1])
 	Wave xwave,ywave
 	variable x0,x1
 	if(ParamisDefault(x0) || ParamisDefault(x1))
