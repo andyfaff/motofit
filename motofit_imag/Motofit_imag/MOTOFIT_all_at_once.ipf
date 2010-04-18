@@ -2403,7 +2403,7 @@ Function Moto_fit_GenLM()
 		colour=replacestring(fitdestination,colour,slddestination)
 		cmd="modifygraph "+colour
 		Execute/Z cmd
-		Modifygraph lsize($SLDdestination)=1
+		Modifygraph lsize($SLDdestination)=1, mode($SLDdestination)=0
 	endif
 	
 	//write the fit to the report notebook
