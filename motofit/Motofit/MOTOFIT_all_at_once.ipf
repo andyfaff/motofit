@@ -190,7 +190,7 @@ Function plotCalcref()
 		Label left "\Z08\\f02\\F'Symbol'r\\F'Arial'   \\f00/10\\S-6\\M √Ö\\S-2 "
 		ModifyGraph lblPos(left)=42; 
 		Modifygraph fSize(left)=8
-		Label bottom "\Z06<<-- TOP          \Z08z /Å       \Z06 BOTTOM-->>"
+		Label bottom "z/Å"
 		ModifyGraph lblPos(bottom)=30; 
 		Modifygraph fSize(bottom)=8
 		Modifygraph rgb(sld)=(0,0,52224)
@@ -205,7 +205,6 @@ Function plotCalcref()
 	Dowindow/F reflectivitygraph
 	Autopositionwindow/m=1/R=reflectivitygraph reflectivitypanel
 End
-
 Function Moto_genericButtonControl(B_Struct)
 	STRUCT WMButtonAction &B_Struct
 	if(B_Struct.eventcode!=2)
