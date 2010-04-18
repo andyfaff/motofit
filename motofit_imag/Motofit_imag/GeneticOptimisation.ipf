@@ -2608,15 +2608,13 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 	limitsdialog_listwave[][0] = num2istr(thosebeingvaried[p])
 	limitsdialog_listwave[][1] = num2str(coefs[thosebeingvaried[p]])
 	limitsdialog_selwave[][2] = 2
-	limitsdialog_selwave[][3] = 2
-
+	limitsdialog_selwave[][3] = 2	
+	
 	//limits for those being varied
 	Wave/z limitsForThoseBeingVaried = root:packages:motofit:old_genoptimise:limitsForThoseBeingVaried
 	if(!waveexists(limitsForThoseBeingVaried))
-		make/o/n=(numbeingvaried, 2) limitsForThoseBeingVaried = 0
-	else 
-		redimension/n=(numbeingvaried,-1) limitsForThoseBeingVaried
-	endif	
+		make/o/n=(0, 2) limitsForThoseBeingVaried = 0
+	endif
 	
 	if(paramisdefault(limits))
 		Wave/z limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
@@ -2634,8 +2632,13 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 				limitsforthosebeingvaried[][0] = coefs[thosebeingvaried[p]] < 0 ? 2* coefs[thosebeingvaried[p]] : 0
 				limitsforthosebeingvaried[][1] = coefs[thosebeingvaried[p]] > 0 ? 2* coefs[thosebeingvaried[p]] : 0
 			endif
-		endif
+		else
+			redimension/n=(numbeingvaried,-1) limitsForThoseBeingVaried
+			limitsforthosebeingvaried[][0] = coefs[thosebeingvaried[p]] < 0 ? 2* coefs[thosebeingvaried[p]] : 0
+			limitsforthosebeingvaried[][1] = coefs[thosebeingvaried[p]] > 0 ? 2* coefs[thosebeingvaried[p]] : 0
+		endif	
 	else
+		redimension/n=(numbeingvaried,-1) limitsForThoseBeingVaried
 		limitsforthosebeingvaried[][0] = limits[thosebeingvaried[p]]
 		limitsforthosebeingvaried[][1] = limits[thosebeingvaried[p]] 
 	endif
@@ -2662,7 +2665,7 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 		SetVariable setvar4,pos={12,104},size={215,19},title="fit tolerance",fSize=12
 		SetVariable setvar4,limits={1e-7,1e-1,0.001},value= root:packages:motofit:old_genoptimise:fittol
 		Button button0,pos={30,310},size={266,25},proc=GCF_dialogProc,title="Continue"
-	
+		Button button1,pos={251, 103},size={45, 20},proc=GCF_dialogProc,title="default", fsize=9
 		PauseForUser GCF_dialog
 
 		limitsforthosebeingvaried[][0] = str2num(limitsdialog_listwave[p][2])
@@ -2671,7 +2674,7 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 		for(ii=0 ; ii < numbeingvaried ; ii+=1)
 			limits[thosebeingvaried[ii]][0] = limitsforthosebeingvaried[ii][0] 
 			limits[thosebeingvaried[ii]][1] = limitsforthosebeingvaried[ii][1] 
-			if(limits[thosebeingvaried[ii]][0] < limits[thosebeingvaried[ii]][1])
+			if(limits[thosebeingvaried[ii]][0] <= limits[thosebeingvaried[ii]][1])
 				thoseOK+=1
 			endif
 		endfor
@@ -2687,10 +2690,19 @@ End
 Function GCF_dialogProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 
+	Wave/T listwave = root:packages:motofit:old_genoptimise:limitsdialog_listwave
 	switch( ba.eventCode )
 		case 2: // mouse up
 			// click code here
-			dowindow/k $ba.win
+			strswitch(ba.ctrlname)
+				case "button0":
+					dowindow/k $ba.win
+				break
+				case "button1":
+					listwave[][2] = selectstring(str2num(listwave[p][1]) > 0, num2str(2 * str2num(listwave[p][1])), "0")
+					listwave[][3] = selectstring(str2num(listwave[p][1]) < 0, num2str(2 * str2num(listwave[p][1])), "0")
+				break
+			endswitch
 			break
 	endswitch
 
