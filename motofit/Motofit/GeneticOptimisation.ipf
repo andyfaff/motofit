@@ -2828,13 +2828,13 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB])
 		//now lets do the montecarlo fitting
 		variable timed = datetime
 		for(ii=0 ; ii<Iters ; ii+=1)
-			if(ii>0)
+			if(ii == 0)
 				y_montecarlo[] = yy[p]
 			else
 				y_montecarlo[] = yy[p] + gnoise(ee[p])
 			endif	
-			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
-//			Gencurvefit/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={gen.GEN_generations, gen.GEN_popsize,gen.k_m, gen.GEN_recombination}/TOL=(gen.GEN_V_fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+//			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+			Gencurvefit/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			M_montecarlo[ii][] = w[q]
 			W_chisq[ii] = V_chisq
 			print "montecarlo ", ii, " done - total time = ", datetime-timed
