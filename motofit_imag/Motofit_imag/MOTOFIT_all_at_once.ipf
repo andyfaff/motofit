@@ -1678,7 +1678,7 @@ Function Moto_fit_Genetic()
 		
 	//now set up the command for optimisation
 	cmd ="GENcurvefit"
-	cmd += 	"/x="+nameofwave(a)
+	cmd += 	"/MAT=2/x="+nameofwave(a)
 	if(useerrors)
 		cmd += "/I=1/w="+nameofwave(c) 
 	endif
@@ -2213,7 +2213,7 @@ Function Moto_fit_GenLM()
 	NVAR fittol = root:packages:motofit:old_genoptimise:fittol
 	
 	cmd ="GENcurvefit"
-	cmd += 	"/q/x="+x
+	cmd += 	"/MAT=2/q/x="+x
 	cmd += "/D="+fitdestination
 		
 	options = "/k={"+num2str(iterations)+","+num2str(popsize)+","+num2str(k_m)+","+num2str(recomb)+"}"

@@ -30,6 +30,20 @@ Function modelWrapper(w,y,x):fitfunc
 //		forRef[4*(w[0]-1)+8] = 0
 //		forRef[4*(w[0]-1)+9] = w[10]
 
+//	for(ii=1 ; ii < w[0] ; ii+=1)
+//			forRef[4*ii+6] = w[6]
+//			forRef[4*ii+7] = w[ii+12]
+//			forRef[4*ii+8] = 0
+//			if(ii)
+//				forRef[4*ii+9] = w[7]
+//			else
+//				forRef[4*ii+9] = w[11]
+//			endif
+//	endfor
+//	forRef[6] = w[8]
+//	forRef[7] = w[9]
+//	forRef[8] = 0
+//	forRef[9] = w[10]
 
 
 Motofit(forRef,y,x)
