@@ -2576,7 +2576,7 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 		variable/g iterations = 100
 	endif
 	if(!NVAR_exists(popsize))
-		variable/g popsize = 100
+		variable/g popsize = 10
 	endif
 	if(!NVAR_exists(recomb))
 		variable/g recomb = 0.5
@@ -2831,7 +2831,7 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB])
 			if(ii == 0)
 				y_montecarlo[] = yy[p]
 			else
-				y_montecarlo[] = yy[p] + gnoise(ee[p])
+				y_montecarlo[] = yy[p] + gnoise(ee[p], 2)
 			endif	
 //			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			Gencurvefit/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
