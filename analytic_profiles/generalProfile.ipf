@@ -53,20 +53,21 @@ End
 
 //gencurvefit /MINF=smoother/X=root:PAF1_q/K={100,20,0.7,0.5}/TOL=0.001/L=200 modelWrapper,root:PAF1_R,root:w,"1010011100000000000000000000000000000000000000000000000000",root:packages:motofit:gencurvefit:gen_limits
 Function smoothier(coefs, y_obs, y_calc, s_obs)
-	Wave coefs, y_obs, y_calc, s_obs
+	Wave/z coefs, y_obs, y_calc, s_obs
+
 	make/n=(numpnts(y_obs))/free/d diff
 	diff = ((y_obs-y_calc)/s_obs)^2
 	
-	variable ii, betaD=0
-	for(ii=8 ; ii<coefs[0]-1 ; ii+=1)
-		betaD += (coefs[ii]-coefs[ii+1])^2
+	variable ii, betaD=1
+	for(ii=9 ; ii<9+coefs[0]-1 ; ii+=1)
+		betaD +=sqrt(abs((coefs[ii]-coefs[ii+1])/(0.5*coefs[ii]+0.5*coefs[ii+1])))
 	endfor
-	if(coefs[0] > 0)
-		betaD += (coefs[2]-coefs[8])^2
-	endif
-	if(coefs[0] > 1)
-		betaD += (coefs[8-1+coefs[0]]-coefs[3])^2
-	endif
+//	if(coefs[0] > 0)
+//		betaD += (coefs[2]-coefs[9])^2
+//	endif
+//	if(coefs[0] > 1)
+//		betaD += (coefs[9-1+coefs[0]]-coefs[3])^2
+//	endif
 	
 	return sum(diff)* betaD
 end

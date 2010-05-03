@@ -467,7 +467,9 @@ Function Motofit(w,y,z) :Fitfunc
 			case 0:					//case 0 is if usedqwave=0.  This means the user hasn't selected a dQ wave
 				res=(res/100)
 				if (res<0.005)		//if the resolution is less that 1% don't bother doing the convolution
+//					variable timer = startmstimer
 					Abelesall(w,y,z)
+//					print dimsize(y, 0), stopmstimer(timer)
 				else				//calculate the resolution with a convolution
 					//by varying gaussnum you control the accuracy of the interpolation.  Higher=more accurate but a lot slower.
 					//make it an odd number
@@ -503,7 +505,8 @@ Function Motofit(w,y,z) :Fitfunc
 					//calculate the theoretical curve with a lot of datapoints	
 	//				variable timer = startmstimer
 					AbelesAll(w, ytemp, xtemp)
-		//			print stopmstimer(timer)
+	//				print dimsize(ytemp, 0), stopmstimer(timer)
+					
 
 					//do the resolution convolution
 					setscale/I x,start,logxtemp[numpnts(logxtemp)-1],ytemp
