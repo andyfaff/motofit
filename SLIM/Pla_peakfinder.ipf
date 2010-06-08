@@ -22,7 +22,7 @@ Function Pla_findpeakDetails(ywave,xwave,[expected_centre,expected_width])//dist
       
 	//now work out where the leading edge and trailing edge of the peak is.  
 	//CAUTION, this may be rough
-	Wave W_integrate,W_integratex
+	Wave/z W_integrate,W_integratex
       
 	//this should get 99.5% of the integrated counts
 	//note that you can only get these positions if profile is an equally spaced wave.
