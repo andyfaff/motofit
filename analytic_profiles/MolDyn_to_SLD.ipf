@@ -55,7 +55,7 @@ Function parseCarFile()
 	endif
 
 	//initialise SLD database
-	Moto_SLDdatabase()
+//	Moto_SLDdatabase()
 End
 
 Function parsePDBFile()
@@ -91,8 +91,14 @@ Function parsePDBFile()
 			cellDimensions = {xx, yy, zz}		
 		endif
 		if(stringmatch(buffer[0,3], "ATOM"))
-			sscanf buffer, "%s %f %s %s %f  %f %f %f", othercrap, othercrapV1, element, otherCrap, otherCrapV2, xx, yy, zz
+			sscanf buffer, "%s %f %s %s %f  %f %f %f", othercrap, othercrapV1, element, otherCrap1, otherCrapV2, xx, yy, zz
 			if(V_flag > 0)
+				if(stringmatch(othercrap1, "SOL"))
+					if(stringmatch(element[0,0], "H"))
+						element[0,0]="D"
+					endif
+				endif
+
 				redimension/n=(dimsize(elementtype, 0) + 1, -1) elementType, elementPositions
 				elementType[dimsize(elementtype, 0)- 1] = "0" + element[0,0]
 				elementPositions[dimsize(elementPositions, 0)- 1][0] = xx
@@ -109,7 +115,7 @@ Function parsePDBFile()
 	endif
 
 	//initialise SLD database
-	Moto_SLDdatabase()
+//	Moto_SLDdatabase()
 	setdatafolder $cDF
 
 End
@@ -140,7 +146,7 @@ Function SLDprofile(binSize)
 		MD_profile[zposition][0] += str2num(scatlengths[row][2])
 		MD_profile[zposition][1] += str2num(scatlengths[row][5])
 	endfor
-	MD_profile *= 2.8179
+	MD_profile[][1] *= 2.8179
 	MD_profile /= molecularvolume
 	MD_profile *=10	
 End

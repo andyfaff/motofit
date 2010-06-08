@@ -24,7 +24,7 @@ Function FitRefToListOfWaves()
 	String holdstring=moto_str("holdstring")
 	variable holdbits =  bin2dec(GEN_reverseString(holdstring))
 	
-	Variable/g root:packages:Motofit:Motofit_batchfits:V_fitOptions = 4 // suppress progress window
+	Variable/g root:packages:motofit:Motofit_batchfits:V_fitOptions = 4 // suppress progress window
 	Variable V_FitError = 0 // prevent abort on error
 	
 	//offset is the value for offsetting the traces in the graphs
@@ -49,7 +49,7 @@ Function FitRefToListOfWaves()
 	String constraint=""
 	variable ii=0
 	string test
-	Wave/T constraints=root:motofit:reflectivity:constraints
+	Wave/T constraints=root:packages:motofit:reflectivity:constraints
 	if(V_Value)
 		if (Waveexists(constraints)==0)
 			ABORT "no constraint wave exists"
@@ -74,7 +74,7 @@ Function FitRefToListOfWaves()
 		
 		Wave aWave= $aWaveName_Y
 		
-		appendtograph/w=reflectivitygraph aWave vs $awavename_x
+//		appendtograph/w=reflectivitygraph aWave vs $awavename_x
 		
 		// /N suppresses screen updates during fitting
 		// /Q suppresses history output during fitting
@@ -179,9 +179,9 @@ Function FitRefToListOfWaves()
 		variable traceexists = whichlistitem("fit_"+aWaveName_Y,traces,";")
 		if(traceexists==-1)
 			Appendtograph/W=batchdata $("fit_"+aWaveName_Y) vs $("fitx_"+aWaveName_Y)
-			Modifygraph/W=batchdata mode($("fit_"+aWaveName_Y))=0,offset($("fit_"+aWaveName_Y))={0,offset*(((ii+2)/3)-1)}
-			modifygraph/W=batchdata rgb($("fit_"+aWaveName_Y))=(0,0,0)
 		endif
+		Modifygraph/W=batchdata mode($("fit_"+aWaveName_Y))=0,offset($("fit_"+aWaveName_Y))={0,offset*(((ii+2)/3)-1)}
+		modifygraph/W=batchdata rgb($("fit_"+aWaveName_Y))=(0,0,0)
 		doupdate
 		print (ii+2)/3
 	endfor
@@ -234,7 +234,7 @@ Function Moto_plotbatchresults(coefwave,holdstring)
 			appendtograph/w=concatenatedcoefs/L=$axisname coefwave[][ii] vs timeslice
 			Modifygraph axisEnab($axisname)={offsetstart,offsetstart+offset}, axisEnab(bottom)={0.05,1},freePos($axisname)={0,bottom}
 			Modifygraph tickRGB($axisName )=(65535,65535,65535),tlblRGB($axisName )=(65535,65535,65535),axRGB($axisName )=(65535,65535,65535) 
-			ModifyGraph freePos(L1)={0,bottom},tickRGB(bottom)=(65535,65535,65535),tlblRGB(bottom)=(65535,65535,65535),axRGB(bottom)=(65535,65535,65535) 
+			ModifyGraph tickRGB(bottom)=(65535,65535,65535),tlblRGB(bottom)=(65535,65535,65535),axRGB(bottom)=(65535,65535,65535) 
 			ErrorBars $tracename Y,wave=(root:packages:motofit:MOTOFIT_batchfits:concat_Coef_sigma[][ii],root:packages:motofit:MOTOFIT_batchfits:concat_Coef_sigma[][ii])
 			offsetstart+=offset+0.1/numplots
 			jj+=1
@@ -253,6 +253,7 @@ Function LoadAndGraphAll (pathname)
 
 	//loads all the data into a specific datafolder!
 	string saveDF=Getdatafolder(1)
+	newdatafolder /o root:packages
 	Newdatafolder/o/s root:packages:motofit
 	NewDataFolder/O/S root:packages:motofit:MOTOFIT_batchfits
 
@@ -305,7 +306,7 @@ Function LoadAndGraphAll (pathname)
 	endif
 	
 	//sort that list to make it alphabetical.
-	All_names=SortList(All_names,";", 0)
+	All_names=SortList(All_names,";", 16)
 
 	// Create new graph for the data
 	if(itemsinlist(winlist("batchdata",";","win:1"))==0)
@@ -315,8 +316,10 @@ Function LoadAndGraphAll (pathname)
 	//loop through each file and load it in.
 	for(ii=0;ii<itemsinlist(All_names);ii+=1)
 		filename=StringFromList(ii,All_Names,";")
-	//	LoadWave /q/a/J/D/O/P=$pathName fileName
-		LoadWave/a/J/D/K=0/l={0,120,0,1,3}/V={" "," ",0,0}/P=$pathname filename
+		LoadWave/Q/G/D/A/P=$pathName fileName
+//		LoadWave/q/a/J/D/K=0/V={"\t, "," $",0,0}/L={0,1,0,0,3}/P=$pathname filename
+		
+	//	LoadWave/a/J/D/K=0/l={0,120,0,1,3}/V={" "," ",0,0}/P=$pathname filename
 		if (V_flag==0)  //No waves loaded. Perhaps user cancelled
 			ABORT
 		endif
