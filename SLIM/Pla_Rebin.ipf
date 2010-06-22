@@ -264,5 +264,5 @@ for(ii = 0 ; ii < numpnts(qq) ; ii += 1)
 endfor
 	W_R_rebin[] /= I_sw[p]
 	W_q_rebin[] /= Q_sw[p]
-	W_E_rebin[] = 1/I_sw[p] 
+	W_E_rebin[] = sqrt(1/I_sw[p])
 End
