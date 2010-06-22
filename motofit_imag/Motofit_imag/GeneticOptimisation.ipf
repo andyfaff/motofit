@@ -2648,7 +2648,7 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 	
 	do
 		variable thoseOK = 0
-		NewPanel /W=(445,64,774,410) as "Gencurvefit limits"
+		NewPanel /W=(445,64,774,445) as "Gencurvefit limits"
 		Dowindow/c GCF_dialog
 		ListBox list0,pos={11,130},size={307,167}
 		ListBox list0,listWave=root:packages:motofit:old_genoptimise:limitsdialog_listwave
@@ -2666,8 +2666,14 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 		SetVariable setvar4,limits={1e-7,1e-1,0.001},value= root:packages:motofit:old_genoptimise:fittol
 		Button button0,pos={30,310},size={266,25},proc=GCF_dialogProc,title="Continue"
 		Button button1,pos={251, 103},size={45, 20},proc=GCF_dialogProc,title="default", fsize=9
+		Button button2,pos={30,337},size={266,25},proc=GCF_dialogProc,title="Cancel"
 		PauseForUser GCF_dialog
 
+		NVAR GCF_continue = root:packages:motofit:old_genoptimise:GCF_continue
+		if(!GCF_continue)
+			setdatafolder $cDF
+			abort
+		endif
 		limitsforthosebeingvaried[][0] = str2num(limitsdialog_listwave[p][2])
 		limitsforthosebeingvaried[][1] = str2num(limitsdialog_listwave[p][3])
 	
@@ -2691,16 +2697,23 @@ Function GCF_dialogProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 
 	Wave/T listwave = root:packages:motofit:old_genoptimise:limitsdialog_listwave
+	variable/g root:packages:motofit:old_genoptimise:GCF_continue
+	NVAR GCF_continue = root:packages:motofit:old_genoptimise:GCF_continue
 	switch( ba.eventCode )
 		case 2: // mouse up
 			// click code here
 			strswitch(ba.ctrlname)
 				case "button0":
 					dowindow/k $ba.win
+					GCF_continue = 1
 				break
 				case "button1":
 					listwave[][2] = selectstring(str2num(listwave[p][1]) > 0, num2str(2 * str2num(listwave[p][1])), "0")
 					listwave[][3] = selectstring(str2num(listwave[p][1]) < 0, num2str(2 * str2num(listwave[p][1])), "0")
+				break
+				case "button2":  //Cancel
+					dowindow/k $ba.win
+					GCF_continue = 0
 				break
 			endswitch
 			break

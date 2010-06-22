@@ -268,4 +268,11 @@ endfor
 	W_q_rebin[] /= Q_sw[p]
 	W_E_rebin[] = sqrt(1/I_sw[p])
 	W_dq_rebin[] /= Q_sw[p]
+	
+for(ii = numpnts(W_q_rebin) - 1 ; ii >= 0 ; ii -= 1)
+	if(numtype(W_q_Rebin[ii]))
+		deletepoints ii, 1, W_q_rebin, W_R_rebin, W_E_rebin, W_dq_rebin
+	endif
+endfor
+
 End
