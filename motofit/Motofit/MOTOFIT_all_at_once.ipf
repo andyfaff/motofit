@@ -4044,7 +4044,7 @@ Function Moto_removeNAN(q,R,dR,dQ)
 End
 
 Function Moto_localchi2() //menu call
-	Wave coef_Cref = root:coef_Cref ,coef_multiCref=root:coef_multicref
+	Wave/z coef_Cref = root:coef_Cref ,coef_multiCref=root:coef_multicref
 	string callfolder=Getdatafolder(1)
 			
 	controlinfo/w=reflectivitypanel dataset

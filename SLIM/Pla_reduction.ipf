@@ -1583,7 +1583,7 @@ Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite, rebin])
 		endfor
 		
 		if(!paramisdefault(rebin))
-			Pla_rebin_afterwards(tempQQ, tempRR, tempDR, tempDQ, rebin, tempQQ[0] - 0.0005, tempQQ[inf]+0.0005)
+			Pla_rebin_afterwards(tempQQ, tempRR, tempDR, tempDQ, rebin, tempQQ[0] - 0.00005, tempQQ[inf]+0.00005)
 			duplicate/o W_Q_rebin, tempQQ
 			duplicate/o W_R_rebin, tempRR
 			duplicate/o W_E_rebin, tempDR
