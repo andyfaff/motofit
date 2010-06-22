@@ -228,23 +228,24 @@ Threadsafe Function checkSorted(aWave)
 End
 
 
-Function Pla_rebin_afterwards(qq,rr, dr, dq, rebinPercent, lowerQ,upperQ)
+Function Pla_rebin_afterwards(qq,rr, dr, dq, rebin, lowerQ,upperQ)
 Wave qq,rr,dr,dq
-variable rebinPercent, lowerQ, upperQ
+variable rebin, lowerQ, upperQ
 //this function rebins a set of R vs Q data given a rebin percentage.
 //it is designed to replace rebinning the wavelength spectrum which can result in twice as many points in the overlap region.
 //However, the background subtraction is currently done on rebinned data. So if you don't rebin at the start the  subtraction
 //isn't as good.
 variable stepsize, numsteps, ii, binnum, weight
 
-rebinPercent =  1 + (rebinPercent/100)
-stepsize = log(rebinPercent)
+rebin =  1 + (rebin/100)
+stepsize = log(rebin)
 numsteps = log(upperQ / lowerQ) / stepsize
 
 make/n=(numsteps + 1)/o/d W_q_rebin, W_R_rebin, W_E_rebin, W_dq_rebin
 W_q_rebin = 0
 W_R_rebin = 0
 W_E_rebin = 0
+W_dq_rebin = 0
 
 make/n=(numsteps + 2)/free/d W_q_rebinHIST
 make/n=(numsteps + 1)/d/free Q_sw, I_sw, E_sw
@@ -259,10 +260,12 @@ for(ii = 0 ; ii < numpnts(qq) ; ii += 1)
 	weight = 1 / (dR[ii]^2)
 	W_R_rebin[binnum] += RR[ii] * weight
 	W_q_rebin[binnum] += qq[ii] * weight
+	W_dq_rebin[binnum] += dq[ii] * weight
 	Q_sw[binnum] += weight
 	I_sw[binnum] += weight
 endfor
 	W_R_rebin[] /= I_sw[p]
 	W_q_rebin[] /= Q_sw[p]
 	W_E_rebin[] = sqrt(1/I_sw[p])
+	W_dq_rebin[] /= Q_sw[p]
 End

@@ -495,8 +495,8 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 
 		//THey are spliced from file, rather from memory, this is because one may want to delete individual points using
 		//delrefpoints.  If you want to do this then do the reduction, delrefpoints, then call splicefiles again.
-		print "splicefiles(\"" + replacestring("\\", pathname, "\\\\") + "\", \"" + toSplice + "\",  dontoverwrite = " + num2istr(dontoverwrite) + ")"
-		if(spliceFiles(pathName, toSplice, dontoverwrite = dontoverwrite))
+		print "splicefiles(\"" + replacestring("\\", pathname, "\\\\") + "\", \"" + toSplice + "\",  dontoverwrite = " + num2istr(dontoverwrite) + "rebin = " + num2str(rebin) + ")"
+		if(spliceFiles(pathName, toSplice, dontoverwrite = dontoverwrite, rebin = rebin))
 			print "ERROR while splicing (reduce)";abort
 		endif		
 	catch
@@ -1481,9 +1481,10 @@ Function delrefpoints(pathname, filename, pointlist)
 	endif
 End
 
-Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite])
+Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite, rebin])
 	string pathName,runnumbers, factors
-	variable dontoverwrite
+	variable dontoverwrite, rebin
+	//this function splices different reduced files together.
 	
 	string cDF = getdatafolder(1)
 	string fname
@@ -1580,6 +1581,14 @@ Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite])
 				sort tempQQ,tempQQ,tempRR,tempDR,tempDQ 
 			endif
 		endfor
+		
+		if(!paramisdefault(rebin))
+			Pla_rebin_afterwards(tempQQ, tempRR, tempDR, tempDQ, rebin, tempQQ[0] - 0.0005, tempQQ[inf]+0.0005)
+			duplicate/o W_Q_rebin, tempQQ
+			duplicate/o W_R_rebin, tempRR
+			duplicate/o W_E_rebin, tempDR
+			duplicate/o W_dq_rebin, tempDQ
+		endif
 		
 		fname = "c_" + cutfilename(stringfromlist(0, runnumbers)) + ".dat"
 		if(dontoverwrite)
