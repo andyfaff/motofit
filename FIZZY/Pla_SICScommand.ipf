@@ -115,6 +115,8 @@ Function setUpGlobalVariables()
 	variable/g root:packages:platypus:data:RAW:integratedCounts
 	string/g root:packages:platypus:data:RAW:displayed:order = ""
 
+	variable/g root:packages:platypus:data:batchScan:currentpoint = -1
+	 variable/g root:packages:platypus:data:batchScan:userPaused = 0
 End
 
 Function button_SICScmdpanel(ba) : ButtonControl
@@ -267,6 +269,7 @@ Function button_SICScmdpanel(ba) : ButtonControl
 						Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
 						Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
 						batchfile[][1] = ""
+						batchfile[][3] = ""
 						sel_batchfile[][2] = 2^5
 					endif
 					break
@@ -281,6 +284,9 @@ Function button_SICScmdpanel(ba) : ButtonControl
 					Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
 					batchfile[][2] = "0"
 					sel_batchfile[][2] = 2^5
+					break
+				case "positions_tab3":
+					positions_panel()
 					break
 			endswitch		
 			break
@@ -419,9 +425,6 @@ Function startSICS()
 	//setup experimental details
 	experimentDetailsWizard()
 
-	//create a layout graph of all the motors
-	Instrumentlayout_panel()
-		
 	//ok, now get current list of SICS axis positions, then register the interestProcessor on the socket.
 	//this function creates root:packages:platypus:SICS:axeslist
 	err = createAxisListAndPopulate(SOCK_interest)
@@ -429,6 +432,7 @@ Function startSICS()
 	if(err)
 		Abort "Couldn't get full list of current motor positions for some reason (SICScmd)"
 	endif
+
 
 	//register a processor for everything coming back on the interest sockit.  THis sockit is used
 	//for collecting information on when anything on the instrument hipadaba paths changes.	
@@ -455,7 +459,13 @@ Function startSICS()
 	if(err)
 		abort "problem with instrument specific setup (SICScmd)"
 	endif
-			
+
+	//create a layout graph of all the motors
+	Instrumentlayout_panel()
+	
+		//get all the values in the hipadaba tree
+	getCurrentHipaVals()
+	
 	//Waves for the current axes positions
 	//the set of positions has already been completed.
 	//here we make a colour wave and the listbox selection wave
@@ -505,7 +515,7 @@ Function startSICS()
 		Notebook SICScmdPanel#NB0_tab0, defaultTab=20, statusWidth=0, autoSave=1,showRuler=0, rulerUnits=1
 	
 		ListBox currentAxisPos_tab0,pos={388,31},size={300,687},proc=moveAxisListBoxProc
-		ListBox currentAxisPos_tab0,mode= 2,selRow= 0,editStyle= 1,widths={2,0,2,0,2,0,2}
+		ListBox currentAxisPos_tab0,mode= 2,selRow= 0,editStyle= 1,widths={2,0,2,0,2,0,2}, fsize=14
 		ListBox currentAxisPos_tab0 listwave=:packages:platypus:SICS:axeslist
 		ListBox currentAxisPos_tab0,userColumnResize= 0,selwave = root:packages:platypus:sics:selAxesList,mode = 2, colorWave=root:packages:platypus:SICS:cwAxes
 		//		SetVariable histostatus_tab1,pos={62,146},size={402,16},title="histostatus"
@@ -577,7 +587,7 @@ Function startSICS()
 		ListBox buffer_tab3,pos={54,45},size={383,637}
 		ListBox buffer_tab3,listWave=root:packages:platypus:data:batchScan:list_batchbuffer
 		ListBox buffer_tab3,selWave=root:packages:platypus:data:batchScan:sel_batchbuffer
-		ListBox buffer_tab3,row= 1,mode= 7,editStyle= 2,widths={10,70,6,24}
+		ListBox buffer_tab3,row= 1,mode= 7,editStyle= 2,widths={10,90,6,24}, fsize=14
 		ListBox buffer_tab3,userColumnResize= 0,proc=RebuildBatchListBoxProc
 		Button runbatch_tab3,pos={510,53},size={101,101},title=""
 		Button runbatch_tab3,picture= ProcGlobal#go_pict, proc=button_SICScmdpanel
@@ -591,6 +601,8 @@ Function startSICS()
 		Button clearbatch_tab3,pos={514,455},size={100,30},title="Clear Batch File",proc=button_SICScmdpanel
 		Button selectAllBatch_tab3,pos={514,495},size={100,30},title="Select all",proc=button_SICScmdpanel
 		Button deselectAllBatch_tab3,pos={514,535},size={100,30},title="Deselect all",proc=button_SICScmdpanel
+		Button positions_tab3 title="Defined positions",pos={514,577}, size={100,30},proc=button_SICScmdpanel
+
 		
 		setwindow sicscmdpanel hook(winhook)=sicscmdpanelwinhook 
 		//		Modifypanel/W=SICScmdpanel noedit=1
@@ -751,7 +763,7 @@ Function sicsCmdPanelWinHook(s)		//window hook for events happening in the SICSc
 							break
 						case 13:		//return
 							notebook $s.winname, selection={startOfParagraph, endOfParagraph}
-							notebook $s.winname, textRGB=(0, 0,  65535), fstyle=1, fsize=8
+							notebook $s.winname, textRGB=(0, 0,  65535), fstyle=1, fsize=12
 							getselection notebook, $s.winname, 3
 							string cmdStr = S_Selection
 							variable parastart = V_startparagraph, paraend = V_endparagraph
@@ -765,7 +777,7 @@ Function sicsCmdPanelWinHook(s)		//window hook for events happening in the SICSc
 								cmdStr = removeending(cmdStr, "\r")
 								Notebook SICScmdpanel#NB0_tab0 selection={endOfFile, endOfFile}, text = cmdStr
 								notebook $s.winname, selection={startOfParagraph, endOfParagraph}
-								notebook $s.winname, textRGB=(0, 0,  65535), fstyle=1, fsize=8
+								notebook $s.winname, textRGB=(0, 0,  65535), fstyle=1, fsize=12
 								return 1
 							endif
 							
@@ -887,11 +899,11 @@ Function sics_tabcontrol(tca) : TabControl
 	switch( tca.eventCode )
 		case 2: // mouse up
 			Variable tab = tca.tab
-			ModifyControlList ControlNameList("",";","*_tab0") disable=(tab!=0)
-			ModifyControlList ControlNameList("",";","*_tab1") disable=(tab!=1)
+			ModifyControlList ControlNameList("SICScmdPanel",";","*_tab0") disable=(tab!=0)
+			ModifyControlList ControlNameList("SICScmdPanel",";","*_tab1") disable=(tab!=1)
 			setwindow sicscmdpanel#G0_tab1 hide=(tab!=1)
-			ModifyControlList ControlNameList("",";","*_tab2") disable=(tab!=2)
-			ModifyControlList ControlNameList("",";","*_tab3") disable=(tab!=3)
+			ModifyControlList ControlNameList("SICScmdPanel",";","*_tab2") disable=(tab!=2)
+			ModifyControlList ControlNameList("SICScmdPanel",";","*_tab3") disable=(tab!=3)
 			setwindow sicscmdpanel#NB0_tab0 hide=(tab!=0)
 			setwindow sicscmdpanel#G0_tab2 hide=(tab!=2)
 			setwindow sicscmdpanel#G1_tab2 hide=(tab!=2)
@@ -1266,7 +1278,7 @@ Function getLatestData()
 			totalsize = dim0 * dim1
 		else
 			numdims = 3
-			totalsize *= dim0 * dim1 *dim2
+			totalsize = dim0 * dim1 *dim2
 		endif
 		if(totalsize != numpnts(W_stringtowave))
 			print "ERROR unzipped wave isn't same size as the reported dimensions (getlatestdata)"
@@ -1926,6 +1938,20 @@ Function/c centreofMass2D(w,xx,yy)
 	endfor
 	return cmplx(sumrmx/totalmass,sumrmy/totalmass)
  
+End
+
+Function listexe()
+//is anything still running?
+NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
+	sockitsendnrecv/time=2/smal sock_sync,"\n"
+	sockitsendnrecv/time=2/smal sock_sync,"listexe\n"
+	S_tcp = replacestring(" ", S_tcp, "")
+	S_tcp = replacestring("\t", S_tcp, "")
+	if(strlen(stringfromlist(0, S_tcp, "\n")) > 1)
+		return 1
+	else
+		return 0
+	endif
 End
 
 Function SICSstatus(msg)
@@ -2601,4 +2627,159 @@ for(ii=0; ii<dimsize(hipadaba_paths,0) ; ii+=1)
 	sockitsendmsg SOCK_interest, cmd
 endfor
 
+End
+
+
+Function positioner(posNum)
+       //creates a drive command to send to sics for pre defined positions.
+       //intended to work with a sample changer.
+       //could be adapted to add extra stuff (e.g. temp control, omega_2theta, etc
+       Variable posnum
+       Wave/t/z position_listwave = root:packages:platypus:SICS:position_listwave
+       Wave/z position_selwave = root:packages:platypus:SICS:position_selwave
+       string cmd = "drive"
+       variable isRelative, desiredposition
+       if(!waveexists(position_listwave) || !waveexists(position_selwave))
+               return 1
+       endif
+       if(posNum < 0 || posNum > dimsize(position_listwave, 0) - 1)
+               return 1
+       endif
+       posnum = trunc(posnum)
+
+       //sx
+       isrelative = 2^4 & position_selwave[posnum][2]
+       if(isRelative)
+               desiredposition = getpos("sx") + str2num(position_listwave[posnum][1])
+       else
+               desiredposition =  str2num(position_listwave[posnum][1])
+       endif
+       if(checkDrive("sx", desiredposition))
+               return 1
+       endif
+       cmd += " sx " + num2str(desiredposition)
+
+       //sz
+       isrelative = 2^4 & position_selwave[posnum][4]
+       if(isRelative)
+               desiredposition = getpos("sz") + str2num(position_listwave[posnum][3])
+       else
+               desiredposition =  str2num(position_listwave[posnum][3])
+       endif
+       if(checkDrive("sz", desiredposition))
+               return 1
+       endif
+       cmd += " sz " + num2str(desiredposition)
+
+       //sth
+       isrelative = 2^4 & position_selwave[posnum][6]
+       if(isRelative)
+               desiredposition = getpos("sth") + str2num(position_listwave[posnum][5])
+       else
+               desiredposition =  str2num(position_listwave[posnum][5])
+       endif
+       if(checkDrive("sth", desiredposition))
+               return 1
+       endif
+       cmd += " sth " + num2str(desiredposition)
+
+       //sphi
+       isrelative = 2^4 & position_selwave[posnum][8]
+       if(isRelative)
+               desiredposition = getpos("sphi") + str2num(position_listwave[posnum][7])
+       else
+               desiredposition =  str2num(position_listwave[posnum][7])
+       endif
+       if(checkDrive("sphi", desiredposition))
+               return 1
+       endif
+       cmd += " sphi " + num2str(desiredposition)
+
+       print cmd
+       sics_cmd_cmd(cmd)
+
+End
+
+Function positionlist(numpositions)
+       //sets up pre-defined position waves for various samples.
+       variable numpositions
+       string cDF = getdatafolder(1)
+       variable ii, oldpositions
+       newdatafolder/o root:packages
+       newdatafolder/o root:packages:platypus
+       newdatafolder/o/s root:packages:platypus:SICS
+
+       Wave/t/z position_listwave
+       Wave/z position_selwave
+
+       if(!waveexists(position_listwave))
+               make/t/o/n=(numpositions, 9) position_listwave
+               make/o/n=(numpositions, 9) position_selwave = 2
+               position_selwave[][2] =  2^5
+               position_selwave[][4] =  2^5
+               position_selwave[][6] =  2^5
+               position_selwave[][8] =  2^5
+       elseif(numpositions > 0)
+               oldpositions = dimsize(position_listwave, 0)
+               redimension/n=(numpositions, -1) position_listwave, position_selwave
+               position_selwave[][1] = 2
+               position_selwave[][3] = 2
+               position_selwave[][5] = 2
+               position_selwave[][7] = 2
+               for(ii = oldpositions ; ii < numpositions ; ii += 1)
+                       position_selwave[ii][2] =  2^5
+                       position_selwave[ii][4] =  2^5
+                       position_selwave[ii][6] =  2^5 + 2^4
+                       position_selwave[ii][8] =  2^5
+                       position_listwave[ii][1] = "0"
+                       position_listwave[ii][3] = "0"
+                       position_listwave[ii][5] = "0"
+                       position_listwave[ii][7] = "0"
+               endfor
+       endif
+
+       position_listwave[][0] = num2istr(p)
+       position_selwave[][0] = 0
+
+       setdimlabel 1, 0, position, position_listwave
+       setdimlabel 1, 1, sx, position_listwave
+       setdimlabel 1, 2, relative, position_listwave
+       setdimlabel 1, 3, sz, position_listwave
+       setdimlabel 1, 4, relative, position_listwave
+       setdimlabel 1, 5, sth, position_listwave
+       setdimlabel 1, 6, relative, position_listwave
+       setdimlabel 1, 7, sphi, position_listwave
+       setdimlabel 1, 8, relative, position_listwave
+
+       setdatafolder $cDF
+End
+
+Function numpositions_setVarProc(sva) : SetVariableControl
+       STRUCT WMSetVariableAction &sva
+       //changes the number of pre-defined positions contained in position_panel
+       switch( sva.eventCode )
+               case 1: // mouse up
+               case 2: // Enter key
+               case 3: // Live update
+                       Variable dval = sva.dval
+                       positionlist(dval)
+                       String sval = sva.sval
+                       break
+       endswitch
+
+       return 0
+End
+
+Function positions_panel() : Panel
+       Dowindow/k position_panel
+       //creates a window to setup pre-defined positions
+       PauseUpdate; Silent 1           // building window...
+       NewPanel /K=1/N=position_panel/W=(442,111,1011,410) as "Position Panel"
+       positionlist(0)
+       ListBox position_list,pos={6,34},size={552,255}
+       ListBox position_list,listWave=root:packages:platypus:SICS:position_listwave
+       ListBox position_list,selWave=root:packages:platypus:SICS:position_selwave
+       ListBox position_list,mode= 5,editStyle= 1
+       SetVariable numpositions,pos={9,8},size={200,15},proc=numpositions_setVarProc,title="Number of positions"
+       SetVariable numpositions,limits={1,10,1},value= _NUM:0
 End

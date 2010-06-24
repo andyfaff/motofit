@@ -40,7 +40,7 @@
 
 	//the max count rate you want on the detector
 	//the slit will close to zero if you exceed this rate
-	Constant FSD = 20000
+	Constant FSD = 10000
 
 	//detector axes.
 	//these are the different axes that are downloadable from the histogram server
@@ -78,42 +78,42 @@ End
 Function bHistogram()		//suitable for 40mm HG with FOC
 	oat_table("X",56,-52,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=23)
+	oat_table("T",0,49,999,freq=20)
 	sics_cmd_interest("::chopper::ready?")
 End
 
 Function cHistogram()		//suitable for 30mm HG with FOC
 	oat_table("X",48,-46,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=23)
+	oat_table("T",0,49,999,freq=20)
 	sics_cmd_interest("::chopper::ready?")
 End
 
 Function dHistogram()	//suitable for 40mm HG with FOC + 50mm St4vt
 	oat_table("X",64,-56,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=23)
+	oat_table("T",0,49,999,freq=20)
 	sics_cmd_interest("::chopper::ready?")
 End
 
 Function eHistogram()		//suitable for 25mm HG with FOC
 	oat_table("X",21,-19,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=23)
+	oat_table("T",0,49,999,freq=20)
 	sics_cmd_interest("::chopper::ready?")
 End
 
 Function fHistogram()		//suitable for 30mm HG with SB
 	oat_table("X",25,-24,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=23)
+	oat_table("T",0,49,999,freq=20)
 	sics_cmd_interest("::chopper::ready?")
 End
 
 Function gHistogram()		//suitable for 7mm HG with FOC
 	oat_table("X",10,-10,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=23)
+	oat_table("T",0,49,999,freq=20)
 	sics_cmd_interest("::chopper::ready?")
 End
 
@@ -125,21 +125,28 @@ Function hHistogram()
 //this was measured by Zin Tun and Andrew Nelson on 23/12/2009
 	oat_table("X",54.5,-54.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=23)
+	oat_table("T",0,49,999,freq = 20)
 	sics_cmd_interest("::chopper::ready?")
 End
 
 Function iHistogram() //Bills SAW, hslits(10,4,4,20)
 	oat_table("X",5.5,-5.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=23)
+	oat_table("T",0,49,999,freq=20)
 	sics_cmd_interest("::chopper::ready?")
 End
 
 Function jHistogram()		//suitable for hslits(44,35,35,43) "SB"
 	oat_table("X",35,-35,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=23)
+	oat_table("T",0,49,999,freq=20)
+	sics_cmd_interest("::chopper::ready?")
+End
+
+Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
+	oat_table("X",16,-11,1)
+	oat_table("Y",110.5,109.5,221)
+	oat_table("T",0,49, 999,freq=20)
 	sics_cmd_interest("::chopper::ready?")
 End
 
@@ -201,7 +208,7 @@ Function vslits(s1,s2,s3,s4)
 	if(checkDrive("ss1vg",s1) || checkDrive("ss2vg",s2) || checkDrive("ss3vg",s3)	|| checkDrive("ss4vg",s4))
 		abort "One of the requested slit positions is not within the limits (slits)" 		
 	endif
-	cmd = "run ss2u "+num2str(s2/2)+" "
+	cmd = "drive ss2u "+num2str(s2/2)+" "
 	cmd += "ss2d "+num2str(-s2/2)+" "
 	cmd += "ss3u "+num2str(s3/2)+" "
 	cmd += "ss3d "+num2str(-s3/2)+" "
@@ -231,7 +238,7 @@ Function hslits(s1,s2,s3,s4)
 		abort "One of the requested slit positions is not within the limits (slits)" 		
 	endif
 	
-	cmd = "run ss2r " + num2str(s2/2)+" "
+	cmd = "drive ss2r " + num2str(s2/2)+" "
 	cmd += "ss2l " + num2str(-s2/2)+" "
 	cmd += "ss3r " + num2str(s3/2)+" "
 	cmd += "ss3l " + num2str(-s3/2)+" "
@@ -428,7 +435,7 @@ Function Instrument_Specific_Setup()
 		print "error with hnotify_registation(instrument_specific_setup)"
 		return 1
 	endif
-	
+		
 	//get all the values in the hipadaba tree
 	getCurrentHipaVals()
 	
@@ -1474,7 +1481,7 @@ Function Instrumentlayout_panel()
 	TitleBox sth,labelBack=(65535,65535,65535),fSize=10
 	TitleBox sz,pos={127,203},size={28,21},title="sz="
 	TitleBox sz,labelBack=(65535,65535,65535),fSize=10
-	TitleBox sx,pos={127,229},size={28,21},title="sz="
+	TitleBox sx,pos={127,229},size={28,21},title="sx="
 	TitleBox sx,labelBack=(65535,65535,65535),fSize=10
 	TitleBox dy,pos={3,139},size={25,21},title="dy=",labelBack=(65535,65535,65535)
 	TitleBox dy,fSize=10

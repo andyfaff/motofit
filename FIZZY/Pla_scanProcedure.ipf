@@ -62,7 +62,7 @@ Function fpxStatus()
 	//0 = not running
 	//1 = running
 	//2 = paused
-	NVAR userPaused = root:packages:platypus:data:scan:userPaused
+	NVAR/z userPaused = root:packages:platypus:data:scan:userPaused
 	ctrlnamedbackground scanTask,status
 	variable running = numberbykey("RUN",S_info)
 	if(running)

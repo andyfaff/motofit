@@ -99,29 +99,40 @@ Function batchScanReadyForNextPoint()
 	//3) There is no fpx scan running
 	string msg
 	NVAR userPaused = root:packages:platypus:data:batchscan:userPaused
+	NVAR currentpoint = root:packages:platypus:data:batchScan:currentpoint
+	SVAR sicsstatus = root:packages:platypus:SICS:sicsstatus
 	Wave/t statemon = root:packages:platypus:SICS:statemon
-
 	DoXOPIDLE	
-//	execute/p/q	"DoXOPIdle"
-//		print "SICSSTATUS "+num2str(SICSstatus(msg))
-//		print "FPXSTATUS "+num2str(fpxstatus())
-//		print "CURRENTACQSTATUS "+num2str(currentAcquisitionStatus(msg))
-//		print "hmcontrol", statemonstatus("hmcontrol")
-//		print "HISTOGRAMMEMORY", statemonstatus ("HistogramMemory")
-//print "statemon", dimsize(statemon, 0)
-//if(dimsize(statemon, 0) ==0)
-//	SICSstatus(msg)
-//	print msg
-//endif
+	//	execute/p/q	"DoXOPIdle"
+	//		print "SICSSTATUS "+num2str(SICSstatus(msg))
+	//		print "FPXSTATUS "+num2str(fpxstatus())
+	//		print "CURRENTACQSTATUS "+num2str(currentAcquisitionStatus(msg))
+	//		print "hmcontrol", statemonstatus("hmcontrol")
+	//		print "HISTOGRAMMEMORY", statemonstatus ("HistogramMemory")
+	//print "statemon", dimsize(statemon, 0)
+	//if(dimsize(statemon, 0) ==0)
+	//	SICSstatus(msg)
+	//	print msg
+	//endif
 	
-	if(userPaused)
-		return 2
-	elseif(fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus() || dimsize(statemon,0)>0 || SICSstatus(msg))
-		return 1
-	else
-//		print "FPX:",fpxstatus(),"hmm:",statemonstatus("hmcontrol"), "STATEMON:",dimsize(statemon,0), "SICS:",SICSstatus(msg)
-		return 0
-	endif
+//	print status,msg, statemon
+	try
+		if(userPaused)
+			return 2
+		elseif(fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus() || dimsize(statemon,0)>0 || !stringmatch(sicsstatus, "Eager to execute commands") || SICSstatus(msg))
+	//		print time(), "DEBUG BATCH FPX:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
+			return 1
+		else
+			variable status = SICSstatus(msg)
+			if(status)
+				return 1
+			endif
+			print time(), "DEBUG BATCH:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
+			return 0
+		endif
+	catch
+	endtry
+	return 1
 End
 
 Function batchScanStop()

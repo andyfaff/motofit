@@ -87,6 +87,10 @@ Function interestProcessor(w,x)
 	if(items==2)
 		strswitch(str1)//see what the message is about
 			case "STARTED":		//this is listening to the statemon starting an axis
+				if(stringmatch(str2, "histmem"))
+					break
+				endif
+				
 				redimension/n=(numpnts(statemon)+1) statemon
 				statemon[inf] = str2
 				
@@ -192,7 +196,10 @@ Function updatelayout(motor)
 	Wave/t axeslist = root:packages:platypus:SICS:axeslist
 	variable rowsinwave = dimsize(axeslist,0),col,row,val,ii
 
-	string controls = controlnamelist("instrumentlayout","",motor)
+	string controls = ""
+	if(itemsinlist(winlist("instrumentlayout", ";", "WIN:64")))
+		controls = controlnamelist("instrumentlayout","",motor)
+	endif
 	if(itemsinlist(controls)) 
 		findvalue/z/text = motor axeslist
 		if(V_value==-1)
