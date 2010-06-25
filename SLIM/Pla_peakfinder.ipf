@@ -26,13 +26,14 @@ Function Pla_findpeakDetails(ywave,xwave,[expected_centre,expected_width])//dist
       
 	//this should get 99.5% of the integrated counts
 	//note that you can only get these positions if profile is an equally spaced wave.
-	variable leadingedgeval = binarysearchinterp(W_integrate,0.0025)
-	variable leadingedgepos =W_integratex[trunc(leadingedgeval)]+ (leadingedgeval-trunc(leadingedgeval))*(W_integratex[trunc(leadingedgeval)+1]-W_integratex[trunc(leadingedgeval)])
-	variable trailingedgeval = binarysearchinterp(W_integrate,0.9975)
-	variable trailingedgepos =W_integratex[trunc(trailingedgeval)]+ (trailingedgeval-trunc(trailingedgeval))*(W_integratex[trunc(trailingedgeval)+1]-W_integratex[trunc(trailingedgeval)])
-	
-	W_peakinfo[1] = leadingedgepos
-	W_peakinfo[2] = trailingedgepos
+	if(waveexists(W_integrate) && waveexists(W_integratex))
+		variable leadingedgeval = binarysearchinterp(W_integrate,0.0025)
+		variable leadingedgepos =W_integratex[trunc(leadingedgeval)]+ (leadingedgeval-trunc(leadingedgeval))*(W_integratex[trunc(leadingedgeval)+1]-W_integratex[trunc(leadingedgeval)])
+		variable trailingedgeval = binarysearchinterp(W_integrate,0.9975)
+		variable trailingedgepos =W_integratex[trunc(trailingedgeval)]+ (trailingedgeval-trunc(trailingedgeval))*(W_integratex[trunc(trailingedgeval)+1]-W_integratex[trunc(trailingedgeval)])
+		W_peakinfo[1] = leadingedgepos
+		W_peakinfo[2] = trailingedgepos
+	endif
 	
 	W_peakinfo[3] = areaXY(xwave,ywave)
 	

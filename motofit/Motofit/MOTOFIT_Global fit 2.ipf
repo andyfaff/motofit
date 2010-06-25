@@ -505,7 +505,7 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	
 	DoUpdate
 	//arjn
-	string funcName
+	string funcName = ""
 	if (isAllAtOnce)
 		funcName = " MOTO_NewGlblFitFuncAllAtOnce"
 	else

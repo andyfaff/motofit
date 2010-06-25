@@ -388,7 +388,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			duplicate/o W_point, $(angle0DF + ":W_qSD")
 			Wave W_q = $(angle0DF + ":W_q")
 			Wave W_qSD = $(angle0DF + ":W_qSD")
-			LambdatoQ(W_qHIST, W_lambdaHIST, omega)
+//			LambdatoQ(W_qHIST, W_lambdaHIST, omega)
 			LambdatoQ(W_q, W_lambda, omega)
 			
 			W_qSD[] = (W_lambdaSD[p]/W_lambda[p])^2+(domega/omega[p])^2
@@ -1582,8 +1582,8 @@ Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite, rebin])
 			endif
 		endfor
 		
-		if(!paramisdefault(rebin))
-			Pla_rebin_afterwards(tempQQ, tempRR, tempDR, tempDQ, rebin, tempQQ[0] - 0.00005, tempQQ[inf]+0.00005)
+		if(!paramisdefault(rebin) && rebin > 0 && rebin < 15)
+			Pla_rebin_afterwards(tempQQ, tempRR, tempDR, tempDQ, rebin, tempQQ[0] - 0.00005, tempQQ[numpnts(tempQQ) - 1]+0.00005)
 			duplicate/o W_Q_rebin, tempQQ
 			duplicate/o W_R_rebin, tempRR
 			duplicate/o W_E_rebin, tempDR

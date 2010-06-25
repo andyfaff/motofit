@@ -452,7 +452,7 @@ Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
 	//	endfor
 	
 	Make/o/DF/N=(dimsize(image,0))/free dfw
-	MultiThread dfw= Pla_linbkgworker(image, imageSD, W_mask, p,  y0, y1, y2, y3)
+	Multithread dfw= Pla_linbkgworker(image, imageSD, W_mask, p,  y0, y1, y2, y3)
 	DFREF df= dfw[0]		
 	Duplicate/O df:W_templine, M_imagebkg
 	Duplicate/O df:W_templineSD, M_imagebkgSD
@@ -506,6 +506,7 @@ Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2,
 	//but will not be correct outside the background+foreground regions.
 	//In which case use funcfit and Pla_CPInterval, it'll just be slower.
 	variable v_fiterror=0
+
 	CurveFit/n/q line, kwCWave=W_coef,  W_templine /M=W_mask /I=1 /W=W_templineSD /D /F={0.683000, 2}
 		
 	if(getrterror(0))
@@ -516,7 +517,8 @@ Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2,
 	else
 		Wave UP_W_templine,LP_W_templine
 		W_templine = W_coef[0] + p*W_coef[1]
-		W_templineSD = 0.5*(UP_W_templine(p)-LP_W_templine(p))
+		W_templineSD = (p > leftx(UP_W_templine) && p < rightx(UP_W_templine)) ? 0.5*(UP_W_templine(p)-LP_W_templine(p)) : 0
+//		W_templineSD[] = 0.5*(UP_W_templine(p)-LP_W_templine(p))
 	endif
 
 	SetDataFolder dfSav

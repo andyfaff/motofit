@@ -219,7 +219,7 @@ End
 Threadsafe Function checkSorted(aWave)
 	Wave aWave
 	variable ii
-	for(ii=dimsize(awave,0)-1 ; ii>= 0 ; ii-=1)
+	for(ii=dimsize(awave,0)-1 ; ii>= 1 ; ii-=1)
 		if(awave[ii] < awave[ii-1])
 			return 1
 		endif
