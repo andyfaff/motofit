@@ -2,11 +2,11 @@
 #pragma IGORVersion=5.02
 	constant kMotoToImag=0
 	
-// SVN date:    $Date$
-// SVN author:  $Author$
-// SVN rev.:    $Revision$
-// SVN URL:     $HeadURL$
-// SVN ID:      $Id$
+	// SVN date:    $Date$
+	// SVN author:  $Author$
+	// SVN rev.:    $Revision$
+	// SVN URL:     $HeadURL$
+	// SVN ID:      $Id$
 
 	// Use modern global access method.
 	///MOTOFIT is a program that fits neutron and X-ray reflectivity profiles :written by Andrew Nelson
@@ -168,14 +168,15 @@ Function plotCalcref()
 	
 	//make a nice graph
 	if(!itemsinlist(winlist("reflectivitygraph", ";", "WIN:1")))
-		Display/K=1/N=reflectivitygraph/w=(10,10,550,350) theoretical_R vs theoretical_q
+		Display/K=1/N=reflectivitygraph/w=(10,10,560,350) theoretical_R vs theoretical_q
 		controlbar/T/W=reflectivitygraph 35
-		PopupMenu plottype,pos={140,6},size={220,21},proc=Moto_Plottype,title="Plot type"
+		PopupMenu plottype,pos={90,7},size={220,24}, proc=Moto_Plottype, title="Plot type"
 		PopupMenu plottype,mode=plotyp,bodyWidth= 100,value= #"\"logR vs Q;R vs Q;RQ4 vs Q\""
-		Button Autoscale title="Autoscale",size={80,24},pos={12,7},proc=Moto_genericButtonControl,fsize=10
-		Button ChangeQrange title="Q range",proc=Moto_genericButtonControl,size={100,24},fsize=10
-		Button Snapshot title="snapshot",proc=Moto_genericButtonControl,size={70,24},pos={380,6},fsize=10
-		Button restore title="restore",proc=Moto_genericButtonControl,size={70,24},pos={460,6},fsize=10
+		Button Autoscale title="Autoscale",size={73,24},pos={9,5},proc=Moto_genericButtonControl, fsize=10
+		Button ChangeQrange title="Q range",proc=Moto_genericButtonControl,size={73,24}, pos = {87, 5},fsize=10
+		Button Snapshot title="snapshot",proc=Moto_genericButtonControl,size={73,24},pos={320,5},fsize=10
+		Button restore title="restore",proc=Moto_genericButtonControl,size={73,24},pos={395,5},fsize=10
+		Button refreshdata title="refresh",size={73,24},proc=Moto_genericButtonControl, pos ={472, 5}, fsize=10
 		
 		Label bottom "Q /A\\S-1\\M"
 		Label left "R"
@@ -230,6 +231,9 @@ Function Moto_genericButtonControl(B_Struct)
 				Legend/C/N=text0/A=MC
 			endif
 			break
+		case "refreshData":
+			Moto_refreshData()
+		break
 		case "croppanel":
 			moto_croppanel()
 			break
@@ -467,9 +471,9 @@ Function Motofit(w,y,z) :Fitfunc
 			case 0:					//case 0 is if usedqwave=0.  This means the user hasn't selected a dQ wave
 				res=(res/100)
 				if (res<0.005)		//if the resolution is less that 1% don't bother doing the convolution
-//					variable timer = startmstimer
+					//					variable timer = startmstimer
 					Abelesall(w,y,z)
-//					print dimsize(y, 0), stopmstimer(timer)
+					//					print dimsize(y, 0), stopmstimer(timer)
 				else				//calculate the resolution with a convolution
 					//by varying gaussnum you control the accuracy of the interpolation.  Higher=more accurate but a lot slower.
 					//make it an odd number
@@ -503,9 +507,9 @@ Function Motofit(w,y,z) :Fitfunc
 					logxtemp=(start)+p*(abs(start-finish))/(interpnum)
 					xtemp=alog(logxtemp)
 					//calculate the theoretical curve with a lot of datapoints	
-	//				variable timer = startmstimer
+					//				variable timer = startmstimer
 					AbelesAll(w, ytemp, xtemp)
-	//				print dimsize(ytemp, 0), stopmstimer(timer)
+					//				print dimsize(ytemp, 0), stopmstimer(timer)
 					
 
 					//do the resolution convolution
@@ -865,6 +869,10 @@ Function Moto_SLDplot(w,z)
 End
 
 Function/t Moto_askForListofFiles()
+	SVAR/z nv = S_filename
+	if(SVAR_exists(nv))
+		nv = ""
+	endif
 	execute/z "multiopenfiles/F=\".*;.xml;\"/M=\"Please select your data files.\""
 	SVAR/z nv = S_filename
 	if(SVAR_exists(nv))
@@ -874,11 +882,141 @@ Function/t Moto_askForListofFiles()
 	endif
 End
 
+Function/s Moto_loadReffile(filename)
+	//this function loads a reflectivity file in and adjusts it to the current plot type.
+	//it does not plot anything.
+	string filename
+	variable fileID,numcols, ii
+	Variable logg,rr,gg,bb, plotyp
+	string topGraphStr = "", dataName = ""
+	String Q = "", R = "", dR = "", dQ = ""
+
+	if(stringmatch(filename,"*.xml"))	//loading XML type reduced file from Platypus
+		fileID = xmlopenfile(filename)
+		if(fileID==-1)
+			print "ERROR opening xml file (SLIM_PLOT_reduced)"
+			abort
+		endif
+			
+		xmlwavefmXPATH(fileID,"//REFdata[1]/Qz","","")
+		Wave/t M_xmlcontent
+		make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl0
+		asdfghjkl0 = str2num(M_xmlcontent[p][0])
+			
+		xmlwavefmXPATH(fileID,"//REFdata[1]/R","","")
+		Wave/t M_xmlcontent
+		make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl1
+		asdfghjkl1 = str2num(M_xmlcontent[p][0])
+
+		xmlwavefmXPATH(fileID,"//REFdata[1]/dR","","")
+		Wave/t M_xmlcontent
+		make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl2
+		asdfghjkl2 = str2num(M_xmlcontent[p][0])
+
+		xmlwavefmXPATH(fileID,"//REFdata[1]/dQz","","")
+		Wave/t M_xmlcontent
+		make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl3
+		asdfghjkl3 = str2num(M_xmlcontent[p][0])
+		xmlclosefile(fileID,0)
+		numcols=4 
+	else	
+		LoadWave/Q/G/D/N=asdfghjkl/A fileName
+		//if you're not loading 2,3 or 4 column data then there may be something wrong.
+		numcols=V_Flag
+		Wave/z asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3
+		if(numcols<2 || numcols>4)
+			Killwaves/z asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3,asdfghjkl4,asdfghjkl5,asdfghjkl6,asdfghjkl7,asdfghjkl8
+			ABORT "does your dataset have anything other than 2,3 or 4 columns?"
+		endif
+	endif
+
+	string pathSep
+	strswitch(UpperStr(IgorInfo(2)))
+		case "MACINTOSH":
+			pathSep = ":"
+			break
+		case "WINDOWS":
+			pathSep = "\\"
+			break
+	endswitch
+	dataName = parsefilepath(3, filename, pathSep, 0, 0)
+      	
+	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
+  	
+	//if the program control string doesn't exist then make logR vs Q the default
+	if(SVAR_exists(motofitcontrol))
+		plotyp=str2num(moto_str("plotyp"))
+	else
+		plotyp=1
+	endif
+			
+	switch(plotyp)
+		case 1:
+			logg=0	
+			break
+		case 2:
+			logg=1
+			break
+		case 3:
+			logg=0
+			break
+	endswitch
+	
+	//give all the waves their new names, using a filename stub
+	dataname = cleanupname(dataname, 0)
+	Q = dataname + "_q"
+	R = dataname + "_R"
+	dR = dataname + "_E"
+	dQ = dataname + "_dq"
+	
+	//rename all the waves to their correct name
+	duplicate/o asdfghjkl0, $Q
+	duplicate/o asdfghjkl1, $R
+		
+	//here's where we see if we've loaded in dR and dQ waves
+	switch(numcols)
+		case 2:
+			Sort $q,$q,$R
+			break
+		case 3:
+			duplicate/o asdfghjkl2,$dR
+			Sort $q,$q,$R,$dR
+			break
+		case 4:
+			duplicate/o asdfghjkl2,$dR
+			duplicate/o asdfghjkl3,$dQ
+			Sort $q,$q,$R,$dR,$dQ
+			break
+	endswitch
+	
+	Killwaves/z asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3,asdfghjkl4,asdfghjkl5,asdfghjkl6,asdfghjkl7,asdfghjkl8
+	
+	//remove all the NaN or +/- INFS from loaded wave
+	Moto_removeNAN($q,$R,$dR,$dQ)
+	
+	//do we want to modify the data to suit the plotyp?
+	switch(plotyp)
+		case 1:
+			Moto_toLogLin($Q,$R,$dR,1) //convert data to loglin
+			break
+		case 2:
+			//do nothing, we want the data as linlin
+			break
+		case 3:
+			Moto_toRQ4($Q,$R,$dR,1) //convert data to RQ4
+			break
+	endswitch
+	return dataName
+End
+
 Function Moto_Plotreflectivity()
 	//this function loads experimental data from a file, then puts it into a nice graph.  The data is from 2 to 4 columns wide:  Q,R,dR,dQ and can contain as
 	//many datapoints as you want.
 	variable fileID,numcols, ii
-	string fileName ="", filenames = "" 
+	string fileName ="", filenames = "" , topGraphStr = "", dataName = ""
+	Variable logg,rr,gg,bb, plotyp
+	String Q = "", R = "", dR = "", dQ = ""
+
 	if(itemsinlist(OperationList("multiopenfiles", ";", "external" ))>0)
 		filenames = Moto_askforlistoffiles()
 	else
@@ -887,139 +1025,29 @@ Function Moto_Plotreflectivity()
 	endif
 	
 	//if the user presses cancel then we should abort the load
-	if(itemsinlist(filenames)==0)
+	if(!itemsinlist(filenames))
 		ABORT
 	endif
 	
-	for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
+	for(ii = 0 ; ii < itemsinlist(filenames) ; ii += 1)
 		filename = stringfromlist(ii, filenames)
-	
-		if(stringmatch(filename,"*.xml"))	//loading XML type reduced file from Platypus
-			fileID = xmlopenfile(filename)
-			if(fileID==-1)
-				print "ERROR opening xml file (SLIM_PLOT_reduced)"
-				abort
-			endif
-			
-			xmlwavefmXPATH(fileID,"//REFdata[1]/Qz","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl0
-			asdfghjkl0 = str2num(M_xmlcontent[p][0])
-			
-			xmlwavefmXPATH(fileID,"//REFdata[1]/R","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl1
-			asdfghjkl1 = str2num(M_xmlcontent[p][0])
-
-			xmlwavefmXPATH(fileID,"//REFdata[1]/dR","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl2
-			asdfghjkl2 = str2num(M_xmlcontent[p][0])
-
-			xmlwavefmXPATH(fileID,"//REFdata[1]/dQz","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl3
-			asdfghjkl3 = str2num(M_xmlcontent[p][0])
-			xmlclosefile(fileID,0)
-			numcols=4 
-		else	
-			LoadWave/Q/G/D/N=asdfghjkl/A fileName
-			//if you're not loading 2,3 or 4 column data then there may be something wrong.
-			numcols=V_Flag
-			Wave/z asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3
-			if(numcols<2 || numcols>4)
-				Killwaves/z asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3,asdfghjkl4,asdfghjkl5,asdfghjkl6,asdfghjkl7,asdfghjkl8
-				ABORT "does your dataset have anything other than 2,3 or 4 columns?"
-			endif
-		endif
-
-		string pathSep
-		strswitch(UpperStr(IgorInfo(2)))
-			case "MACINTOSH":
-				pathSep = ":"
-				break
-			case "WINDOWS":
-				pathSep = "\\"
-				break
-		endswitch
-		filename = parsefilepath(3,filename,pathSep,0,0)
-      	
-		SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
-  	
-		//if the program control string doesn't exist then make logR vs Q the default
-		if(SVAR_exists(motofitcontrol))
-			variable plotyp=str2num(moto_str("plotyp"))
-		else
-			plotyp=1
-		endif
-	
-		Variable logg,rr,gg,bb
-	
-		switch(plotyp)
-			case 1:
-				logg=0	
-				break
-			case 2:
-				logg=1
-				break
-			case 3:
-				logg=0
-				break
-		endswitch
-	
-		//give all the waves their new names, using a filename stub
-		String Q,R,dR,dQ
-
-		Q = CleanupName((fileName + "_q"),0)
-		R = CleanupName((fileName + "_R"),0)
-		dR = CleanupName((fileName + "_E"),0)
-		dQ = CleanupName((fileName + "_dq"),0)
-	
-		//rename all the waves to their correct name
-		duplicate/o asdfghjkl0, $Q
-		duplicate/o asdfghjkl1, $R
 		
-		//here's where we see if we've loaded in dR and dQ waves
-		switch(numcols)
-			case 2:
-				Sort $q,$q,$R
-				break
-			case 3:
-				duplicate/o asdfghjkl2,$dR
-				Sort $q,$q,$R,$dR
-				break
-			case 4:
-				duplicate/o asdfghjkl2,$dR
-				duplicate/o asdfghjkl3,$dQ
-				Sort $q,$q,$R,$dR,$dQ
-				break
-		endswitch
-	
-		Killwaves/z asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3,asdfghjkl4,asdfghjkl5,asdfghjkl6,asdfghjkl7,asdfghjkl8
-	
-		//remove all the NaN or +/- INFS from loaded wave
-		Moto_removeNAN($q,$R,$dR,$dQ)
-	
-		//do we want to modify the data to suit the plotyp?
-		switch(plotyp)
-			case 1:
-				Moto_toLogLin($Q,$R,$dR,1) //convert data to loglin
-				break
-			case 2:
-				//do nothing, we want the data as linlin
-				break
-			case 3:
-				Moto_toRQ4($Q,$R,$dR,1) //convert data to RQ4
-				break
-		endswitch
+		//load the file
+		dataName = Moto_loadReffile(filename)
   	
+		//find out the name of the wave
+		Q = dataname + "_q"
+		R = dataname + "_R"
+		dR = dataname + "_E"
+		dQ = dataname + "_dq"
+		
 		// assign colors randomly
 		rr = abs(trunc(enoise(65535)))
 		gg = abs(trunc(enoise(65535)))
 		bb = abs(trunc(enoise(65535)))
 	
 		if(WinType("") == 1)
-			if(findlistitem(tracenamelist("",";",1),nameofwave($R))!=-1)
+			if(findlistitem(tracenamelist("", ";", 1), nameofwave($R)) != -1)
 				Moto_autoscale()
 				return 0
 			endif
@@ -1056,11 +1084,28 @@ Function Moto_Plotreflectivity()
 			Label left "Reflectivity"
 			//			Moto_autoscale()
 		endif
+		
+		//keep a note of which waves are displayed in the graph
+		topGraphStr = WinName(0,1)
+		setwindow $topGraphStr userdata(refFiles) += fileName + ";"
 	endfor
 End
 
-Function Moto_autoscale()
+Function Moto_refreshData()
+	//this function refreshes the loaded data in the reflectivitygraph
+	//(assumes data is in root:)
+	string reflectivitygraph_exists = WinList("reflectivitygraph", ";", "WIN:1")
+	string plottedgraphs = ""
+	variable ii
+	if(strlen(reflectivitygraph_exists))
+		plottedgraphs = GetUserData("reflectivitygraph", "", "refFiles")
+		for(ii = 0 ; ii < itemsinlist(plottedgraphs) ; ii += 1)
+			Moto_loadReffile(stringfromlist(ii, plottedgraphs))
+		endfor
+	endif
+End
 
+Function Moto_autoscale()
 	string traces = tracenamelist("reflectivitygraph",";",1)
 	string xwavestr
 	if(Stringmatch(traces,"*theoretical_R*")==0)
@@ -1068,7 +1113,7 @@ Function Moto_autoscale()
 	endif
 	traces = removefromlist("theoretical_R",traces)
 
-	variable highestvalue=0,lowestvalue=1000,tracenumber,ii=0
+	variable highestvalue = 0, lowestvalue = 1000, tracenumber , ii = 0
 
 	tracenumber = itemsinlist(traces)
 	
@@ -1278,7 +1323,7 @@ End
 
 Function moto_cropPanel()
 	//resizes the reflectivity panel so you can't see FTwindow
-	Movewindow /w=reflectivitypanel 124,62,700,370
+	Movewindow /w=reflectivitypanel 309,218,1039,645
 End
 
 Function moto_thicknesstabProc(TC_Struct)
