@@ -160,7 +160,7 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	string cDF,msg,lhs="",rhs=""
 	variable col,row
 	Wave/t axeslist = root:packages:platypus:SICS:axeslist
-	variable/g root:packages:platypus:data:scan:motoraxisrow = -1
+	variable/g root:packages:platypus:data:scan:motoraxisrow = NaN
 	NVAR motoraxisrow = root:packages:platypus:data:scan:motoraxisrow
 
 	cDF = getdatafolder(1)
@@ -190,7 +190,7 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 		
 	//first have to check if motor exists
 	if(stringmatch(motorStr,"_none_"))
-	
+		motoraxisrow = NaN
 	else
 		findvalue/text=motorStr/Z axeslist
 		if(V_Value == -1)

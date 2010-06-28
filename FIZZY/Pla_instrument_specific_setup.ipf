@@ -440,7 +440,7 @@ Function Instrument_Specific_Setup()
 	getCurrentHipaVals()
 	
 	//setup the default histogram OAT_Table
-	bHistogram()
+	//bHistogram()
 	//	defaultHistogram()
 
 	return err
@@ -1970,6 +1970,7 @@ Function/t createFizzyCommand(type)
 	//wait
 	//attenuate
 	//sics
+	//setexperimentalmode
 	string cmd=""
 
 	string motor="",motorlist="", samplename="", sicscmd="",mode
@@ -2093,6 +2094,11 @@ Function/t createFizzyCommand(type)
 			doprompt "Please enter the mode", mode
 			sprintf cmd, "setexperimentalmode(\"%s\")", mode
 			break
+		case "positioner":
+			prompt s1, "Which position did you want?"
+			doprompt "Please enter the (integer) position)", s1
+			sprintf cmd, "positioner(%g)",s1
+		break
 		case "_none_":
 		default:
 			break

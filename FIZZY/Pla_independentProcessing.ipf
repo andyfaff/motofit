@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma independentmodule=Ind_Process
+#pragma IndependentModule=Ind_Process
 // SVN date:    $Date$
 // SVN author:  $Author$
 // SVN rev.:    $Revision$
@@ -92,7 +92,7 @@ Function interestProcessor(w,x)
 				endif
 				
 				redimension/n=(numpnts(statemon)+1) statemon
-				statemon[inf] = str2
+				statemon[numpnts(statemon) - 1] = str2
 				
 				//if its a motor axis we want to change the colour in the panel.
 				Findvalue/Text=str2/TXOP=4 axeslist

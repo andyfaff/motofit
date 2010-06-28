@@ -308,7 +308,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 1: //mouse down
 			if(lba.eventmod & 2^4)
-				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode"
+				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner"
 				listwave[row][col] = createFizzyCommand(S_Selection)
 			endif
 			break
@@ -345,7 +345,9 @@ Function startSICS()
 			return 0
 		endif
 	endif
-
+	//don't want bounds checking on arrays!
+	Execute "SetIgorOption DimensionChecking=0xF"
+	
 	Newpath/o/q Homepath,Home
 	PauseUpdate; Silent 1		// building window...
 	

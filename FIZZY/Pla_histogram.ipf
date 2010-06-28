@@ -483,13 +483,12 @@ Function oat_table(axis,binlim0,binlim1,numchannels,[freq])
 	sprintf cmd, "oat_table -set %s {%g %g} %s %d \n",axis, binlim0, binlim1, channel, numchannels
 	sockitsendmsg sock_interest, cmd
 	
+	sockitsendmsg sock_interest, "histmem loadconf\n"
 	//TODO
 	if(!ParamIsDefault(freq))
 		sprintf cmd,"histmem freq %g\n",freq
 		sockitsendmsg sock_interest, cmd
-	endif
-	sockitsendmsg sock_interest, "histmem loadconf\n"
-	
+	endif	
 	return 0
 End
 
