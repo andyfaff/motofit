@@ -2650,23 +2650,23 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 		variable thoseOK = 0
 		NewPanel /W=(445,64,774,445) as "Gencurvefit limits"
 		Dowindow/c GCF_dialog
-		ListBox list0,pos={11,130},size={307,167}
-		ListBox list0,listWave=root:packages:motofit:old_genoptimise:limitsdialog_listwave
-		ListBox list0,selWave=root:packages:motofit:old_genoptimise:limitsdialog_selwave
-		SetVariable setvar0,pos={11,8},size={216,19},title="iterations",fSize=12
-		SetVariable setvar0,limits={1,inf,10},value= root:packages:motofit:old_genoptimise:iterations
-		SetVariable setvar1,pos={12,32},size={215,19},title="population size",fSize=12
-		SetVariable setvar1,limits={1,inf,4},value= root:packages:motofit:old_genoptimise:popsize
-		SetVariable setvar2,pos={12,56},size={216,19},title="mutation constant",fSize=12
-		SetVariable setvar2,limits={0,1,0.05},value=root:packages:motofit:old_genoptimise:k_m
-		SetVariable setvar3,pos={12,80},size={216,19},title="recombination constant"
-		SetVariable setvar3,fSize=12
-		SetVariable setvar3,limits={0,1,0.05},value= root:packages:motofit:old_genoptimise:recomb
-		SetVariable setvar4,pos={12,104},size={215,19},title="fit tolerance",fSize=12
-		SetVariable setvar4,limits={1e-7,1e-1,0.001},value= root:packages:motofit:old_genoptimise:fittol
-		Button button0,pos={30,310},size={266,25},proc=GCF_dialogProc,title="Continue"
-		Button button1,pos={251, 103},size={45, 20},proc=GCF_dialogProc,title="default", fsize=9
-		Button button2,pos={30,337},size={266,25},proc=GCF_dialogProc,title="Cancel"
+		ListBox list0,pos={11,130},size={307,167}, win=GCF_dialog
+		ListBox list0,listWave=root:packages:motofit:old_genoptimise:limitsdialog_listwave, win=GCF_dialog
+		ListBox list0,selWave=root:packages:motofit:old_genoptimise:limitsdialog_selwave, win=GCF_dialog
+		SetVariable setvar0,pos={11,8},size={216,19},title="iterations",fSize=12, win=GCF_dialog
+		SetVariable setvar0,limits={1,inf,10},value= root:packages:motofit:old_genoptimise:iterations, win=GCF_dialog
+		SetVariable setvar1,pos={12,32},size={215,19},title="population size",fSize=12, win=GCF_dialog
+		SetVariable setvar1,limits={1,inf,4},value= root:packages:motofit:old_genoptimise:popsize, win=GCF_dialog
+		SetVariable setvar2,pos={12,56},size={216,19},title="mutation constant",fSize=12, win=GCF_dialog
+		SetVariable setvar2,limits={0,1,0.05},value=root:packages:motofit:old_genoptimise:k_m, win=GCF_dialog
+		SetVariable setvar3,pos={12,80},size={216,19},title="recombination constant", win=GCF_dialog
+		SetVariable setvar3,fSize=12, win=GCF_dialog
+		SetVariable setvar3,limits={0,1,0.05},value= root:packages:motofit:old_genoptimise:recomb, win=GCF_dialog
+		SetVariable setvar4,pos={12,104},size={215,19},title="fit tolerance",fSize=12, win=GCF_dialog
+		SetVariable setvar4,limits={1e-7,1e-1,0.001},value= root:packages:motofit:old_genoptimise:fittol, win=GCF_dialog
+		Button button0,pos={30,310},size={266,25},proc=GCF_dialogProc,title="Continue", win=GCF_dialog
+		Button button1,pos={251, 103},size={45, 20},proc=GCF_dialogProc,title="default", fsize=9, win=GCF_dialog
+		Button button2,pos={30,337},size={266,25},proc=GCF_dialogProc,title="Cancel", win=GCF_dialog
 		PauseForUser GCF_dialog
 
 		NVAR GCF_continue = root:packages:motofit:old_genoptimise:GCF_continue
