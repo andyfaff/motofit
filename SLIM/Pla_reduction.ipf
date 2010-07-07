@@ -1318,7 +1318,7 @@ Function madd(pathname, filenames)
 
 		for(ii=1 ; ii<itemsinlist(filenames) ; ii+=1)
 			temp = removeending( stringfromlist(ii,filenames), ".nx.hdf")+".nx.hdf"
-			hdf5openfile/Z fileIDcurrent as pathname+temp
+			hdf5openfile/R/Z fileIDcurrent as pathname+temp
 			if(V_Flag)
 				print "ERROR opening add file (madd)";abort
 			endif
