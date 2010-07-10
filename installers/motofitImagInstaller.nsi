@@ -56,8 +56,8 @@ ${EndIf}
 
 	; Set Section Files and Shortcuts
 	SetOutPath "$INSTDIR\motofit"
-	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/GeneticOptimisation.ipf"
-	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/MOTOFIT_Global fit 2.ipf"
+;	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/GeneticOptimisation.ipf"
+;	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/MOTOFIT_Global fit 2.ipf"
 
 	SetOutPath "$INSTDIR\motofit\GenCurvefit"
 	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/win/GenCurveFit.xop"
