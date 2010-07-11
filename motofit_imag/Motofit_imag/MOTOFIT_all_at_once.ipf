@@ -878,6 +878,7 @@ Function Moto_SLDplot(w,z)
 End
 
 Function/t Moto_askForListofFiles()
+	SVAR/z nv = S_filename
 	if(SVAR_exists(nv))
 		nv = ""
 	endif
