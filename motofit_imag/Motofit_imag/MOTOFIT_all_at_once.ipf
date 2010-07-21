@@ -188,12 +188,10 @@ Function plotCalcref()
 		//This section pulls up a graph of the (real SLD profile). 
 		// It automatically updates whenever you change the fit parameters
 		
-		Label left "\Z08\\f02\\F'Symbol'r\\F'Arial'   \\f00/10\\S-6\\M Å\\S-2 "
+		Label left "\\F'Symbol'r\\F'Arial' /10\\S-6\\M Å\\S-2 "
 		ModifyGraph lblPos(left)=42; 
-		Modifygraph fSize(left)=8
-		Label bottom "\Z06<<-- TOP          \Z08z /Å       \Z06 BOTTOM-->>"
+		Label bottom "z/Å"
 		ModifyGraph lblPos(bottom)=30; 
-		Modifygraph fSize(bottom)=8
 		Modifygraph rgb(sld)=(0,0,52224)
 		Setactivesubwindow Reflectivitygraph
 	endif
@@ -1155,16 +1153,23 @@ Function Moto_Reflectivitypanel() : Panel
 	Moto_changelayerwave(8,1,4)
 	
 	SetDrawLayer UserBack
-	ListBox baseparams,pos={92,52},size={146,146},proc=moto_modelchange,frame=0
+	Wave/t layerparams = root:packages:motofit:reflectivity:layerparams
+	setdimlabel 1,0,layer, layerparams
+	setdimlabel 1,2, thickness, layerparams
+	setdimlabel 1,5, SLD, layerparams
+	setdimlabel 1,8, solvent, layerparams
+	setdimlabel 1,11, roughness, layerparams
+	
+	ListBox baseparams,pos={92,52},size={146,146},proc=moto_modelchange,frame=0, fsize=12
 	ListBox baseparams,listWave=root:packages:motofit:reflectivity:baselayerparams
 	ListBox baseparams,selWave=root:packages:motofit:reflectivity:baselayerparams_selwave
 	ListBox baseparams,mode= 6,editStyle= 1,widths={19,89,21}
 	
-	ListBox layerparams,pos={70,289},size={564,133},proc=moto_modelchange
+	ListBox layerparams,pos={40,271},size={600,156},proc=moto_modelchange, fSize=12
 	ListBox layerparams,listWave=root:packages:motofit:reflectivity:layerparams
 	ListBox layerparams,selWave=root:packages:motofit:reflectivity:layerparams_selwave
 	ListBox layerparams,mode= 5,editStyle= 1
-	ListBox layerparams,widths={21,23,86,21,23,86,21,23,86,21,23,86,21}
+	ListBox layerparams,widths={35,23,86,21,23,86,21,23,86,21,23,86,21}
 	ListBox layerparams,userColumnResize= 0
 		
 	TabControl foo,pos={7,2},size={716,633},proc=Moto_fooProc,tabLabel(0)="Fit"
@@ -1287,22 +1292,14 @@ Function Moto_Reflectivitypanel() : Panel
 	PopupMenu nlayers,mode=3,popvalue="0",value= #"\"0;1;2;3;4;5;6;7;8;9;10\""
 	PopupMenu numcontrasts,pos={335,128},size={144,21},disable=1,title=" number of contrasts"
 	PopupMenu numcontrasts,mode=2,popvalue="1",value= #"\"1;2;3;4;5;6;7;8;9;10\""
-	TitleBox param2,pos={247,263},size={74,18},title="SLD /10\\S-6\\MA\\S-2",frame=0
-	TitleBox param2,fStyle=1
-	TitleBox param1,pos={117,267},size={72,13},title="thickness /\\MA"
-	TitleBox param1,frame=0,fStyle=1
-	TitleBox param3,pos={388,262},size={113,26},title="iSLD /A\\S-2"
-	TitleBox param3,frame=0,fStyle=1
-	TitleBox param4,pos={512,266},size={76,13},title="roughness /A",frame=0,fStyle=1
-	TitleBox param5,pos={22,312},size={27,13},title="layer",fSize=12,frame=0
-	TitleBox param5,fStyle=1
+
 	TitleBox baseparam,pos={27,53},size={33,13},title="layers",fSize=12,frame=0
 	TitleBox baseparam,fStyle=1
 	TitleBox baseparam1,pos={14,69},size={63,13},title="scalefactor",fSize=12
 	TitleBox baseparam1,frame=0,fStyle=1
 	TitleBox baseparam2,pos={22,86},size={42,13},title="SLDtop",fSize=12,frame=0
 	TitleBox baseparam2,fStyle=1
-		TitleBox baseparam3,pos={22,102},size={51,13},title="iSLDtop",fSize=12,frame=0
+	TitleBox baseparam3,pos={22,102},size={51,13},title="iSLDtop",fSize=12,frame=0
 	TitleBox baseparam3,fStyle=1
 	TitleBox baseparam4,pos={18,118},size={21,13},title="SLDbase",fSize=12,frame=0
 	TitleBox baseparam4,fStyle=1
@@ -1320,9 +1317,9 @@ Function Moto_Reflectivitypanel() : Panel
 	string cmd="ValDisplay Chisquare title=\"Chi squared\",pos={252,230},size={170,15},value=root:packages:motofit:reflectivity:chisq"
 	Execute/Q/Z cmd
 	
-	TabControl thicknesstab, value=1,tabLabel(1)="Fringe spacing"
+    TabControl thicknesstab, value=1,tabLabel(1)="Fringe spacing"
 	TabControl thicknesstab ,value=0,tabLabel(0)="FFT of data"
-	TabControl thicknesstab ,size={564,200},pos={69,426},proc=Moto_thicknesstabproc
+	TabControl thicknesstab ,size={600,200},pos={40,430},proc=Moto_thicknesstabproc
 	variable/g root:packages:motofit:reflectivity:tempwaves:fringe
 	SetVariable FT_lowQ title="low Q for FFT",bodyWidth=60,value=root:packages:motofit:reflectivity:tempwaves:FTlowQ
 	Setvariable FT_lowQ,pos={160,476},proc=Moto_FTreflectivityHook,limits={0.005,1,0.01}

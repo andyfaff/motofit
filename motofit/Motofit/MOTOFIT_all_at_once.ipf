@@ -188,12 +188,10 @@ Function plotCalcref()
 		//This section pulls up a graph of the (real SLD profile). 
 		// It automatically updates whenever you change the fit parameters
 		
-		Label left "\Z08\\f02\\F'Symbol'r\\F'Arial'   \\f00/10\\S-6\\M √Ö\\S-2 "
+		Label left "\\F'Symbol'r\\F'Arial' /10\\S-6\\M Å\\S-2 "
 		ModifyGraph lblPos(left)=42; 
-		Modifygraph fSize(left)=8
 		Label bottom "z/Å"
 		ModifyGraph lblPos(bottom)=30; 
-		Modifygraph fSize(bottom)=8
 		Modifygraph rgb(sld)=(0,0,52224)
 		Setactivesubwindow Reflectivitygraph
 	endif
@@ -1145,16 +1143,24 @@ Function Moto_Reflectivitypanel() : Panel
 	Moto_changelayerwave(6,1,4)
 	
 	SetDrawLayer UserBack
+	Wave/t layerparams = root:packages:motofit:reflectivity:layerparams
+			
+	setdimlabel 1,0,layer, layerparams
+	setdimlabel 1,2, thickness, layerparams
+	setdimlabel 1,5, SLD, layerparams
+	setdimlabel 1,8, solvent, layerparams
+	setdimlabel 1,11, roughness, layerparams
+		
 	ListBox baseparams,pos={92,52},size={146,146},proc=moto_modelchange,frame=0
 	ListBox baseparams,listWave=root:packages:motofit:reflectivity:baselayerparams
 	ListBox baseparams,selWave=root:packages:motofit:reflectivity:baselayerparams_selwave
-	ListBox baseparams,mode= 6,editStyle= 1,widths={19,89,21}
+	ListBox baseparams,mode= 6,editStyle= 1,widths={19,89,21}, fSize=12
 	
-	ListBox layerparams,pos={70,289},size={564,133},proc=moto_modelchange
+	ListBox layerparams,pos={40,271},size={600,156},proc=moto_modelchange, fSize=12
 	ListBox layerparams,listWave=root:packages:motofit:reflectivity:layerparams
 	ListBox layerparams,selWave=root:packages:motofit:reflectivity:layerparams_selwave
 	ListBox layerparams,mode= 5,editStyle= 1
-	ListBox layerparams,widths={21,23,86,21,23,86,21,23,86,21,23,86,21}
+	ListBox layerparams,widths={35,23,86,21,23,86,21,23,86,21,23,86,21}
 	ListBox layerparams,userColumnResize= 0
 		
 	variable/g root:packages:motofit:reflectivity:tempwaves:fringe
@@ -1219,9 +1225,8 @@ Function Moto_Reflectivitypanel() : Panel
 	TitleBox hold,pos={184,36},size={26,13},title="hold?",frame=0
 	TabControl thicknesstab, value=1,tabLabel(1)="Fringe spacing"
 	TabControl thicknesstab ,value=0,tabLabel(0)="FFT of data"
-	TabControl thicknesstab ,size={564,200},pos={69,426},proc=Moto_thicknesstabproc
+	TabControl thicknesstab ,size={600,200},pos={40,430},proc=Moto_thicknesstabproc
 
-		
 	//	PopupMenu Calculationtype value="Solvent Penetration;imaginary SLD",pos={366,477},proc=Moto_calculationtype
 	
 	PopupMenu con1,pos={415,196},size={137,21},disable=1,title="2nd contrast"
@@ -1287,34 +1292,22 @@ Function Moto_Reflectivitypanel() : Panel
 	PopupMenu numcontrasts,pos={335,128},size={144,21},disable=1,title=" number of contrasts"
 	PopupMenu numcontrasts,mode=2,popvalue="1",value= #"\"1;2;3;4;5;6;7;8;9;10\""
 	TitleBox compound,pos={498,128},size={50,20}
-	TitleBox param2,pos={247,263},size={74,18},title="SLD /10\\S-6\\MA\\S-2",frame=0
-	TitleBox param2,fStyle=1
-	TitleBox param1,pos={117,267},size={72,13},title="thickness /\\MA",fSize=12
-	TitleBox param1,frame=0,fStyle=1
-	TitleBox param3,pos={370,259},size={113,26},title="solvent penetration \r          %v/v"
-	TitleBox param3,frame=0,fStyle=1
-	TitleBox param4,pos={512,266},size={76,13},title="roughness /A",frame=0,fStyle=1
-	TitleBox param5,pos={22,312},size={27,13},title="layer",fSize=12,frame=0
-	TitleBox param5,fStyle=1
-	TitleBox baseparam,pos={27,53},size={33,13},title="layers",fSize=12,frame=0
+
+	TitleBox baseparam,pos={28,53},size={34,16},title="layers",fSize=12,frame=0
 	TitleBox baseparam,fStyle=1
-	TitleBox baseparam1,pos={14,69},size={63,13},title="scalefactor",fSize=12
+	TitleBox baseparam1,pos={15,72},size={64,16},title="scalefactor",fSize=12
 	TitleBox baseparam1,frame=0,fStyle=1
-	TitleBox baseparam2,pos={22,86},size={42,13},title="SLDtop",fSize=12,frame=0
+	TitleBox baseparam2,pos={29,91},size={42,16},title="SLDtop",fSize=12,frame=0
 	TitleBox baseparam2,fStyle=1
-	TitleBox baseparam3,pos={8,102},size={51,13},title="SLD subphase",fSize=12,frame=0
-	TitleBox baseparam3,fStyle=1
-	TitleBox baseparam4,pos={31,118},size={21,13},title="bkg",fSize=12,frame=0
+	TitleBox baseparam3,pos={10,110},size={81,16},title="SLD subphase",fSize=12
+	TitleBox baseparam3,frame=0,fStyle=1
+	TitleBox baseparam4,pos={35,129},size={21,16},title="bkg",fSize=12,frame=0
 	TitleBox baseparam4,fStyle=1
-	TitleBox baseparam5,pos={12,133},size={63,13},title="sub rough",fSize=12
-	TitleBox baseparam5,frame=0,fStyle=1
+	TitleBox baseparam5,pos={19,148},size={58,16},title="sub rough",fSize=12,frame=0
+	TitleBox baseparam5,fStyle=1
 	TitleBox baseparam6,pos={80,133},size={50,20}
 	TitleBox baseparam0,pos={140,133},size={50,20}
-	TitleBox layerparam1,pos={200,133},size={50,20},disable=1
-	TitleBox layerparam2,pos={260,133},size={50,20},disable=1
-	TitleBox layerparam3,pos={320,133},size={50,20},disable=1
-	TitleBox layerparam4,pos={380,133},size={50,20},disable=1
-	
+
 	//I'm sorry about this, but I can't seem to be able to perform the follwing command in a function
 	string cmd="ValDisplay Chisquare title=\"Chi squared\",pos={252,230},size={170,15},value=root:packages:motofit:reflectivity:chisq"
 	Execute/Q/Z cmd
