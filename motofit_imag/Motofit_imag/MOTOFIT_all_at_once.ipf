@@ -1156,8 +1156,8 @@ Function Moto_Reflectivitypanel() : Panel
 	Wave/t layerparams = root:packages:motofit:reflectivity:layerparams
 	setdimlabel 1,0,layer, layerparams
 	setdimlabel 1,2, thickness, layerparams
-	setdimlabel 1,5, SLD, layerparams
-	setdimlabel 1,8, solvent, layerparams
+	setdimlabel 1,5, SLDreal, layerparams
+	setdimlabel 1,8, SLDimag, layerparams
 	setdimlabel 1,11, roughness, layerparams
 	
 	ListBox baseparams,pos={92,52},size={146,146},proc=moto_modelchange,frame=0, fsize=12
