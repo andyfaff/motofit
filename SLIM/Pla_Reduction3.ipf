@@ -1143,44 +1143,37 @@ End
 
 Function createSpecBeamAdjustmentPanel(detector, ordProj)
 	Wave detector, ordProj
-	PauseUpdate; Silent 1		// building window...
 	string filename = getwavesdatafolder(detector, 0)
 	NewPanel /W=(150,50,883,506)/n=specBeamAdjustmentPanel as filename
-	Button Continue_Button,pos={465,407},size={161,43},proc=killSpecBeamAdjustmentPanel,title="Continue"
-	SetVariable pixelsToInclude_setvar,pos={449,275},size={185,19},proc=adjustAOI,title="TOF Pixels to include"
-	SetVariable pixelsToInclude_setvar,fSize=12
-	SetVariable pixelsToInclude_setvar,limits={1,999,1},value= root:packages:platypus:data:reducer:TOFpixels
-	SetVariable width_setvar,pos={464,297},size={170,19},proc=adjustAOI,title="integrate width"
-	SetVariable width_setvar,fSize=12
-	SetVariable width_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:width
-	SetVariable position_setvar,pos={464,321},size={170,19},proc=adjustAOI,title="integrate position"
-	SetVariable position_setvar,fSize=12
-	SetVariable position_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:expected_centre
+	Button Continue_Button,pos={465,407},size={161,43},proc=killSpecBeamAdjustmentPanel,title="Continue",win=specBeamAdjustmentPanel
+	SetVariable pixelsToInclude_setvar,pos={449,275},size={185,19},proc=adjustAOI,title="TOF Pixels to include",win=specBeamAdjustmentPanel
+	SetVariable pixelsToInclude_setvar,fSize=12,win=specBeamAdjustmentPanel
+	SetVariable pixelsToInclude_setvar,limits={1,999,1},value= root:packages:platypus:data:reducer:TOFpixels,win=specBeamAdjustmentPanel
+	SetVariable width_setvar,pos={464,297},size={170,19},proc=adjustAOI,title="integrate width",win=specBeamAdjustmentPanel
+	SetVariable width_setvar,fSize=12,win=specBeamAdjustmentPanel
+	SetVariable width_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:width,win=specBeamAdjustmentPanel
+	SetVariable position_setvar,pos={464,321},size={170,19},proc=adjustAOI,title="integrate position",win=specBeamAdjustmentPanel
+	SetVariable position_setvar,fSize=12,win=specBeamAdjustmentPanel
+	SetVariable position_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:expected_centre,win=specBeamAdjustmentPanel
 	
-	SetVariable true_width_setvar,pos={548,368},size={170,19},proc=myAOI,title="true FWHM"
-	SetVariable true_width_setvar,fSize=12
-	SetVariable true_width_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:true_width
-	SetVariable true_position_setvar,pos={378,368},size={170,19},proc=myAOI,title="true position"
-	SetVariable true_position_setvar,fSize=12
-	SetVariable true_position_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:true_position
-	TitleBox Instruction,pos={429,231},size={226,20},title="Please adjust regions to find gaussian beamcentre"
-	GroupBox group0,pos={440,256},size={203,88},title="auto adjust"
-	GroupBox group1,pos={372,349},size={354,49},title="manual adjust"
+	SetVariable true_width_setvar,pos={548,368},size={170,19},proc=myAOI,title="true FWHM",win=specBeamAdjustmentPanel
+	SetVariable true_width_setvar,fSize=12,win=specBeamAdjustmentPanel
+	SetVariable true_width_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:true_width,win=specBeamAdjustmentPanel
+	SetVariable true_position_setvar,pos={378,368},size={170,19},proc=myAOI,title="true position",win=specBeamAdjustmentPanel
+	SetVariable true_position_setvar,fSize=12,win=specBeamAdjustmentPanel
+	SetVariable true_position_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:true_position,win=specBeamAdjustmentPanel
+	TitleBox Instruction,pos={429,231},size={226,20},title="Please adjust regions to find gaussian beamcentre",win=specBeamAdjustmentPanel
+	GroupBox group0,pos={440,256},size={203,88},title="auto adjust",win=specBeamAdjustmentPanel
+	GroupBox group1,pos={372,349},size={354,49},title="manual adjust",win=specBeamAdjustmentPanel
 		
-	TitleBox Instruction,pos={429,231},size={226,20},title="Please adjust regions to find gaussian beamcentre"
+	TitleBox Instruction,pos={429,231},size={226,20},title="Please adjust regions to find gaussian beamcentre",win=specBeamAdjustmentPanel
 
-	DefineGuide UGV0={FR,0.5,FL},UGH0={FB,0.5,FT}
-	Display/W=(104,50,313,153)/FG=(FL,FT,UGV0,FB)/HOST=# 
-	AppendImage detector
+	DefineGuide/W=specBeamAdjustmentPanel UGV0={FR,0.5,FL},UGH0={FB,0.5,FT}
+	Display/W=(104,50,313,153)/FG=(FL,FT,UGV0,FB)/N=detector/HOST=specBeamAdjustmentPanel
+	AppendImage/w=specBeamAdjustmentPanel#detector detector
 	ModifyGraph mirror=2
 	SetDrawLayer UserFront
-	RenameWindow #,detector
-	Doupdate
-	setactivesubwindow ##
-	Display/W=(361,100,668,204)/FG=(UGV0,FT,FR,UGH0)/HOST=#  ordProj
-	Doupdate
-	RenameWindow #,detectorADD
-	SetActiveSubwindow ##
+	Display/W=(361,100,668,204)/FG=(UGV0,FT,FR,UGH0)/N=detectorADD/HOST=specBeamAdjustmentPanel  ordProj
 	
 	STRUCT WMSetVariableAction s
 	s.eventcode=1
