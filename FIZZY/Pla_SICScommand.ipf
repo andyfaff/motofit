@@ -2778,10 +2778,10 @@ Function positions_panel() : Panel
        PauseUpdate; Silent 1           // building window...
        NewPanel /K=1/N=position_panel/W=(442,111,1011,410) as "Position Panel"
        positionlist(0)
-       ListBox position_list,pos={6,34},size={552,255}
-       ListBox position_list,listWave=root:packages:platypus:SICS:position_listwave
-       ListBox position_list,selWave=root:packages:platypus:SICS:position_selwave
-       ListBox position_list,mode= 5,editStyle= 1
-       SetVariable numpositions,pos={9,8},size={200,15},proc=numpositions_setVarProc,title="Number of positions"
-       SetVariable numpositions,limits={1,10,1},value= _NUM:0
+       ListBox position_list,pos={6,34},size={552,255}, win=position_panel
+       ListBox position_list,listWave=root:packages:platypus:SICS:position_listwave, win=position_panel
+       ListBox position_list,selWave=root:packages:platypus:SICS:position_selwave, win=position_panel
+       ListBox position_list,mode= 5,editStyle= 1, win=position_panel
+       SetVariable numpositions,pos={9,8},size={200,15},proc=numpositions_setVarProc,title="Number of positions", win=position_panel
+       SetVariable numpositions,limits={1,10,1},value= _NUM:0, win=position_panel
 End

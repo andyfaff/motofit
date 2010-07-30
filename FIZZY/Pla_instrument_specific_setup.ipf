@@ -82,8 +82,8 @@ Function bHistogram()		//suitable for 40mm HG with FOC
 	sics_cmd_interest("::chopper::ready?")
 End
 
-Function cHistogram()		//suitable for 30mm HG with FOC
-	oat_table("X",48,-46,1)
+Function cHistogram()		//suitable for 30mm HG with FOC hslits(40,30,30,38)
+	oat_table("X",50,-50,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49,999,freq=20)
 	sics_cmd_interest("::chopper::ready?")
@@ -442,7 +442,10 @@ Function Instrument_Specific_Setup()
 	//setup the default histogram OAT_Table
 	//bHistogram()
 	//	defaultHistogram()
-
+	
+	//make a wave to track the frame deasset time, AKA the chopper delay in ms.
+	make/n=(0,2)/o root:packages:platypus:SICS:frame_deassert
+	
 	return err
 End
 
@@ -544,6 +547,13 @@ Function regularTasks(s)
 	NVAR SOCK_bmon3 = root:packages:platypus:SICS:SOCK_bmon3
 	if(!SOCKITisitopen(SOCK_bmon3))
 		restartbmon3()
+	endif
+	
+	Wave/z frame_deassert = root:packages:platypus:SICS:frame_deassert
+	if(waveexists(frame_deassert))
+		redimension/n=(dimsize(frame_deassert, 0) + 1, -1) frame_deassert
+		frame_deassert[dimsize(frame_deassert,0) -1][0] = datetime
+		frame_deassert[dimsize(frame_deassert,0) -1][1] = str2num(grabHistoStatus("frame_deassert_time"))
 	endif
 	
 	//update the webpage status
@@ -1844,7 +1854,16 @@ Function createHTML()
 		text +="<TR><TD>mode</TD><TD>"+ UpperStr(gethipaval("/instrument/parameters/mode")) + "</TD></TR>\r"
 		text +="<TR><TD>omega</TD><TD>"+ UpperStr(gethipaval("/instrument/parameters/omega")) + "</TD></TR>\r"
 		text +="<TR><TD>twotheta</TD><TD>"+ UpperStr(gethipaval("/instrument/parameters/twotheta")) + "</TD></TR>\r"
-		
+
+		Wave/z frame_deassert = root:packages:platypus:SICS:frame_deassert
+		if(waveexists(frame_deassert))
+			text +="<TR><TD>chopper pulse delay(ms)</TD><TD>"+ num2str(frame_deassert[dimsize(frame_deassert, 0)][1]) + "</TD></TR>\r"
+			display/n=frame_deassert_graph/HIDE=1 frame_deassert[*][1] vs frame_deassert[*][0]
+			ModifyGraph dateInfo(bottom)={0,0,0}
+			SavePICT/win=frame_deassert_graph/e=-5/o/z as SAVELOC + "statusMedia:Picture4.png"
+			killwindow frame_deassert_graph
+		endif
+			
 		text +="</TABLE>\r"
 		fbinwrite fileID, text
 		
@@ -1887,6 +1906,10 @@ Function createHTML()
 
 		text += "<tr><td>\r"
 		text += "<P><IMG id=\"Picture3\" src=\"./statusMedia/Picture3.png\" alt=\"Picture1\"></P>\r"
+		text += "</TD></TR>\r"
+
+		text += "<tr><td>\r"
+		text += "<P><IMG id=\"Picture4\" src=\"./statusMedia/Picture4.png\" alt=\"Picture4\"></P>\r"
 		text += "</TD></TR>\r"
 
 		text += "</TABLE>\r"

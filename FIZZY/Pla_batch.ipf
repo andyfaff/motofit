@@ -127,7 +127,7 @@ Function batchScanReadyForNextPoint()
 			if(status)
 				return 1
 			endif
-			print time(), "DEBUG BATCH:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
+//			print time(), "DEBUG BATCH:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
 			return 0
 		endif
 	catch
@@ -249,7 +249,7 @@ Function executenextbatchpoint(batchbuffer, currentpoint)
 	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
 
 	//this function executes a row of the batch buffer.  Will need to do some parsing here!!!!
-	print batchbuffer[currentpoint][1]
+	//print batchbuffer[currentpoint][1]
 	if(strlen(batchbuffer[currentpoint][1])>0 && (sel_batchbuffer[currentpoint][2] & 2^4))
 		print "STARTED POINT: "+num2str(currentpoint)+" of batch Scan at:    ", Secs2Time(DateTime,2)
 		batchbuffer[currentpoint][3] = "Executing"
