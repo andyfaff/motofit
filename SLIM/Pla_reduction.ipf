@@ -81,7 +81,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	//writes out the file in Q <tab> R <tab> dR <tab> dQ format.
 	
 	string tempStr,cDF,directDF,angle0DF, alreadyLoaded="", toSplice="", direct = "", angle0="",tempDF, reductionCmd
-	variable ii,D_S2, D_S3, D_SAMPLE,domega, spliceFactor, bmon1_counts_Direct, bmon1_counts_angle0,temp, isDirect, aa,bb,cc,dd,jj,kk
+	variable ii,D_S2, D_S3, D_SAMPLE,domega, spliceFactor,temp, isDirect, aa,bb,cc,dd,jj,kk
 	
 	cDF = getdatafolder(1)
 	
@@ -345,13 +345,13 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			//slit characteristics as the reflected beam.  This assumption is normally ok for the first angle.  One can only hope that everyone
 			//have done this for the following angles.
 			//multiply by bmon1_direct/bmon1_angle0
-
-			if(exists(angle0DF+":monitor:bm1_counts")==1 && exists(directDF+":monitor:bm1_counts")==1)
-				Wave/z bmon1_Direct = $(directDF+":monitor:bm1_counts")
-				Wave/z bmon1_angle0 = $(angle0DF+":monitor:bm1_counts")
-				if(bmon1_Direct[0] != 0 && bmon1_angle0[0] != 0)
-					bmon1_counts_direct = bmon1_direct[0]
-					bmon1_counts_angle0 = bmon1_angle0[0]
+			
+			//there should exist a global variable by the name of angle0DF + BM1counts, which is the summed BM1 count.
+			NVAR/z bmon1_counts_direct = $(directDF) + ":bm1counts"
+			NVAR/z bmon1_counts_angle0 = $(angle0DF) + ":bm1counts"
+			
+			if(nvar_exists(bmon1_counts_direct) && nvar_exists(bmon1_counts_angle0))
+				if(bmon1_counts_direct != 0 && bmon1_counts_angle0 != 0)
 					temp =  ((sqrt(bmon1_counts_direct)/bmon1_counts_direct)^2 + (sqrt(bmon1_counts_angle0)/bmon1_counts_angle0)^2) //(dratio/ratio)^2
 					
 					multithread M_refSD += temp		//M_refSD is still fractional variance at this point.
@@ -495,7 +495,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 
 		//THey are spliced from file, rather from memory, this is because one may want to delete individual points using
 		//delrefpoints.  If you want to do this then do the reduction, delrefpoints, then call splicefiles again.
-		print "splicefiles(\"" + replacestring("\\", pathname, "\\\\") + "\", \"" + toSplice + "\",  dontoverwrite = " + num2istr(dontoverwrite) + "rebin = " + num2str(rebin) + ")"
+		print "splicefiles(\"" + replacestring("\\", pathname, "\\\\") + "\", \"" + toSplice + "\",  dontoverwrite = " + num2istr(dontoverwrite) + ", rebin = " + num2str(rebin) + ")"
 		if(spliceFiles(pathName, toSplice, dontoverwrite = dontoverwrite, rebin = rebin))
 			print "ERROR while splicing (reduce)";abort
 		endif		
@@ -717,25 +717,50 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 		//hmm[scanpoint][t][y][x]
 		setdatafolder $tempDF
 		Wave hmm = $(tempDF+":data:hmm")
+		Wave BM1_counts = $(tempDF+":monitor:bm1_counts")
+		
+		if(wavedims(hmm) != 4)
+			print "ERROR: dataset must be saved as HISTOGRAM_XYT to be handled correctly (processNexusfile)"
+			abort
+		endif
+		
 		if(paramisdefault(scanpoint) && dimsize(hmm,0)>1)
 			scanpoint = 0
-			prompt scanpoint, "Enter an integer scanpoint number 0<= scanpoint<="+num2istr(dimsize(hmm,0)-1)
-			doprompt filename,scanpoint
+			prompt scanpoint, "Enter an integer scanpoint number 0<= scanpoint<="+num2istr(dimsize(hmm,0)-1) + " (-1 sums over all scanpoints)"
+			doprompt filename, scanpoint
 			if(V_Flag)
 			print "DIDN'T WANT TO ENTER A scanpoint (processNexusFile)"
 				abort
 			endif
 		endif
-		if(wavedims(hmm) != 4)
-			print "ERROR: dataset must be saved as HISTOGRAM_XYT to be handled correctly (processNexusfile)"
-			abort
-		endif
-		if(dimsize(hmm,0)-1 < scanpoint)
+		if(dimsize(hmm,0)-1 < scanpoint || scanpoint < -1)
 			print "ERROR: you are trying to access a scanpoint outside a valid limit (processNexusfile)"
 			abort
 		endif
-		make/o/i/u/n=(dimsize(hmm,1),dimsize(hmm,2),dimsize(hmm,3)) detector
-		multithread detector[][][] = hmm[scanpoint][p][q][r]
+		make/o/i/u/n=(dimsize(hmm,1),dimsize(hmm,2),dimsize(hmm,3)) detector = 0
+		variable/g BM1counts = 0
+		
+		//you may want to have several scans, but integrate a subset.
+		if(scanpoint == -1)
+			scanpoint = 0
+			variable finishingPoint = dimsize(hmm, 0)
+			prompt scanpoint, "Enter an integer scanpoint to start from (>= 0):"
+			prompt finishingPoint, "Enter an integer scanpoint to finish at  (startingPoint <= scanpoint <=" +num2istr(dimsize(hmm,0)-1) + "):"
+			if(V_Flag)
+				print "DIDN'T WANT TO ENTER A scanpoint (processNexusFile)"
+				abort
+			endif
+			scanpoint = round(scanpoint)
+			finishingPoint = round(finishingPoint)
+			for(ii = scanpoint ; ii < finishingPoint + 1; ii +=1)
+				detector[][][] += hmm[ii][p][q][r]
+				BM1counts += BM1_counts[ii]
+			endfor
+		else
+			multithread detector[][][] = hmm[scanpoint][p][q][r]
+			BM1counts += BM1_counts[scanpoint]
+		endif
+		
 		imagetransform sumplanes, detector
 		duplicate/o M_sumplanes, detector
 		duplicate/o detector, detectorSD
