@@ -727,10 +727,10 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 		if(paramisdefault(scanpoint) && dimsize(hmm,0)>1)
 			scanpoint = 0
 			finishingPoint = dimsize(hmm, 0) - 1
-			prompt scanpoint, "startingPoint 0<= scanpoint<="+num2istr(finishingPoint -1) 
+			prompt scanpoint, "startingPoint 0<= scanpoint<="+num2istr(finishingPoint ) 
 			prompt finishingPoint, "finishingPoint startingPoint<= scanpoint<="+num2istr(finishingPoint) 
 
-			doprompt "Enter integer start and finishing scan points for integration: "+filename, scanpoint, finishingPoint
+			doprompt filename + ", start and finish points: "+filename, scanpoint, finishingPoint
 			if(V_Flag)
 			print "DIDN'T WANT TO ENTER A scanpoint (processNexusFile)"
 				abort
