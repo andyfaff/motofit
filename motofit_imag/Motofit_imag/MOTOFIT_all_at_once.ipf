@@ -566,7 +566,7 @@ Function Motofit(w,y,z) :Fitfunc
 				endif
 				break
 			case 1:			//if usedqwave=1 then this means the user has selected his own resolution wave (requires 4 column data) 
-				make/o/n=(13 * dimsize(z, 0)) root:packages:motofit:reflectivity:tempwaves:ytemp, root:packages:motofit:reflectivity:tempwaves:xtemp
+				make/o/d/n=(13 * dimsize(z, 0)) root:packages:motofit:reflectivity:tempwaves:ytemp, root:packages:motofit:reflectivity:tempwaves:xtemp
 				make/o/n=13 root:packages:motofit:reflectivity:tempwaves:x13, root:packages:motofit:reflectivity:tempwaves:w13
 				Wave xtemp = root:packages:motofit:reflectivity:tempwaves:xtemp, ytemp = root:packages:motofit:reflectivity:tempwaves:ytemp
 				Wave x13 = root:packages:motofit:reflectivity:tempwaves:x13, w13 = root:packages:motofit:reflectivity:tempwaves:w13				
