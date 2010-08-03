@@ -686,7 +686,7 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 	//OUTPUT
 	//W_Spec,W_specSD,W_lambda,W_lambdaSD,W_lambdaHIST,W_specTOF,W_specTOFHIST, W_waternorm, W_beampos
 	
-	variable ChoD, toffset, nrebinpnts,ii, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp
+	variable ChoD, toffset, nrebinpnts,ii, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint
 	string tempDF,cDF,tempDFwater
 	Wave/z hmmWater
 	
@@ -726,40 +726,33 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 		
 		if(paramisdefault(scanpoint) && dimsize(hmm,0)>1)
 			scanpoint = 0
-			prompt scanpoint, "Enter an integer scanpoint number 0<= scanpoint<="+num2istr(dimsize(hmm,0)-1) + " (-1 sums over all scanpoints)"
-			doprompt filename, scanpoint
+			finishingPoint = dimsize(hmm, 0) - 1
+			prompt scanpoint, "startingPoint 0<= scanpoint<="+num2istr(finishingPoint -1) 
+			prompt finishingPoint, "finishingPoint startingPoint<= scanpoint<="+num2istr(finishingPoint) 
+
+			doprompt "Enter integer start and finishing scan points for integration: "+filename, scanpoint, finishingPoint
 			if(V_Flag)
 			print "DIDN'T WANT TO ENTER A scanpoint (processNexusFile)"
 				abort
 			endif
+			scanpoint = round(scanpoint)
+			finishingPoint = round(finishingPoint)
+			if(scanpoint < 0)
+				scanpoint = 0
+			endif
+			if(finishingPoint > dimsize(hmm, 0) -1)
+				finishingPoint = dimsize(hmm, 0) -1
+			endif
 		endif
-		if(dimsize(hmm,0)-1 < scanpoint || scanpoint < -1)
-			print "ERROR: you are trying to access a scanpoint outside a valid limit (processNexusfile)"
-			abort
-		endif
+		
 		make/o/i/u/n=(dimsize(hmm,1),dimsize(hmm,2),dimsize(hmm,3)) detector = 0
 		variable/g BM1counts = 0
 		
 		//you may want to have several scans, but integrate a subset.
-		if(scanpoint == -1)
-			scanpoint = 0
-			variable finishingPoint = dimsize(hmm, 0)
-			prompt scanpoint, "Enter an integer scanpoint to start from (>= 0):"
-			prompt finishingPoint, "Enter an integer scanpoint to finish at  (startingPoint <= scanpoint <=" +num2istr(dimsize(hmm,0)-1) + "):"
-			if(V_Flag)
-				print "DIDN'T WANT TO ENTER A scanpoint (processNexusFile)"
-				abort
-			endif
-			scanpoint = round(scanpoint)
-			finishingPoint = round(finishingPoint)
-			for(ii = scanpoint ; ii < finishingPoint + 1; ii +=1)
-				detector[][][] += hmm[ii][p][q][r]
-				BM1counts += BM1_counts[ii]
-			endfor
-		else
-			multithread detector[][][] = hmm[scanpoint][p][q][r]
-			BM1counts += BM1_counts[scanpoint]
-		endif
+		for(ii = scanpoint ; ii < finishingPoint + 1; ii +=1)
+			multithread detector[][][] += hmm[ii][p][q][r]
+			BM1counts += BM1_counts[ii]
+		endfor
 		
 		imagetransform sumplanes, detector
 		duplicate/o M_sumplanes, detector
