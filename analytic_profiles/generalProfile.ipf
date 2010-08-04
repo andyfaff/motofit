@@ -1,52 +1,52 @@
 #pragma rtGlobals=1		// Use modern global access method.
 Function modelWrapper(w,y,x):fitfunc
 	Wave w,y,x
-	make/n=(4*w[0]+6)/free/d forRef = w
+	make/n=(4*w[0]+6)/o/d coef_forref = w
 	variable ii
 
 	for(ii=0 ; ii <w[0] ; ii+=1)
-		forRef[4*ii+6] = w[6]
-		forRef[4*ii+7] = w[ii+9]
-		forRef[4*ii+8] = 0
+		coef_forref[4*ii+6] = w[6]
+		coef_forref[4*ii+7] = w[ii+9]
+		coef_forref[4*ii+8] = 0
 		if(ii)
-			forRef[4*ii+9] = w[7]
+			coef_forref[4*ii+9] = w[7]
 		else
-			forRef[4*ii+9] = w[8]
+			coef_forref[4*ii+9] = w[8]
 		endif
 	endfor
 	
 //		for(ii=0 ; ii <w[0]-1 ; ii+=1)
-//			forRef[4*ii+6] = w[6]
-//			forRef[4*ii+7] = w[ii+12]
-//			forRef[4*ii+8] = 0
+//			coef_forref[4*ii+6] = w[6]
+//			coef_forref[4*ii+7] = w[ii+12]
+//			coef_forref[4*ii+8] = 0
 //			if(ii)
-//				forRef[4*ii+9] = w[7]
+//				coef_forref[4*ii+9] = w[7]
 //			else
-//				forRef[4*ii+9] = w[11]
+//				coef_forref[4*ii+9] = w[11]
 //			endif
 //		endfor
-//		forRef[4*(w[0]-1)+6] = w[8]
-//		forRef[4*(w[0]-1)+7] = w[9]
-//		forRef[4*(w[0]-1)+8] = 0
-//		forRef[4*(w[0]-1)+9] = w[10]
+//		coef_forref[4*(w[0]-1)+6] = w[8]
+//		coef_forref[4*(w[0]-1)+7] = w[9]
+//		coef_forref[4*(w[0]-1)+8] = 0
+//		coef_forref[4*(w[0]-1)+9] = w[10]
 
 //	for(ii=1 ; ii < w[0] ; ii+=1)
-//			forRef[4*ii+6] = w[6]
-//			forRef[4*ii+7] = w[ii+12]
-//			forRef[4*ii+8] = 0
-//			if(ii)
-//				forRef[4*ii+9] = w[7]
+//			coef_forref[4*ii+6] = w[9]
+//			coef_forref[4*ii+7] = w[ii - 1+12]
+//			coef_forref[4*ii+8] = 0
+//			if(ii==1)
+//				coef_forref[4*ii+9] = w[10]
 //			else
-//				forRef[4*ii+9] = w[11]
+//				coef_forref[4*ii+9] = w[11]
 //			endif
 //	endfor
-//	forRef[6] = w[8]
-//	forRef[7] = w[9]
-//	forRef[8] = 0
-//	forRef[9] = w[10]
+//	coef_forref[6] = w[6]
+//	coef_forref[7] = w[7]
+//	coef_forref[8] = 0
+//	coef_forref[9] = w[8]
 
 
-Motofit(forRef,y,x)
+Motofit(coef_forref,y,x)
 //y = log(y)
 End
 

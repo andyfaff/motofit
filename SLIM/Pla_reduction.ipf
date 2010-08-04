@@ -214,9 +214,6 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 				print "ERROR while processing a reflected beam run (reduce)" ; abort
 			endif
 			
-			//to keep track of what we have to splice and save
-			toSplice += angle0 + ";"
-			
 			//check that the angle0 data has been loaded into a folder and processed
 			angle0DF = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(angle0,".nx.hdf"),0)
 			if(!datafolderexists(angle0DF))
@@ -470,24 +467,31 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			Sort W_q,W_q,W_ref,W_refSD,W_qSD
 
 			variable fileID
-			string fname = cutfilename(angle0) + ".dat"
+			string fname = cutfilename(angle0)
 			if(dontoverwrite)
 				fname = uniqueFileName(S_path, fname, ".dat")
 			endif
-			open/P=path_to_data/z=1 fileID as fname
+			open/P=path_to_data/z=1 fileID as fname + ".dat"
 			
 			if(V_flag==0)
 				fprintf fileID, "Q (1/A)\t Ref\t dRef (SD)\t dq(FWHM, 1/A)\n"
 				wfprintf fileID, "%g\t %g\t %g\t %g\n" W_q,W_ref,W_refSD,W_qSD
 				close fileID
 			endif
-			pathinfo path_to_data
-			//this only writes XML for a single file
-			writeXML(S_path,angle0, dontoverwrite)
 			
+			pathinfo path_to_data
+			
+			//this only writes XML for a single file
+			Wave/t user = $(angle0DF + ":user:name")
+			Wave/t samplename = $(angle0DF + ":sample:name")			
+			writeSpecRefXML1D(S_path, fname, W_q, W_ref, W_refSD, W_qSD, "", user[0], samplename[0], angle0, reductionCmd)
+						
 			//write a 2D XMLfile for the offspecular data
 //			write2DXML(S_path, angle0, dontoverwrite)
 			Sort/R W_q,W_q,W_ref,W_refSD,W_qSD
+			
+			//to keep track of what we have to splice and save
+			toSplice += fname + ";"
 		endfor
 		//at this point, outside the for block, one should have reduced all the individual angles
 		//the runnames to splice are in the variable toSplice.
@@ -495,8 +499,15 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 
 		//THey are spliced from file, rather from memory, this is because one may want to delete individual points using
 		//delrefpoints.  If you want to do this then do the reduction, delrefpoints, then call splicefiles again.
-		print "splicefiles(\"" + replacestring("\\", pathname, "\\\\") + "\", \"" + toSplice + "\",  dontoverwrite = " + num2istr(dontoverwrite) + ", rebin = " + num2str(rebin) + ")"
-		if(spliceFiles(pathName, toSplice, dontoverwrite = dontoverwrite, rebin = rebin))
+		fname = stringfromlist(0, toSplice)
+		if(dontoverwrite)
+			fname = uniqueFileName(S_path, "c_" + fname, ".xml")
+		else
+			fname = "c_" + fname
+		endif
+			
+		print "splicefiles(\"" + replacestring("\\", pathname, "\\\\") + ",\"" + fname + "\",\"" + toSplice + "\",  rebin = " + num2str(rebin) + ")"
+		if(spliceFiles(pathName, fname, toSplice, rebin = rebin))
 			print "ERROR while splicing (reduce)";abort
 		endif		
 	catch
@@ -560,7 +571,7 @@ Function/t uniqueFileName(pathStr, filename, ext)
 		theFiles = indexedFile(PATH_TO_DATA, -1, ext)
 		theUniqueName = filename
 		//the file already exists, increment a number
-		for(ii=1; whichListItem(theUniqueName, theFiles) > -1 ; ii+=1)
+		for(ii=1; whichListItem(theUniqueName + ext, theFiles) > -1 ; ii+=1)
 			theUniqueName = "o" + num2istr(ii) + "_" + filename
 		endfor 
 		return theUniqueName
@@ -1088,54 +1099,50 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 End
 
 
-Function writeXML(pathName, runnumbers, dontoverwrite)
-	string pathName,runnumbers
-	variable dontoverwrite
-	 
-	//a function to write an XML description of the reduced dataset.
+Function writeSpecRefXML1D(pathname, fname, qq, RR, dR, dQ, exptitle, user, samplename, runnumbers, rednnote)
+	String pathname, fname
+	wave qq, RR, dR, dQ
+	String exptitle, user, samplename, runnumbers, rednnote	//a function to write an XML description of the reduced dataset.
+	//pathname is a folder path, e.g. faffmatic:Users:andrew:Desktop: 	REQUIRED
+	//fname is the filename of the file you want to write					REQUIRED
+	//qq, RR, dR, dQ are the waves you want to write to the file			REQUIRED	
+	//exptitle is the experiment title, e.g. "polymer films.				OPTIONAL
+	//user is the user name												OPTIONAL
+	//samplename is the name of the sample, duh						OPTIONAL
+	//runnumbers is a semicolon separated list of the runnumbers making up this file, e.g. PLP0001000;PLP0001001;PLP0001002	OPTIONAL
+	//rednnote is the command that was used to do the reduction			OPTIONAL
+	
 	variable fileID,ii,jj
-	string df = "root:packages:platypus:data:Reducer:"
-	string qqStr="",RRstr="",dRStr="", dqStr = "",filename, prefix = ""
-
-	if(itemsinlist(runnumbers) == 0)
-		print "ERROR, no runs to write (writeXML)"
+	string qqStr="",RRstr="",dRStr="", dqStr = "", prefix = ""
+	
+	Newpath/o/q/c/z PATH_TO_DATA, pathname
+	if(V_FLAG)
+		print "ERROR output path doesn't exist (writeSpecRefXML1D)"
 		return 1
 	endif
-	for(ii=0 ; ii<itemsinlist(runnumbers) ; ii+=1)
-		if(!Datafolderexists(df+stringfromlist(ii,runnumbers)))
-			print "ERROR one or more of the runs doesn't exist (writeXML)"
-			return 1
-		endif
-	endfor
-	filename = cutfilename(stringfromlist(0, runnumbers)) + ".xml"
-	
 	pathinfo PATH_TO_DATA
 	if(!V_FLAG)
-		print "ERROR output path doesn't exist (writexml)"
+		print "ERROR output path doesn't exist (writeSpecRefXML1D)"
 		return 1
 	endif
 	
-	if(itemsinlist(runnumbers)>1)
-		filename = "c_"+filename
+	//create the XMLfile
+	fileID = XMLcreatefile(S_path + fname + ".xml", "REFroot", "", "")
+	if(fileID < 1)
+		print "ERROR couldn't create XML file (writeSpecRefXML1D)"
 	endif
-	
-	if(dontoverwrite)
-		filename = uniqueFileName(S_path, filename, ".xml")
-	endif
-
-	fileID = XMLcreatefile(S_Path + filename,"REFroot","","")
 
 	xmladdnode(fileID,"//REFroot","","REFentry","",1)
 	XMLsetattr(fileID,"//REFroot/REFentry[1]","","time",Secs2Date(DateTime,0) + " "+Secs2Time(DateTime,3))
 
 	xmladdnode(fileID,"//REFroot/REFentry[1]","","Title","",1)
+	
+	//username
+	xmladdnode(fileID,"//REFroot/REFentry[1]","","User",user,1)
 
-	Wave/t user = $(df+stringfromlist(0,runnumbers)+":user:name")
-	xmladdnode(fileID,"//REFroot/REFentry[1]","","User",user[0],1)
-
+	//sample names
 	xmladdnode(fileID,"//REFroot/REFentry[1]","","REFsample","",1)
-	Wave/t samplename = $(df+stringfromlist(0,runnumbers)+":sample:name")
-	xmladdnode(fileID,"//REFroot/REFentry[1]/REFsample","","ID",samplename[0],1)
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFsample","","ID", samplename,1)
 
 	xmladdnode(fileID,"//REFroot/REFentry[1]","","REFdata","",1)
 	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","axes","Qz")
@@ -1143,8 +1150,6 @@ Function writeXML(pathName, runnumbers, dontoverwrite)
 
 	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","type","POINT")
 	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","spin","UNPOLARISED")
-
-	make/n=0/o/d tempRR, tempQQ,tempRRsd,tempQQsd
 	
 	for(ii=0;ii<itemsinlist(runnumbers);ii+=1)
 		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Run","",1)
@@ -1152,28 +1157,16 @@ Function writeXML(pathName, runnumbers, dontoverwrite)
 		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","preset","")
 		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","size","")
 
-		Wave qq = $(df+stringfromlist(ii,runnumbers)+":W_q")
-		Wave RR = $(df+stringfromlist(ii,runnumbers)+":W_Ref")
-		Wave dR = $(df+stringfromlist(ii,runnumbers)+":W_RefSD")
-		Wave dq = $(df+stringfromlist(ii,runnumbers)+":W_qSD")
-
-		concatenate/NP {RR}, tempRR
-		concatenate/NP { qq}, tempQQ
-		concatenate/NP { dq}, tempQQsd
-		concatenate/NP { dR}, tempRRsd
-
-		SVAR reductionCmd = $(df+stringfromlist(ii,runnumbers)+":reductionCmd")
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","reductionnote",reductionCmd,1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]/reductionnote["+num2istr(ii+1)+"]","","software","SLIM")
 	endfor
-	sort tempQQ, tempQQ,tempRR, tempRRsd, tempQQsd
+	
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]","","reductionnote",rednnote,1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]/reductionnote[1]","","software","SLIM")
 	
 	//create ASCII representation of data
-	sockitWaveToString/TXT tempQQ, qqStr
-	sockitWaveToString/TXT tempRR, RRStr
-	sockitWaveToString/TXT tempRRsd, dRStr
-	sockitWaveToString/TXT tempQQsd, dqStr
-	killwaves/z tempRR,tempqq,tempQQsd,tempRRsd
+	sockitWaveToString/TXT qq, qqStr
+	sockitWaveToString/TXT RR, RRStr
+	sockitWaveToString/TXT dR, dRStr
+	sockitWaveToString/TXT dQ, dqStr
 
 	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","dim",num2istr(itemsinlist(RRstr," ")))
 
@@ -1499,21 +1492,17 @@ Function delrefpoints(pathname, filename, pointlist)
 	endif
 End
 
-Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite, rebin])
-	string pathName,runnumbers, factors
-	variable dontoverwrite, rebin
+Function spliceFiles(pathName, fname, filesToSplice, [factors, rebin])
+	string pathName, fname, filesToSplice, factors
+	variable rebin
 	//this function splices different reduced files together.
 	
 	string cDF = getdatafolder(1)
-	string fname
 	string df = "root:packages:platypus:data:Reducer:"
 	string qqStr="",RRstr="",dRStr="",dqStr="",filename,prefix=""
+	string user = "", samplename = "", rednnote = ""
 	
 	variable fileID,ii,fileIDcomb, err=0, jj
-	
-	if(paramisdefault(dontoverwrite))
-		dontoverwrite = 0
-	endif
 	
 	try
 		newdatafolder/o root:packages
@@ -1530,8 +1519,8 @@ Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite, rebin])
 		endif
 		
 		//load in each of the files
-		for(ii = 0 ; ii < itemsinlist(runnumbers) ; ii += 1)
-			fileID = xmlopenfile(S_path + stringfromlist(ii, runnumbers) + ".xml")
+		for(ii = 0 ; ii < itemsinlist(filesToSplice) ; ii += 1)
+			fileID = xmlopenfile(S_path + stringfromlist(ii, filesToSplice) + ".xml")
 			if(fileID < 1)
 				print "ERROR couldn't open individual file (spliceFiles)";abort
 			endif
@@ -1556,23 +1545,24 @@ Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite, rebin])
 			make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl3
 			asdfghjkl3 = str2num(M_xmlcontent[p][0])
 			
-			xmlclosefile(fileID,0)
-			fileID=0
-			
 			sort asdfghjkl0,asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3 
 			
-			if(ii==0)
+			if(ii == 0)
 				make/o/d/n=(numpnts(asdfghjkl0)) tempQQ, tempRR, tempDR, tempDQ
 				Wave tempQQ, tempRR, tempDR, tempDQ
 				tempQQ=asdfghjkl0
 				tempRR=asdfghjkl1
 				tempDR=asdfghjkl2
 				tempDQ=asdfghjkl3
+				
+				samplename = xmlstrfmXpath(fileID, "//REFsample/ID", "", "")
+				user = xmlstrfmXpath(fileID, "//REFentry[1]/User", "", "")
+				rednnote = xmlstrfmXpath(fileID,"//REFroot/REFentry[1]/REFdata[1]/Run[1]/reductionnote","","")			 
 			else
 				//splice with propagated error in the splice factor
 				variable/c compSplicefactor
 				if(paramisdefault(factors))
-					compSplicefactor = Pla_GetweightedScalingInoverlap(tempQQ,tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)		
+					compSplicefactor = Pla_GetweightedScalingInoverlap(tempQQ, tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)		
 				else
 					if(itemsinlist(factors) <= ii)
 						compSplicefactor = cmplx(str2num(stringfromlist(ii-1, factors)), 0)
@@ -1587,7 +1577,7 @@ Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite, rebin])
 				//think the following is wrong! No need to errors in quadrature if scalefactor does not depend on wavelength
 				asdfghjkl2 = (asdfghjkl2/asdfghjkl1)^2
 				asdfghjkl2 += (imag(compSpliceFactor)/real(compSpliceFactor))^2
-				asdfghjkl2 =sqrt(asdfghjkl2)
+				asdfghjkl2 = sqrt(asdfghjkl2)
 				asdfghjkl1 *= real(compSplicefactor)
 				asdfghjkl2 *= asdfghjkl1
 				
@@ -1598,6 +1588,9 @@ Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite, rebin])
 				
 				sort tempQQ,tempQQ,tempRR,tempDR,tempDQ 
 			endif
+			//close the XML file
+			xmlclosefile(fileID, 0)
+			fileID=0
 		endfor
 		
 		if(!paramisdefault(rebin) && rebin > 0 && rebin < 15)
@@ -1608,12 +1601,7 @@ Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite, rebin])
 			duplicate/o W_dq_rebin, tempDQ
 		endif
 		
-		fname = "c_" + cutfilename(stringfromlist(0, runnumbers)) + ".dat"
-		if(dontoverwrite)
-			fname = uniqueFileName(S_path, fname, ".dat")
-		endif
-		
-		open/P=PATH_TO_DATA/z=1 fileIDcomb as fname
+		open/P=PATH_TO_DATA/z=1 fileIDcomb as  fname + ".dat"
 		if(V_flag)
 			print "ERROR writing combined file (aplicefiles)";	 abort
 		endif
@@ -1622,69 +1610,9 @@ Function spliceFiles(pathName,runnumbers, [factors, dontoverwrite, rebin])
 		wfprintf fileIDcomb, "%g\t %g\t %g\t %g\r", tempQQ, tempRR, tempDR, tempDQ
 		close fileIDcomb
 		
-		//now write an XML file
-		fname = "c_" + cutfilename(stringfromlist(0,runnumbers)) + ".xml"
-		if(dontoverwrite)
-			fname = uniquefilename(S_path, fname, ".xml")
-		endif
-		fileID = XMLcreatefile(S_Path + fname, "REFroot", "", "")
-		if(fileID < 1)
-			print "ERROR while creating XML combined file (spliceFiles)";abort
-		endif
-		
-		xmladdnode(fileID, "//REFroot", "", "REFentry", "", 1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]","","time",Secs2Date(DateTime,0) + " "+Secs2Time(DateTime,3))
+		//now write a spliced XML file
+		writeSpecRefXML1D(pathname, fname, tempQQ, tempRR, tempDR, tempDQ, "", user, samplename, filestosplice, rednnote)
 
-		xmladdnode(fileID,"//REFroot/REFentry[1]","","Title","",1)
-
-		Wave/t user = $(df+stringfromlist(0,runnumbers)+":user:name")
-		xmladdnode(fileID,"//REFroot/REFentry[1]","","User",user[0],1)
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]","","REFsample","",1)
-		Wave/t samplename = $(df+stringfromlist(0,runnumbers)+":sample:name")
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFsample","","ID",samplename[0],1)
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]","","REFdata","",1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","axes","Qz")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","rank","1")
-
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","type","POINT")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","spin","UNPOLARISED")
-
-		for(ii=0;ii<itemsinlist(runnumbers);ii+=1)
-			xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Run","",1)
-			XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","filename",stringfromlist(ii,runnumbers)+".nx.hdf")
-			XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","preset","")
-			XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","size","")
-		
-			string reductionNote = xmlstrfmXpath(fileID, "//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]/reductionnote","","")
-			xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","reductionnote",reductionnote,1)
-			XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]/reductionnote","","software","SLIM")
-		endfor
-	
-		//create ASCII representation of data
-		sockitWaveToString/TXT tempQQ, qqStr
-		sockitWaveToString/TXT tempRR, RRStr
-		sockitWaveToString/TXT tempDR, dRStr
-		sockitWaveToString/TXT tempDQ, dqStr
-
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","dim",num2istr(itemsinlist(RRstr," ")))
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","R",RRStr,1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/R","","uncertainty","dR")
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Qz",qqStr,1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qz","","uncertainty","dQz")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qz","","units","1/A")
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dR",dRStr,1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dR","","type","SD")
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dQz",dqStr,1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dQz","","type","FWHM")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dQz","","units","1/A")
-
-		xmlclosefile(fileID,1)
 	catch
 		if(fileID)
 			xmlclosefile(fileID,0)

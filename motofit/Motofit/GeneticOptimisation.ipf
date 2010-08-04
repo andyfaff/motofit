@@ -2847,7 +2847,7 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB])
 				y_montecarlo[] = yy[p] + gnoise(ee[p], 2)
 			endif	
 //			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
-			Gencurvefit/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+			Gencurvefit/q/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			M_montecarlo[ii][] = w[q]
 			W_chisq[ii] = V_chisq
 			print "montecarlo ", ii, " done - total time = ", datetime-timed

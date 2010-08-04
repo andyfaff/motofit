@@ -61,13 +61,13 @@ Function lipidtoRef(coefs)
 	W_forreflectivity[15] = (phiInnerC * coefs[12]) + ((1-phiInnerC)*coefs[2])
 	W_forreflectivity[16] = 0
 	W_forreflectivity[17] = coefs[17]
-	//outer head
+	//outer tail
 	W_forreflectivity[18] = coefs[15]
-	W_forreflectivity[19] = (phiInnerC * coefs[12]) + ((1-phiInnerC)*coefs[2])
+	W_forreflectivity[19] = (phiInnerC * coefs[12]) + ((1-phiOuterC)*coefs[2])
 	W_forreflectivity[20] = 0
 	W_forreflectivity[21] = coefs[17]
 	
-	//outer chain
+	//outer head
 	W_forreflectivity[22] = coefs[16]
 	W_forreflectivity[23] =  (phiOuterH * coefs[10]) + ((1-phiOuterH)*coefs[2])
 	W_forreflectivity[24] =  0
