@@ -506,7 +506,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			fname = "c_" + fname
 		endif
 			
-		print "splicefiles(\"" + replacestring("\\", pathname, "\\\\") + ",\"" + fname + "\",\"" + toSplice + "\",  rebin = " + num2str(rebin) + ")"
+		print "splicefiles(\"" + replacestring("\\", pathname, "\\\\") + "\",\"" + fname + "\",\"" + toSplice + "\",  rebin = " + num2str(rebin) + ")"
 		if(spliceFiles(pathName, fname, toSplice, rebin = rebin))
 			print "ERROR while splicing (reduce)";abort
 		endif		
