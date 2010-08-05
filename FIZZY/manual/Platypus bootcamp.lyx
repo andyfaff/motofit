@@ -2210,12 +2210,18 @@ Changing the histogram frequency
 histmem freq 23
 \end_layout
 
-\begin_layout LyX-Code
-histmem loadconf
+\begin_layout Subsubsection
+Updating SICS after changing the chopper speed/phasing
+\end_layout
+
+\begin_layout Standard
+When you alter the chopper speed or phasing you need to get SICS to update
+ it's information.
+ To get SICS to query the chopper server issue the following command:
 \end_layout
 
 \begin_layout LyX-Code
-::chopper::ready?
+chopperController status
 \end_layout
 
 \begin_layout Subsubsection
