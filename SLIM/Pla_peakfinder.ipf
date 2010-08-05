@@ -135,6 +135,7 @@ End
 Threadsafe Function Pla_peakCentroid(xwave,ywave,[x0,x1])
 	Wave xwave,ywave
 	variable x0,x1
+	variable retval
 	if(ParamisDefault(x0) || ParamisDefault(x1))
 		x0 = 0
 		x1 = numpnts(ywave)-1
@@ -166,8 +167,12 @@ Threadsafe Function Pla_peakCentroid(xwave,ywave,[x0,x1])
 	
 	W_integrate /= W_integrate[numpnts(W_tempx)-1]
 	variable centroid = binarysearchinterp(W_integrate,0.5)
+	if(numtype(centroid))
+		retval = NaN
+	else
+		retval = W_integratex[centroid]
+	endif
 	
-	variable retval = W_tempx[trunc(centroid)]+(centroid-trunc(centroid))*(W_tempx[trunc(centroid)+1]-W_tempx[trunc(centroid)])
 	killwaves/z W_tempy,W_tempx
 	return retval
 End
