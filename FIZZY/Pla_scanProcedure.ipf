@@ -634,14 +634,19 @@ Function finishScan(status)
 	PATHinfo PATH_TO_DATA
 	if(V_flag)
 		if(!NVAR_exists(FIZscanFileNumber))
-			string files = greplist(IndexedFile(PATH_TO_DATA,-1,".itx","IGR0"),"^FIZscan")	// all Igor text files
-			Variable/g root:packages:platypus:data:scan:FIZscanFileNumber = itemsinlist(files)+1
+			string files = greplist(IndexedFile(PATH_TO_DATA, -1, ".itx", "IGR0"), "^FIZscan")	// all Igor text files
+			string lastfile = ""
+			files = sortlist(files, ";", 16)
+			lastfile = stringfromlist(itemsinlist(files) - 1, files)
+			lastfile = removeending(lastfile, ".itx")
+			lastfile = replacestring("FIZscan", lastfile, "")
+			Variable/g root:packages:platypus:data:scan:FIZscanFileNumber = str2num(lastfile) + 1
 			NVAR/z FIZscanFileNumber = root:packages:platypus:data:scan:FIZscanFileNumber
 		else
 			FIZscanFileNumber += 1
 		endif
-		string fname =  "FIZscan"+num2str(FIZscanFileNumber)+".itx"
-		save/o/t/p=PATH_TO_DATA position,counts as fname
+		string fname =  "FIZscan" + num2str(FIZscanFileNumber) + ".itx"
+		save/o/t/p=PATH_TO_DATA position, counts as fname
 		print "FPXscan (position vs counts) saved to ", parsefilepath(5, S_Path+fname, "*", 0, 1)
 		print "file saved as: ", gethipaval("/experiment/file_name")
 	endif
