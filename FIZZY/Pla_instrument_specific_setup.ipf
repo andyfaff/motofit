@@ -28,7 +28,8 @@
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
 	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
-	
+	Constant ChopperN_delay = 3.863		// a time delay between the first chopper pulse and chopper N
+	StrConstant SMSnotifyNumber = "" //an SMS is sent to this number if the chopper phase goes wrong
 	
 	//these motors are removed from the list displayed in the instrument panel.
 	Strconstant ForbiddenMotors ="bat;two_theta"
@@ -57,14 +58,14 @@ Function DefaultHistogram()
 	oat_table("X",210.5,209.5,421)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,43000,1,freq=23)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function testHistogram()
 	oat_table("X",60.5,59.5,201)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,43000,1,freq=23)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 
@@ -72,49 +73,49 @@ Function aHistogram()		//suitable for 40mm HG
 	oat_table("X",40,-39,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,43,999,freq=23)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function bHistogram()		//suitable for 40mm HG with FOC
 	oat_table("X",56,-52,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49,999,freq=20)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function cHistogram()		//suitable for 30mm HG with FOC hslits(40,30,30,38)
 	oat_table("X",50,-50,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49,999,freq=20)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function dHistogram()	//suitable for 40mm HG with FOC + 50mm St4vt
 	oat_table("X",64,-56,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49,999,freq=20)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function eHistogram()		//suitable for 25mm HG with FOC
 	oat_table("X",21,-19,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49,999,freq=20)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function fHistogram()		//suitable for 30mm HG with SB
 	oat_table("X",25,-24,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49,999,freq=20)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function gHistogram()		//suitable for 7mm HG with FOC
 	oat_table("X",10,-10,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49,999,freq=20)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 
@@ -126,28 +127,28 @@ Function hHistogram()
 	oat_table("X",54.5,-54.5,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49,999,freq = 20)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function iHistogram() //Bills SAW, hslits(10,4,4,20)
 	oat_table("X",5.5,-5.5,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49,999,freq=20)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function jHistogram()		//suitable for hslits(44,35,35,43) "SB"
 	oat_table("X",35,-35,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49,999,freq=20)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
 	oat_table("X",16,-11,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,49, 999,freq=20)
-	sics_cmd_interest("::chopper::ready?")
+	sics_cmd_interest("chopperController status")
 End
 
 Function hnotify_registration()
@@ -545,15 +546,35 @@ Function regularTasks(s)
 
 	//make sure the detector rate monitor is connected
 	NVAR SOCK_bmon3 = root:packages:platypus:SICS:SOCK_bmon3
+	NVAR/z sentChopperSMS = root:packages:platypus:SICS:sentChopperSMS
 	if(!SOCKITisitopen(SOCK_bmon3))
 		restartbmon3()
 	endif
 	
 	Wave/z frame_deassert = root:packages:platypus:SICS:frame_deassert
 	if(waveexists(frame_deassert))
+		variable theTime = str2num(grabHistoStatus("frame_deassert_time"))
+		if(abs(theTime - ChopperN_delay) > 0.15)
+			theTime = NaN
+		endif
+		if(abs(theTime - ChopperN_delay) > 0.012 && abs(theTime - ChopperN_delay) < 0.15 && !numtype(theTime))
+			//oh dear, the phasing has gone wrong
+			if(NVAR_exists(sentChopperSMS) && sentChopperSMS == 0)
+				//send an SMS
+				print "SENDING SMS TO SOMEONE, COZ CHOPPERS HAVE GONE WRONG"
+				easyhttp "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=r1vergod&to=" + SMSnotifyNumber + "&text=Chopper+phasing+."+Secs2Time(DateTime, 3)+gethipaval("/experiment/file_name")
+				sentChopperSMS = 1
+				//pause the acquisition
+				print "RUN HAS BEEN PAUSED DUE TO CHOPPER PHASING, please press the unpause button"
+				pausefpx(1)
+				Button/z Pause_tab1,win=sicscmdpanel,title="Restart"
+			endif
+		else
+			variable/g root:packages:platypus:SICS:sentChopperSMS = 0
+		endif
 		redimension/n=(dimsize(frame_deassert, 0) + 1, -1) frame_deassert
 		frame_deassert[dimsize(frame_deassert,0) -1][0] = datetime
-		frame_deassert[dimsize(frame_deassert,0) -1][1] = str2num(grabHistoStatus("frame_deassert_time"))
+		frame_deassert[dimsize(frame_deassert,0) -1][1] = theTime
 	endif
 	
 	//update the webpage status

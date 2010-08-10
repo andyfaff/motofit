@@ -186,21 +186,28 @@ Function button_SICScmdpanel(ba) : ButtonControl
 						fpxStop()
 					else
 						return 0
-					endif
-					break
-				case "Pause_tab1":
-					switch(fpxstatus())
-						case 2:
-							pausefpx(0)
-							Button/z Pause_tab1,win=sicscmdpanel,title="Pause"						
-							break
-						case 1:
-							pausefpx(1)
-							Button/z Pause_tab1,win=sicscmdpanel,title="Restart"
-							break
-					endswitch
-					break
-				case "runbatch_tab3":
+				endif
+				break
+			case "Pause_tab1":
+				switch(fpxstatus())
+					case 2:
+						pausefpx(0)
+						Button/z Pause_tab1,win=sicscmdpanel,title="Pause"
+						//if the tertiary shutter is closed, it might be a good idea to open it.
+						if(stringmatch(gethipaval("/instrument/status/tertiary"), "*Closed*"))
+							doalert 1, "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons, do you want to continue?"
+							if(V_Flag==2)
+								abort
+							endif
+						endif						
+						break
+					case 1:
+						pausefpx(1)
+						Button/z Pause_tab1,win=sicscmdpanel,title="Restart"
+						break
+				endswitch
+				break
+			case "runbatch_tab3":
 					//see if you're doing a batch scan
 					if(batchScanStatus())
 						print "you are already doing a batch scan, please stop that first"
@@ -2784,4 +2791,26 @@ Function positions_panel() : Panel
        ListBox position_list,mode= 5,editStyle= 1, win=position_panel
        SetVariable numpositions,pos={9,8},size={200,15},proc=numpositions_setVarProc,title="Number of positions", win=position_panel
        SetVariable numpositions,limits={1,10,1},value= _NUM:0, win=position_panel
+End
+
+Function email(to, msg)
+       string to, msg
+       string mailServer = "smtp.nbi.ansto.gov.au"
+       string theEmail = ""
+       variable sock           //holds the SOCKIT reference
+       make/t/o buf                      //holds the output from the SOCKIT connection
+
+       sockitopenconnection/q sock, mailServer, 25, buf
+
+       theEmail = "HELO smtp.nbi.ansto.gov.au\n"               //say HELO to the server
+       theEmail += "MAIL FROM: platypus@nbi.ansto.gov.au\n" //say who you are
+       theEmail += "RCPT TO:" + to + "\n" //say who the recipient is
+       theEmail +=  "DATA\n"           //start the message
+       theEmail +=  "Subject:Platypus Update [SEC=UNCLASSIFIED]\n\n"           //subject line, note double newline is required
+       theEmail += msg + "\n"  //the message
+       theEmail += ".\n" //finish the message
+
+       sockitsendmsg sock, theEmail
+
+       sockitcloseconnection(sock)     //close the SOCKIT connection
 End
