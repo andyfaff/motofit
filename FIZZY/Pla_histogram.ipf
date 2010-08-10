@@ -275,11 +275,11 @@ Function HISTMEM_preparedetector(presettype,preset)
 	sics_cmd_sync("histmem mode "+ presettype)
 	sics_cmd_sync("histmem preset "+num2str(preset))
 
-	sics_cmd_sync("histmem pause")
+//	sics_cmd_sync("histmem pause")
 End
 
 Function HISTMEM_startDetector()
-	if(stringmatch(grabhistostatus("DAQ"),"Started"))
+	if(stringmatch(grabhistostatus("DAQ"), "Started"))
 		print "ERROR, detector is already counting (HISTMEM_startDetector)"
 		return 1
 	endif

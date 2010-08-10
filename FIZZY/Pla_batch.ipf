@@ -36,11 +36,12 @@ Function batchScan(batchfile)
 		endif
 	endif
 		
-	if(dimsize(batchfile,1)!=4)
-		print "Batchbuffer must have 4 columns"
+	if(dimsize(batchfile, 1) != 5)
+		print "Batchbuffer must have 5 columns"
 		return 1
 	endif
 	batchfile[][3] = ""
+	batchfile[][4] = ""
 	
 	if(SICSstatus(msg))
 		print "Cannot start batch, because SICS is doing something (batchScan)"
@@ -102,6 +103,7 @@ Function batchScanReadyForNextPoint()
 	NVAR currentpoint = root:packages:platypus:data:batchScan:currentpoint
 	SVAR sicsstatus = root:packages:platypus:SICS:sicsstatus
 	Wave/t statemon = root:packages:platypus:SICS:statemon
+	Wave/t list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
 	DoXOPIDLE	
 	//	execute/p/q	"DoXOPIdle"
 	//		print "SICSSTATUS "+num2str(SICSstatus(msg))
@@ -127,7 +129,18 @@ Function batchScanReadyForNextPoint()
 			if(status)
 				return 1
 			endif
-//			print time(), "DEBUG BATCH:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
+			
+			//if it's an acquire or fpx run, and you've just finished an acquisition then put the filename in the last column
+			string theCmd = list_batchbuffer[currentpoint][1]
+			theCmd = replacestring(" ", theCmd, "")
+			if(grepstring(theCmd, "^acquire") || grepstring(theCmd, "^fpx"))
+				string theFile = gethipaval("/experiment/file_name")
+				theFile = ParseFilePath(0, theFile, "/", 1, 0)
+				theFile = removeending(theFile, ".nx.hdf")
+				list_batchbuffer[currentpoint][4] = theFile
+			endif
+		
+			//			print time(), "DEBUG BATCH:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
 			return 0
 		endif
 	catch
@@ -253,7 +266,7 @@ Function executenextbatchpoint(batchbuffer, currentpoint)
 	if(strlen(batchbuffer[currentpoint][1])>0 && (sel_batchbuffer[currentpoint][2] & 2^4))
 		print "STARTED POINT: "+num2str(currentpoint)+" of batch Scan at:    ", Secs2Time(DateTime,2)
 		batchbuffer[currentpoint][3] = "Executing"
-		execute batchbuffer[currentpoint][1]
+		execute batchbuffer[currentpoint][1]	
 	endif
 End
 

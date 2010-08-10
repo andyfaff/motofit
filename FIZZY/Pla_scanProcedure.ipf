@@ -197,13 +197,13 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 			Print "Error: The" + motorStr + " motor is not in the current motor list. (fpx)"
 			return 1
 		else 
-			col=floor(V_Value/dimsize(axeslist,0))
-			row=V_Value-col*dimsize(axeslist,0)
+			col=floor(V_Value / dimsize(axeslist, 0))
+			row=V_Value-col*dimsize(axeslist, 0)
 			motoraxisrow = row
 		endif
 	endif
 	//rangeval has to be greater than or equal to 0
-	if(rangeval<0)
+	if(rangeval < 0)
 		Print "range must be >=0 (fpx)"
 		return 1
 	endif
@@ -216,8 +216,8 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	endif
 
 	//now check upper and lower limits, but not for virtual motors.
-	if(!stringmatch(motorStr,"_none_") && !numtype(str2num(axeslist[row][4])) && !numtype(str2num(axeslist[row][6])) )
-		if( (str2num(axeslist[row][2])-rangeval/2) < str2num(axeslist[row][4]) || (str2num(axeslist[row][2])+rangeval/2) > str2num(axeslist[row][6]))
+	if(!stringmatch(motorStr, "_none_") && !numtype(str2num(axeslist[row][4])) && !numtype(str2num(axeslist[row][6])) )
+		if( (str2num(axeslist[row][2]) - rangeval/2) < str2num(axeslist[row][4]) || (str2num(axeslist[row][2])+rangeval/2) > str2num(axeslist[row][6]))
 			Print "scan range will exceed limits of motor (fpx)"
 			return 1
 		endif
@@ -252,17 +252,14 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	NVAR initialposition =  root:packages:platypus:data:scan:initialPosition
 	NVAR motorprecision = root:packages:platypus:data:scan:motorprecision
 	
-	//findout what the precision of the motor of interest is	
-	sockitsendnrecv/time=0.5 sock_sync, motorStr + " precision\n"
-	if(V_Flag)
-		print "error while speaking to SICS (fpx)"
-		finishScan(1)
-		return 1
+	//findout what the precision of the motor of interest is
+	//it's contained in the hipadaba tree
+	if(!numtype(motoraxisrow))	
+		motorprecision = str2num(gethipaval(axeslist[motoraxisrow][1] + "/precision"))
 	endif
-	parseReply(S_tcp,lhs,rhs)
-	motorprecision = str2num(rhs)
+
 	//the virtual motors don't have precision associated with them, so give a default if the number is NaN/Inf
-	if(numtype(motorprecision) !=0)
+	if(numtype(motorprecision) != 0)
 		motorprecision = 0.008
 	endif
 	
@@ -273,7 +270,7 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 		if(points ==1)
 			position[] = initialposition
 		else
-			position[] = rangeVal*(p/(points-1)) + str2num(axeslist[row][2]) -rangeval/2
+			position[] = rangeVal*(p/(points - 1)) + str2num(axeslist[row][2]) - rangeval/2
 		endif
 	endif
 

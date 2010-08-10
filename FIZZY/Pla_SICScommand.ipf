@@ -203,7 +203,7 @@ Function button_SICScmdpanel(ba) : ButtonControl
 						break
 					case 1:
 						pausefpx(1)
-						Button/z Pause_tab1,win=sicscmdpanel,title="Restart"
+						Button/z Pause_tab1,win=sicscmdpanel, title="Restart"
 						break
 				endswitch
 				break
@@ -255,6 +255,7 @@ Function button_SICScmdpanel(ba) : ButtonControl
 						Wave/t qwertyfiable0
 						batchfile[][1] = selectstring(p > dimsize(qwertyfiable0,0)-1, qwertyfiable0[p], "")
 						batchfile[][3]=""
+						batchfile[][4]=""
 						killwaves/z qwertyfiable0
 					endif
 					break
@@ -277,19 +278,18 @@ Function button_SICScmdpanel(ba) : ButtonControl
 						Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
 						batchfile[][1] = ""
 						batchfile[][3] = ""
+						batchfile[][4] = ""
 						sel_batchfile[][2] = 2^5
 					endif
 					break
 				case "selectAllBatch_tab3":
 					Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
 					Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
-					batchfile[][2] = "1"
 					sel_batchfile[][2] = 2^5+2^4
 					break
 				case "deselectAllBatch_tab3":
 					Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
-					Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer
-					batchfile[][2] = "0"
+					Wave sel_batchfile = root:packages:platypus:data:batchScan:sel_batchbuffer				
 					sel_batchfile[][2] = 2^5
 					break
 				case "positions_tab3":
@@ -323,7 +323,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			variable ii
 			listwave[row][2] = ""
 			if(selwave[row][2] & 2^4)
-				listwave[row][2] = "1"
+				listwave[row][2] = ""
 			endif
 			break
 		case 3: // double click
@@ -489,16 +489,22 @@ Function startSICS()
 	SetDimLabel 2,1,backColors,selaxeslist
 	
 
-	make/n=(600,4)/t/o root:packages:platypus:data:batchScan:list_batchbuffer = ""	
-	make/n=(600,4)/o root:packages:platypus:data:batchScan:sel_batchbuffer
+	make/n=(600, 5)/t/o root:packages:platypus:data:batchScan:list_batchbuffer = ""	
+	make/n=(600, 5)/o root:packages:platypus:data:batchScan:sel_batchbuffer
 	Wave sel_batchbuffer = root:packages:platypus:data:batchScan:sel_batchbuffer
 	wave/t list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
+	setdimlabel 1, 1, command,list_batchbuffer
+	setdimlabel 1, 2, 'run?',list_batchbuffer
+	setdimlabel 1, 3, 'status', list_batchbuffer
+	setdimlabel 1, 4, 'filename', list_batchbuffer
+	
 	list_batchbuffer[][0] = num2istr(p)
 	sel_batchbuffer[][1] = 0
 	sel_batchbuffer[][1] = 2^1
 	sel_batchbuffer[][2] = 2^5
 	sel_batchbuffer[][3] = 0
-
+	sel_batchbuffer[][4] = 0
+	
 	//panel for the SICS command window
 	if(itemsinlist(winlist("SICScmdpanel",";",""))==0)
 		NewPanel /W=(48,46,767,785)/k=1 as "FIZZY instrument control (C) A. Nelson + ANSTO"
@@ -593,10 +599,10 @@ Function startSICS()
 		RenameWindow #,G2_tab2
 		SetActiveSubwindow ##
 		
-		ListBox buffer_tab3,pos={54,45},size={383,637}
+		ListBox buffer_tab3,pos={54,45},size={400,637}
 		ListBox buffer_tab3,listWave=root:packages:platypus:data:batchScan:list_batchbuffer
 		ListBox buffer_tab3,selWave=root:packages:platypus:data:batchScan:sel_batchbuffer
-		ListBox buffer_tab3,row= 1,mode= 7,editStyle= 2,widths={10,90,6,24}, fsize=14
+		ListBox buffer_tab3,row= 1,mode= 7,editStyle= 2,widths={10,90,13,24,34}, fsize=14
 		ListBox buffer_tab3,userColumnResize= 0,proc=RebuildBatchListBoxProc
 		Button runbatch_tab3,pos={510,53},size={101,101},title=""
 		Button runbatch_tab3,picture= ProcGlobal#go_pict, proc=button_SICScmdpanel
@@ -730,7 +736,11 @@ Function/t getHipaVal(path)
 	Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
 
 	findvalue/text=path/txop=4/z hipadaba_paths
-	return hipadaba_paths[V_Value][1]
+	if(V_Value == -1)
+		return ""
+	else
+		return hipadaba_paths[V_Value][1]
+	endif
 ENd
 
 Function sicsCmdPanelWinHook(s)		//window hook for events happening in the SICScmdpanel

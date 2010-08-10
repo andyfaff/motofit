@@ -1803,6 +1803,7 @@ Function createHTML()
 	string text = ""
 	
 	Wave/t/z batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
+	Wave/z sel_batchbuffer = root:packages:platypus:data:batchScan:sel_batchbuffer
 	Wave/t/z axeslist = root:packages:platypus:SICS:axeslist
 	SVAR/z sicsstatus = root:packages:platypus:SICS:sicsstatus
 	NVAR/z bmon3_rate = root:packages:platypus:SICS:bmon3_rate
@@ -1954,7 +1955,7 @@ Function createHTML()
 			text +="<CAPTION>Command buffer</CAPTION>\r"
 			text += "<TR>\r<TH>#</TH><TH>cmd</TH><TH>status</TH><TH>will run?</TH>\r</TR>\r"
 			for(ii=0 ; ii < dimsize(batchfile,0) ; ii+=1)
-				text += "<TR><TD>"+num2istr(ii)+"</TD><TD>"+ batchfile[ii][1] + "</TD><TD>"+ batchfile[ii][2] + "</TD><TD> " + batchfile[ii][3]+"</TD></TR>\r"
+				text += "<TR><TD>"+num2istr(ii)+"</TD><TD>"+ batchfile[ii][1] + "</TD><TD>"+ selectstring(2^4 & sel_batchbuffer[ii][2], "", "1") + "</TD><TD> " + batchfile[ii][3]+"</TD></TR>\r"
 			endfor
 			text +="</TABLE>\r"
 			fbinwrite fileID, text
@@ -2131,16 +2132,25 @@ Function/t createFizzyCommand(type)
 			prompt s3, "slit 3 (mm):"
 			prompt s4, "slit 4 (mm):"
 			doprompt "Please enter values for all the slit vertical gaps", s1, s2, s3, s4
+			if(V_Flag)
+				return ""
+			endif
 			sprintf cmd, "vslits(%g, %g, %g, %g)", s1, s2, s3, s4
 			break
 		case "setexperimentalmode":
 			prompt mode, "Which mode did you want?", popup, "MT;FOC;POL;SB;DB"
 			doprompt "Please enter the mode", mode
+			if(V_Flag)
+				return ""
+			endif
 			sprintf cmd, "setexperimentalmode(\"%s\")", mode
 			break
 		case "positioner":
 			prompt s1, "Which position did you want?"
 			doprompt "Please enter the (integer) position)", s1
+			if(V_Flag)
+				return ""
+			endif
 			sprintf cmd, "positioner(%g)",s1
 		break
 		case "_none_":
