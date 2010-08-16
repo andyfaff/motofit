@@ -274,6 +274,8 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			
 			strswitch(mode[0])
 				case "FOC":
+				case "POL":
+				case "POLANAL":
 				case "MT":
 					//					omega = Pi*sth[0]/180
 					multithread	 omega = atan(((W_beamposA0 + DetectorHeightA0[0]) - (W_directbeampos + DetectorHeightD[0]))/DetectorposA0[0])/2
