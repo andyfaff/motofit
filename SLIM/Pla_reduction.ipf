@@ -47,13 +47,13 @@
 	//StrConstant PATH_TO_DATA = "Macintosh HDD:Users:andrew:Documents:Andy:Platypus:TEMP:"
 
 
-Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual, dontoverwrite])
+Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum])
 	string pathName
 	variable scalefactor
 	string runfilenames
 	variable lowLambda,highLambda, rebin
 	string water
-	variable background, expected_centre, manual, dontoverwrite
+	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum
 	
 	//produces a reflectivity curve for a given set of angles
 	//returns 0 if successful, non zero otherwise
@@ -69,6 +69,8 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	//expected_centre = where you expect to see the specular ridge, in detector pixels
 	//manual = 1 if you would like to manually choose beam centres/FWHM, otherwise it is done automatically
 	//dontoverwrite = 1 if you want to create unique names everytime you reduce the file. (default == 0)
+	//normalise = 1 if you want to normalise by beam monitor counts (default == 1)
+	//saveSpectrum = 1 if you want to save the spectrum (default == 0)
 	
 	//this function must load the data using loadNexusfile, then call processNexusfile which produces datafolders containing
 	//containing the spectrum (W_spec, W_specSD, W_lambda, W_lambdaSD,W_specTOFHIST,W_specTOF,W_LambdaHIST)
@@ -109,9 +111,15 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	if(paramisdefault(dontoverwrite))
 		dontoverwrite = 0
 	endif
+	if(paramisdefault(normalise))
+		normalise = 1
+	endif
+	if(paramisdefault(saveSpectrum))
+		saveSpectrum = 0
+	endif
 	
 	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
-	sprintf reductionCmd, "reduce(\"%s\",%g,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g)",pathName, scalefactor, runfilenames,lowLambda,highLambda, rebin,  background,water, expected_centre, manual, dontoverwrite
+	sprintf reductionCmd, "reduce(\"%s\",%g,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g)",pathName, scalefactor, runfilenames,lowLambda,highLambda, rebin, background,water, expected_centre, manual, dontoverwrite, normalise, saveSpectrum
 	
 	try
 		setdatafolder "root:packages:platypus:data:Reducer"
@@ -154,7 +162,6 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			endif
 		endif
 		
-
 		//make the rebin wave, to rebin both direct and reflected data
 		if(rebin)
 			make/o/d/n= (round(log(highlambda/lowlambda)/log(1+rebin/100))+1) W_rebinBoundaries
@@ -170,15 +177,12 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			//start off by processing the direct beam run
 			if(whichlistitem(direct,alreadyLoaded)==-1)	//if you've not loaded the direct beam for that angle do so.
 				isDirect = 1
-				if(loadNexusfile(S_path, direct))
-					print "ERROR couldn't load direct beam run (reduce)";abort
-				endif
 				if(rebin)
-					if(processNeXUSfile(direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, rebinning = W_rebinboundaries,manual=manual))
+					if(processNeXUSfile(S_path, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, rebinning = W_rebinboundaries, manual = manual, normalise=normalise, saveSpectrum = saveSpectrum))
 						print "ERROR while processing a direct beam run (reduce)" ; abort
 					endif
 				else
-					if(processNeXUSfile(direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, manual =manual))
+					if(processNeXUSfile(S_path, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, manual = manual, normalise = normalise, saveSpectrum = saveSpectrum))
 						print "ERROR while processing a direct beam run (reduce)" ; abort
 					endif				
 				endif
@@ -201,16 +205,9 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			Wave DetectorHeightD = $(directDF+":instrument:detector:vertical_translation")
 			Wave W_directbeampos = $(directDF+":W_beampos"); AbortOnRTE
 
-			//
 			//load in and process reflected angle
-			//
-			if(loadNexusfile(S_path, angle0))
-				print "ERROR couldn't load a reflected beam run, "+angle0 + " (reduce)";
-				abort
-			endif
-
 			//when you process the reflected nexus file you have to use the lambda spectrum from the direct beamrun
-			if(processNeXUSfile(angle0, background, lowLambda, highLambda, water = water, isDirect = 0, expected_centre = expected_centre, rebinning = W_lambdaHISTD, manual=manual))
+			if(processNeXUSfile(S_path, angle0, background, lowLambda, highLambda, water = water, isDirect = 0, expected_centre = expected_centre, rebinning = W_lambdaHISTD, manual=manual, normalise = normalise, saveSpectrum = saveSpectrum))
 				print "ERROR while processing a reflected beam run (reduce)" ; abort
 			endif
 			
@@ -345,18 +342,20 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			//have done this for the following angles.
 			//multiply by bmon1_direct/bmon1_angle0
 			
-			//there should exist a global variable by the name of angle0DF + BM1counts, which is the summed BM1 count.
-			NVAR/z bmon1_counts_direct = $(directDF) + ":bm1counts"
-			NVAR/z bmon1_counts_angle0 = $(angle0DF) + ":bm1counts"
-			
-			if(nvar_exists(bmon1_counts_direct) && nvar_exists(bmon1_counts_angle0))
-				if(bmon1_counts_direct != 0 && bmon1_counts_angle0 != 0)
-					temp =  ((sqrt(bmon1_counts_direct)/bmon1_counts_direct)^2 + (sqrt(bmon1_counts_angle0)/bmon1_counts_angle0)^2) //(dratio/ratio)^2
-					
-					multithread M_refSD += temp		//M_refSD is still fractional variance at this point.
-					multithread M_ref *= bmon1_counts_direct/bmon1_counts_angle0
-				endif
-			endif
+//			//there should exist a global variable by the name of angle0DF + BM1counts, which is the summed BM1 count.
+//			//this normalisation can be done in processNexus file
+//			NVAR/z bmon1_counts_direct = $(directDF) + ":bm1counts"
+//			NVAR/z bmon1_counts_angle0 = $(angle0DF) + ":bm1counts"
+//			
+//			if(nvar_exists(bmon1_counts_direct) && nvar_exists(bmon1_counts_angle0))
+//				if(bmon1_counts_direct != 0 && bmon1_counts_angle0 != 0)
+//					temp =  ((sqrt(bmon1_counts_direct)/bmon1_counts_direct)^2 + (sqrt(bmon1_counts_angle0)/bmon1_counts_angle0)^2) //(dratio/ratio)^2
+//					
+//					multithread M_refSD += temp		//M_refSD is still fractional variance at this point.
+//					multithread M_ref *= bmon1_counts_direct/bmon1_counts_angle0
+//				endif
+//			endif
+
 			//M_refSD is still (dr/r)^2
 			multithread M_refSD = sqrt(M_refSD)
 			multithread M_refSD *= M_ref
@@ -525,18 +524,18 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	return 0
 End
 
-Function sumWave(wav,p1,p2)
+Function sumWave(wav, p1, p2)
 	Wave wav
-	variable p1,p2
-	variable summ,ii,temp
-	if(p2<p1)
+	variable p1, p2
+	variable summ, ii, temp
+	if(p2 < p1)
 		temp = p2
 		p2 = p1
 		p1 = temp
 	endif
 
-	for(ii=0 ; ii<p2; ii+=1)
-		summ+=wav[ii]
+	for(ii = 0 ; ii < p2; ii += 1)
+		summ += wav[ii]
 	endfor
 	return summ
 end
@@ -676,22 +675,27 @@ Function doesNexusfileExist(pathName, filename)
 	endif
 End
 
-Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scanpoint,isDirect, expected_centre, expected_width, omega, two_theta, rebinning,manual])
-	string fileName
+Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, water, scanpoint, isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, rebinning, normalise])
+	string pathname, fileName
 	variable background, loLambda, hiLambda
 	string water
-	variable scanpoint, isDirect, expected_centre, expected_width, omega, two_theta, manual
+	variable scanpoint, isDirect, expected_centre, expected_width, omega, two_theta, manual, saveSpectrum, normalise
 	Wave/z rebinning
 	//processes a loaded NeXUS file.
 	//returns 0 if successful, non zero otherwise
-
+	//filename = filename for the spectrum, e.g. PLP0001000.  This is used to try and find a datafolder containing the loaded NeXUS data.
+	//background = if you want to subtract a background, then set this variable equal to 1.
+	//lolambda  = low wavelength cutoff for the spectrum
+	//hiLambda = high wavelength cutoff for the spectrum
 	//water is a filename for a normalisation run, typically a SANS scattering through a water cuvette.
-	//freq = chopper frequency, in Hz
 	//expected_centre = pixel position for specular beam
 	//expected_width = FWHM width in pixels of specular beam
-	//pairing = the chopper pairing used (2, 3 or 4)  Default = 3
 	//manual = 1 for manual specification of specular ridge
 	//rebinning = a wave containing new wavelength bins
+	//isDirect = the spectrum is a direct beam measurement and gravity correction will ensue.
+	//scanpoint = if a datafile contains several images this variable controls which is processed.  If you want to aggregate scanpoints do not specify this optional parameter
+	 //                   you will then be asked what range of points you want to use. Alternatively specify scanpoint = -1 to aggregate all scanpoints
+	 //saveSpectrumLoc = if this variable !=0 then the spectrum is saved to file.
 	
 	//first thing we will do is  average over x, possibly rebin, subtract background on timebin by time bin basis, then integrate over the foreground
 	//files will be loaded into root:packages:platypus:data:Reducer:+cleanupname(removeending(fileStr,".nx.hdf"),0)
@@ -699,7 +703,7 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 	//OUTPUT
 	//W_Spec,W_specSD,W_lambda,W_lambdaSD,W_lambdaHIST,W_specTOF,W_specTOFHIST, W_waternorm, W_beampos
 	
-	variable ChoD, toffset, nrebinpnts,ii, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint
+	variable ChoD, toffset, nrebinpnts,ii, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint, dBM1counts
 	string tempDF,cDF,tempDFwater
 	Wave/z hmmWater
 	
@@ -719,6 +723,12 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 	endif
 	
 	try
+		//try and load the data
+		if(loadNeXUSfile(pathname, filename))
+			print "problem whilst loading NeXUS file: ",  pathname + filename, " (processNexusfile)"
+			abort
+		endif
+		
 		//check the data is loaded
 		tempDF = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(filename,".nx.hdf"),0)
 		if(!datafolderexists(tempDF))
@@ -756,6 +766,9 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 			if(finishingPoint > dimsize(hmm, 0) -1)
 				finishingPoint = dimsize(hmm, 0) -1
 			endif
+		elseif(!paramisdefault(scanpoint) && scanpoint == -1 && dimsize(hmm, 0) > 1)
+			scanpoint = 0
+			finishingPoint = dimsize(hmm, 0) -1
 		endif
 		
 		make/o/i/u/n=(dimsize(hmm,1),dimsize(hmm,2),dimsize(hmm,3)) detector = 0
@@ -1068,9 +1081,29 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 		duplicate/o root:packages:platypus:data:Reducer:M_topAndTail , $(tempDF+":M_topAndTail")
 		duplicate/o root:packages:platypus:data:Reducer:M_topAndTailSD , $(tempDF+":M_topAndTailSD")
 		Wave W_spec = $(tempDF+":W_spec")
+		Wave W_specSD = $(tempDF+":W_specSD")
 		Wave M_topAndTail = $(tempDF+":M_topandtail")
 		Wave M_topAndTailSD = $(tempDF+":M_topandtailSD")
 	
+		//if you want to normalise by monitor counts do so here.
+		//propagate the errors.
+		if(!paramisdefault(normalise) && normalise)
+			dBM1counts = sqrt(BM1counts)
+			
+			multithread M_topandtailSD[][] = numtype((M_topandtailSD[p][q] / M_topandtail[p][q])^2) ? 0 : (M_topandtailSD[p][q] / M_topandtail[p][q])^2
+			multithread M_topandtailSD[][] += numtype((dBM1counts/BM1counts)^2) ? 0 : (dBM1counts/BM1counts)^2		
+			multithread M_topandtailSD = sqrt(M_topandtailSD)
+			
+			multithread W_specSD[] = numtype((W_specSD[p] / W_spec[p])^2) ? 0 : (W_specSD[p] / W_spec[p])^2
+			multithread W_specSD[][] += numtype((dBM1counts/BM1counts)^2) ? 0 : (dBM1counts/BM1counts)^2		
+			multithread W_specSD = sqrt(W_specSD)
+			
+			Multithread	 W_spec /= BM1counts
+			Multithread	 W_specSD *= W_spec
+			Multithread M_topandtail /= BM1counts
+			multithread M_topandtailSD[][] *= M_topandtail[p][q]
+		endif
+		
 		//now work out dlambda/lambda, the resolution contribution from wavelength.
 		//vanWell, Physica B,  357(2005) pp204-207), eqn 4.
 		//this is only an approximation for our instrument, as the 2nd and 3rd discs have smaller
@@ -1090,6 +1123,13 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 		W_lambdaSD = sqrt(W_LambdaSD)
 		W_lambdaSD *= W_lambda
 	
+		//you may want to save the spectrum to file
+		if(!paramisdefault(saveSpectrum) && saveSpectrum)
+			if(writeSpectrum(pathname, filename, filename, W_spec, W_specSD, W_lambda, W_lambdaSD))
+				print "ERROR whilst writing spectrum to file (processNexusfile)"
+			endif
+		endif
+	
 		killwaves/z W_point, detector, detectorSD
 		setdatafolder $cDF
 		return 0
@@ -1098,6 +1138,76 @@ Function processNeXUSfile(filename, background, loLambda, hiLambda[, water, scan
 		setdatafolder $cDF
 		return 1
 	endtry
+End
+
+Function writeSpectrum(pathname, fname, runnumber, II, dI, lambda, dlambda)
+String pathname, fname, runnumber
+Wave II, dI, lambda, dlambda
+//a function to save a spectrum file to disc.
+//pathname = string containing the path to where the data needs to be saved.
+//fname = the filename of the the file you want to write
+//runnumber = the runnumber of the file
+//II = the wave containing the intensities
+//dI = the uncertainty in the intensities (SD)
+//lambda = the wavelength (A)
+//dlambda = the uncertainty in wavelength (FWHM)
+	variable fileID
+	string data = ""
+	
+	Newpath/o/q/c/z PATH_TO_DATA, pathname
+	if(V_FLAG)
+		print "ERROR output path doesn't exist (writeSpectrum)"
+		return 1
+	endif
+	pathinfo PATH_TO_DATA
+	if(!V_FLAG)
+		print "ERROR output path doesn't exist (writeSpectrum)"
+		return 1
+	endif
+	fileID = XMLcreatefile(S_path + fname + ".spectrum", "REFroot", "", "")
+	if(fileID < 1)
+		print "ERROR couldn't create XML file (writeSpecRefXML1D)"
+		return 1
+	endif
+	
+	xmladdnode(fileID,"//REFroot","","REFentry","",1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]","","time",Secs2Date(DateTime,0) + " "+Secs2Time(DateTime,3))
+
+	xmladdnode(fileID,"//REFroot/REFentry[1]","","Title","",1)
+
+	xmladdnode(fileID,"//REFroot/REFentry[1]","","REFdata","",1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","axes","lambda")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","rank","1")
+	
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","type","POINT")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","spin","UNPOLARISED")
+	
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Run","",1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run[1]","","filename", runnumber +".nx.hdf")
+	
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","dim", num2istr(dimsize(II, 0)))
+
+
+	sockitWaveToString/TXT II, data	
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","R", data,1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/R","","uncertainty","dR")
+
+	sockitWaveToString/TXT lambda, data	
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata", "", "lambda", data,1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/lambda", "","uncertainty","dlambda")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/lambda","","units","1/A")
+
+	sockitWaveToString/TXT dI, data	
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dR", data,1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dR","","type","SD")
+
+	sockitWaveToString/TXT dlambda, data	
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dlambda", data,1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dlambda","","type","FWHM")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dlambda","","units","1/A")
+
+	xmlclosefile(fileID,1)
+
 End
 
 
@@ -1158,7 +1268,6 @@ Function writeSpecRefXML1D(pathname, fname, qq, RR, dR, dQ, exptitle, user, samp
 		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","filename",stringfromlist(ii,runnumbers)+".nx.hdf")
 		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","preset","")
 		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","size","")
-
 	endfor
 	
 	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]","","reductionnote",rednnote,1)

@@ -114,7 +114,11 @@ Function  reducerpanel() : Panel
 	variable/g root:packages:platypus:data:Reducer:highLambda=18
 	variable/g root:packages:platypus:data:Reducer:expected_centre=ROUGH_BEAM_POSITION
 	variable/g root:packages:platypus:data:Reducer:rebinpercent=5
-
+	variable/g root:packages:platypus:data:Reducer:backgroundsbn=1
+	variable/g root:packages:platypus:data:Reducer:manualbeamfind=0
+	variable/g root:packages:platypus:data:Reducer:normalisebymonitor=1
+	variable/g root:packages:platypus:data:Reducer:saveSpectrum=0
+		
 	SVAR pathName = root:packages:platypus:data:Reducer:pathName
 	pathInfo PATH_TO_DATA
 	if(V_Flag)
@@ -151,9 +155,6 @@ Function  reducerpanel() : Panel
 	SetVariable dataSource_tab0,fSize=10
 	SetVariable dataSource_tab0,value= root:packages:platypus:data:Reducer:pathName,noedit= 1
 	//	checkbox rebinning_tab0,pos={574,30},title="rebin?",fsize=10
-	checkbox bkgsub_tab0,pos={574,35},title="background sub?",fsize=10
-	checkbox manbeamfind_tab0,pos={574,55},title="manual beam find?",fsize=10
-
 	Button showreducervariables_tab0,pos={381,52},size={152,16},proc=SLIM_buttonproc,title="show reducer variables"
 	Button showreducervariables_tab0,fSize=9
 
@@ -169,7 +170,7 @@ End
 Function  reducerVariablesPanel() : Panel
 	PauseUpdate; Silent 1		// building window...
 	Dowindow/k SLIMvarpanel
-	NewPanel /K=1 /W=(385,164,589,267)
+	NewPanel /K=1 /W=(385,164,588,350)
 	Dowindow/c SLIMvarpanel
 	
 	Newdatafolder/o root:packages
@@ -178,18 +179,26 @@ Function  reducerVariablesPanel() : Panel
 	//directory for the reduction package
 	Newdatafolder /o root:packages:platypus:data:Reducer
 	
-	SetVariable lowLambda_tab0,pos={10,10},size={170,16},title="lowWavelength"
-	SetVariable lowLambda_tab0,fSize=10
-	SetVariable lowLambda_tab0,limits={0.5,30,0.1},value= root:packages:platypus:data:Reducer:lowLambda
-	SetVariable highLambda_tab0,pos={10,30},size={171,16},title="highWavelength"
-	SetVariable highLambda_tab0,fSize=10
-	SetVariable highLambda_tab0,limits={0.5,30,0.1},value= root:packages:platypus:data:Reducer:highLambda
-	SetVariable rebinpercent_tab0,pos={10,50},size={145,16},title="Rebin %tage "
-	SetVariable rebinpercent_tab0,fSize=10
-	SetVariable rebinpercent_tab0,limits={-1,11,1},value= root:packages:platypus:data:Reducer:rebinpercent
-	SetVariable expected_centre_tab0,pos={8,70},size={145,16},title="expected centre"
-	SetVariable expected_centre_tab0,fSize=10
-	SetVariable expected_centre_tab0,limits={-220,220,1},value= root:packages:platypus:data:Reducer:expected_centre	
+	SetVariable lowLambda_tab0,pos={10,10},size={177,16},title="lowWavelength", win=SLIMvarpanel
+	SetVariable lowLambda_tab0,fSize=10, win=SLIMvarpanel
+	SetVariable lowLambda_tab0,limits={0.5,30,0.1},value= root:packages:platypus:data:Reducer:lowLambda, win=SLIMvarpanel
+	SetVariable highLambda_tab0,pos={10,30},size={178,16},title="highWavelength", win=SLIMvarpanel
+	SetVariable highLambda_tab0,fSize=10, win=SLIMvarpanel
+	SetVariable highLambda_tab0,limits={0.5,30,0.1},value= root:packages:platypus:data:Reducer:highLambda, win=SLIMvarpanel
+	SetVariable rebinpercent_tab0,pos={10,51},size={177,16},title="Rebin %tage ", win=SLIMvarpanel
+	SetVariable rebinpercent_tab0,fSize=10, win=SLIMvarpanel
+	SetVariable rebinpercent_tab0,limits={-1,11,1},value= root:packages:platypus:data:Reducer:rebinpercent, win=SLIMvarpanel
+	SetVariable expected_centre_tab0,pos={8,72},size={178,16},title="expected centre", win=SLIMvarpanel
+	SetVariable expected_centre_tab0,fSize=10, win=SLIMvarpanel
+	SetVariable expected_centre_tab0,limits={-220,220,1},value= root:packages:platypus:data:Reducer:expected_centre, win=SLIMvarpanel
+	CheckBox background_tab0,pos={9,94},size={138,14},title="background subtraction?", win=SLIMvarpanel
+	CheckBox background_tab0,fSize=10,variable= root:packages:platypus:data:Reducer:backgroundsbn, win=SLIMvarpanel
+	CheckBox manual_tab0,pos={9,115},size={109,14},title="manual beam find?", win=SLIMvarpanel
+	CheckBox manual_tab0,fSize=10,value= 0, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:manualbeamfind
+	CheckBox normalise_tab0,pos={9,136},size={155,14},title="normalise by beam monitor?", win=SLIMvarpanel
+	CheckBox normalise_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:normalisebymonitor
+	CheckBox saveSpectrum_tab0,pos={9,157},size={94,14},title="save spectrum?", win=SLIMvarpanel
+	CheckBox saveSpectrum_tab0,fSize=10,value= 0, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:saveSpectrum
 End
 
 Function SLIM_listproc(lba) : ListBoxControl
@@ -256,8 +265,12 @@ Function SLIM_buttonproc(ba) : ButtonControl
 			SVAR pathName = root:packages:platypus:data:Reducer:pathName
 			NVAR expected_centre = root:packages:platypus:data:Reducer:expected_centre
 			NVAR rebinpercent = root:packages:platypus:data:Reducer:rebinpercent
+			NVAR backgroundsbn =  root:packages:platypus:data:Reducer:backgroundsbn
+			NVAR manualbeamfind =  root:packages:platypus:data:Reducer:manualbeamfind
+			NVAR normalisebymonitor = root:packages:platypus:data:Reducer:normalisebymonitor
+			NVAR saveSpectrum =  root:packages:platypus:data:Reducer:saveSpectrum
 			
-			variable rebinning,background,ii,jj, manual, dontoverwrite = 0
+			variable rebinning,ii,jj, dontoverwrite = 0
 			string tempDF,filenames, water = ""
 			string fileNameList="", righteousFileName = ""	
 			string cmd
@@ -269,28 +282,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						Doalert 0, "Please enter a valid filepath for the data source"
 						return 0
 					endif			
+
 					//did you want to rebin?
-					//					controlinfo/w=SLIM rebinning_tab0
-					//					if(V_Value)
 					rebinning = rebinpercent
-					//					else	
-					//						rebinning = -1
-					//					endif
-					controlinfo/w=SLIM bkgsub_tab0
-					if(V_Value)
-						background = 1
-					else	
-						background = 0
-					endif
-					
-					controlinfo/w=SLIM manbeamfind_tab0
-					if(V_Value)
-						manual = 1
-					else	
-						manual = 0
-					endif
-					
-					
+										
 					for(ii=0 ; ii < dimsize(angledata_list, 0) ; ii+=1)
 						if(strlen(angledata_list[ii][3]) == 0 || !(angledata_sel[ii][0] & 2^4))
 							continue
@@ -337,10 +332,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							angledata_list[ii][2] = "1"
 							print "Warning setting scale factor to 1 ", angledata_list[ii][3]
 						endif
-						sprintf cmd, " reduce(\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g)", replacestring("\\", pathname, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  background,water, expected_centre, manual, dontoverwrite
+						sprintf cmd, " reduce(\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g)", replacestring("\\", pathname, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, dontoverwrite, normalisebymonitor, saveSpectrum
 						cmdToHistory(cmd)
 						
-						if(reduce(pathName, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = background, water = water, expected_centre = expected_centre, manual=manual, dontoverwrite = dontoverwrite))
+						if(reduce(pathName, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_centre = expected_centre, manual=manualbeamfind, dontoverwrite = dontoverwrite, normalise = normalisebymonitor, saveSpectrum = saveSpectrum))
 							print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
 						endif
 					endfor
@@ -366,26 +361,8 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						return 0
 					endif			
 					//did you want to rebin?
-					//					controlinfo/w=SLIM rebinning_tab0
-					//					if(V_Value)
 					rebinning = rebinpercent
-					//					else	
-					//						rebinning = -1
-					//					endif
-					controlinfo/w=SLIM bkgsub_tab0
-					if(V_Value)
-						background = 1
-					else	
-						background = 0
-					endif
-					
-					controlinfo/w=SLIM manbeamfind_tab0
-					if(V_Value)
-						manual = 1
-					else	
-						manual = 0
-					endif
-					
+										
 					NewPath/o/q/z PATH_TO_DATA pathName
 					pathinfo path_to_data
 					if(!V_Flag)
@@ -422,10 +399,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						return 0
 					endif
 					
-					sprintf cmd, "slim_plot(\"%s\",\"%s\",%g,%g,%g,expected_centre=%g, rebinning=%g, manual=%g)",pathName, filenames, lowLambda,highLambda,  background,expected_centre, rebinpercent, manual
+					sprintf cmd, "slim_plot(\"%s\",\"%s\",%g,%g,%g,expected_centre=%g, rebinning=%g, manual=%g, normalise=%g, saveSpectrum = %g)",pathName, filenames, lowLambda,highLambda, backgroundsbn,expected_centre, rebinpercent, manualbeamfind, normalisebymonitor, saveSpectrum
 					cmdToHistory(cmd)
 						
-					if(slim_plot(pathName,fileNames,lowLambda,highLambda,background, expected_centre=expected_centre, rebinning = rebinpercent, manual = manual))
+					if(slim_plot(pathName,fileNames,lowLambda,highLambda,backgroundsbn, expected_centre=expected_centre, rebinning = rebinpercent, manual = manualbeamfind, normalise = normalisebymonitor, saveSpectrum = saveSpectrum))
 						print "ERROR while trying to plot (SLIM_buttonproc)"
 						return 0
 					endif
@@ -450,14 +427,25 @@ Function SLIM_buttonproc(ba) : ButtonControl
 End
 
 
-Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expected_centre, rebinning, manual])
+Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expected_centre, rebinning, manual, normalise, saveSpectrum])
 	String pathName,fileNames
-	variable lowlambda, highlambda, background, expected_centre, rebinning, manual
+	variable lowlambda, highlambda, background, expected_centre, rebinning, manual, normalise, saveSpectrum
 		
 	if(paramisdefault(expected_centre))
 		expected_centre = ROUGH_BEAM_POSITION
 	endif
 			
+	if(paramisdefault(manual))
+		manual = 0
+	endif
+	if(paramisdefault(normalise))
+		normalise = 0
+	endif
+	if(paramisdefault(saveSpectrum))
+		saveSpectrum = 0
+	endif
+
+	
 	Newpath/o/q/z PATH_TO_DATA pathName
 	PathInfo PATH_TO_DATA
 	if(!V_Flag)
@@ -467,11 +455,6 @@ Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expecte
 
 	variable ii
 	string tempDF,tempFileNameStr
-	
-	//if manual=1 then do a manual peak find
-	if(paramisdefault(manual))
-		manual=0
-	endif
 	
 	for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
 		tempFileNameStr = stringfromlist(ii,fileNames)
@@ -508,20 +491,15 @@ Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expecte
 		endif
 		tempFileNameStr = removeending(stringfromlist(ii,fileNames),".nx.hdf")
 		
-		if(loadNexusfile(S_path,tempfilenameStr))
-			print "ERROR loading Nexus file (SLIM_plot)"
-			return 1
-		endif
-		
 		if(paramisdefault(rebinning) || rebinning <= 0)
-			if(processNeXUSfile(tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, manual=manual))
+			if(processNeXUSfile(S_path, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, manual=manual, normalise = normalise))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1
 			endif
 		else
 			make/o/d/n= (round(log(highlambda/lowlambda)/log(1+rebinning/100))+1) W_rebinBoundaries
 			W_rebinboundaries = lowlambda * (1+rebinning/100)^p
-			if(processNeXUSfile(tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, rebinning=W_rebinboundaries,manual=manual))
+			if(processNeXUSfile(S_path, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, rebinning=W_rebinboundaries,manual=manual, normalise = normalise))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1
 			endif		
@@ -651,7 +629,7 @@ Function SLIM_plot_reduced(pathName,filenames)
 			string fname = stringfromlist(ii,filenames)
 
 			variable fileID = xmlopenfile(S_path+fname)
-			if(fileID==-1)
+			if(fileID < 1)
 				print "ERROR opening xml file (SLIM_PLOT_reduced)"
 				abort
 			endif
@@ -783,6 +761,10 @@ Function button_SLIM_PLOT(ba) : ButtonControl
 	Wave/t angledata_list = root:packages:platypus:data:Reducer:angledata_list
 	NVAR rebinpercent = root:packages:platypus:data:Reducer:rebinpercent
 	SVAR pathName = root:packages:platypus:data:Reducer:pathName
+	NVAR backgroundsbn =  root:packages:platypus:data:Reducer:backgroundsbn
+	NVAR manualbeamfind =  root:packages:platypus:data:Reducer:manualbeamfind
+	NVAR normalisebymonitor = root:packages:platypus:data:Reducer:normalisebymonitor
+	NVAR saveSpectrum =  root:packages:platypus:data:Reducer:saveSpectrum
 	
 	variable background,isLOG,type, rebinning
 	string fileNames = ""
@@ -798,21 +780,9 @@ Function button_SLIM_PLOT(ba) : ButtonControl
 					controlinfo graphtype
 					type = V_Value-1			
 					
-					controlinfo/W=SLIM bkgsub_tab0
-					if(V_Value)
-						background = 1
-					else
-						background = 0
-					endif
-					
-					//					controlinfo/w=SLIM rebinning_tab0
-					//					if(V_Value)
 					rebinning = rebinpercent
-					//					else
-					//						rebinning = -1
-					//					endif
 
-					SLIM_plot(pathName,fileNames,lowLambda,highLambda, background, rebinning = rebinning)
+					SLIM_plot(pathName,fileNames,lowLambda,highLambda, backgroundsbn, rebinning = rebinning, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, manual = manualbeamfind)
 					if(!stringmatch(stringfromlist(0,filenames),"*.xml") && !stringmatch(stringfromlist(0,filenames),"*.xrdml"))
 						SLIM_redisplay(type,isLog)
 					endif
