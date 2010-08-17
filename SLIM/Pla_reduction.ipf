@@ -1195,7 +1195,7 @@ Wave II, dI, lambda, dlambda
 	sockitWaveToString/TXT lambda, data	
 	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata", "", "lambda", data,1)
 	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/lambda", "","uncertainty","dlambda")
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/lambda","","units","1/A")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/lambda","","units","A")
 
 	sockitWaveToString/TXT dI, data	
 	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dR", data,1)
@@ -1204,7 +1204,7 @@ Wave II, dI, lambda, dlambda
 	sockitWaveToString/TXT dlambda, data	
 	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dlambda", data,1)
 	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dlambda","","type","FWHM")
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dlambda","","units","1/A")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dlambda","","units","A")
 
 	xmlclosefile(fileID,1)
 

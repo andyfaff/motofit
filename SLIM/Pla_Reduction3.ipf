@@ -198,7 +198,7 @@ Function  reducerVariablesPanel() : Panel
 	CheckBox normalise_tab0,pos={9,136},size={155,14},title="normalise by beam monitor?", win=SLIMvarpanel
 	CheckBox normalise_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:normalisebymonitor
 	CheckBox saveSpectrum_tab0,pos={9,157},size={94,14},title="save spectrum?", win=SLIMvarpanel
-	CheckBox saveSpectrum_tab0,fSize=10,value= 0, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:saveSpectrum
+	CheckBox saveSpectrum_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:saveSpectrum
 End
 
 Function SLIM_listproc(lba) : ListBoxControl
@@ -492,14 +492,14 @@ Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expecte
 		tempFileNameStr = removeending(stringfromlist(ii,fileNames),".nx.hdf")
 		
 		if(paramisdefault(rebinning) || rebinning <= 0)
-			if(processNeXUSfile(S_path, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, manual=manual, normalise = normalise))
+			if(processNeXUSfile(S_path, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, manual=manual, normalise = normalise, savespectrum = saveSpectrum))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1
 			endif
 		else
 			make/o/d/n= (round(log(highlambda/lowlambda)/log(1+rebinning/100))+1) W_rebinBoundaries
 			W_rebinboundaries = lowlambda * (1+rebinning/100)^p
-			if(processNeXUSfile(S_path, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, rebinning=W_rebinboundaries,manual=manual, normalise = normalise))
+			if(processNeXUSfile(S_path, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, rebinning=W_rebinboundaries,manual=manual, normalise = normalise, savespectrum = saveSpectrum))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1
 			endif		
