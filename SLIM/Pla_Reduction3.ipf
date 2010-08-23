@@ -1244,55 +1244,55 @@ Function adjustAOI(s):setvariablecontrol
 End
 
 
-#pragma rtGlobals=1		// Use modern global access method.
-Function offspec_XRMLmap()
-variable fileID
-variable wavelength, KA1, KA2, ratio, ii, numscans, startpoint, endpoint
-string namespace = "xrdml=http://www.xrdml.com/XRDMeasurement/1.0"
-
-	Open/R/D/F=".xrdml" fileID
-	fileID = XMLopenfile(S_fileName)
-	if(fileID < 1)
-		abort
-	endif
-
-KA1 = str2num(XMLstrFmXpath(fileID, "//xrdml:kAlpha1",namespace,""))
-KA2 = str2num(XMLstrFmXpath(fileID, "//xrdml:kAlpha2",namespace,""))
-ratio = str2num(XMLstrFmXpath(fileID, "//xrdml:ratioKAlpha2KAlpha1",namespace,""))
-wavelength = (KA1 + ratio * KA2) / (1+ratio)
-
-XMLlistXPATH(fileID, "//xrdml:scan", namespace)
-Wave/t/z M_listXpath
-numscans = dimsize(M_listXPath, 0)
-
-make/n=(0,3)/free/o/d temp
-make/n=(0,3)/o/d offspec_map
-
-for(ii = 0 ; ii < numscans ; ii+=1)
-	XMLlistXpath(fileID, "//xrdml:scan["+num2istr(ii+1)+"]/xrdml:dataPoints/xrdml:intensities", namespace)
-	Wave/t/z M_listXpath
-	XMLwavefmXpath(fileID, M_listXpath[0][0], namespace, " ")
-	Wave/t/z M_xmlcontent
-	redimension/n=(dimsize(M_xmlcontent, 0), -1)temp
-	temp[][2] = str2num(M_XMLcontent[p][0])
-	
-	startpoint = str2num(XMLstrfmXpath(fileID, "//xrdml:scan["+num2istr(ii+1)+"]/xrdml:dataPoints/xrdml:positions[@axis=\"2Theta\"]/xrdml:startPosition", namespace, ""))
-	endpoint = str2num(XMLstrfmXpath(fileID, "//xrdml:scan["+num2istr(ii+1)+"]/xrdml:dataPoints/xrdml:positions[@axis=\"2Theta\"]/xrdml:endPosition", namespace, ""))
-	temp[][0] = startpoint + p * (endpoint - startpoint) / (dimsize(temp, 0) - 1)
-
-	startpoint = str2num(XMLstrfmXpath(fileID, "//xrdml:scan["+num2istr(ii+1)+"]/xrdml:dataPoints/xrdml:positions[@axis=\"Omega\"]/xrdml:startPosition", namespace, ""))
-	endpoint = str2num(XMLstrfmXpath(fileID, "//xrdml:scan["+num2istr(ii+1)+"]/xrdml:dataPoints/xrdml:positions[@axis=\"Omega\"]/xrdml:endPosition", namespace, ""))
-	temp[][1] = startpoint + p * (endpoint - startpoint) / (dimsize(temp, 0) - 1)
-	
-	duplicate/free/o temp, temp2
-	temp2[][1] = imag(Moto_angletoQ(temp[p][1], temp[p][0], wavelength))
-	temp2[][0] = real(Moto_angletoQ(temp[p][1], temp[p][0], wavelength))
-	
-	concatenate/NP=0 {temp2}, offspec_map
-endfor
-
-if(fileID> 0)
-	xmlclosefile(fileID, -1)
-endif
-killwaves/z M_listxpath, M_xmlcontent, W_xmlcontent
-End
+//#pragma rtGlobals=1		// Use modern global access method.
+//Function offspec_XRMLmap()
+//variable fileID
+//variable wavelength, KA1, KA2, ratio, ii, numscans, startpoint, endpoint
+//string namespace = "xrdml=http://www.xrdml.com/XRDMeasurement/1.0"
+//
+//	Open/R/D/F=".xrdml" fileID
+//	fileID = XMLopenfile(S_fileName)
+//	if(fileID < 1)
+//		abort
+//	endif
+//
+//KA1 = str2num(XMLstrFmXpath(fileID, "//xrdml:kAlpha1",namespace,""))
+//KA2 = str2num(XMLstrFmXpath(fileID, "//xrdml:kAlpha2",namespace,""))
+//ratio = str2num(XMLstrFmXpath(fileID, "//xrdml:ratioKAlpha2KAlpha1",namespace,""))
+//wavelength = (KA1 + ratio * KA2) / (1+ratio)
+//
+//XMLlistXPATH(fileID, "//xrdml:scan", namespace)
+//Wave/t/z M_listXpath
+//numscans = dimsize(M_listXPath, 0)
+//
+//make/n=(0,3)/free/o/d temp
+//make/n=(0,3)/o/d offspec_map
+//
+//for(ii = 0 ; ii < numscans ; ii+=1)
+//	XMLlistXpath(fileID, "//xrdml:scan["+num2istr(ii+1)+"]/xrdml:dataPoints/xrdml:intensities", namespace)
+//	Wave/t/z M_listXpath
+//	XMLwavefmXpath(fileID, M_listXpath[0][0], namespace, " ")
+//	Wave/t/z M_xmlcontent
+//	redimension/n=(dimsize(M_xmlcontent, 0), -1)temp
+//	temp[][2] = str2num(M_XMLcontent[p][0])
+//	
+//	startpoint = str2num(XMLstrfmXpath(fileID, "//xrdml:scan["+num2istr(ii+1)+"]/xrdml:dataPoints/xrdml:positions[@axis=\"2Theta\"]/xrdml:startPosition", namespace, ""))
+//	endpoint = str2num(XMLstrfmXpath(fileID, "//xrdml:scan["+num2istr(ii+1)+"]/xrdml:dataPoints/xrdml:positions[@axis=\"2Theta\"]/xrdml:endPosition", namespace, ""))
+//	temp[][0] = startpoint + p * (endpoint - startpoint) / (dimsize(temp, 0) - 1)
+//
+//	startpoint = str2num(XMLstrfmXpath(fileID, "//xrdml:scan["+num2istr(ii+1)+"]/xrdml:dataPoints/xrdml:positions[@axis=\"Omega\"]/xrdml:startPosition", namespace, ""))
+//	endpoint = str2num(XMLstrfmXpath(fileID, "//xrdml:scan["+num2istr(ii+1)+"]/xrdml:dataPoints/xrdml:positions[@axis=\"Omega\"]/xrdml:endPosition", namespace, ""))
+//	temp[][1] = startpoint + p * (endpoint - startpoint) / (dimsize(temp, 0) - 1)
+//	
+//	duplicate/free/o temp, temp2
+//	temp2[][1] = imag(Moto_angletoQ(temp[p][1], temp[p][0], wavelength))
+//	temp2[][0] = real(Moto_angletoQ(temp[p][1], temp[p][0], wavelength))
+//	
+//	concatenate/NP=0 {temp2}, offspec_map
+//endfor
+//
+//if(fileID> 0)
+//	xmlclosefile(fileID, -1)
+//endif
+//killwaves/z M_listxpath, M_xmlcontent, W_xmlcontent
+//End

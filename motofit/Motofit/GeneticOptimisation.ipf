@@ -2613,13 +2613,13 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 	//limits for those being varied
 	Wave/z limitsForThoseBeingVaried = root:packages:motofit:old_genoptimise:limitsForThoseBeingVaried
 	if(!waveexists(limitsForThoseBeingVaried))
-		make/o/n=(0, 2) limitsForThoseBeingVaried = 0
+		make/o/n=(0, 2) limitsForThoseBeingVaried = 0 
 	endif
 	
 	if(paramisdefault(limits))
 		Wave/z limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
 		if(!waveexists(limits) || dimsize(limits, 0) != dimsize(coefs, 0))
-			make/o/n=(dimsize(coefs, 0), 2) root:packages:motofit:old_genoptimise:GENcurvefitlimits = 0
+			make/o/n=(dimsize(coefs, 0), 2)/d root:packages:motofit:old_genoptimise:GENcurvefitlimits = 0
 			Wave/z limits =root:packages:motofit:old_genoptimise:GENcurvefitlimits
 //				limits[][0] = coefs[thosebeingvaried[p]] < 0 ? 2* coefs[thosebeingvaried[p]] : 0
 //				limits[][1] = coefs[thosebeingvaried[p]] > 0 ? 2* coefs[thosebeingvaried[p]] : 0		
