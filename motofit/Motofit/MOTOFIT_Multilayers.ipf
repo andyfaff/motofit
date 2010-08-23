@@ -37,10 +37,10 @@ Function Setupmultilayer(ctrlname,checked) : CheckboxControl
 	String ctrlname
 	Variable checked
 	NVAR/z Vmullayers,Vmulrep,Vappendlayer
-	Wave coef_Cref,theoretical_R,theoretical_q,sld,zed
 	
 	String saveDF = getdatafolder(1)
 	Setdatafolder root:
+	Wave/z coef_Cref,theoretical_R,theoretical_q,sld
 	
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:Motofitcontrol
 	moto_repstr("multilayer",num2str(checked))
@@ -50,7 +50,6 @@ Function Setupmultilayer(ctrlname,checked) : CheckboxControl
 			note/K coef_Cref
 			note coef_Cref,motofitcontrol
 			Moto_update()
-			Setformula  SLD,"SLDplot(coef_Cref,zed)"
 			killvariables/z Vmullayers,Vmulrep,Vappendlayer
 			Moto_repstr("Vmullayers","0")
 			Moto_repstr("mulrep","0")
@@ -75,7 +74,6 @@ Function Setupmultilayer(ctrlname,checked) : CheckboxControl
 			note/K coef_multiCref
 			note coef_multiCref,motofitcontrol
 			changemultilayers("",Vmullayers,"","")
-			Setformula  SLD,"SLDplot(multikernel,zed)"
 			Dowindow/F multilayerpanel
 
 			break

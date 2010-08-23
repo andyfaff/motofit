@@ -126,7 +126,7 @@ Function plotCalcref()
 		
 	make/o/d/n=(num) theoretical_q,theoretical_R
 	setscale/P x,qmin,((qmax-qmin)/num), theoretical_R
-	make/o/d/n=(SLDpts) zed,sld
+	make/o/d/n=(SLDpts) sld
 
 	//This section pulls up a graph with the reflectivity in it, and a table containing the reflectivity parameters	
 	theoretical_q = qmin+(x)*((qmax-qmin)/num)
@@ -183,7 +183,7 @@ Function plotCalcref()
 		ModifyGraph log(bottom)=0,mode=0
 		ModifyGraph log(left)=(logg)
 		DoWindow/T reflectivitygraph,"reflectivity graph"
-		Display/Host=#/N=SLDplot/W=(0.6,0,1,0.5) sld vs zed
+		Display/Host=#/N=SLDplot/W=(0.6,0,1,0.5) sld
 	
 		//This section pulls up a graph of the (real SLD profile). 
 		// It automatically updates whenever you change the fit parameters
@@ -219,13 +219,13 @@ Function Moto_genericButtonControl(B_Struct)
 			moto_restoremodel()
 			break
 		case "snapshot":
-			string ywave ="",xwave="",sldwave="",zedwave=""
-			if(!Moto_snapshot(ywave,xwave,sldwave,zedwave))
+			string ywave ="",xwave="",sldwave=""
+			if(!Moto_snapshot(ywave,xwave,sldwave))
 				if(Findlistitem(ywave,tracenamelist("reflectivitygraph",";",1))==-1)
 					appendtograph/w=reflectivitygraph $("root:"+ywave) vs $("root:"+xwave)
 				endif
 				if(Findlistitem(sldwave,tracenamelist("reflectivitygraph#SLDplot",";",1))==-1)
-					appendtograph/w=reflectivitygraph#sldplot $("root:"+sldwave) vs $("root:"+zedwave)
+					appendtograph/w=reflectivitygraph#sldplot $("root:"+sldwave)
 				endif
 				Legend/C/N=text0/A=MC
 			endif
@@ -309,8 +309,8 @@ endswitch
 return 0
 End
 
-Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
-	string &ywave,&xwave,&sldwave,&zedwave
+Function Moto_snapshot(ywave,xwave,sldwave)
+	string &ywave,&xwave,&sldwave
 	
 	string snapStr = "snapshot"
 	prompt snapStr, "Name: "
@@ -323,10 +323,9 @@ Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
 		ywave = cleanupname(snapstr+"_R",0)
 		xwave = cleanupname(snapstr+"_q",0)
 		sldwave = cleanupname("SLD_"+snapstr,0)
-		zedwave = cleanupname("zed_"+snapstr,0)
 		coefwave = cleanupname("coef_"+snapstr,0)
 		
-		if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1) || checkname(zedwave,1))
+		if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1))
 			Doalert 2, "One of the snapshot waves did not have a unique name, did you want to overwrite it?"
 			if(V_Flag == 1)
 				break
@@ -344,8 +343,6 @@ Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
 	Duplicate/o root:theoretical_R, root:$ywave
 	Duplicate/o root:theoretical_q, root:$xwave
 	Duplicate/o root:sld, root:$sldwave
-	Duplicate/o root:zed, root:$zedwave
-	setformula root:$sldwave,""
 	
 	return 0
 End
@@ -401,7 +398,7 @@ Function Moto_update()
 	string saveDF=getdatafolder(1)
 	
 	Setdatafolder root:
-	Wave/z coef_Cref,theoretical_R,theoretical_q,multilay,SLD,zed,coef_multiCref
+	Wave/z coef_Cref,theoretical_R,theoretical_q,multilay,SLD,coef_multiCref
 	
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:Motofitcontrol
 	//make sure that we're not in a fit
@@ -415,12 +412,13 @@ Function Moto_update()
 		//program will fall over if Vmullayers is not equal to zero.
 		
 		Motofit(coef_Cref,theoretical_R,theoretical_Q)
-		Setformula SLD,"Moto_SLDplot(coef_Cref,zed)"
+		Moto_SLDplot(coef_cref, SLD)
 	else
 		Createmultilayer(coef_Cref,multilay)    //the situation when you have a multilayer
 		Kerneltransformation(coef_multicref)
 		Motofit(coef_multiCref,theoretical_R,theoretical_Q)
-		Setformula SLD,"Moto_SLDplot(multikernel,zed)"
+		Wave multikernel = root:multikernel
+		Moto_SLDplot(multikernel, SLD)
 	endif
 	
 	//if you change the model, then you may need to update the FFT of the theoretical curve
@@ -433,27 +431,14 @@ Function Moto_update()
 	setdatafolder $saveDF
 End
 
-Function Moto_createmotofitwaves(w)
-	Wave w
-	variable nlayers=w[0]
-	
-	String savedDataFolder = GetDataFolder(1)		// save
+Function Moto_createmotofitwaves()
+		String savedDataFolder = GetDataFolder(1)		// save
 	newdatafolder/o/s root:packages
 	newdatafolder/o/s root:packages:motofit
 	newdatafolder/o/s root:packages:motofit:reflectivity
 	newdatafolder/o/s root:packages:motofit:reflectivity:tempwaves
 	
 	Variable/g Vmullayers, Vmulrep , Vappendlayer
-	
-	Make/o/d/C/n=(nlayers+2) pj
-	Make/o/d/C/n=(2,2) subtotal,temp2
-	Make/o/d/C/n=(2,2) MRtotal,MI		//MRtotal is the resultant matrix MI is the individual matrix for each layer
-	NVAR/z Vmullayers=root:packages:motofit:reflectivity:tempwaves:Vmullayers
-	
-	if(NVAR_exists(Vmullayers)==1)
-		make/c/o/d/n=(2,2,Vmullayers) mmatrix	//mmatrix holds the repeat matrix for the multilayer
-		make/c/o/d/n=(3,Vmullayers) kznpjbeta //this holds all the wavevectors, fresnel coefficients and beta values for the repeat
-	endif
 	SetDataFolder savedDataFolder	
 End
 
@@ -473,7 +458,7 @@ Function Motofit(w,y,z) :Fitfunc
 		//if this datafolder exists then it is likely that the tempwaves have been made.
 		//if it hasn't then make the waves necessary for Motofit to start
 		if(datafolderexists("root:packages:motofit:reflectivity:tempwaves")==0)
-			Moto_createmotofitwaves(w) 
+			Moto_createmotofitwaves() 
 		endif
 			
 		SVAR/z motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
@@ -607,272 +592,33 @@ Function Motofit(w,y,z) :Fitfunc
 	SetDataFolder savedDataFolder	
 End
 
-Function Moto_Abelesreflectivity(w,y,x) //:fitfunc
-	Wave w,y,x
-	//this function is calculates the reflectivity with an Abeles characteristic matrix.  It works, so don't alter it.
-	//number of layers,SUPERphaseSLD,SUBphaseSLD,Q value
-	
-	String savedDataFolder = GetDataFolder(1)		// save
-	SetDataFolder root:packages:motofit:reflectivity:tempwaves
-		
-	NVAR/z Vmullayers=root:packages:motofit:reflectivity:tempwaves:Vmullayers
-	NVAR/z Vmulrep=root:packages:motofit:reflectivity:tempwaves:Vmulrep
-	NVAR/z Vappendlayer = root:packages:motofit:reflectivity:tempwaves:Vappendlayer
-	
-	Variable reflectivity,ii,jj,kk,nlayers,inter,qq,scale,bkg,subrough
-	Variable/C super,sub,arg,cinter,Beta,Rj,cella,cellb,cellc,celld,SLD
-	
-	//declare all the waves
-	//pj are the wavevectors
-	//MI is the characteristic matrix for a layer
-	Wave/z/c pj,subtotal,temp2,MRtotal,MI,mmatrix,kznpjbeta
-	
-	//subsequent layers have 4 parameters each: thickness, SLD, iSLD and roughness
-	//if you increase the number of layers you have to put extra parameters in.
-	//you should be able to remember the order in which they go.
-	//enter the SLD as SLD*1e6 (it's easier to type).
-	
-	//Layer 1 is always closest to the SUPERPHASE (e.g. air).  increasing layers go down 
-	//towards the subphase.  This may be confusing if you switch between air-solid and solid-liquid
-	//I will write some functions to create exotic SLD profiles if required.
-	
+Function Moto_SLDplot(w, sld)
+	Wave w, sld
+	//
+	//This function calculates the SLD profile.
+	//	
+	variable nlayers,zstart,zend,ii,temp,zinc	 
 	nlayers=w[0]
-	scale=w[1]
-	super=cmplx(w[2]*1e-6,w[3])
-	sub=cmplx(1e-6*w[4],w[5])
-	bkg=abs(w[6])
-	subrough=w[7]
-	
-	//offset is where the coefficients for the multilayer repeat start
-	variable offset=4*w[0]+8	
-	
-	//for definitions of all the parameters see 
-	//NEUTRON REFLECTION FROM HYDROGEN/DEUTERIUM CONTAINING MATERIALS
-	//Penfold,Webster,Bucknall
-	//http://www.isis.rl.ac.uk/largescale/Crisp/documents/neut_refl_HD.htm
-	variable nit=numpnts(x)
-	for(nit=0;nit<numpnts(x);nit+=1)
-		qq=x[nit]
-	
-		//make the resultant matrix Mr an identity matrix to start with
-		MRtotal={{cmplx(1,0),cmplx(0,0)},{cmplx(0,0),cmplx(1,0)}}
-		subtotal={{cmplx(1,0),cmplx(0,0)},{cmplx(0,0),cmplx(1,0)}}
-		
-		//workout the wavevector in the incident medium/superphase
-		pj[0]=cmplx(cabs(qq/2),0)
-	
-		//workout the wavevector in the subphase
-		pj[nlayers+1]=sqrt(pj[0]^2-4*Pi*(sub-super))
-	
-		//workout the wavevector in the rest of the layers
-		for(ii=1;ii<nlayers+1;ii+=1)
-			SLD=cmplx(w[4*(ii)+5]*1e-6,w[4*(ii)+6])
-			pj[ii]=sqrt(pj[0]^2-4*Pi*(SLD-super))
-		endfor
-		
-		//workout the wavevector in each of the toplayer of the multilayer (if it exists)
-		if(Vmullayers>0)
-			SLD=cmplx(w[offset+1]*1e-6,w[offset+2])
-			kznpjbeta[0][0]=sqrt(pj[0]^2-4*Pi*(SLD-super))
-		endif
-			
-		for(ii=0;ii<nlayers+1;ii+=1)
-			//work out the fresnel coefficient for the layer
-			//work out the fresnel coefficient for the layer
-			if(ii==Vappendlayer && Vmulrep>0 && Vmullayers>0)
-				rj=((pj[ii]-kznpjbeta[0][0])/(pj[ii]+kznpjbeta[0][0]))*exp(-2*pj[ii]*kznpjbeta[0][0]*w[offset+3]^2) //roughness of the top multilayer
-			elseif(ii==(nlayers))
-				rj=((pj[ii]-pj[ii+1])/(pj[ii]+pj[ii+1]))*exp(-2*pj[ii]*pj[ii+1]*subrough^2)	//the roughness of the subphase is sigma_rough
-			else
-				rj=((pj[ii]-pj[ii+1])/(pj[ii]+pj[ii+1]))*exp(-2*pj[ii]*pj[ii+1]*w[4*(ii+1)+7]^2)	  //the roughness at the top of each layer
-			endif
-		
-			//work out Beta
-			Beta=pj[ii]*cmplx(0,abs(w[4*ii+4]))
-			if(ii==0)
-				Beta=cmplx(0,0)
-			endif
-			
-			//this is the characteristic matrix of a layer
-			MI={{exp(Beta),rj*exp(-Beta)},{rj*exp(Beta),exp(-Beta)}}
-		
-			//Matrixmultiply MR,MI to get the updated total matrix
-			Moto_matrixmult(MRtotal,MI,MRtotal)
-	
-			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			//Multilayer starting
-			//if this is the appendlayer then you have to do something about it
-			//multiply MR by the multilayer
-			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			if(ii==Vappendlayer && Vmulrep>0 && Vmullayers>0)
-									
-				//work out the wavevectors in each of the multilayer subsections
-				for(jj=0;jj<Vmullayers;jj+=1)
-					SLD=cmplx(w[4*jj+1+offset]*1e-6,w[4*jj+offset+2])
-					kznpjbeta[0][jj]=sqrt(pj[0]^2-4*Pi*(SLD-super))
-				endfor
-			
-				//work out the fresnel coefficients
-				for(jj=0;jj<Vmullayers;jj+=1)
-					if(jj==Vmullayers-1)	//if you're in the last layer then the roughness is the roughness of the top
-						kznpjbeta[1][jj]=((kznpjbeta[0][jj]-kznpjbeta[0][0])/(kznpjbeta[0][jj]+kznpjbeta[0][0]))*exp(-2*kznpjbeta[0][jj]*kznpjbeta[0][0]*w[offset+3]^2)
-					else					//otherwise it's the roughness of the layer below
-						kznpjbeta[1][jj]=((kznpjbeta[0][jj]-kznpjbeta[0][jj+1])/(kznpjbeta[0][jj]+kznpjbeta[0][jj+1]))*exp(-2*kznpjbeta[0][jj]*kznpjbeta[0][jj+1]*w[4*(jj+1)+3+offset]^2)
-					endif
-					
-					//Beta's
-					kznpjbeta[2][jj]=kznpjbeta[0][jj]*cmplx(0,abs(w[4*(jj)+offset]))
-					
-					//fillout the matrix
-					mmatrix[][][jj]={{exp(kznpjbeta[2][jj]),kznpjbeta[1][jj]*exp(-kznpjbeta[2][jj])},{kznpjbeta[1][jj]*exp(kznpjbeta[2][jj]),exp(-kznpjbeta[2][jj])}}
-				endfor
-			
-				//work out the subtotal for the matrixrepeats
-				//start off the the first layer
-				//this will save a lot of time, because you only have to work it out once.
-				for(jj=0;jj<Vmullayers;jj+=1)
-					temp2[0][0]=mmatrix[0][0][jj]
-					temp2[0][1]=mmatrix[0][1][jj]
-					temp2[1][0]=mmatrix[1][0][jj]
-					temp2[1][1]=mmatrix[1][1][jj]
-					
-					Moto_matrixmult(subtotal,temp2,subtotal)
-				endfor
-			
-				for(kk=0;kk<Vmulrep;kk+=1)		//multiply of the repeat units to save time
-					
-					if(kk==Vmulrep-1)			//if you're the last repeat then the fresnel coefficient will have to change using the bottom/Vappend+1 roughness
-						if(Vappendlayer==nlayers)
-							cellb=((kznpjbeta[0][Vmullayers-1]-pj[nlayers+1])/(kznpjbeta[0][Vmullayers-1]+pj[nlayers+1]))*exp(-2*kznpjbeta[0][Vmullayers-1]*pj[nlayers+1]*subrough^2)
-						else
-							cellb=((kznpjbeta[0][Vmullayers-1]-pj[Vappendlayer+1])/(kznpjbeta[0][Vmullayers-1]+pj[Vappendlayer+1]))*exp(-2*kznpjbeta[0][Vmullayers-1]*pj[Vappendlayer+1]*w[4*(Vappendlayer+1)+7]^2)
-						endif
-						mmatrix[][][Vmullayers-1]={{exp(kznpjbeta[2][Vmullayers-1]),cellb*exp(-kznpjbeta[2][Vmullayers-1])},{cellb*exp(kznpjbeta[2][Vmullayers-1]),exp(-kznpjbeta[2][Vmullayers-1])}}
-						
-						for(jj=0;jj<Vmullayers;jj+=1)
-							temp2[0][0]=mmatrix[0][0][jj]
-							temp2[0][1]=mmatrix[0][1][jj]
-							temp2[1][0]=mmatrix[1][0][jj]
-							temp2[1][1]=mmatrix[1][1][jj]
-							
-							Moto_Matrixmult(MRtotal,temp2,MRtotal)
-						endfor
-						
-					else
-						Moto_Matrixmult(MRtotal,subtotal,MRtotal)
-					endif					
-				endfor
-			endif
-		endfor
-	
-		variable den=magsqr(MRtotal[0][0])
-		variable num=magsqr(MRtotal[1][0])
-		reflectivity=num/den
-		reflectivity*=scale
-		reflectivity+=bkg
-		y[nit] = reflectivity
-	endfor
-	SetDataFolder savedDataFolder	
-End
-
-Function Moto_matrixmult(a,b,c)
-	Wave/C a,b,c
-	variable/C cella=a[0][0],cellb=a[1][0],cellc=a[0][1],celld=a[1][1],celle=b[0][0],cellf=b[0][1],cellg=b[1][0],cellh=b[1][1]
-	c[0][0]=cella*celle+cellc*cellg
-	c[1][0]=cellb*celle+celld*cellg
-	c[0][1]=cella*cellf+cellc*cellh
-	c[1][1]=cellb*cellf+celld*cellh
-End
-
-
-Function Moto_SLDplot(w,z)
-	Wave w
-	Variable z
-//
-//This function calculates the SLD profile.  It updates whenever the fitparameters update.
-//
-	Wave zed=root:zed
-	
-	Variable SLDpts=str2num(Moto_str("SLDpts"))
-	variable nlayers,SLD1,SLD2,zstart,zend,ii,temp,zinc,summ
-	Variable deltarho,zi,dindex,sigma,thick,dist,rhosolv
- 
-	nlayers=w[0]
-	rhosolv=w[4]
 	
 	//setup the start and finish points of the SLD profile
-
-	if (nlayers==0)
-		zstart=-5-4*abs(w[7])
+	if (nlayers == 0)
+		zstart= -5-4 * abs(w[7])
 	else
-		zstart=-5-4*abs(w[11])
+		zstart= -5-4 * abs(w[11])
 	endif
-	
-	ii=1
-	temp=0
-	if (nlayers==0)
-		zend=5+4*abs(w[7])
+		
+	temp = 0
+	if (nlayers == 0)
+		zend = 5+4*abs(w[7])
 	else	
-		do
-			temp+=abs(w[4*ii+4])
-			ii+=1
-		while(ii<nlayers+1)
-		
-		zend=5+temp+4*abs(w[7])
+		for(ii = 1 ; ii < nlayers + 1 ; ii+=1)
+			temp += abs(w[4*ii+4])
+		endfor 	
+		zend = 5 + temp + 4 * abs(w[7])
 	endif
-	zinc=(zend-zstart)/SLDpts
-
-	//work out the z depth wave
-	ii=0
-	do
-		zed[ii]=zstart+(zinc*ii)
-		ii+=1
-	while(ii<SLDpts)
-
-
-	dist=0
-	summ=w[2]
-	ii=0
-
-	do
-		if(ii==0)
-			SLD1=w[9]
-			deltarho=-w[2]+SLD1
-			thick=0
-			sigma=abs(w[11])
-			
-			if(nlayers==0)
-				sigma=abs(w[7])
-				deltarho=-w[2]+w[4]
-			endif
-		
-		elseif(ii==nlayers)
-			SLD1=w[4*ii+5]
-			deltarho=-SLD1+rhosolv
-			thick=abs(w[4*ii+4])
-			sigma=abs(w[7])
-		
-		else
-			SLD1=w[4*ii+5]
-			SLD2=w[4*(ii+1)+5]
-			deltarho=-SLD1+SLD2
-			thick=abs(w[4*(ii)+4])
-			sigma=abs(w[4*(ii+1)+7])
-		endif
-		
-		dist+=thick
-		
-		//if sigma=0 then the computer goes haywire (division by zero), so say it's vanishingly small
-		if(sigma==0)
-			sigma+=1e-3
-		endif
-		
-		summ+=(deltarho/2)*(1+erf((z-dist)/(sigma*sqrt(2))))
-		
-		ii+=1
-	while(ii<nlayers+1)
+	setscale/I x, zstart, zend, sld
 	
-	return summ
+	sld = Moto_SLD_at_depth(w, x)
 End
 
 Function/t Moto_askForListofFiles()
@@ -1604,16 +1350,16 @@ Function Moto_fit_Genetic()
 	String y,x,e,dx,dataset
 	String cmd,cursors,errors,options
 	Variable plotyp=str2num(moto_Str("plotyp"))
-	Wave zed,SLD
+	Wave/z SLD
 	
 	//which waves do you want to fit?
 	Controlinfo/W=reflectivitypanel dataset
 	dataset=S_Value
-	dataset=removeending(dataset,"_R")
+	dataset=removeending(dataset, "_R")
 	y=cleanupname(dataset+"_R",0)
 	x=cleanupname(dataset+"_q",0)
 	e=cleanupname(dataset+"_E",0)
-	dx=cleanupname(dataset+"_dq",0)	
+	dx=cleanupname(dataset+"_dq",0)
 	
 	Wave/z a=$x
 	Wave/z b=$y
@@ -1711,7 +1457,8 @@ Function Moto_fit_Genetic()
 		endif
 	endif
 	
-	GEN_setlimitsforGENcurvefit($coefwaveStr, holdstring,  cDF)
+	//get limits wave, also sets default parameters.
+	GEN_setlimitsforGENcurvefit($coefwavestr,holdstring,cDF)
 	NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
 	NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
 	NVAR recomb =  root:packages:motofit:old_genoptimise:recomb
@@ -1735,14 +1482,12 @@ Function Moto_fit_Genetic()
 		cmd += "[pcsr(A),pcsr(B)]"
 	endif
 	cmd += ","+coefwavestr
-	cmd += ",\""+holdstring+"\""
+	cmd += ",\""+holdstring+"\""	
 	cmd += ",root:packages:motofit:old_genoptimise:GENcurvefitlimits"
-	
+		
 	//optimise with genetic optimisation
 	Moto_repstr("inFIT","1")
-	//break the SLD relationship with zed, otherwise it can slow the fit down
-	setformula SLD,""	
-		
+
 	Moto_backupModel() //make a backup of the model before you start the fit, so that you can roll back.
 	
 	Dowindow/f reflectivitygraph
@@ -1762,8 +1507,6 @@ Function Moto_fit_Genetic()
 	//make a coefficient wave related to the data
 	//y is the name of the y wave data
 	test="coef_"+dataset+"_R"
-	Duplicate/O $coefwavestr $test,W_Sigma
-	W_Sigma = NaN	
 		
 	//this sets the wave note of the coefficient wave to be the same as motofitcontrol
 	test=cleanupname("coef_"+dataset+"_R", 0)
@@ -1814,8 +1557,8 @@ Function Moto_fit_Genetic()
 		AppendToGraph $fitdestination vs $fitX
 	endif
 	
-	string colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
-	colour=replacestring("x",colour,fitdestination)
+	string colour = greplist(traceinfo("", y, 0), "^rgb(x)*")
+	colour=replacestring("x",colour,fitdestination)	
 	cmd="modifygraph "+colour
 	Execute/z cmd
 	Modifygraph lsize($fitdestination)=1,mode($fitdestination)=0
@@ -1826,14 +1569,11 @@ Function Moto_fit_Genetic()
 	Dowindow/F Reflectivitygraph
 	Setactivesubwindow reflectivitygraph#SLDplot
 	traceexists=TraceNameList("",";",1)
-	String SLDdestination="SLD_"+dataset,zeddestination="zed_"+dataset
-	Wave sld,zed
+	String SLDdestination="SLD_"+dataset
+	Wave sld
 	Duplicate/O sld,$SLDdestination
-	Duplicate/O zed,$zeddestination
-	Setformula $SLDdestination,""
-	Setformula $zeddestination,""
 	if(Strsearch(traceexists,SLDdestination,0)==-1)
-		AppendToGraph/W=# $SLDdestination vs $zeddestination
+		AppendToGraph/W=# $SLDdestination
 	endif
 	colour=replacestring(fitdestination,colour,slddestination)
 	cmd="modifygraph "+colour
@@ -1850,12 +1590,11 @@ Function Moto_fit_Genetic()
 End
 //end of genetic optimisation
 
-
 Function Moto_fit_Levenberg() 
 	//this function is the button control that starts the fit.
 	//this function takes care of all the procedures involved with performing a Levenberg-Marquardt fit
 	Setdatafolder root:
-	Wave coef_Cref,zed,SLD
+	Wave/z coef_Cref, SLD
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
 	
 	String test,holdstring,constraint="",errors="",cursors=""
@@ -1863,7 +1602,6 @@ Function Moto_fit_Levenberg()
 	variable useerrors=0,usedqwave=0,usecursors=0,useconstraint=0
 	Variable ii
 	Variable plotyp=str2num(Moto_str("plotyp"))
-
 
 	//setupholdstring, all the hold checkboxes are numbered in order h0,h1,h2, etc.
 	Moto_holdstring("",0)
@@ -1883,12 +1621,11 @@ Function Moto_fit_Levenberg()
 	x=cleanupname(dataset+"_q",0)
 	e=cleanupname(dataset+"_E",0)
 	dx=cleanupname(dataset+"_dq",0)
-	
+
 	Wave/z a=$x
 	Wave/z b=$y
 	Wave/z c=$e
 	Wave/z d=$dx
-
 
 	if(waveexists(a)==0 | waveexists(b)==0)						//if the waves you entered aren't valid then there is no 
 		abort "please enter a valid dataset"		//point in doing the fit.
@@ -1951,7 +1688,6 @@ Function Moto_fit_Levenberg()
 		endif
 	endif
 
-
 	//do you want to use constraints?
 	useconstraint=str2num(moto_str("useconstraint"))
 	if(useconstraint==1)
@@ -2002,9 +1738,6 @@ Function Moto_fit_Levenberg()
 	
 	variable multilayer=str2num(moto_str("multilayer"))
 	
-	//break the SLD relationship with zed, otherwise it can slow the fit down
-	setformula SLD,""
-
 	//now we're fitting
 	Moto_repstr("inFIT","1")
 	variable/g V_Fiterror=0
@@ -2092,14 +1825,11 @@ Function Moto_fit_Levenberg()
 	Dowindow/F Reflectivitygraph
 	Setactivesubwindow reflectivitygraph#SLDplot
 	traceexists=TraceNameList("",";",1)
-	String SLDdestination="SLD_"+dataset,zeddestination="zed_"+dataset
-	Wave sld,zed
+	String SLDdestination="SLD_"+dataset
+	Wave sld
 	Duplicate/O sld,$SLDdestination
-	Duplicate/O zed,$zeddestination
-	Setformula $SLDdestination,""
-	Setformula $zeddestination,""
 	if(Strsearch(traceexists,SLDdestination,0)==-1)
-		AppendToGraph/W=# $SLDdestination vs $zeddestination
+		AppendToGraph/W=# $SLDdestination
 		colour=replacestring(fitdestination,colour,slddestination)
 		cmd="modifygraph "+colour
 		Execute/Z cmd
@@ -2112,31 +1842,11 @@ Function Moto_fit_Levenberg()
 	
 	Setactivesubwindow reflectivitygraph
 End
+
 //
 //
 //
 //
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-///
 Function Moto_fit_GenLM()
 	//the fit is done with genetic optimisation then curvefit
 	
@@ -2146,7 +1856,7 @@ Function Moto_fit_GenLM()
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
 		
 	Wave/z coef_Cref,coef_multiCref
-	Wave zed,SLD
+	Wave/z SLD
 	
 	Variable ii,nlayers,npars,jj,usedqwave,usecursors,useerrors,useconstraint
 	Variable plotyp=str2num(moto_Str("plotyp"))
@@ -2234,7 +1944,7 @@ Function Moto_fit_GenLM()
 	controlinfo/w=reflectivitypanel fitcursors
 	if(V_Value)
 		usecursors = 1
-		cursors="[pcsr(A),pcsr(B)]"
+		cursors="[xcsr(A),xcsr(B)]"
 	endif
 	
 	//output
@@ -2244,10 +1954,9 @@ Function Moto_fit_GenLM()
 		
 	//optimise with genetic optimisation
 	Moto_repstr("inFIT","1")
-	//break the SLD relationship with zed, otherwise it can slow the fit down
-	setformula SLD,""
 	
-	GEN_setlimitsforGENcurvefit($coefwaveStr, holdstring,  savDF)
+	//get limits wave, also sets default parameters.
+	GEN_setlimitsforGENcurvefit($coefwavestr,holdstring,savDF)
 	NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
 	NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
 	NVAR recomb =  root:packages:motofit:old_genoptimise:recomb
@@ -2255,7 +1964,7 @@ Function Moto_fit_GenLM()
 	NVAR fittol = root:packages:motofit:old_genoptimise:fittol
 	
 	cmd ="GENcurvefit"
-	cmd += 	"/MAT=2/q/x="+x
+	cmd += "/MAT=2/q/x="+x
 	cmd += "/D="+fitdestination
 		
 	options = "/k={"+num2str(iterations)+","+num2str(popsize)+","+num2str(k_m)+","+num2str(recomb)+"}"
@@ -2349,9 +2058,6 @@ Function Moto_fit_GenLM()
 	endif
 	
 	setdatafolder $savDF
-	
-	//break the SLD relationship with zed, otherwise it can slow the fit down
-	setformula SLD,""
 
 	//now we're fitting
 	Moto_repstr("inFIT","1")
@@ -2388,7 +2094,7 @@ Function Moto_fit_GenLM()
 	moto_repstr("V_chisq",num2str(V_chisq/V_npnts))
 			
 	//this sets the wave note of the coefficient wave to be the same as motofitcontrol
-	test=cleanupname("coef_"+y,0)
+	test=cleanupname("coef_"+dataset+"_R", 0)
 	if(multilayer==1)
 		note/K $test
 		note $test,motofitcontrol
@@ -2422,11 +2128,13 @@ Function Moto_fit_GenLM()
 	if(Strsearch(traceexists,fitdestination,0)==-1)
 		AppendToGraph $fitdestination vs $fitX
 	endif
-	string colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
-	colour=replacestring("x",colour,fitdestination)
+	
+	string colour = greplist(traceinfo("", y, 0), "^rgb(x)*")
+	colour=replacestring("x",colour,fitdestination)	
+
 	cmd="modifygraph "+colour
 	Execute/Z cmd
-	Modifygraph lsize($fitdestination)=1, mode($fitdestination)=0
+	Modifygraph lsize($fitdestination)=0, mode($fitdestination)=0
 
 	//figure out what the SLD and Zed and coef waves should be called.  Use a stub of the
 	//data wave.
@@ -2434,18 +2142,16 @@ Function Moto_fit_GenLM()
 	Dowindow/F Reflectivitygraph
 	Setactivesubwindow reflectivitygraph#SLDplot
 	traceexists=TraceNameList("",";",1)
-	string SLDdestination="SLD_"+dataset,zeddestination="zed_"+dataset
-	Wave sld,zed
+	string SLDdestination="SLD_"+dataset
+	Wave sld
 	Duplicate/O sld,$SLDdestination
-	Duplicate/O zed,$zeddestination
-	Setformula $SLDdestination,""
-	Setformula $zeddestination,""
+
 	if(Strsearch(traceexists,SLDdestination,0)==-1)
-		AppendToGraph/W=# $SLDdestination vs $zeddestination
-		colour=replacestring(fitdestination,colour,slddestination)
+		AppendToGraph/W=# $SLDdestination
+		colour=replacestring(fitdestination,colour, slddestination)
 		cmd="modifygraph "+colour
 		Execute/Z cmd
-		Modifygraph lsize($SLDdestination)=1, mode($SLDdestination)=0
+		Modifygraph lsize($SLDdestination)=1
 	endif
 	
 	//write the fit to the report notebook
@@ -2457,6 +2163,7 @@ Function Moto_fit_GenLM()
 	return 0
 End
 
+
 Function Moto_fit_GenMC()
 	//this is called by the Dofit button on the reflectivity panel
 	string cDF = getdatafolder(1)
@@ -2467,14 +2174,14 @@ Function Moto_fit_GenMC()
 		Moto_holdstring("",0)
 		SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
 	
-		Wave coef_Cref,coef_multiCref
+		Wave/z coef_Cref,coef_multiCref
 		Variable ii,nlayers,npars,jj,use
 		variable usecursors,useerrors,usedqwave, cursA, cursB, iters
 		String test
 		String y,x,e,dx,dataset
 		String cmd,cursors,errors,options
 		Variable plotyp=str2num(moto_Str("plotyp"))
-		Wave zed,SLD
+		Wave SLD = root:SLD
 	
 		//which waves do you want to fit?
 		Controlinfo/W=reflectivitypanel dataset
@@ -2606,11 +2313,8 @@ Function Moto_fit_GenMC()
 		
 		//optimise with genetic optimisation
 		Moto_repstr("inFIT","1")
-		//break the SLD relationship with zed, otherwise it can slow the fit down
-		setformula SLD,""	
 
-		Moto_backupModel() //make a backup of the model before you start the fit, so that you can roll back.
-		
+		Moto_backupModel() //make a backup of the model before you start the fit, so that you can roll back.		
 		try 
 			if(Moto_montecarlo("motofit", coef, b, a, c, holdstring, iters, cursA = cursA, cursB = cursB))
 				abort
@@ -2667,7 +2371,6 @@ Function Moto_fit_GenMC()
 		Moto_CrefToLayerTable()
 		
 		Moto_update()
-		
 			
 		//make the SLD curves and fit curves the same colour as the original wave
 		//if the trace isn't on the graph add it.  If it is, don't do anything.
@@ -2699,14 +2402,12 @@ Function Moto_fit_GenMC()
 		Dowindow/F Reflectivitygraph
 		Setactivesubwindow reflectivitygraph#SLDplot
 		traceexists=TraceNameList("",";",1)
-		String SLDdestination="SLD_"+removeending(dataset,"_"),zeddestination="zed_"+removeending(dataset,"_")
-		Wave sld,zed
+		String SLDdestination="SLD_"+removeending(dataset,"_")
+		Wave sld
 		Duplicate/O sld,$SLDdestination
-		Duplicate/O zed,$zeddestination
-		Setformula $SLDdestination,""
-		Setformula $zeddestination,""
+		
 		if(Strsearch(traceexists,SLDdestination,0)==-1)
-			AppendToGraph/W=# $SLDdestination vs $zeddestination
+			AppendToGraph/W=# $SLDdestination
 		endif
 		colour=replacestring(fitdestination,colour,slddestination)
 		cmd="modifygraph "+colour
@@ -2717,7 +2418,6 @@ Function Moto_fit_GenMC()
 		
 		//create a graph of all the montecarloSLDcurves
 		Moto_montecarlo_SLDcurves(M_montecarlo)
-		
 	catch
 	
 	endtry
@@ -2725,7 +2425,6 @@ Function Moto_fit_GenMC()
 	setdatafolder $cDF
 	return 0
 End
-
 
 Function Moto_parse_equalconstraints(constraints)
 	Wave/T constraints 
@@ -5337,59 +5036,50 @@ Function Moto_montecarlo_SLDcurves(M_montecarlo)
 	killwaves/z tempcoefs, SLDmatrixtemp
 End
 
-Function Moto_SLD_at_depth(w,z)
-	//function calculates an SLD point at a distance, z, from the interface.
-	//w are the fit coefficients.
-	//shares a lot of code with Moto_SLDplot
-	wave w
-	variable z
-
-	variable nlayers,SLD1,SLD2,zstart,zend,ii,temp,zinc,summ
-	Variable deltarho,zi,dindex,sigma,thick,dist,rhosolv
-	
+Function Moto_SLD_at_depth(w, zed)
+	Wave w
+	variable zed
+	variable nlayers,SLD1,SLD2,ii,summ
+	Variable deltarho,sigma,thick,dist,rhosolv
+	 
+	nlayers=w[0]
 	rhosolv=w[4]
-	nlayers = w[0]
-	//work out the z depth wave
+	
 	dist=0
 	summ=w[2]
-	ii=0
-
-	do
-		if(ii==0)
-			SLD1=w[9]
+	for( ii = 0 ; ii < nlayers + 1 ; ii += 1) 
+		if(ii == 0)
+			SLD1=(w[9]/100)*(100-w[10])+(w[10]*rhosolv/100)
 			deltarho=-w[2]+SLD1
 			thick=0
 			sigma=abs(w[11])
 			
 			if(nlayers==0)
 				sigma=abs(w[7])
-				deltarho=-w[2]+w[4]
+				deltarho=-w[2]+w[5]
 			endif
 		
 		elseif(ii==nlayers)
-			SLD1= w[4*ii+5]
+			SLD1=(w[4*ii+5]/100)*(100-w[4*ii+6])+(w[4*ii+6]*rhosolv/100)
 			deltarho=-SLD1+rhosolv
 			thick=abs(w[4*ii+4])
 			sigma=abs(w[7])
-		
 		else
-			SLD1=w[4*ii+5]
-			SLD2=w[4*(ii+1)+5]
+			SLD1=(w[4*ii+5]/100)*(100-w[4*ii+6])+(w[4*ii+6]*rhosolv/100)
+			SLD2=(w[4*(ii+1)+5]/100)*(100-w[4*(ii+1)+6])+(w[4*(ii+1)+6]*rhosolv/100)
 			deltarho=-SLD1+SLD2
 			thick=abs(w[4*(ii)+4])
 			sigma=abs(w[4*(ii+1)+7])
 		endif
+		dist += thick
 		
-		dist+=thick	
 		//if sigma=0 then the computer goes haywire (division by zero), so say it's vanishingly small
-		if(sigma==0)
-			sigma+=1e-3
+		if(sigma == 0)
+			sigma += 1e-3
 		endif
 		
-		summ+=(deltarho/2)*(1+erf((z-dist)/(sigma*sqrt(2))))
+		summ += (deltarho/2)*(1+erf((zed-dist)/(sigma*sqrt(2))))		
+	endfor
 		
-		ii+=1
-	while(ii<nlayers+1)
-	
 	return summ
 End

@@ -126,7 +126,7 @@ Function plotCalcref()
 		
 	make/o/d/n=(num) theoretical_q,theoretical_R
 	setscale/P x,qmin,((qmax-qmin)/num), theoretical_R
-	make/o/d/n=(SLDpts) zed,sld
+	make/o/d/n=(SLDpts) sld
 
 	//This section pulls up a graph with the reflectivity in it, and a table containing the reflectivity parameters	
 	theoretical_q = qmin+(x)*((qmax-qmin)/num)
@@ -183,7 +183,7 @@ Function plotCalcref()
 		ModifyGraph log(bottom)=0,mode=0
 		ModifyGraph log(left)=(logg)
 		DoWindow/T reflectivitygraph,"reflectivity graph"
-		Display/Host=#/N=SLDplot/W=(0.6,0,1,0.5) sld vs zed
+		Display/Host=#/N=SLDplot/W=(0.6,0,1,0.5) sld
 
 		//This section pulls up a graph of the (real SLD profile). 
 		// It automatically updates whenever you change the fit parameters
@@ -204,6 +204,7 @@ Function plotCalcref()
 	Dowindow/F reflectivitygraph
 	Autopositionwindow/m=1/R=reflectivitygraph reflectivitypanel
 End
+
 Function Moto_genericButtonControl(B_Struct)
 	STRUCT WMButtonAction &B_Struct
 	if(B_Struct.eventcode!=2)
@@ -218,13 +219,13 @@ Function Moto_genericButtonControl(B_Struct)
 			moto_restoremodel()
 			break
 		case "snapshot":
-			string ywave ="",xwave="",sldwave="",zedwave=""
-			if(!Moto_snapshot(ywave, xwave, sldwave, zedwave))
+			string ywave ="",xwave="",sldwave=""
+			if(!Moto_snapshot(ywave, xwave, sldwave))
 				if(Findlistitem(ywave,tracenamelist("reflectivitygraph",";",1))==-1)
 					appendtograph/w=reflectivitygraph $("root:"+ywave) vs $("root:"+xwave)
 				endif
 				if(Findlistitem(sldwave,tracenamelist("reflectivitygraph#SLDplot",";",1))==-1)
-					appendtograph/w=reflectivitygraph#sldplot $("root:"+sldwave) vs $("root:"+zedwave)
+					appendtograph/w=reflectivitygraph#sldplot $("root:"+sldwave)
 				endif
 				Legend/C/N=text0/A=MC
 			endif
@@ -308,8 +309,8 @@ Function Moto_genericButtonControl(B_Struct)
 	return 0
 End
 
-Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
-	string &ywave,&xwave,&sldwave,&zedwave
+Function Moto_snapshot(ywave,xwave,sldwave)
+	string &ywave,&xwave,&sldwave
 	
 	string snapStr = "snapshot"
 	prompt snapStr, "Name: "
@@ -319,13 +320,12 @@ Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
 		if(V_flag)
 			return 1
 		endif
-		ywave = cleanupname(snapstr+"_R",0)
-		xwave = cleanupname(snapstr+"_q",0)
+		ywave = cleanupname(snapstr+"_R", 0)
+		xwave = cleanupname(snapstr+"_q", 0)
 		sldwave = cleanupname("SLD_"+snapstr,0)
-		zedwave = cleanupname("zed_"+snapstr,0)
 		coefwave = cleanupname("coef_"+snapstr,0)
 		
-		if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1) || checkname(zedwave,1))
+		if(checkname(ywave,1) || checkname(xwave,1) || checkname(sldwave,1))
 			Doalert 2, "One of the snapshot waves did not have a unique name, did you want to overwrite it?"
 			if(V_Flag == 1)
 				break
@@ -342,15 +342,12 @@ Function Moto_snapshot(ywave,xwave,sldwave,zedwave)
 	Duplicate/o root:coef_cref, root:$coefwave
 	Duplicate/o root:theoretical_R, root:$ywave
 	Duplicate/o root:theoretical_q, root:$xwave
-	Duplicate/o root:sld, root:$sldwave
-	Duplicate/o root:zed, root:$zedwave
-	setformula root:$sldwave,""
-	
+	Duplicate/o root:sld, root:$sldwave	
 	return 0
 End
 
 Function Moto_changeQrangeprompt()
-	Wave localref_R=root:theoretical_R,localref_Q=root:theoretical_Q
+	Wave localref_R = root:theoretical_R, localref_Q=root:theoretical_Q
 	Variable num=numpnts(localref_R),qmin=localref_q[0],qmax=localref_q[numpnts(localref_q)-1]
 	Prompt num, "Enter number of data points for model: "
 	Prompt qmin, "Enter minimum q-value (A^-1) for model: "
@@ -390,7 +387,7 @@ Function Moto_update()
 	string saveDF=getdatafolder(1)
 	
 	Setdatafolder root:
-	Wave/z coef_Cref,theoretical_R,theoretical_q,multikernel,multilay,SLD,zed,coef_multiCref
+	Wave/z coef_Cref,theoretical_R,theoretical_q,multikernel,multilay,SLD,coef_multiCref
 	
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:Motofitcontrol
 	//make sure that we're not in a fit
@@ -404,12 +401,13 @@ Function Moto_update()
 		//program will fall over if Vmullayers is not equal to zero.
 		
 		Motofit(coef_Cref,theoretical_R,theoretical_Q)
-		Setformula SLD,"Moto_SLDplot(coef_Cref,zed)"
+		Moto_SLDplot(coef_Cref, sld)
 	else
 		Createmultilayer(coef_Cref,multilay)    //the situation when you have a multilayer
 		Kerneltransformation(coef_multicref)
 		Motofit(coef_multiCref,theoretical_R,theoretical_Q)
-		Setformula SLD,"Moto_SLDplot(multikernel,zed)"
+		Wave multikernel = root:multikernel
+		Moto_SLDplot(multikernel, sld)
 	endif
 	
 	//if you change the model, then you may need to update the FFT of the theoretical curve
@@ -422,8 +420,8 @@ Function Moto_update()
 	setdatafolder $saveDF
 End
 
-Function Motofit(w,y,z) :Fitfunc
-	Wave w,y,z
+Function Motofit(w, y, z) :Fitfunc
+	Wave w, y, z
 	//NOTE the "Z" wave is really the x data in disguise
 	//This fit function calls either Parratt- or Abeles-reflectivity, and integrates over a gaussian beam profile. 
 	// Knowledge of dq/q is required.
@@ -437,7 +435,7 @@ Function Motofit(w,y,z) :Fitfunc
 		//if this datafolder exists then it is likely that the tempwaves have been made.
 		//if it hasn't then make the waves necessary for Motofit to start
 		if(!datafolderexists("root:packages:motofit:reflectivity:tempwaves"))
-			Moto_createmotofitwaves(w) 
+			Moto_createmotofitwaves() 
 		endif
 			
 		SVAR/z motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
@@ -573,295 +571,44 @@ Function Motofit(w,y,z) :Fitfunc
 	SetDataFolder savedDataFolder
 End
 
-Function Moto_createmotofitwaves(w)
-	Wave w
-	variable nlayers=w[0]
-	
-	newdatafolder/o root:packages
-	newdatafolder/o root:packages:motofit
-	newdatafolder/o root:packages:motofit:reflectivity
-	newdatafolder/o root:packages:motofit:reflectivity:tempwaves
+Function Moto_createmotofitwaves()
+	String savedDataFolder = GetDataFolder(1)		// save
+	newdatafolder/o/s root:packages
+	newdatafolder/o/s root:packages:motofit
+	newdatafolder/o/s root:packages:motofit:reflectivity
+	newdatafolder/o/s root:packages:motofit:reflectivity:tempwaves
 	
 	Variable/g Vmullayers, Vmulrep , Vappendlayer
-	
-	Make/o/d/C/n=(nlayers+2)root:packages:motofit:reflectivity:tempwaves:pj
-	Make/o/d/C/n=(2,2) root:packages:motofit:reflectivity:tempwaves:subtotal,root:packages:motofit:reflectivity:tempwaves:temp2
-	Make/o/d/C/n=(2,2) root:packages:motofit:reflectivity:tempwaves:MRtotal,root:packages:motofit:reflectivity:tempwaves:MI		//MRtotal is the resultant matrix MI is the individual matrix for each layer
-	NVAR/z Vmullayers=root:packages:motofit:reflectivity:tempwaves:Vmullayers
-	
-	if(NVAR_exists(Vmullayers)==1)
-		make/c/o/d/n=(2,2,Vmullayers) root:packages:motofit:reflectivity:tempwaves:mmatrix	//mmatrix holds the repeat matrix for the multilayer
-		make/c/o/d/n=(3,Vmullayers) root:packages:motofit:reflectivity:tempwaves:kznpjbeta //this holds all the wavevectors, fresnel coefficients and beta values for the repeat
-	endif
+	SetDataFolder savedDataFolder		
 End
 
-Function Moto_Abelesreflectivity(w,y,x) //:fitfunc
-	Wave w,y,x
-	//this function is calculates the reflectivity with an Abeles characteristic matrix.  It works, so don't alter it.
-	//number of layers,SUPERphaseSLD,SUBphaseSLD,Q value
-	
-	String savedDataFolder = GetDataFolder(1)		// save
-	SetDataFolder root:packages:motofit:reflectivity:tempwaves
-		
-	NVAR/z Vmullayers=root:packages:motofit:reflectivity:tempwaves:Vmullayers
-	NVAR/z Vmulrep=root:packages:motofit:reflectivity:tempwaves:Vmulrep
-	NVAR/z Vappendlayer = root:packages:motofit:reflectivity:tempwaves:Vappendlayer
-	
-	Variable reflectivity,ii,jj,kk,nlayers,inter,SLD,qq,scale,bkg,subrough
-	Variable/C super,sub,arg,cinter,Beta,Rj,cella,cellb,cellc,celld
-	
-	//declare all the waves
-	//pj are the wavevectors
-	//MI is the characteristic matrix for a layer
-	Wave/z/c pj,subtotal,temp2,MRtotal,MI,mmatrix,kznpjbeta
-	
-	//subsequent layers have 4 parameters each: thickness, SLD, solvent penetration and roughness
-	//if you increase the number of layers you have to put extra parameters in.
-	//you should be able to remember the order in which they go.
-	//enter the SLD as SLD*1e6 (it's easier to type).
-	
-	//Layer 1 is always closest to the SUPERPHASE (e.g. air).  increasing layers go down 
-	//towards the subphase.  This may be confusing if you switch between air-solid and solid-liquid
-	//I will write some functions to create exotic SLD profiles if required.
-	
-	nlayers=w[0]
-	scale=w[1]
-	super=w[2]*1e-6
-	sub=1e-6*w[3]
-	bkg=abs(w[4])
-	subrough=w[5]
-	
-	//offset is where the coefficients for the multilayer repeat start
-	variable offset=4*w[0]+6	
-	
-	//for definitions of all the parameters see 
-	//NEUTRON REFLECTION FROM HYDROGEN/DEUTERIUM CONTAINING MATERIALS
-	//Penfold,Webster,Bucknall
-	//http://www.isis.rl.ac.uk/largescale/Crisp/documents/neut_refl_HD.htm
-	variable nit=numpnts(x)
-	for(nit=0;nit<numpnts(x);nit+=1)
-		qq=x[nit]
-	
-		//make the resultant matrix Mr an identity matrix to start with
-		MRtotal={{cmplx(1,0),cmplx(0,0)},{cmplx(0,0),cmplx(1,0)}}
-		subtotal={{cmplx(1,0),cmplx(0,0)},{cmplx(0,0),cmplx(1,0)}}
-		
-		//workout the wavevector in the incident medium/superphase
-		inter=cabs(sqrt((qq/2)^2))
-		pj[0]=cmplx(inter,0)
-	
-		//workout the wavevector in the subphase
-		pj[nlayers+1]=sqrt(pj[0]^2-4*Pi*((w[3]*1e-6)-super))
-	
-		//workout the wavevector in the rest of the layers
-		for(ii=1;ii<nlayers+1;ii+=1)
-			SLD=((w[4*(ii)+4]/100)*sub)+((100-w[4*(ii)+4])/100)*w[4*(ii)+3]*1e-6
-			pj[ii]=sqrt(cmplx((pj[0]^2-4*Pi*(SLD-super)),0))
-		endfor
-		
-		//workout the wavevector in each of the toplayer of the multilayer (if it exists)
-		if(Vmullayers>0)
-			SLD=((w[offset+2]/100)*sub)+((100-w[offset+2])/100)*w[offset+1]*1e-6
-			kznpjbeta[0][0]=sqrt(cmplx((pj[0]^2-4*Pi*(SLD-super)),0))
-		endif
-		
-		for(ii=0;ii<nlayers+1;ii+=1)
-			//work out the fresnel coefficient for the layer
-			if(ii==Vappendlayer && Vmulrep>0 && Vmullayers>0)
-				rj=((pj[ii]-kznpjbeta[0][0])/(pj[ii]+kznpjbeta[0][0]))*exp(-2*pj[ii]*kznpjbeta[0][0]*w[offset+3]^2) //roughness of the top multilayer
-			elseif(ii==(nlayers))
-				rj=((pj[ii]-pj[ii+1])/(pj[ii]+pj[ii+1]))*exp(-2*pj[ii]*pj[ii+1]*subrough^2)	//the roughness of the subphase is sigma_rough
-			else
-				rj=((pj[ii]-pj[ii+1])/(pj[ii]+pj[ii+1]))*exp(-2*pj[ii]*pj[ii+1]*w[4*(ii+1)+5]^2)	  //the roughness at the top of each layer
-			endif
-		
-			//work out Beta
-			Beta=pj[ii]*cmplx(0,abs(w[4*ii+2]))
-			if(ii==0)
-				Beta=cmplx(0,0)
-			endif
-		
-			//this is the characteristic matrix of a layer
-			MI={{exp(Beta),rj*exp(-Beta)},{rj*exp(Beta),exp(-Beta)}}
-		
-			//Matrixmultiply MR,MI to get the updated total matrix
-			Moto_matrixmult(MRtotal,MI,MRtotal)
-	
-			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			//Multilayer starting
-			//if this is the appendlayer then you have to do something about it
-			//multiply MR by the multilayer
-			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			if(ii==Vappendlayer && Vmulrep>0 && Vmullayers>0)
-									
-				//work out the wavevectors in each of the multilayer subsections
-				for(jj=0;jj<Vmullayers;jj+=1)
-					SLD=((w[4*jj+offset+2]/100)*sub)+((100-w[4*jj+2+offset])/100)*w[4*jj+1+offset]*1e-6
-					kznpjbeta[0][jj]=sqrt(cmplx((pj[0]^2-4*Pi*(SLD-super)),0))
-				endfor
-			
-				//work out the fresnel coefficients
-				for(jj=0;jj<Vmullayers;jj+=1)
-					if(jj==Vmullayers-1)	//if you're in the last layer then the roughness is the roughness of the top
-						kznpjbeta[1][jj]=((kznpjbeta[0][jj]-kznpjbeta[0][0])/(kznpjbeta[0][jj]+kznpjbeta[0][0]))*exp(-2*kznpjbeta[0][jj]*kznpjbeta[0][0]*w[offset+3]^2)
-					else					//otherwise it's the roughness of the layer below
-						kznpjbeta[1][jj]=((kznpjbeta[0][jj]-kznpjbeta[0][jj+1])/(kznpjbeta[0][jj]+kznpjbeta[0][jj+1]))*exp(-2*kznpjbeta[0][jj]*kznpjbeta[0][jj+1]*w[4*(jj+1)+3+offset]^2)
-					endif
-				
-					//Beta's
-					kznpjbeta[2][jj]=kznpjbeta[0][jj]*cmplx(0,abs(w[4*(jj)+offset]))
-				
-					//fillout the matrix
-					mmatrix[][][jj]={{exp(kznpjbeta[2][jj]),kznpjbeta[1][jj]*exp(-kznpjbeta[2][jj])},{kznpjbeta[1][jj]*exp(kznpjbeta[2][jj]),exp(-kznpjbeta[2][jj])}}
-				endfor
-			
-				//work out the subtotal for the matrixrepeats
-				//start off the the first layer
-				//this will save a lot of time, because you only have to work it out once.
-				for(jj=0;jj<Vmullayers;jj+=1)
-					temp2[0][0]=mmatrix[0][0][jj]
-					temp2[0][1]=mmatrix[0][1][jj]
-					temp2[1][0]=mmatrix[1][0][jj]
-					temp2[1][1]=mmatrix[1][1][jj]
-					
-					Moto_matrixmult(subtotal,temp2,subtotal)
-				endfor
-			
-				for(kk=0;kk<Vmulrep;kk+=1)		//multiply of the repeat units to save time
-				
-					if(kk==Vmulrep-1)			//if you're the last repeat then the fresnel coefficient will have to change using the bottom/Vappend+1 roughness
-						if(Vappendlayer==nlayers)
-							cellb=((kznpjbeta[0][Vmullayers-1]-pj[nlayers+1])/(kznpjbeta[0][Vmullayers-1]+pj[nlayers+1]))*exp(-2*kznpjbeta[0][Vmullayers-1]*pj[nlayers+1]*subrough^2)
-						else
-							cellb=((kznpjbeta[0][Vmullayers-1]-pj[Vappendlayer+1])/(kznpjbeta[0][Vmullayers-1]+pj[Vappendlayer+1]))*exp(-2*kznpjbeta[0][Vmullayers-1]*pj[Vappendlayer+1]*w[4*(Vappendlayer+1)+5]^2)
-						endif
-						mmatrix[][][Vmullayers-1]={{exp(kznpjbeta[2][Vmullayers-1]),cellb*exp(-kznpjbeta[2][Vmullayers-1])},{cellb*exp(kznpjbeta[2][Vmullayers-1]),exp(-kznpjbeta[2][Vmullayers-1])}}
-					
-						for(jj=0;jj<Vmullayers;jj+=1)
-							temp2[0][0]=mmatrix[0][0][jj]
-							temp2[0][1]=mmatrix[0][1][jj]
-							temp2[1][0]=mmatrix[1][0][jj]
-							temp2[1][1]=mmatrix[1][1][jj]
-						
-							Moto_Matrixmult(MRtotal,temp2,MRtotal)
-						endfor
-					
-					else
-						Moto_Matrixmult(MRtotal,subtotal,MRtotal)
-					endif					
-				endfor
-			endif
-		endfor
-	
-		variable den=magsqr(MRtotal[0][0])
-		variable num=magsqr(MRtotal[1][0])
-		reflectivity=num/den
-		reflectivity*=scale
-		reflectivity+=bkg
-		y[nit] = reflectivity
-	endfor
-	SetDataFolder savedDataFolder	
-End
-
-
-Function Moto_matrixmult(a,b,c)
-	Wave/C a,b,c
-	variable/C cella=a[0][0],cellb=a[1][0],cellc=a[0][1],celld=a[1][1],celle=b[0][0],cellf=b[0][1],cellg=b[1][0],cellh=b[1][1]
-	c[0][0]=cella*celle+cellc*cellg
-	c[1][0]=cellb*celle+celld*cellg
-	c[0][1]=cella*cellf+cellc*cellh
-	c[1][1]=cellb*cellf+celld*cellh
-End
-
-
-Function Moto_SLDplot(w,z)
-	Wave w
-	Variable z
+Function Moto_SLDplot(w, sld)
+	Wave w, sld
 	//
-	//This function calculates the SLD profile.  It updates whenever the fitparameters update.
-	//
-	Wave zed = root:zed
-	
-	Variable SLDpts=str2num(Moto_str("SLDpts"))
-	variable nlayers,SLD1,SLD2,zstart,zend,ii,temp,zinc,summ
-	Variable deltarho,zi,dindex,sigma,thick,dist,rhosolv
-	 
+	//This function calculates the SLD profile.
+	//	
+	variable nlayers,zstart,zend,ii,temp,zinc	 
 	nlayers=w[0]
-	rhosolv=w[3]
 	
 	//setup the start and finish points of the SLD profile
-
-	if (nlayers==0)
-		zstart=-5-4*abs(w[5])
+	if (nlayers == 0)
+		zstart= -5-4 * abs(w[5])
 	else
-		zstart=-5-4*abs(w[9])
+		zstart= -5-4 * abs(w[9])
 	endif
-	
-	ii=1
-	temp=0
-	if (nlayers==0)
-		zend=5+4*abs(w[5])
+		
+	temp = 0
+	if (nlayers == 0)
+		zend = 5+4*abs(w[5])
 	else	
-		do
-			temp+=abs(w[4*ii+2])
-			ii+=1
-		while(ii<nlayers+1)
-		
-		zend=5+temp+4*abs(w[5])
+		for(ii = 1 ; ii < nlayers + 1 ; ii+=1)
+			temp += abs(w[4*ii+2])
+		endfor 	
+		zend = 5 + temp + 4 * abs(w[5])
 	endif
-	zinc=(zend-zstart)/SLDpts
-
-	//work out the z depth wave
-	ii=0
-	do
-		zed[ii]=zstart+(zinc*ii)
-		ii+=1
-	while(ii<SLDpts)
-
-
-	dist=0
-	summ=w[2]
-	ii=0
-
-	do
-		if(ii==0)
-			SLD1=(w[7]/100)*(100-w[8])+(w[8]*rhosolv/100)
-			deltarho=-w[2]+SLD1
-			thick=0
-			sigma=abs(w[9])
-			
-			if(nlayers==0)
-				sigma=abs(w[5])
-				deltarho=-w[2]+w[3]
-			endif
-		
-		elseif(ii==nlayers)
-			SLD1=(w[4*ii+3]/100)*(100-w[4*ii+4])+(w[4*ii+4]*rhosolv/100)
-			deltarho=-SLD1+rhosolv
-			thick=abs(w[4*ii+2])
-			sigma=abs(w[5])
-		
-		else
-			SLD1=(w[4*ii+3]/100)*(100-w[4*ii+4])+(w[4*ii+4]*rhosolv/100)
-			SLD2=(w[4*(ii+1)+3]/100)*(100-w[4*(ii+1)+4])+(w[4*(ii+1)+4]*rhosolv/100)
-			deltarho=-SLD1+SLD2
-			thick=abs(w[4*(ii)+2])
-			sigma=abs(w[4*(ii+1)+5])
-		endif
-		
-		dist+=thick
-		
-		//if sigma=0 then the computer goes haywire (division by zero), so say it's vanishingly small
-		if(sigma==0)
-			sigma+=1e-3
-		endif
-		
-		summ+=(deltarho/2)*(1+erf((z-dist)/(sigma*sqrt(2))))
-		
-		ii+=1
-	while(ii<nlayers+1)
+	setscale/I x, zstart, zend, sld
 	
-	return summ
+	sld = Moto_SLD_at_depth(w, x)
 End
 
 Function/t Moto_askForListofFiles()
@@ -1583,7 +1330,7 @@ Function Moto_fit_Genetic()
 	String y,x,e,dx,dataset
 	String cmd,cursors,errors,options
 	Variable plotyp=str2num(moto_Str("plotyp"))
-	Wave/z zed,SLD
+	Wave/z SLD
 	
 	//which waves do you want to fit?
 	Controlinfo/W=reflectivitypanel dataset
@@ -1720,9 +1467,7 @@ Function Moto_fit_Genetic()
 		
 	//optimise with genetic optimisation
 	Moto_repstr("inFIT","1")
-	//break the SLD relationship with zed, otherwise it can slow the fit down
-	setformula SLD,""	
-		
+
 	Moto_backupModel() //make a backup of the model before you start the fit, so that you can roll back.
 	
 	Dowindow/f reflectivitygraph
@@ -1742,8 +1487,6 @@ Function Moto_fit_Genetic()
 	//make a coefficient wave related to the data
 	//y is the name of the y wave data
 	test="coef_"+dataset+"_R"
-	Duplicate/O $coefwavestr $test,W_Sigma
-	W_Sigma = NaN	
 		
 	//this sets the wave note of the coefficient wave to be the same as motofitcontrol
 	test=cleanupname("coef_"+dataset+"_R", 0)
@@ -1794,8 +1537,8 @@ Function Moto_fit_Genetic()
 		AppendToGraph $fitdestination vs $fitX
 	endif
 	
-	string colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
-	colour=replacestring("x",colour,fitdestination)
+	string colour = greplist(traceinfo("", y, 0), "^rgb(x)*")
+	colour=replacestring("x",colour,fitdestination)	
 	cmd="modifygraph "+colour
 	Execute/z cmd
 	Modifygraph lsize($fitdestination)=1,mode($fitdestination)=0
@@ -1806,14 +1549,11 @@ Function Moto_fit_Genetic()
 	Dowindow/F Reflectivitygraph
 	Setactivesubwindow reflectivitygraph#SLDplot
 	traceexists=TraceNameList("",";",1)
-	String SLDdestination="SLD_"+dataset,zeddestination="zed_"+dataset
-	Wave sld,zed
+	String SLDdestination="SLD_"+dataset
+	Wave sld = root:sld
 	Duplicate/O sld,$SLDdestination
-	Duplicate/O zed,$zeddestination
-	Setformula $SLDdestination,""
-	Setformula $zeddestination,""
 	if(Strsearch(traceexists,SLDdestination,0)==-1)
-		AppendToGraph/W=# $SLDdestination vs $zeddestination
+		AppendToGraph/W=# $SLDdestination
 	endif
 	colour=replacestring(fitdestination,colour,slddestination)
 	cmd="modifygraph "+colour
@@ -1835,7 +1575,7 @@ Function Moto_fit_Levenberg()
 	//this function is the button control that starts the fit.
 	//this function takes care of all the procedures involved with performing a Levenberg-Marquardt fit
 	Setdatafolder root:
-	Wave coef_Cref,zed,SLD
+	Wave/z coef_Cref, SLD
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
 	
 	String test,holdstring,constraint="",errors="",cursors=""
@@ -1843,7 +1583,6 @@ Function Moto_fit_Levenberg()
 	variable useerrors=0,usedqwave=0,usecursors=0,useconstraint=0
 	Variable ii
 	Variable plotyp=str2num(Moto_str("plotyp"))
-
 
 	//setupholdstring, all the hold checkboxes are numbered in order h0,h1,h2, etc.
 	Moto_holdstring("",0)
@@ -1868,7 +1607,6 @@ Function Moto_fit_Levenberg()
 	Wave/z b=$y
 	Wave/z c=$e
 	Wave/z d=$dx
-
 
 	if(waveexists(a)==0 | waveexists(b)==0)						//if the waves you entered aren't valid then there is no 
 		abort "please enter a valid dataset"		//point in doing the fit.
@@ -1981,9 +1719,6 @@ Function Moto_fit_Levenberg()
 	
 	variable multilayer=str2num(moto_str("multilayer"))
 	
-	//break the SLD relationship with zed, otherwise it can slow the fit down
-	setformula SLD,""
-
 	//now we're fitting
 	Moto_repstr("inFIT","1")
 	variable/g V_Fiterror=0
@@ -2055,10 +1790,13 @@ Function Moto_fit_Levenberg()
 
 	//make the SLD curves and fit curves the same colour as the original wave
 	//if the trace isn't on the graph add it.  If it is, don't do anything.
+	Dowindow/F reflectivitygraph
+	Setactivesubwindow reflectivitygraph
 	String traceexists=TraceNameList("",";",1)
-	if(Strsearch(traceexists,fitdestination,0)==-1)
-		string colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
-		colour=replacestring("x",colour,fitdestination)
+	string colour = greplist(traceinfo("", y, 0), "^rgb(x)*")
+	colour=replacestring("x",colour,fitdestination)
+	
+	if(Strsearch(traceexists,fitdestination,0) == -1)
 		AppendToGraph $fitdestination vs $fitX
 		cmd="modifygraph "+colour
 		Execute/Z cmd
@@ -2071,14 +1809,11 @@ Function Moto_fit_Levenberg()
 	Dowindow/F Reflectivitygraph
 	Setactivesubwindow reflectivitygraph#SLDplot
 	traceexists=TraceNameList("",";",1)
-	String SLDdestination="SLD_"+dataset,zeddestination="zed_"+dataset
-	Wave sld,zed
+	String SLDdestination="SLD_"+dataset
+	Wave sld = root:SLD
 	Duplicate/O sld,$SLDdestination
-	Duplicate/O zed,$zeddestination
-	Setformula $SLDdestination,""
-	Setformula $zeddestination,""
-	if(Strsearch(traceexists,SLDdestination,0)==-1)
-		AppendToGraph/W=# $SLDdestination vs $zeddestination
+	if(Strsearch(traceexists, SLDdestination, 0)==-1)
+		AppendToGraph/W=# $SLDdestination
 		colour=replacestring(fitdestination,colour,slddestination)
 		cmd="modifygraph "+colour
 		Execute/Z cmd
@@ -2088,7 +1823,6 @@ Function Moto_fit_Levenberg()
 	//write the fit to the report notebook
 	//b is the ywave
 	Moto_notebookoutput("Reflectivityfittingreport",b,"Levenberg Marquardt")
-	
 	Setactivesubwindow reflectivitygraph
 End
 //
@@ -2125,7 +1859,7 @@ Function Moto_fit_GenLM()
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
 		
 	Wave/z coef_Cref,coef_multiCref
-	Wave/z zed,SLD
+	Wave/z SLD
 	
 	Variable ii,nlayers,npars,jj,usedqwave,usecursors,useerrors,useconstraint
 	Variable plotyp=str2num(moto_Str("plotyp"))
@@ -2223,8 +1957,6 @@ Function Moto_fit_GenLM()
 		
 	//optimise with genetic optimisation
 	Moto_repstr("inFIT","1")
-	//break the SLD relationship with zed, otherwise it can slow the fit down
-	setformula SLD,""
 	
 	//get limits wave, also sets default parameters.
 	GEN_setlimitsforGENcurvefit($coefwavestr,holdstring,savDF)
@@ -2329,9 +2061,6 @@ Function Moto_fit_GenLM()
 	endif
 	
 	setdatafolder $savDF
-	
-	//break the SLD relationship with zed, otherwise it can slow the fit down
-	setformula SLD,""
 
 	//now we're fitting
 	Moto_repstr("inFIT","1")
@@ -2402,8 +2131,9 @@ Function Moto_fit_GenLM()
 	if(Strsearch(traceexists,fitdestination,0)==-1)
 		AppendToGraph $fitdestination vs $fitX
 	endif
-	string colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
-	colour=replacestring("x",colour,fitdestination)
+
+	string colour = greplist(traceinfo("", y, 0), "^rgb(x)*")
+	colour=replacestring("x",colour,fitdestination)	
 	cmd="modifygraph "+colour
 	Execute/Z cmd
 	Modifygraph lsize($fitdestination)=0, mode($fitdestination)=0
@@ -2414,15 +2144,13 @@ Function Moto_fit_GenLM()
 	Dowindow/F Reflectivitygraph
 	Setactivesubwindow reflectivitygraph#SLDplot
 	traceexists=TraceNameList("",";",1)
-	string SLDdestination="SLD_"+dataset,zeddestination="zed_"+dataset
-	Wave sld,zed
+	string SLDdestination="SLD_"+dataset
+	Wave sld
 	Duplicate/O sld,$SLDdestination
-	Duplicate/O zed,$zeddestination
-	Setformula $SLDdestination,""
-	Setformula $zeddestination,""
+
 	if(Strsearch(traceexists,SLDdestination,0)==-1)
-		AppendToGraph/W=# $SLDdestination vs $zeddestination
-		colour=replacestring(fitdestination,colour,slddestination)
+		AppendToGraph/W=# $SLDdestination
+		colour=replacestring(fitdestination,colour, slddestination)
 		cmd="modifygraph "+colour
 		Execute/Z cmd
 		Modifygraph lsize($SLDdestination)=1
@@ -2431,7 +2159,6 @@ Function Moto_fit_GenLM()
 	//write the fit to the report notebook
 	//b is the ywave
 	Moto_notebookoutput("Reflectivityfittingreport",b,"GEN/LM")
-	
 	Setactivesubwindow reflectivitygraph
 	
 	return 0
@@ -2455,7 +2182,7 @@ Function Moto_fit_GenMC()
 		String y,x,e,dx,dataset
 		String cmd,cursors,errors,options
 		Variable plotyp=str2num(moto_Str("plotyp"))
-		Wave zed,SLD
+		Wave SLD = root:SLD
 	
 		//which waves do you want to fit?
 		Controlinfo/W=reflectivitypanel dataset
@@ -2587,11 +2314,8 @@ Function Moto_fit_GenMC()
 		
 		//optimise with genetic optimisation
 		Moto_repstr("inFIT","1")
-		//break the SLD relationship with zed, otherwise it can slow the fit down
-		setformula SLD,""	
 
-		Moto_backupModel() //make a backup of the model before you start the fit, so that you can roll back.
-		
+		Moto_backupModel() //make a backup of the model before you start the fit, so that you can roll back.		
 		try 
 			if(Moto_montecarlo("motofit", coef, b, a, c, holdstring, iters, cursA = cursA, cursB = cursB))
 				abort
@@ -2648,7 +2372,6 @@ Function Moto_fit_GenMC()
 		Moto_CrefToLayerTable()
 		
 		Moto_update()
-		
 			
 		//make the SLD curves and fit curves the same colour as the original wave
 		//if the trace isn't on the graph add it.  If it is, don't do anything.
@@ -2680,14 +2403,12 @@ Function Moto_fit_GenMC()
 		Dowindow/F Reflectivitygraph
 		Setactivesubwindow reflectivitygraph#SLDplot
 		traceexists=TraceNameList("",";",1)
-		String SLDdestination="SLD_"+removeending(dataset,"_"),zeddestination="zed_"+removeending(dataset,"_")
-		Wave sld,zed
+		String SLDdestination="SLD_"+removeending(dataset,"_")
+		Wave sld
 		Duplicate/O sld,$SLDdestination
-		Duplicate/O zed,$zeddestination
-		Setformula $SLDdestination,""
-		Setformula $zeddestination,""
+		
 		if(Strsearch(traceexists,SLDdestination,0)==-1)
-			AppendToGraph/W=# $SLDdestination vs $zeddestination
+			AppendToGraph/W=# $SLDdestination
 		endif
 		colour=replacestring(fitdestination,colour,slddestination)
 		cmd="modifygraph "+colour
@@ -2698,7 +2419,6 @@ Function Moto_fit_GenMC()
 		
 		//create a graph of all the montecarloSLDcurves
 		Moto_montecarlo_SLDcurves(M_montecarlo)
-		
 	catch
 	
 	endtry
@@ -3088,7 +2808,6 @@ Function Moto_Makeglobals(ctrlName) : ButtonControl
 	sorttabs(TC_Struct,1)
 	MOTO_NewGF_SetTabControlContent(1)
 	MOTO_WM_NewGlobalFit1#SetCoefListFromWave(globalwave, 2, 0, 0)
-
 End
 
 Function Moto_changecoefs(PU_Struct)
@@ -3150,9 +2869,7 @@ Function Moto_changecoefs(PU_Struct)
 	if(cmpstr(popStr,"coef_multiCref")==0)
 		duplicate/o coef_multicref TEMP_coef_multicref
 	endif
-	
- 
-	
+
 	Setupmultilayer("",multilayer)
 
 	if(cmpstr(popStr,"coef_multiCref")==0)
@@ -3273,7 +2990,6 @@ Function moto_UpdateControls()
 	Wave resolution
 	resolution[0]=str2num(moto_Str("res"))
 	setvariable res,value=resolution[0],win=reflectivitypanel
-
 End
 
 Function Moto_savecoefficients(ctrlName) : ButtonControl
@@ -5319,25 +5035,19 @@ Function Moto_montecarlo_SLDcurves(M_montecarlo)
 	killwaves/z tempcoefs, SLDmatrixtemp
 End
 
-Function Moto_SLD_at_depth(w,z)
-	//function calculates an SLD point at a distance, z, from the interface.
-	//w are the fit coefficients.
-	//shares a lot of code with Moto_SLDplot
-	wave w
-	variable z
-
-	variable nlayers,SLD1,SLD2,zstart,zend,ii,temp,zinc,summ
-	Variable deltarho,zi,dindex,sigma,thick,dist,rhosolv
-	
+Function Moto_SLD_at_depth(w, zed)
+	Wave w
+	variable zed
+	variable nlayers,SLD1,SLD2,ii,summ
+	Variable deltarho,sigma,thick,dist,rhosolv
+	 
+	nlayers=w[0]
 	rhosolv=w[3]
-	nlayers = w[0]
-	//work out the z depth wave
+	
 	dist=0
 	summ=w[2]
-	ii=0
-
-	do
-		if(ii==0)
+	for( ii = 0 ; ii < nlayers + 1 ; ii += 1) 
+		if(ii == 0)
 			SLD1=(w[7]/100)*(100-w[8])+(w[8]*rhosolv/100)
 			deltarho=-w[2]+SLD1
 			thick=0
@@ -5353,7 +5063,6 @@ Function Moto_SLD_at_depth(w,z)
 			deltarho=-SLD1+rhosolv
 			thick=abs(w[4*ii+2])
 			sigma=abs(w[5])
-		
 		else
 			SLD1=(w[4*ii+3]/100)*(100-w[4*ii+4])+(w[4*ii+4]*rhosolv/100)
 			SLD2=(w[4*(ii+1)+3]/100)*(100-w[4*(ii+1)+4])+(w[4*(ii+1)+4]*rhosolv/100)
@@ -5361,17 +5070,15 @@ Function Moto_SLD_at_depth(w,z)
 			thick=abs(w[4*(ii)+2])
 			sigma=abs(w[4*(ii+1)+5])
 		endif
+		dist += thick
 		
-		dist+=thick	
 		//if sigma=0 then the computer goes haywire (division by zero), so say it's vanishingly small
-		if(sigma==0)
-			sigma+=1e-3
+		if(sigma == 0)
+			sigma += 1e-3
 		endif
 		
-		summ+=(deltarho/2)*(1+erf((z-dist)/(sigma*sqrt(2))))
+		summ += (deltarho/2)*(1+erf((zed-dist)/(sigma*sqrt(2))))		
+	endfor
 		
-		ii+=1
-	while(ii<nlayers+1)
-	
 	return summ
 End
