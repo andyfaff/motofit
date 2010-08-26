@@ -4936,7 +4936,84 @@ q *= (4*Pi/lambda)
 
 End
 
-Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)	Wave M_montecarlo	variable SLDbin, SLDpts	//calculates the envelope of SLDplots for a montecarlo reflectivity analysis.	//M_montecarlo contains the fit coefficients for all the fit coefs, rows = montecarlo iteration, cols = coefs.	variable nlayers, MCiters, ii, jj, minz = 0, maxz = 0, SLDmax, SLDmin		//how many layers are there? 	nlayers=M_montecarlo[0][0]		//how many Monte Carlo iterations there were	MCiters = dimsize(M_montecarlo, 0)		//a wave to put a temporary SLD plot	make/n=(SLDpts)/d anSLDplot	make/n=(dimsize(M_montecarlo, 1)) tempcoefs		for(ii = 0 ; ii < MCiters ; ii += 1)		tempcoefs[] = M_montecarlo[ii][p]		Moto_SLDplot(tempcoefs, anSLDplot)		if(leftx(anSLDplot) < minz)			minz = leftx(anSLDplot)		endif		if(pnt2x(anSLDplot, numpnts(anSLDplot)-1) > maxz)			maxz = pnt2x(anSLDplot, numpnts(anSLDplot)-1)		endif	endfor		//you have the minimum and maximum ends of all the fits, now create all the SLDprofiles.	setscale/I x, minz, maxz, anSLDplot	make/n=(MCiters, SLDpts)/d/o SLDmatrix	for(ii = 0 ; ii < MCiters ; ii += 1)		tempcoefs[] = M_montecarlo[ii][p]		Moto_SLDplot(tempcoefs, anSLDplot)		SLDmatrix[ii][] = anSLDplot[q]	endfor			//now we have a matrix that has uniform scaling and we need to bin it.	imagestats/M=1 SLDmatrix	SLDmax = V_max	SLDmin = V_min	make/n=( (SLDmax - SLDmin ) / SLDbin)/d/o SLDsliceHIST	make/n=(MCiters)/free/d SLDslices			setscale/I x,  SLDmin, SLDmax, SLDsliceHIST	make/n=(SLDpts, numpnts(SLDsliceHIST))/o/d SLDimage	setscale/I x, minz, maxz,  SLDimage		setscale/I y, SLDmin, SLDmax,  SLDimage		for(ii = 0 ; ii < SLDpts ; ii+=1)		SLDslices[] = SLDmatrix[p][ii]		Histogram/B=2 SLDslices, SLDsliceHIST		SLDimage[ii][] = SLDSliceHIST[q]	endfor		Display /W=(40,44,825,866)/K=1 	AppendImage/T SLDimage	ModifyImage SLDimage ctab= {0.4,*,Rainbow,0}	ModifyImage SLDimage minRGB=(49151,49152,65535)	ModifyGraph margin(left)=35,margin(bottom)=14,margin(top)=36,margin(right)=14,gfSize=14	ModifyGraph mirror=2	ModifyGraph nticks(left)=10,nticks(top)=4	ModifyGraph minor=1	ModifyGraph fSize=14	ModifyGraph standoff=0	ModifyGraph tkLblRot(left)=90	ModifyGraph btLen=3	ModifyGraph tlOffset=-2	Label left "SLD"	Label top "distance from interface"		killwaves/z SLDsliceHIST, SLDmatrix, tempcoefs, anSLDplot, SLDslicesEnd
+Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
+	Wave M_montecarlo
+	variable SLDbin, SLDpts
+	//calculates the envelope of SLDplots for a montecarlo reflectivity analysis.
+	//M_montecarlo contains the fit coefficients for all the fit coefs, rows = montecarlo iteration, cols = coefs.
+	variable nlayers, MCiters, ii, jj, minz = 0, maxz = 0, SLDmax, SLDmin
+	
+	//how many layers are there? 
+	nlayers=M_montecarlo[0][0]
+	
+	//how many Monte Carlo iterations there were
+	MCiters = dimsize(M_montecarlo, 0)
+	
+	//a wave to put a temporary SLD plot
+	make/n=(SLDpts)/d anSLDplot
+	make/n=(dimsize(M_montecarlo, 1)) tempcoefs
+	
+	for(ii = 0 ; ii < MCiters ; ii += 1)
+		tempcoefs[] = M_montecarlo[ii][p]
+		Moto_SLDplot(tempcoefs, anSLDplot)
+		if(leftx(anSLDplot) < minz)
+			minz = leftx(anSLDplot)
+		endif
+		if(pnt2x(anSLDplot, numpnts(anSLDplot)-1) > maxz)
+			maxz = pnt2x(anSLDplot, numpnts(anSLDplot)-1)
+		endif
+	endfor
+	
+	//you have the minimum and maximum ends of all the fits, now create all the SLDprofiles.
+	setscale/I x, minz, maxz, anSLDplot
+	make/n=(MCiters, SLDpts)/d/o SLDmatrix
+	for(ii = 0 ; ii < MCiters ; ii += 1)
+		tempcoefs[] = M_montecarlo[ii][p]
+		Moto_SLDplot(tempcoefs, anSLDplot)
+		SLDmatrix[ii][] = anSLDplot[q]
+	endfor
+		
+	//now we have a matrix that has uniform scaling and we need to bin it.
+	imagestats/M=1 SLDmatrix
+	SLDmax = V_max
+	SLDmin = V_min
+
+	make/n=( (SLDmax - SLDmin ) / SLDbin)/d/o SLDsliceHIST
+	make/n=(MCiters)/free/d SLDslices
+		
+	setscale/I x,  SLDmin, SLDmax, SLDsliceHIST
+	make/n=(SLDpts, numpnts(SLDsliceHIST))/o/d SLDimage
+	setscale/I x, minz, maxz,  SLDimage	
+	setscale/I y, SLDmin, SLDmax,  SLDimage
+	
+	for(ii = 0 ; ii < SLDpts ; ii+=1)
+		SLDslices[] = SLDmatrix[p][ii]
+		Histogram/B=2 SLDslices, SLDsliceHIST
+		SLDimage[ii][] = SLDSliceHIST[q]
+	endfor
+	
+	Display /W=(403,44,1188,866)/K=1 
+	AppendImage/T SLDimage
+	ModifyImage SLDimage ctab= {0.4,*,Rainbow,0}
+	ModifyImage SLDimage minRGB=(0,0,0)
+	ModifyGraph margin(left)=35,margin(bottom)=14,margin(top)=36,margin(right)=14,gfSize=14
+	ModifyGraph wbRGB=(0,0,0),gbRGB=(0,0,0)
+	ModifyGraph mirror=2
+	ModifyGraph nticks(left)=10,nticks(top)=4
+	ModifyGraph minor=1
+	ModifyGraph fSize=14
+	ModifyGraph standoff=0
+	ModifyGraph axRGB=(65535,65535,65535)
+	ModifyGraph tlblRGB=(65535,65535,65535)
+	ModifyGraph alblRGB=(65535,65535,65535)
+	ModifyGraph tkLblRot(left)=90
+	ModifyGraph btLen=3
+	ModifyGraph tlOffset=-2
+	Label left "SLD"
+	Label top "distance from interface"
+	
+	killwaves/z SLDsliceHIST, SLDmatrix, tempcoefs, anSLDplot, SLDslices
+End
 
 Function Moto_SLD_at_depth(w, zed)
 	Wave w

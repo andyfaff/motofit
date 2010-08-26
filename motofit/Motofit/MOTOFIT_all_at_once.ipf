@@ -4996,16 +4996,20 @@ Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 		SLDimage[ii][] = SLDSliceHIST[q]
 	endfor
 	
-	Display /W=(40,44,825,866)/K=1 
+	Display /W=(403,44,1188,866)/K=1 
 	AppendImage/T SLDimage
 	ModifyImage SLDimage ctab= {0.4,*,Rainbow,0}
-	ModifyImage SLDimage minRGB=(49151,49152,65535)
+	ModifyImage SLDimage minRGB=(0,0,0)
 	ModifyGraph margin(left)=35,margin(bottom)=14,margin(top)=36,margin(right)=14,gfSize=14
+	ModifyGraph wbRGB=(0,0,0),gbRGB=(0,0,0)
 	ModifyGraph mirror=2
 	ModifyGraph nticks(left)=10,nticks(top)=4
 	ModifyGraph minor=1
 	ModifyGraph fSize=14
 	ModifyGraph standoff=0
+	ModifyGraph axRGB=(65535,65535,65535)
+	ModifyGraph tlblRGB=(65535,65535,65535)
+	ModifyGraph alblRGB=(65535,65535,65535)
 	ModifyGraph tkLblRot(left)=90
 	ModifyGraph btLen=3
 	ModifyGraph tlOffset=-2
@@ -5023,7 +5027,6 @@ Function Moto_SLD_at_depth(w, zed)
 	 
 	nlayers=w[0]
 	rhosolv=w[3]
-	
 	dist=0
 	summ=w[2]
 	for( ii = 0 ; ii < nlayers + 1 ; ii += 1) 
