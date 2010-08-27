@@ -39,6 +39,7 @@
 #pragma ModuleName= GEN_optimise
 #include <WaveSelectorWidget>
 #include <PopupWaveSelector>
+#include <Scatter Plot Matrix 2>
 
 Menu "Motofit"
 	"Genetic curvefitting /1", Genetic_curvefitting()
@@ -148,8 +149,8 @@ Function Genetic_Curvefitting()
 	setdatafolder $cdf
 End
 
- Function Gen_curvefitpanel_init() : Panel
- 	svar ydataWav = root:packages:motofit:gencurvefit:ydataWav
+Function Gen_curvefitpanel_init() : Panel
+	svar ydataWav = root:packages:motofit:gencurvefit:ydataWav
 	svar xdataWav = root:packages:motofit:gencurvefit:xdataWav
 	svar coefWav = root:packages:motofit:gencurvefit:coefWav
 	svar weightWav = root:packages:motofit:gencurvefit:weightWav
@@ -306,7 +307,7 @@ End
 	
 End
 
- Function gen_tabcontrol(tca) : TabControl
+Function gen_tabcontrol(tca) : TabControl
 	STRUCT WMTabControlAction &tca
 
 	switch( tca.eventCode )
@@ -346,89 +347,89 @@ Function gen_functionstr(pa) : PopupMenuControl
 	return 0
 End
 Function Gen_waveselectionNotification(event, wavepath, windowName, ctrlName)
-		Variable event
-		String wavepath
-		String windowName
-		String ctrlName
-		SVAR coefWav = root:packages:motofit:gencurvefit:coefWav
-		NVAR numcoefs = root:packages:motofit:gencurvefit:numcoefs
+	Variable event
+	String wavepath
+	String windowName
+	String ctrlName
+	SVAR coefWav = root:packages:motofit:gencurvefit:coefWav
+	NVAR numcoefs = root:packages:motofit:gencurvefit:numcoefs
 
-		switch(event)
-			case WMWS_SelectionChanged:				//WMWS_SelectionChanged = 4, the only event code.  Defined in WaveSelectorWidget
-				strswitch(ctrlname)
-					case "ydataWav_setvar_tab0":
-						nvar numpoints = root:packages:motofit:gencurvefit:numpoints
-						numpoints = numpnts($wavepath)
-						break
-					case "limitsWAV_setvar_tab2":
-						if(cmpstr(wavepath,"_from below_"))
-							wave limits = $(wavepath)
-							Gen_insertLimits(limits)
-						endif
-						break	
-					case "coefWAV_setvar_tab2":					
-						if(cmpstr(wavepath,"_New Wave_")==0)
-							string newwavename
-							variable nc
-							dowindow/w=popupWSpanel /k popupwspanel
-							newpanel/W=(0,0,1,1)
-							dowindow/c popupwspanel
+	switch(event)
+		case WMWS_SelectionChanged:				//WMWS_SelectionChanged = 4, the only event code.  Defined in WaveSelectorWidget
+			strswitch(ctrlname)
+				case "ydataWav_setvar_tab0":
+					nvar numpoints = root:packages:motofit:gencurvefit:numpoints
+					numpoints = numpnts($wavepath)
+					break
+				case "limitsWAV_setvar_tab2":
+					if(cmpstr(wavepath,"_from below_"))
+						wave limits = $(wavepath)
+						Gen_insertLimits(limits)
+					endif
+					break	
+				case "coefWAV_setvar_tab2":					
+					if(cmpstr(wavepath,"_New Wave_")==0)
+						string newwavename
+						variable nc
+						dowindow/w=popupWSpanel /k popupwspanel
+						newpanel/W=(0,0,1,1)
+						dowindow/c popupwspanel
 							
-							Prompt newwavename,"enter the new wave name"
-							Prompt nc,"and the number of coefficients (>=1)"
-							do
-								doprompt "Create a new fit wave",newwavename,nc
-								if(V_flag)
-									break
-								else
-									newwavename = possiblyquotename(newwavename)
-									if(exists(newwavename))
-										Doalert 0, "name already in use"
-										continue
-									endif
-									if(strlen(newwavename)==0 || itemsinlist(wavelist(newwavename,";","")) || strlen(newwavename)>31)
-										Doalert 0,"Please enter a valid wavename"
-										continue
-									endif
-									if(nc<1)
-										Doalert 0, "number of coefficients must be >0"
-										continue
-									endif
-									make/o/d/n=(nc) $newwavename = 0
-									string fullpath = getdatafolder(1)+newwavename
-									
-									//another BODGE
-									//the function that calls this notify procedure doesn't check that you have created anything before if returns.
-									//this means if you create a wave, then use popws_setselectionfull path it overwrites whatever you did.
-									
-									string cmd = "PopupWS_SetSelectionFullPath(\""+windowname+"\",\""+ctrlname+"\",\""+ fullPath+"\")"
-									execute/p cmd
-//									killcontrol/w = gencurvefitpanel coefWAV_setvar_tab2
-//									SetVariable coefWAV_setvar_tab2,win = gencurvefitpanel,pos={23,57},size={227,20},title="Coefficient Wave",fsize=11
-//									SetVariable coefWAV_setvar_tab2,win = gencurvefitpanel,bodyWidth= 140,noedit=1
-//									MakeSetVarIntoWSPopupButton("gencurvefitpanel", "coefWAV_setvar_tab2", "Gen_waveselectionNotification", "root:Packages:Motofit:gencurvefit:coefWav",content = WMWS_Waves)
-//									PopupWS_MatchOptions("gencurvefitpanel", "coefWAV_setvar_tab2", matchStr="*", listoptions="DIMS:1,CMPLX:0,TEXT:0,BYTE:0,WORD:0,INTEGER:0,MINROWS:1",namefilterproc = "Gen_filter_coefWav")
-//									PopupWS_AddSelectableString("gencurvefitpanel", "coefWAV_setvar_tab2","_new wave_")
-//
-//									PopupWS_SetSelectionFullPath(windowname,ctrlname, fullPath)
-									coefWav = newwavename
-									numcoefs = nc
-									break
+						Prompt newwavename,"enter the new wave name"
+						Prompt nc,"and the number of coefficients (>=1)"
+						do
+							doprompt "Create a new fit wave",newwavename,nc
+							if(V_flag)
+								break
+							else
+								newwavename = possiblyquotename(newwavename)
+								if(exists(newwavename))
+									Doalert 0, "name already in use"
+									continue
 								endif
-							while(1)
-							Gen_expandnpars(numcoefs)
-							Gen_insertCoefs($fullpath)
-						else
-							Wave coefs = $(wavepath)
-							numcoefs = Dimsize(coefs,0)
-							Gen_expandnpars(numcoefs)
-							Gen_insertCoefs(coefs)
-						endif
-						break
-				endswitch
-				break
-		endswitch
-		Gen_rebuildPopups(event,wavepath,windowname,ctrlname)
+								if(strlen(newwavename)==0 || itemsinlist(wavelist(newwavename,";","")) || strlen(newwavename)>31)
+									Doalert 0,"Please enter a valid wavename"
+									continue
+								endif
+								if(nc<1)
+									Doalert 0, "number of coefficients must be >0"
+									continue
+								endif
+								make/o/d/n=(nc) $newwavename = 0
+								string fullpath = getdatafolder(1)+newwavename
+									
+								//another BODGE
+								//the function that calls this notify procedure doesn't check that you have created anything before if returns.
+								//this means if you create a wave, then use popws_setselectionfull path it overwrites whatever you did.
+									
+								string cmd = "PopupWS_SetSelectionFullPath(\""+windowname+"\",\""+ctrlname+"\",\""+ fullPath+"\")"
+								execute/p cmd
+								//									killcontrol/w = gencurvefitpanel coefWAV_setvar_tab2
+								//									SetVariable coefWAV_setvar_tab2,win = gencurvefitpanel,pos={23,57},size={227,20},title="Coefficient Wave",fsize=11
+								//									SetVariable coefWAV_setvar_tab2,win = gencurvefitpanel,bodyWidth= 140,noedit=1
+								//									MakeSetVarIntoWSPopupButton("gencurvefitpanel", "coefWAV_setvar_tab2", "Gen_waveselectionNotification", "root:Packages:Motofit:gencurvefit:coefWav",content = WMWS_Waves)
+								//									PopupWS_MatchOptions("gencurvefitpanel", "coefWAV_setvar_tab2", matchStr="*", listoptions="DIMS:1,CMPLX:0,TEXT:0,BYTE:0,WORD:0,INTEGER:0,MINROWS:1",namefilterproc = "Gen_filter_coefWav")
+								//									PopupWS_AddSelectableString("gencurvefitpanel", "coefWAV_setvar_tab2","_new wave_")
+								//
+								//									PopupWS_SetSelectionFullPath(windowname,ctrlname, fullPath)
+								coefWav = newwavename
+								numcoefs = nc
+								break
+							endif
+						while(1)
+						Gen_expandnpars(numcoefs)
+						Gen_insertCoefs($fullpath)
+					else
+						Wave coefs = $(wavepath)
+						numcoefs = Dimsize(coefs,0)
+						Gen_expandnpars(numcoefs)
+						Gen_insertCoefs(coefs)
+					endif
+					break
+			endswitch
+			break
+	endswitch
+	Gen_rebuildPopups(event,wavepath,windowname,ctrlname)
 End
 
 Function Gen_expandnpars(numpars)
@@ -452,7 +453,7 @@ End
 Gen_expandnpars(numpars)
 Gen_insertCoefs(coefs)
 
- Function Gen_insertCoefs(coefs)
+Function Gen_insertCoefs(coefs)
 	Wave coefs
 	Wave/T Gen_listwave = root:packages:motofit:gencurvefit:Gen_listwave
 	Wave Gen_listselwave = root:packages:motofit:gencurvefit:Gen_listselwave
@@ -462,7 +463,7 @@ Gen_insertCoefs(coefs)
 	Gen_listwave[][1] = num2str(coefs[p])
 End
 
- Function Gen_insertLimits(limits)
+Function Gen_insertLimits(limits)
 	Wave limits
 	Wave/T Gen_listwave = root:packages:motofit:gencurvefit:Gen_listwave
 	Wave Gen_listselwave = root:packages:motofit:gencurvefit:Gen_listselwave
@@ -473,7 +474,7 @@ End
 	Gen_listwave[][4] = num2str(limits[p][1])
 End
 
- Function Gen_extractLimits()
+Function Gen_extractLimits()
 	Wave/T Gen_listwave = root:packages:motofit:gencurvefit:Gen_listwave
 	make/o/d/n=(dimsize(gen_listwave,0),2) root:packages:motofit:gencurvefit:gen_limits
 	Wave gen_limits = root:packages:motofit:gencurvefit:gen_limits
@@ -482,7 +483,7 @@ End
 End
 
 
- Function Gen_weightingRadioProc(CB_Struct):checkboxcontrol
+Function Gen_weightingRadioProc(CB_Struct):checkboxcontrol
 	STRUCT WMCheckboxAction &CB_Struct
 	
 	NVAR weighting_Radio = root:packages:motofit:gencurvefit:weighting_Radio
@@ -531,7 +532,7 @@ Function/s GEN_Functionlists()
 End
 
 
- Function GEN_cancelButtonProc(ba) : ButtonControl
+Function GEN_cancelButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 
 	switch( ba.eventCode )
@@ -545,7 +546,7 @@ End
 	return 0
 End
 
- Function GEN_tocmdline_buttonproc(ba) : ButtonControl
+Function GEN_tocmdline_buttonproc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	SVAR cmd = root:packages:motofit:gencurvefit:cmd
 	switch( ba.eventCode )
@@ -562,7 +563,7 @@ End
 	return 0
 End
 
- Function GEN_toclip_buttonproc(ba) : ButtonControl
+Function GEN_toclip_buttonproc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	SVAR cmd = root:packages:motofit:gencurvefit:cmd
 	switch( ba.eventCode )
@@ -579,7 +580,7 @@ End
 	return 0
 End
 
- Function Gen_ListBoxProc(lba) : ListBoxControl
+Function Gen_ListBoxProc(lba) : ListBoxControl
 	STRUCT WMListboxAction &lba
 
 	Variable row = lba.row
@@ -607,7 +608,7 @@ End
 	return 0
 End
 
- Function Gen_checkLimits()
+Function Gen_checkLimits()
 	Wave/T Gen_listwave = root:packages:motofit:gencurvefit:Gen_listwave
 	Wave Gen_listselwave = root:packages:motofit:gencurvefit:Gen_listselwave
 	variable ii
@@ -624,7 +625,7 @@ End
 End
 
 
- Function Gen_checkParams()
+Function Gen_checkParams()
 	Wave/T Gen_listwave = root:packages:motofit:gencurvefit:Gen_listwave
 	Wave Gen_listselwave = root:packages:motofit:gencurvefit:Gen_listselwave
 	variable ii
@@ -636,7 +637,7 @@ End
 	endfor
 End
 
- Function Gen_checkLimitBoundaries()
+Function Gen_checkLimitBoundaries()
 	Wave/T Gen_listwave = root:packages:motofit:gencurvefit:Gen_listwave
 	Wave Gen_listselwave = root:packages:motofit:gencurvefit:Gen_listselwave
 	variable ii
@@ -654,7 +655,7 @@ End
 	endfor
 End
 
- Function gen_isvalueinlimitboundaries()
+Function gen_isvalueinlimitboundaries()
 	Wave/T Gen_listwave = root:packages:motofit:gencurvefit:Gen_listwave
 	Wave Gen_listselwave = root:packages:motofit:gencurvefit:Gen_listselwave
 	variable ii
@@ -672,7 +673,7 @@ End
 	endfor
 End
 
- Function Gen_buildholdstring()
+Function Gen_buildholdstring()
 	Wave/T Gen_listwave = root:packages:motofit:gencurvefit:Gen_listwave
 	Wave Gen_listselwave = root:packages:motofit:gencurvefit:Gen_listselwave
 	SVAR holdstring = root:packages:motofit:gencurvefit:holdstring
@@ -687,7 +688,7 @@ End
 	endfor
 End
 
- Function Gen_parsetoFitCmd()
+Function Gen_parsetoFitCmd()
 	variable err
 	Gen_buildholdstring()
 	if(Gen_checkParams())
@@ -908,7 +909,7 @@ End
 	return 0
 End
 
- Function gen_graphnowbutton(ba) : ButtonControl
+Function gen_graphnowbutton(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	
 	svar ydataWav = root:packages:motofit:gencurvefit:ydataWav
@@ -1059,14 +1060,14 @@ Function cmdToHistory(cmd)	// returns 0 if Macintosh, 1 if Windows
 	strswitch(platform)
 		case "MACINTOSH":
 			print num2char(-91) + cmd
-		break
+			break
 		case "WINDOWS":
 			print num2char(-107)+cmd
-		break
+			break
 	endswitch
 End
 
- Function gen_cursors_buttonproc(ba) : ButtonControl
+Function gen_cursors_buttonproc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 
 	switch( ba.eventCode )
@@ -1108,7 +1109,7 @@ End
 	return 0
 End
 
- Function gen_clearcursors_buttonproc(ba) : ButtonControl
+Function gen_clearcursors_buttonproc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 
 	switch( ba.eventCode )
@@ -1123,7 +1124,7 @@ End
 	return 0
 End
 
- Function gen_range_setvarProc(sva) : SetVariableControl
+Function gen_range_setvarProc(sva) : SetVariableControl
 	STRUCT WMSetVariableAction &sva
 
 	switch( sva.eventCode )
@@ -1139,7 +1140,7 @@ End
 	return 0
 End
 
- Function gen_checkcursors(startORend)
+Function gen_checkcursors(startORend)
 	string startORend
 	svar cursorstart= root:packages:motofit:gencurvefit:cursorstart
 	svar cursorfinish= root:packages:motofit:gencurvefit:cursorfinish
@@ -1172,7 +1173,7 @@ End
 	endif
 End
 
- Function gen_defaultlims_buttonproc(ba) : ButtonControl
+Function gen_defaultlims_buttonproc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 
 	switch( ba.eventCode )
@@ -1449,19 +1450,19 @@ Function Gen_rebuildPopups(event,wavepath,windowname,ctrlname)
 	strswitch(ctrlname)
 		default:
 			Wave/z ywave = $wavepath
-				variable numpoints = numpnts(ywave)
-				for(ii=0;ii<itemsinlist(ctrllist,";");ii+=1)
-					ctrl = stringfromlist(ii,ctrllist,";")
-					ctrl = stringfromlist(0,ctrl,":")
-					ctrlWavStr = PopupWS_GetSelectionFullPath("gencurvefitpanel", ctrl)
+			variable numpoints = numpnts(ywave)
+			for(ii=0;ii<itemsinlist(ctrllist,";");ii+=1)
+				ctrl = stringfromlist(ii,ctrllist,";")
+				ctrl = stringfromlist(0,ctrl,":")
+				ctrlWavStr = PopupWS_GetSelectionFullPath("gencurvefitpanel", ctrl)
 					
-					nameFilterProcStr = stringbykey(ctrl,filterlist)
-					FUNCREF namefiltertemplate namefilterproc = $nameFilterProcStr
-					if(!namefilterproc(ctrlWavStr,0))
-						PopupWS_SetSelectionFullPath("gencurvefitpanel", ctrl, stringbykey(ctrl,ctrllist))
-					endif
-				endfor
-		break
+				nameFilterProcStr = stringbykey(ctrl,filterlist)
+				FUNCREF namefiltertemplate namefilterproc = $nameFilterProcStr
+				if(!namefilterproc(ctrlWavStr,0))
+					PopupWS_SetSelectionFullPath("gencurvefitpanel", ctrl, stringbykey(ctrl,ctrllist))
+				endif
+			endfor
+			break
 	
 	endswitch
 
@@ -1519,20 +1520,6 @@ function gen_setstatus()
 	tabcontrol tab0 win=gencurvefitpanel,value = lasttab
 End
 	
-/////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
-////////
-////////	Below this is the old genetic optimisation code.  It may come in useful for those 
-////////	who can't use the XOP
-////////
-/////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
-
-
 Structure GEN_optimisation
 Wave GEN_parwave		//what are the initial parameters?
 String GEN_parwavename
@@ -1646,403 +1633,6 @@ Function/S GEN_reverseString(str)
 	return str
 End
 
-//HERE'S WHERE YOU START IF YOU WANT TO FIT PROGRAMATICALLY
-Function GEN_curvefit(func,parwave,ywave,holdstring,[x,w,c,mask,cursors,popsize,k_m,recomb,iters,tol,q])
-	//this is the first insertion to the GENETIC optimisation
-	
-	//REQUIRED
-	//func		:	name of the fitfunction, as a string
-	//parwave	:	parameter wave for sending to the fitfunction
-	//ywave		:	wave containing the data
-	//holdstring	:	string that specifies the parameters you want to vary	
-	
-	//OPTIONAL
-	//x			:	wave containing the x values for the fit. SHould be same length as ywave
-	//w			:	weight wave containing the standard deviations of all the points
-	//c			:	wave containing the upper and lower limits for each of parwave entries.  If not specified
-	//				or is incorrect then program will ask to set limits
-	//mask		:	wave to mask individual points in fit.  Should be same length as ywave.  Set mask[] to
-	//				0 to ignore that point
-	//popsize	:	population size multiplier (start with 10-20?)
-	//k_m		:	mutation constant
-	//recomb		:	recombination constant
-	//iters		:	number of iterations through population
-	//tol			:	a fractional decrease in chi2 below this value stops the fit
-	//q			:	quiet mode.  Set this to 1 to set to quiet mode, nothing prints in history window
-	
-	String func
-	Wave parwave,ywave
-	String holdstring
-	Wave x,w,c,mask
-	variable cursors,popsize,k_m,recomb,iters,tol,q
-	
-	//use the GEN_optimisation structure	
-	Struct GEN_optimisation gen
-	
-	//where are you calling the function from?
-	//these are so you can retun the output to the right places.
-	gen.GEN_callfolder=getdatafolder(1)
-	variable/g V_fiterror = 0
-	
-	try
-		//make the datafolders for the fitting
-		Newdatafolder/o root:packages
-		newdatafolder/o root:packages:motofit
-		Newdatafolder/o root:packages:motofit:old_genoptimise
-		
-		//what type of fit function?
-		variable whattype=Numberbykey("N_Params",Functioninfo(func))
-		gen.GEN_whattype=whattype
-		if(gen.GEN_whattype==2)			//point by point fit function
-			Funcref GEN_fitfunc gen.fan=$func
-		elseif(gen.GEN_whattype==3)		//all at once fit function 
-			Funcref GEN_allatoncefitfunc gen.fin=$func
-		endif
-	
-		//does the user want to operate in quiet mode?
-		//check the maskwave and cursors
-		if(ParamIsDefault(q))
-			gen.GEN_quiet=0
-		else
-			if(q!=0)
-				q=1
-			endif
-			gen.GEN_quiet=q
-		endif
-
-	
-		//check the ywave and store its datafolder
-		if(!waveexists(ywave))
-			setdatafolder $gen.GEN_callfolder
-			abort "y wave doesn't exist"
-		elseif(dimsize(ywave,1)>0)
-			setdatafolder $gen.GEN_callfolder
-			abort "can only fit 1D data at this time"
-		elseif(dimsize(ywave,0)==0)
-			setdatafolder $gen.GEN_callfolder
-			abort "y wave has no points to fit"
-		else
-			gen.GEN_ywaveDF=Getwavesdatafolder(ywave,1)
-			duplicate/o ywave,root:packages:motofit:old_genoptimise:GEN_yy
-		endif
-	
-		//check the parwave and store its datafolder
-		if(!waveexists(parwave))
-			setdatafolder $gen.GEN_callfolder
-			abort "parameter wave doesn't exist"
-		elseif(dimsize(parwave,1)>0)
-			setdatafolder $gen.GEN_callfolder
-			abort "can only use a 1D parameter wave at this time"
-		elseif(dimsize(parwave,0)==0)
-			setdatafolder $gen.GEN_callfolder
-			abort "coefficient wave contains no parameters"
-		else
-			gen.GEN_parwaveDF=Getwavesdatafolder(parwave,2)
-			duplicate/o parwave,root:packages:motofit:old_genoptimise:GEN_parwave
-		endif
-	
-		//check the xwave (x) and store it's datafolder
-		if(ParamIsDefault(x))		//you're going to be using the ywave scaling
-			make/o/d/n = (dimsize(ywave,0)) root:packages:motofit:old_genoptimise:GEN_xx = leftx(ywave)+p*dimdelta(ywave,0)
-		elseif(!ParamisDefault(x))	//the user specified an xwave
-			if(!waveexists(x))
-				setdatafolder $gen.GEN_callfolder
-				abort "x wave doesn't exist"
-			elseif(dimsize(x,1)>0)
-				setdatafolder $gen.GEN_callfolder
-				abort "can only use a 1D x wave at this time"
-			elseif(dimsize(x,0)!=dimsize(ywave,0))
-				setdatafolder $gen.GEN_callfolder
-				abort "x wave requires same number of points as y wave" 
-			else
-				gen.GEN_xwaveDF=Getwavesdatafolder(x,1)
-				duplicate/o x,root:packages:motofit:old_genoptimise:GEN_xx
-			endif
-		endif
-	 
-		//check the weightwave and store its datafolder
-		if(ParamIsDefault(w))		//you're going to be fitting with unit weights
-			make/o/d/n=(dimsize(ywave,0)) root:packages:motofit:old_genoptimise:GEN_ee=1
-		elseif(!ParamisDefault(w))	//the user specified an weightwave
-			if(!waveexists(w))
-				setdatafolder $gen.GEN_callfolder
-				abort "weight wave doesn't exist"
-			elseif(dimsize(w,1)>0)
-				setdatafolder $gen.GEN_callfolder
-				abort "can only use a 1D weight wave at this time"
-			elseif(dimsize(w,0)!=dimsize(ywave,0))
-				setdatafolder $gen.GEN_callfolder
-				abort "weight wave requires same number of points as y wave" 
-			else
-				gen.GEN_ewaveDF=Getwavesdatafolder(w,1)
-				duplicate/o w,root:packages:motofit:old_genoptimise:GEN_ee
-			endif
-		endif	
-		
-		//check the maskwave and cursors
-		variable ii=0
-		if(ParamIsDefault(mask) == 0)
-			if(!waveexists(mask))
-				setdatafolder $gen.GEN_callfolder
-				abort "specified mask wave doesn't exist"
-			elseif(dimsize(mask,1)>0)
-				setdatafolder $gen.GEN_callfolder
-				abort "can only use a 1D mask wave at this time"
-			elseif(dimsize(mask,0)!=dimsize(ywave,0))
-				setdatafolder $gen.GEN_callfolder
-				abort "mask wave requires same number of points as y wave" 
-			else
-				duplicate/o mask,root:packages:motofit:old_genoptimise:GEN_mask
-			endif
-		endif
-	
-		//check the holdstring
-		if(strlen(holdstring)!=dimsize(parwave,0))
-			setdatafolder $gen.GEN_callfolder
-			abort "holdstring needs to be same length as coefficient wave"
-		endif
-	
-		gen.GEN_holdstring = holdstring
-		gen.GEN_numvarparams=0
-		
-		variable test = strlen(holdstring)
-		for(ii=0;ii<strlen(holdstring);ii+=1)
-			if(cmpstr(holdstring[ii],"0") == 0)
-				gen.GEN_numvarparams += 1
-			endif
-			if(cmpstr(holdstring[ii],"0") != 0)
-				if(cmpstr(holdstring[ii],"1") != 0)
-					setdatafolder $gen.GEN_callfolder
-					abort "holdstring can only contain 0 (vary) or 1 (hold)"
-				endif
-			endif
-		endfor
-		gen.GEN_holdBits = bin2dec(GEN_reverseString(holdstring))
-	
-		//Setdatafolder to Genetic Optimisation
-		setdatafolder root:packages:motofit:old_genoptimise
-	
-		//setup wave references.
-		Wave gen.GEN_yy=GEN_yy,gen.GEN_parwave=GEN_parwave,gen.GEN_ee=GEN_ee,gen.GEN_xx=GEN_xx,GEN_mask
-		gen.GEN_parwavename=nameofwave(parwave)
-		gen.GEN_ywavename=nameofwave(ywave)
-
-		variable nit
-		//search for any cursors, masked points, then NaN's to remove non-relevant points from wave
-		if(ParamisDefault(cursors)==0)	//the user wants to use cursors
-			if (WaveExists(CsrWaveRef(A)) %& WaveExists(CsrWaveRef(B)))
-				if (CmpStr(CsrWave(A),CsrWave(B)) != 0)
-					abort "The cursors are not on the same wave. Please move them so that they are."
-				endif
-			else
-				abort "The cursors must be placed on the top graph.  Select Show Info from the Graph menu for access to the cursors."
-			endif
-			if(cmpstr(CsrWave(A,"",1),nameofwave(ywave)) || cmpstr(CsrWave(B,"",1),nameofwave(ywave)))
-				Doalert 1,"One of the cursors is not on the dataset you selected, continue?"
-				if(V_flag==2)
-					ABORT
-				endif
-			endif
-			Variable start=pcsr(A),finish=pcsr(B),temp
-			if(start>finish)
-				temp=finish
-				finish=start
-				start=temp
-			endif
-			//create temporary copies of the data
-			//this is because you're deleting points from the users wave
-			//so remember to replace the points when you've finished doing the fit
-			if(ParamisDefault(mask) == 0)
-				Deletepoints (finish+1),(numpnts(gen.GEN_yy)-finish-1),gen.GEN_yy,gen.GEN_xx,gen.GEN_ee,GEN_mask
-				Deletepoints 0,start, gen.GEN_yy,gen.GEN_xx,gen.GEN_ee,GEN_mask
-			else
-				Deletepoints (finish+1),(numpnts(gen.GEN_yy)-finish-1),gen.GEN_yy,gen.GEN_xx,gen.GEN_ee
-				Deletepoints 0,start, gen.GEN_yy,gen.GEN_xx,gen.GEN_ee
-			endif
-		endif	
-		
-		if(ParamIsDefault(mask)==0)	
-			for(ii=0;ii<numpnts(gen.GEN_yy);ii+=1)
-				if(GEN_mask[ii]==0 || numtype(GEN_mask[ii])==2)
-					deletepoints ii,1,gen.GEN_yy,gen.GEN_ee,gen.GEN_xx,GEN_mask	
-					ii-=1
-				endif
-			endfor
-		endif
-	
-		for(ii=0;ii<numpnts(gen.GEN_yy);ii+=1)
-			if(numtype(gen.GEN_yy[ii])!=0 || numtype(gen.GEN_xx[ii])!=0 || numtype(gen.GEN_ee[ii])!=0)
-				deletepoints ii,1,gen.GEN_yy,gen.GEN_ee,gen.GEN_xx	
-				ii-=1
-			endif
-		endfor	
-		if(dimsize(GEN_yy,0)==0)
-			setdatafolder $gen.GEN_callfolder
-			abort "there were no valid points in the dataset (after removing NaN and mask/cursor points)"
-		endif
-	
-		//put the name of the function name in a global string
-		String/g root:packages:motofit:old_genoptimise:fitfunctionname = 	func
-		String/g root:packages:motofit:old_genoptimise:callfolder = gen.GEN_callfolder
-		Variable/g root:packages:motofit:old_genoptimise:GEN_holdbits = gen.GEN_holdbits
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//do all the fitting
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//initialise the model	
-		//get the intial setup, e.g. numgenerations, mutation constant, etc.
-		if(ParamisDefault(popsize) || ParamisDefault(k_m) || ParamisDefault(recomb) || ParamisDefault(iters) || ParamisDefault(tol))
-			GEN_searchparams(gen)
-		else
-			gen.GEN_generations = iters
-			gen.GEN_popsize = popsize
-			gen.k_m = k_m
-			gen.GEN_recombination = recomb
-			gen.GEN_V_fittol = tol
-		endif
-	
-		//this sets up the waves for the genetic optimisation
-		GEN_Initialise_Model(gen)
-	
-		Wave gen_b,gen.GEN_b = gen_b
-	
-		//make the limits wave
-		//GEN_setlimitwave makes a limit wave if required
-		//GEN_checkinitiallimits makes sure that the initial guess is between the limits
-		variable ok
-		if(Paramisdefault(c))
-			do
-				try	//the user may want to abort the fit at this stage and we need to return to the right DF
-					GEN_setlimitwave(GEN_parnumber, gen.GEN_b)
-					Wave GEN_limits,gen.GEN_limits=GEN_limits
-					ok = GEN_checkinitiallimits(GEN_limits, gen.GEN_b)
-				catch
-					setdatafolder $gen.GEN_callfolder
-					V_fiterror = 1
-					ABORT
-				endtry
-			while(ok==1)
-		elseif(Paramisdefault(c)==0)
-			//make a limitswave, this may be overwritten in the calling function.		
-			if(dimsize(c,1)!=2)
-				setdatafolder $gen.GEN_callfolder
-				abort "user supplied limit wave should be 2 column"
-			endif
-			if(dimsize(c,0) != dimsize(parwave,0))
-				setdatafolder $gen.GEN_callfolder
-				abort "user supplied limit wave should be the same length as the parameter wave"		
-			endif
-
-			duplicate/o c, root:packages:motofit:old_genoptimise:GEN_limits
-			Wave GEN_limits,gen.GEN_limits=GEN_limits
-			variable jj=0
-			for(ii=0 ; ii<strlen(gen.GEN_holdstring) ; ii+=1)
-				if(GEN_isbitset(gen.GEN_holdbits,ii))
-					deletepoints ii-jj,1,root:packages:motofit:old_genoptimise:GEN_limits
-					jj+=1
-				endif
-			endfor
-		
-			ok=GEN_checkinitiallimits(GEN_limits,GEN_b)
-
-			if(ok==1)
-				do
-					try	//the user may want to abort the fit at this stage and we need to return to the right DF
-						GEN_setlimitwave(GEN_parnumber,GEN_b)
-					catch
-						setdatafolder $gen.GEN_callfolder
-						V_fiterror = 1
-						ABORT
-					endtry
-					ok = GEN_checkinitiallimits(GEN_limits,GEN_b)
-				while(ok==1)
-			endif
-		endif
-	
-		//make a whole set of guesses based on the parameter limits just created
-		GEN_set_GENpopvector(GEN_b,GEN_limits)
-	
-		//setup the trial vector
-		make/o/d/n=(dimsize(GEN_b,0)) GEN_trial
-	
-		Wave GEN_populationvector,gen.GEN_populationvector=GEN_populationvector 
-	
-		//initialise the Chi2array
-		//enum is a wave that is used to evaluate Chi2, i.e. Rcalc
-		duplicate/o GEN_xx,enum
-		GEN_chi2array(gen)
-	
-		Wave GEN_chi2matrix,gen.GEN_chi2matrix=GEN_chi2Matrix
-		Wave gen_b,gen.GEN_b=gen_b
-		Wave gen.GEN_trial=gen_trial
-
-		// make a table to illustrate the evolution
-		duplicate/o GEN_populationvector,GEN_colourtable
-		duplicate/o GEN_xx,GEN_yybestfit
-		Wave gen.GEN_yybestfit=GEN_yybestfit
-		GEN_evaluate(gen.GEN_yybestfit,GEN_b,gen)
-	
-		if(strlen(Winlist("evolve",";",""))==0)
-			NewImage/k=1/n=evolve  root:packages:motofit:old_genoptimise:GEN_colourtable
-			Modifygraph/w=evolve width=400,height=400
-			ModifyImage GEN_colourtable ctab= {0,256,Rainbow,0}
-			ModifyGraph/w=evolve mirror(left)=1,mirror(top)=0,minor(top)=0,axisEnab(left)={0.52,1};DelayUpdate
-			Label left "pvector";DelayUpdate
-			Label top "parameter"
-			AppendToGraph/w=evolve /L=ydata/B=xdata root:packages:motofit:old_genoptimise:GEN_yybestfit vs root:packages:motofit:old_genoptimise:GEN_xx
-			AppendToGraph/w=evolve /L=ydata/B=xdata root:packages:motofit:old_genoptimise:GEN_yy vs root:packages:motofit:old_genoptimise:GEN_xx
-			ModifyGraph/w=evolve axisEnab(ydata)={0,0.48},freePos(ydata)={0,xdata};DelayUpdate
-			ModifyGraph/w=evolve freePos(xdata)={0,ydata}
-			ModifyGraph/w=evolve axisEnab(xdata)={0.05,1}
-			ModifyGraph/w=evolve mode(GEN_yy)=3,marker(GEN_yy)=19,msize(GEN_yy)=1
-			ModifyGraph/w=evolve rgb(GEN_yybestfit)=(0,0,0)
-		endif
-	
-		Doupdate
-	
-		try				//the user may try to abort the fit, especially if it takes a long time	
-			//do the first fill with the lowest chi2 value
-			variable exchange1,exchange2
-			//replace the bvector by the best perfoming from population vector
-			//GEN_sort finds the lowest Chi2 value
-			//GEN_Chi2matrix contains an array of all the Chi2 values for each pvector 
-			//exchange1 is the position of the lowest chi2  value
-			exchange1=GEN_sort(GEN_Chi2matrix)
-			exchange2=0
-			gen.GEN_chi2best=GEN_chi2matrix[exchange1]
-			GEN_Chi2matrix[0]=GEN_Chi2matrix[exchange1]
-		
-			//GEN_replacepvector sets GEN_pvector from the populationvector
-			//it also replaces num in the population vector
-			GEN_replacepvector(GEN_populationvector,exchange1,exchange2)
-			//GEN_replacebvector replaces the best fitvector so far with a subvector, in this case GEN_pvector
-			//which has been updated with the previous command
-			GEN_replacebvector(gen,gen.GEN_pvector)		
-			gen.GEN_currentpvector=0
-		
-			//make a wave to follow the trend in Chi2
-			make/o/d/n=1 GEN_chi2trend
-			GEN_Chi2trend[0]=gen.GEN_chi2best
-		
-			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			//now enter the fitting loops to improve it
-			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			GEN_optimiseloop(gen)
-			//we now have the bestvector, but have to load it into GEN_parwave
-			GEN_insertVaryingParams(gen.GEN_parwave,gen.GEN_b,gen.GEN_holdbits)
-
-			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			//make fit waves for the data and coefficients
-			GEN_returnresults(gen)
-		catch		//if the user aborts during the fit then send back the best position so far
-			GEN_returnresults(gen)
-			setdatafolder $gen.GEN_callfolder
-			V_fiterror = 1
-		endtry
-	catch
-		setdatafolder $gen.GEN_callfolder
-		V_fiterror = 1
-	endtry
-End
 
 Static Function GEN_searchparams(gen)
 	Struct GEN_optimisation &gen
@@ -2069,83 +1659,7 @@ Static Function GEN_searchparams(gen)
 	gen.GEN_V_fittol=GEN_V_fittol
 End
 
-Static Function GEN_optimiseloop(gen)
-	//this does all the looping of the optimisation
-	Struct GEN_optimisation &gen
-	Wave gen.GEN_populationvector,gen.GEN_Chi2matrix
-	Wave GEN_Chi2trend
-	
-	string tagtext
-	variable ii,jj,kk,tagchi2,nit
-	
-	if(!gen.GEN_quiet)
-		print "_________________________________\rStarting Genetic Optimisation"
-		print "Initial Chi2: "+num2str(gen.GEN_Chi2best)
-	endif
-	
-	Dowindow/F evolve
-	
-	nit=dimsize(gen.GEN_populationvector,1)
-	
-	for(kk=0;kk<gen.GEN_generations;kk+=1)			//loop over the generations
-		tagtext="Generation: "+num2istr(kk) + " Chi2: "+ num2str(gen.GEN_Chi2best)
-		Tag/c/n=text0/f=0/x=20/y=-100/l=0 GEN_colourtable, 0, tagtext
 
-		for(ii=0;ii<nit;ii+=1)
-			gen.GEN_currentpvector=ii
-
-			//now set up the trial vector using a wave from the populationvector and bprime
-			//first set the pvector 
-			GEN_trialvector(gen)
-
-			//make sure that the trial vector has values within the limits
-			GEN_ensureconstraints(gen)
-
-			//calculate Chi2 of trial vector and pvector[][gen.GEN_currentpvector]
-			//but first have to make pvector equal to trial vector
-			variable chi2pvector=gen.GEN_Chi2matrix[ii]
-			
-			gen.GEN_pvector=gen.GEN_trial
-			variable chi2trial=GEN_chi2(gen)
-
-			if(chi2trial<chi2pvector)				//if the trial vector is better than pvector then replace it.
-				gen.GEN_populationvector[][gen.GEN_currentpvector]=gen.GEN_trial[p]
-				gen.GEN_Chi2matrix[ii]=chi2trial
-						
-				GEN_chromosome(ii)
-						
-				if(chi2trial<gen.GEN_Chi2best)		//if this trial vector is better than the current best then replace it
-					GEN_replacebvector(gen,gen.GEN_trial)
-					gen.GEN_populationvector[][0]=gen.GEN_b[p]
-					gen.GEN_Chi2matrix[0]=chi2trial
-							
-					//update the groovy convergence image
-					GEN_chromosome(0)
-					GEN_evaluate(gen.GEN_yybestfit,GEN_b,gen)
-					
-					//add the value to the Chi2 trend
-					redimension/n=(numpnts(Gen_Chi2trend)+1) GEN_chi2trend
-					GEN_chi2trend[numpnts(GEN_chi2trend)-1] = chi2trial
-										
-					if((abs(chi2trial-gen.GEN_chi2best)/gen.GEN_chi2best)<gen.GEN_V_fittol)	//if the fractional decrease is less and 0.5% stop.
-						gen.GEN_Chi2best=chi2trial
-						if(!gen.GEN_quiet)
-							print "tolerance reached"
-						endif
-						return 1
-					endif
-					gen.GEN_Chi2best=chi2trial
-				endif
-			endif
-		endfor
-		//update the convergence image
-
-		doupdate
-		Dowindow/F evolve
-	endfor
-	
-	//after all this looping the best vector should be gen.GEN_b
-End
 
 Static Function GEN_sort(GEN_chi2matrix)
 	Wave GEN_chi2matrix
@@ -2153,249 +1667,6 @@ Static Function GEN_sort(GEN_chi2matrix)
 	Wavestats/q/z/M=1 GEN_chi2matrix
 	findvalue /V=(V_min) GEN_chi2matrix
 	return V_Value
-End
-
-Static Function GEN_replacepvector(GEN_populationvector,num1,num2)
-	//GEN_replacepvector sets GEN_pvector from the populationvector
-	//it also replaces num in the population vector
-	Wave GEN_populationvector
-	Variable num1,num2
-	Wave GEN_pvector
-	Wave GEN_Chi2matrix
-	
-	GEN_pvector[]=GEN_populationvector[p][num1]
-	ImageTransform/G=(num2)/D=GEN_pvector putCol GEN_populationvector // AG
-End
-
-Static Function GEN_replacebvector(gen,ww)
-	Struct GEN_optimisation &gen
-	Wave ww
-	Wave gen.GEN_b
-	gen.GEN_b=ww
-End
-
-Static Function GEN_trialvector(gen)
-	//this function creates a trial vector from bprime and the current pvector
-	//it fills from a random position along the trial length (start), then continues filling
-	//from the start.  It always fills the last position from the bprime vector, to maintain
-	//diversity.
-	Struct GEN_optimisation &gen
-	Wave gen.GEN_bprime
-	Wave gen.GEN_populationvector
-	Wave gen.GEN_trial
-	
-	variable size=dimsize(gen.GEN_populationvector,0) , popsize = dimsize(gen.GEN_populationvector,1)
-	variable random_a,random_b
-	variable recomb=gen.gen_recombination
-	variable k_m = gen.k_m
-	variable fillpos = abs(round(abs(enoise(size))-0.500000000001)),ii
-	
-	do
-		random_a=round(abs(enoise(popsize-0.50000001)))
-	while(random_a == gen.GEN_currentpvector)
-	
-	do
-		random_b=round(abs(enoise(popsize-0.50000001)))
-	while (random_a == random_b  || random_b == gen.GEN_currentpvector)	
-                
-	gen.GEN_bprime[ii] = gen.GEN_populationvector[p][0] + k_m*(gen.GEN_populationvector[p][random_a] - gen.GEN_populationvector[p][random_b]);
-	gen.GEN_trial[ii] = gen.GEN_populationvector[p][gen.GEN_currentpvector]
-                
-	variable counter = 0
-	do
-		if ((abs(enoise(1)) < recomb) || (counter == size -1))
-			gen.GEN_trial[fillpos] = gen.GEN_bprime[fillpos]
-		endif
-		fillpos+=1
-		fillpos = mod(fillpos,size)
-		counter +=1
-	while(counter < size)
-End
-
-Static Function GEN_ensureconstraints(gen)
-	//this function makes sure that the evolving numbers stay within the set limits.
-	Struct GEN_optimisation &gen
-	Wave gen.GEN_trial
-	Wave gen.GEN_limits
-	variable ii=0
-	variable size=Dimsize(gen.GEN_trial,0)
-	variable lowerbound,upperbound
-	for(ii=0;ii<size;ii+=1)
-		lowerbound=gen.GEN_limits[ii][0]
-		upperbound=gen.GEN_limits[ii][1]
-		if(gen.GEN_trial[ii]<lowerbound || gen.GEN_trial[ii]>upperbound)	//are we in the limits?
-			gen.GEN_trial[ii]=(lowerbound+upperbound)/2+enoise(1)*(upperbound-lowerbound)/2		//this should ensure that the parameter is in limits!!!
-		endif
-	endfor
-End
-
-
-Static Function GEN_setlimitwave(GEN_parnumber,GEN_b)
-	//this function allows the user to set limits for the optimisation
-	Wave GEN_parnumber,GEN_b
-
-	//want to add in a bit to make sure that we don't necessarily have to set up the limit wave
-	// each time we do the fit
-	variable alreadyexists=0
-	Wave/z GEN_limits
-	//if it already exists and it's the same size as the parameter wave, then you could be fitting the same dataset
-	if(Waveexists(GEN_limits) && dimsize(GEN_limits,0)==numpnts(GEN_b)) 
-		Doalert 2,"Motofit has detected that you may have tried to fit a similar dataset, use previous limits?"
-		switch(V_flag)
-			case 1:
-				alreadyexists=1
-				break
-			case 2:
-				alreadyexists=0
-				break
-			case 3:
-				ABORT
-				break
-		endswitch
-	endif
-	
-	//if it doesn't already exist, or you don't want to use the limits again	
-	if(alreadyexists==0)
-		duplicate/o GEN_b, GEN_limits
-		redimension/n=(-1,2) GEN_limits		//one column for the lower limit and one column for the upper limit
-		//in all probability the best values for the lower limits are 0, as a guess set the upper limits to twice the parameter value
-		variable ii
-		for(ii=0;ii<numpnts(GEN_b);ii+=1)
-			if(GEN_b[ii]>0)
-				GEN_limits[ii][1]=2*GEN_b[ii]
-				GEN_limits[ii][0]=0
-			else
-				GEN_limits[ii][0]=2*GEN_b[ii]
-				GEN_limits[ii][1]=0
-			endif
-		endfor
-	endif	
-	
-	//you still get a chance to edit them
-	edit/k=1/n=boundarywave GEN_parnumber,GEN_b,GEN_limits as "set limits for genetic optimisation"
-	
-	Modifytable title[1] = "parameter number"
-	Modifytable title[2] = "initial guess"
-	Modifytable title[3] = "lower limit"
-	Modifytable title[4] = "upper limit"
-	
-	GEN_UsereditAdjust("boundarywave")
-	
-	Dowindow/K boundarywave
-End
-
-Static Function GEN_checkinitiallimits(GEN_limits,GEN_b)
-	Wave GEN_limits,GEN_b
-	Wave GEN_parnumber = root:packages:motofit:old_genoptimise:GEN_parnumber 
-	variable ii,lowlimit,upperlimit,parameter,ok
-	
-	string warning=""
-	for(ii=0;ii<numpnts(GEN_b);ii+=1)
-		lowlimit=GEN_limits[ii][0]
-		upperlimit=GEN_limits[ii][1]
-		parameter=GEN_b[ii]
-		if(lowlimit>upperlimit)
-			warning = "lower limit " + num2istr(GEN_parnumber[ii]) + " is bigger than your upperlimit" 
-			doalert 0, warning
-			ok=1
-			break
-//		elseif(parameter<lowlimit || parameter > upperlimit)
-//			warning = "parameter: " + num2istr(GEN_parnumber[ii]) + " is outside one of the limits"
-//			doalert 0, warning
-//			ok=1
-//			break
-		else
-			ok=0
-		endif
-	endfor
-	return ok
-End
-
-Static Function GEN_Initialise_Model(gen)
-	//this function sets up the geneticoptimisation
-	Struct GEN_optimisation &gen
-
-	//the total size of the population, should be an integer number (~10?)
-	variable GEN_popsize=gen.GEN_popsize		
-
-	//subset of parameters to be fitted, it's the bestfit vector
-	make/o/d/n=(gen.GEN_numvarparams) GEN_b
-	Wave gen.GEN_b=GEN_b
-
-	//makee a list of the parameter numbers you are changing
-	make/o/d/n=(gen.GEN_numvarparams) GEN_parnumber
-	Wave gen.GEN_parnumber=GEN_parnumber
-	
-	//ii is a loop counter, jj will be for how many parameters will vary
-	Variable ii=0,jj=0			
-
-	//and make a wave with the vectors, this wave is the best fit vector
-	GEN_extractVaryingParams(gen.GEN_parwave,gen.GEN_b, gen.GEN_holdbits)
-	
-	for(ii=0 ; ii < numpnts(gen.GEN_parwave) ; ii+=1)
-		if(GEN_isbitset(gen.GEN_holdbits,ii)==0)	//we want to fit that parameter
-			GEN_parnumber[jj]=ii
-			jj+=1
-		endif
-	endfor
-	
-	//now make the total population vector
-	make/o/d/n=(gen.GEN_numvarparams,GEN_popsize*gen.GEN_numvarparams) GEN_populationvector
-	Wave gen.GEN_populationvector=GEN_populationvector
-	//make the difference vector, trial vector and two random vectors
-	make/o/d/n=(gen.GEN_numvarparams) GEN_bprime
-	Wave gen.GEN_bprime=GEN_bprime,gen.GEN_trial=GEN_trial
-	
-	//make a pvector
-	make/o/d/n=(dimsize(GEN_populationvector,0)) GEN_pvector
-	Wave gen.GEN_pvector=GEN_pvector	
-End
-
-
-Static Function GEN_set_GENpopvector(GEN_b,GEN_limits)
-	//GEN_b is the best guess, GEN_limits[][0 or 1] are the lower/upper limits for the fit
-	//GEN_b should already lie in between the limits!!!!!!!!!!!!!!!!
-	Wave GEN_b,GEN_limits
-	Wave GEN_populationvector
-	//initialise loop counters
-	Variable ii=0,jj=0,kk=0,nit,nit1
-
-	//random will be a random number.  Lowerbound and upperbound are the limits on the parameters
-	Variable random,lowerbound,upperbound
-	//initialise GEN_populationvector, within the limits set by GEN_limits
-	//first column is the initial parameters
-	GEN_populationvector[][0]=GEN_b[p]
-	
-	//the rest should be created by random numbers.
-	//go through each column one by one
-	nit=Dimsize(GEN_populationvector,1)
-	nit1=Dimsize(GEN_populationvector,0)
-	for(ii=0;ii<nit1;ii+=1)
-		lowerbound=GEN_limits[ii][0]
-		upperbound=GEN_limits[ii][1]
-		for(kk=1;kk<nit;kk+=1)
-			//generate a random variable for that parameter
-			random=(lowerbound+upperbound)/2+abs(lowerbound-upperbound)*enoise(0.5)
-			GEN_populationvector[ii][kk]=random
-		endfor
-	endfor
-End
-
-Static Function GEN_chi2array(gen)
-	//this function calculates the Chi_2 matrix for the population vector at the start of the optimisation	
-	Struct GEN_optimisation &gen
-	
-	Wave gen.GEN_pvector
-	Wave gen.GEN_populationvector
-
-	make/o/d/n=(dimsize(GEN_populationvector,1)) GEN_chi2matrix
-	Wave gen.GEN_chi2matrix=GEN_chi2matrix	
-	variable ii=0,np=numpnts(GEN_chi2matrix)
-	
-	for(ii=0;ii<np;ii+=1)
-		gen.GEN_pvector[]=gen.GEN_populationvector[p][ii]
-		GEN_chi2matrix[ii]=GEN_chi2(gen)
-	endfor
 End
 
 Static Function GEN_evaluate(evalwave,partialparamwave,gen)
@@ -2475,87 +1746,6 @@ Function GEN_extractVaryingParams(baseCoef,varyCoef, holdbits)
 	endfor
 End
 
-Static Function GEN_UsereditAdjust(tableName)
-	String tablename
-
-	DoWindow/F $tableName		// Bring table to front
-	if (V_Flag == 0)		// Verify that table exists
-		Abort "where did the table go?"
-		return -1
-	endif
-
-	NewPanel/K=2 /W=(139,341,382,432) as "Pause for user editing"
-	DoWindow/C tmp_Pauseforedit		// Set to an unlikely name
-	DrawText 21,20,"Edit the values in the table."
-	Drawtext 21,40,"Once you press go then"
-	Drawtext 21,60,"genetic optimisation will start."
-	
-	Button button0,pos={5,64},size={92,20},title="Continue"
-	Button button0,proc=GEN_optimise#GEN_UsereditAdjust_Cont
-	Button button1,pos={110,64},size={92,20},title="cancel",proc=GEN_optimise#GEN_UserEditAdjust_cancel
-	//this line allows the user to adjust the cursors until they are happy with the right level.
-	//you then press continue to allow the rest of the reduction to occur.
-	PauseForUser tmp_Pauseforedit,$tablename
-
-	return 0
-End
-
-static Function GEN_UserEditAdjust_Cont(ctrlName) : ButtonControl
-	String ctrlName
-	DoWindow/K tmp_Pauseforedit		// Kill self
-End
-
-Static Function GEN_UserEditAdjust_cancel(ctrlName) :Buttoncontrol 
-	String ctrlName
-	DoWindow/K tmp_Pauseforedit		// Kill self
-	Dowindow/K boundarywave
-	Svar callfolder = root:packages:motofit:old_genoptimise:callfolder
-	Setdatafolder $callfolder 
-	ABORT
-End
-
-Static Function GEN_returnresults(gen)
-	Struct GEN_optimisation &gen
-	//make fit waves for the data and coefficients
-	variable ii=0,jj=0,use
-	
-	Wave GEN_parwave=gen.GEN_parwave
-	Wave gen.GEN_yy = gen.GEN_yy
-	Wave GEN_b = gen.GEN_b
-	
-	duplicate/o gen.GEN_xx GEN_fitx,GEN_fit
-	GEN_evaluate(GEN_fit,GEN_b,gen)
-		
-	duplicate/o gen.GEN_parwave GEN_coefs
-	//now rename the waves to what they should be called
-	string ywave=gen.GEN_ywavename
-	string xwave=cleanupname("fitx_"+ywave,0)
-	ywave=cleanupname("fit_"+ywave,0)
-	
-	string writename=gen.GEN_callfolder+xwave
-	duplicate/o GEN_fitx, $writename
-	writename=gen.GEN_callfolder+ywave
-	duplicate/o GEN_fit, $writename
-	writename=gen.GEN_parwaveDF
-	duplicate/o GEN_coefs, $writename
-	//now return to the original datafolder
-	Setdatafolder $gen.GEN_callfolder
-	variable/g V_Chisq=gen.GEN_chi2best
-	if(!gen.GEN_quiet)
-		print "The refined Chi2 value was "+num2str(V_Chisq)+"\r_________________________________"
-	endif
-	killwaves/Z GEN_fit,GEN_fitx,GEN_coefs
-	//add to Moto_returnresults
-	Setdatafolder $gen.GEN_callfolder
-	
-End
-
-Static Function GEN_chromosome(n)
-	//this function makes groovy colours so that you can see when your fits are converging.
-	variable n
-	Wave GEN_populationvector,GEN_limits,GEN_colourtable
-	GEN_colourtable[][n]=256*abs(GEN_populationvector[p][n]-GEN_limits[p][0])/abs(GEN_limits[p][1]-GEN_limits[p][0])		
-End
 
 Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 	Wave coefs
@@ -2613,16 +1803,16 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 	//limits for those being varied
 	Wave/z limitsForThoseBeingVaried = root:packages:motofit:old_genoptimise:limitsForThoseBeingVaried
 	if(!waveexists(limitsForThoseBeingVaried))
-		make/o/n=(0, 2) limitsForThoseBeingVaried = 0
+		make/o/n=(0, 2) limitsForThoseBeingVaried = 0 
 	endif
 	
 	if(paramisdefault(limits))
 		Wave/z limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
 		if(!waveexists(limits) || dimsize(limits, 0) != dimsize(coefs, 0))
-			make/o/n=(dimsize(coefs, 0), 2) root:packages:motofit:old_genoptimise:GENcurvefitlimits = 0
+			make/o/n=(dimsize(coefs, 0), 2)/d root:packages:motofit:old_genoptimise:GENcurvefitlimits = 0
 			Wave/z limits =root:packages:motofit:old_genoptimise:GENcurvefitlimits
-//				limits[][0] = coefs[thosebeingvaried[p]] < 0 ? 2* coefs[thosebeingvaried[p]] : 0
-//				limits[][1] = coefs[thosebeingvaried[p]] > 0 ? 2* coefs[thosebeingvaried[p]] : 0		
+			//				limits[][0] = coefs[thosebeingvaried[p]] < 0 ? 2* coefs[thosebeingvaried[p]] : 0
+			//				limits[][1] = coefs[thosebeingvaried[p]] > 0 ? 2* coefs[thosebeingvaried[p]] : 0		
 		endif
 		
 		//thosebeingvaried may be the same as previous
@@ -2706,15 +1896,15 @@ Function GCF_dialogProc(ba) : ButtonControl
 				case "button0":
 					dowindow/k $ba.win
 					GCF_continue = 1
-				break
+					break
 				case "button1":
 					listwave[][2] = selectstring(str2num(listwave[p][1]) > 0, num2str(2 * str2num(listwave[p][1])), "0")
 					listwave[][3] = selectstring(str2num(listwave[p][1]) < 0, num2str(2 * str2num(listwave[p][1])), "0")
-				break
+					break
 				case "button2":  //Cancel
 					dowindow/k $ba.win
 					GCF_continue = 0
-				break
+					break
 			endswitch
 			break
 	endswitch
@@ -2722,76 +1912,7 @@ Function GCF_dialogProc(ba) : ButtonControl
 	return 0
 End
 
-Function GEN_setlimitwaveGENcurvefit(coefs,holdstring,numvarparam) 
-	//this function allows the user to set limits for the optimisation
-	Wave coefs
-	string holdstring
-	variable numvarparam
-	variable ii,jj=0
-         
-	Wave/z GENcurvefitlimits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
-	Wave/z GENcurvefitdummylimits = root:packages:motofit:old_genoptimise:GENcurvefitdummylimits
-	Wave/z GENcurvefitdummycoefs = root:packages:motofit:old_genoptimise:GENcurvefitdummycoefs
-    
-	//want to add in a bit to make sure that we don't necessarily have to set up the limit wave
-	// each time we do the fit
-	variable alreadyexists=0
-	//if it already exists and it's the same size as the parameter wave, then you could be fitting the same dataset 
-	if(Waveexists(GENcurvefitdummycoefs) && Waveexists(GENcurvefitdummylimits) && numvarparam == numpnts(GENcurvefitdummycoefs)) 
-		Doalert 2,"Motofit has detected that you may have tried to fit a similar dataset, use previous limits?"
-		switch(V_flag) 
-			case 1:
-				alreadyexists=1
-				break
-			case 2:
-				alreadyexists=0				
-				break
-			case 3:
-				ABORT
-				break 
-		endswitch
-	endif
-	
-	make/o/d/n=(numvarparam,1) root:packages:motofit:old_genoptimise:GENcurvefitdummycoefs, root:packages:motofit:old_genoptimise:Gen_parnumber
-	make/o/d/n=(numvarparam,2) root:packages:motofit:old_genoptimise:GENcurvefitdummylimits 
-			      
-	Wave/z GENcurvefitdummylimits= root:packages:motofit:old_genoptimise:GENcurvefitdummylimits 
-	Wave/z GENcurvefitdummycoefs= root:packages:motofit:old_genoptimise:GENcurvefitdummycoefs
-	Wave/z Gen_parnumber= root:packages:motofit:old_genoptimise:Gen_parnumber
-	jj=0
-	for(ii=0;ii<numpnts(coefs);ii+=1)
-		if(cmpstr(holdstring[ii],"0")==0)
-			Gen_parnumber[jj] = ii 
-			GENcurvefitdummycoefs[jj] = coefs[ii]
-			if(!alreadyexists)
-				if(coefs[ii]>0)
-					GENcurvefitdummylimits[jj][1]=2*coefs[ii] 
-					GENcurvefitdummylimits[jj][0]=0
-				else
-					GENcurvefitdummylimits[jj][0]=2*coefs[ii]
-					GENcurvefitdummylimits[jj][1]=0
-				endif
-			endif
-			jj+=1
-		endif
-	endfor
 
-
-	Wave/z GENcurvefitdummylimits= root:packages:motofit:old_genoptimise:GENcurvefitdummylimits 
-	Wave/z GENcurvefitdummycoefs= root:packages:motofit:old_genoptimise:GENcurvefitdummycoefs
-	Wave/z Gen_parnumber= root:packages:motofit:old_genoptimise:Gen_parnumber
-  
-	//you still get a chance to edit them
-	edit/k=1/n=boundarywave GEN_parnumber,GENcurvefitdummycoefs,GENcurvefitdummylimits as "set limits for genetic optimisation" 
-	Modifytable title[1] = "parameter number"
-	Modifytable title[2] = "initial guess"
-	Modifytable title[3] = "lower limit"
-	Modifytable title[4] = "upper limit" 
-    
-	GEN_UsereditAdjust("boundarywave")
-    
-	Dowindow/K boundarywave
-End
 
 Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB])
 	String fn
@@ -2846,7 +1967,7 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB])
 			else
 				y_montecarlo[] = yy[p] + gnoise(ee[p], 2)
 			endif	
-//			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+			//			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			Gencurvefit/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			M_montecarlo[ii][] = w[q]
 			W_chisq[ii] = V_chisq
@@ -2889,7 +2010,43 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB])
 	catch
 		err = 1	
 	endtry
+	
+	//make a 2D scatter plot of all the parameters.
+	make2DScatter_plot_matrix(M_monteCarlo, holdstring)
+	
 	killwaves/z M_wavestats, goes, means, stdevs, fit_y_montecarlo
+	
 	setdatafolder $cDF
 	return err
+End
+
+Function make2DScatter_plot_matrix(M_monteCarlo, holdstring)
+	Wave M_montecarlo
+	string holdstring
+
+	variable ii, jj
+	string cDF = getdatafolder(1)
+	string allWaves = ""
+
+	newdatafolder/o root:packages
+	newdatafolder/o root:packages:Motofit
+	newdatafolder/o root:packages:Motofit:gencurvefit
+
+	setdatafolder root:packages:Motofit:gencurvefit
+
+	try
+		for(ii = 0 ; ii < dimsize(M_montecarlo, 1) ; ii += 1)
+			if(stringmatch(holdstring[ii], "0"))
+				make/n=(dimsize(M_montecarlo, 0))/o/y=(wavetype(M_montecarlo)) $("MonteCarlo_" + num2istr(ii))
+				Wave M_montecarloIt = $("MonteCarlo_" + num2istr(ii))
+				M_montecarloIt[] = M_montecarlo[p][ii]
+				allWaves += "root:packages:Motofit:gencurvefit:MonteCarlo_" + num2istr(ii) + ";"
+			endif
+		endfor
+		SPM_FreeAxisPlotMatrix(allWaves, 21, 2, 1, MarkerSize=1)
+	catch
+		abort
+	endtry
+
+	setdatafolder $cDF
 End
