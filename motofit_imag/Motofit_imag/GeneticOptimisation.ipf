@@ -2007,12 +2007,11 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB])
 				M_correlation[jj][ii] = M_correlation[ii][jj]
 			endfor
 		endfor
+		//make a 2D scatter plot of all the parameters.
+		make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 	catch
 		err = 1	
 	endtry
-	
-	//make a 2D scatter plot of all the parameters.
-	make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 	
 	killwaves/z M_wavestats, goes, means, stdevs, fit_y_montecarlo
 	
