@@ -66,7 +66,10 @@
 //	Wave/t batchfile = root:packages:platypus:data:batchScan:list_batchbuffer
 	
 Menu "Platypus"
-	"FIZZY - Platypus Operation",platypus#startSICS()
+	Submenu "FIZZY"
+	"Platypus Operation",platypus#startSICS()
+	"setup new experiment", experimentDetailsWizard()
+	End
 End
 
 Function Setupdatafolders()

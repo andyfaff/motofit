@@ -28,8 +28,7 @@
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
 	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
-	Constant ChopperN_delay = 3.863		// a time delay between the first chopper pulse and chopper N
-	StrConstant SMSnotifyNumber = "" //an SMS is sent to this number if the chopper phase goes wrong
+	Constant ChopperN_delay = 3.864		// a time delay between the first chopper pulse and chopper N
 	
 	//these motors are removed from the list displayed in the instrument panel.
 	Strconstant ForbiddenMotors ="bat;two_theta"
@@ -278,6 +277,9 @@ Function setExperimentalMode(mode)
 		case "POL":
 			cmd +="POL"
 			break
+		case "POLANAL":
+			cmd += "POLANAL"
+			break
 		default:
 			print "ERROR: mode "+mode+" is not allowed.  It should be one of MT,FOC,SB,DB (setExperimentalMode)"
 			err=1
@@ -474,7 +476,7 @@ Function experimentDetailsWizard()
 	string lhs="", reply, cmd
 
 	//sockitsendnrecv/smal/time=1 SOCK_interest, "\n"
-	sockitsendnrecv/time=0.75 SOCK_interest, "hget /experiment/title\n", reply
+	sockitsendnrecv/time=0.75/smal SOCK_interest, "hget /experiment/title\n", reply
 	parsereply(reply, lhs, experimenttitle)
 	if(!stringmatch(lhs, "/experiment/title"))
 		experimenttitle=""
@@ -482,7 +484,7 @@ Function experimentDetailsWizard()
 	//print lhs, reply,experimenttitle
 	prompt experimenttitle, "Experiment title:"
 
-	sockitsendnrecv/time=.75 SOCK_interest, "hget /user/name\n", reply
+	sockitsendnrecv/time=.75/smal SOCK_interest, "hget /user/name\n", reply
 	parsereply(reply, lhs, username)
 	if(!stringmatch(lhs, "/user/name"))
 		username=""
@@ -490,7 +492,7 @@ Function experimentDetailsWizard()
 	//print lhs, reply, username
 	prompt username, "User Name:"
 
-	sockitsendnrecv/time=0.75 SOCK_interest, "hget /user/email\n", reply
+	sockitsendnrecv/time=0.75/smal SOCK_interest, "hget /user/email\n", reply
 	parsereply(reply, lhs, useremail)
 	if(!stringmatch(lhs, "/user/email"))
 		useremail=""
@@ -498,13 +500,13 @@ Function experimentDetailsWizard()
 	//print lhs, reply, useremail
 	prompt useremail, "User email:"
 
-	sockitsendnrecv/time=0.75 SOCK_interest, "hget /user/phone\n", reply
+	sockitsendnrecv/time=0.75/smal SOCK_interest, "hget /user/phone\n", reply
 	parsereply(reply, lhs, userphone)
 	if(!stringmatch(lhs, "/user/phone"))
 		userphone=""
 	endif
 	//print lhs, reply, userphone
-	prompt userphone, "User phone number:"
+	prompt userphone, "User phone number (mobile):"
 
 	Doprompt "Please enter the details of the experiment.", username, experimenttitle, useremail, userphone
 
@@ -562,7 +564,7 @@ Function regularTasks(s)
 			if(NVAR_exists(sentChopperSMS) && sentChopperSMS == 0)
 				//send an SMS
 				print "SENDING SMS TO SOMEONE, COZ CHOPPERS HAVE GONE WRONG"
-				easyhttp "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=r1vergod&to=" + SMSnotifyNumber + "&text=Chopper+phasing+."+Secs2Time(DateTime, 3)+gethipaval("/experiment/file_name")
+				easyhttp "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=r1vergod&to=" + getHipaVal("/user/phone") + "&text=Chopper+phasing+."+Secs2Time(DateTime, 3)+gethipaval("/experiment/file_name")
 				sentChopperSMS = 1
 				//pause the acquisition
 				print "RUN HAS BEEN PAUSED DUE TO CHOPPER PHASING, please press the unpause button"
@@ -2138,7 +2140,7 @@ Function/t createFizzyCommand(type)
 			sprintf cmd, "vslits(%g, %g, %g, %g)", s1, s2, s3, s4
 			break
 		case "setexperimentalmode":
-			prompt mode, "Which mode did you want?", popup, "MT;FOC;POL;SB;DB"
+			prompt mode, "Which mode did you want?", popup, "MT;FOC;POL;POLANAL;SB;DB"
 			doprompt "Please enter the mode", mode
 			if(V_Flag)
 				return ""
@@ -2294,3 +2296,100 @@ Function julabo_settemp(temperature)
 	err = MOXA("out_sp_00 "+num2str(temperature)+"\r", 1)
 	return err
 end
+
+
+//STUFF FOR BRUKER BEC MAGNET
+Function set_dc_power(on)
+variable on
+NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
+string cmd = ""
+on = round(on)
+if(on < 0 || on > 1)
+	return 1
+endif
+sprintf cmd, "hset /sample/ma1/pwrctrl/dc_power %d \n", on
+print cmd
+sockitsendmsg sock_interest, cmd
+return 0
+End
+
+Function/t get_dc_power()
+string power = getHipaval("/sample/ma1/pwrctrl/dc_power")
+print power
+return power
+End
+
+Function set_dc_current(current)
+variable current
+NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
+string cmd = ""
+if(current < -30 || current > 30)
+	return 1
+endif
+sprintf cmd, "hset /sample/ma1/sensor/desired_current %3.2f \n", current
+print cmd
+sockitsendmsg sock_interest, cmd
+return 0
+End
+
+Function/t get_dc_current()
+string power = getHipaval("/sample/ma1/sensor/desired_current")
+print power
+return power
+End
+
+Function/t get_nom_current()
+string power = getHipaval("/sample/ma1/sensor/nominal_outp_current")
+print power
+return power
+End
+
+Function magnet_SetVarProc(sva) : SetVariableControl
+	STRUCT WMSetVariableAction &sva
+
+	switch( sva.eventCode )
+		case 1: // mouse up
+		case 2: // Enter key
+			strswitch (sva.ctrlname)
+			case "dc_power":
+				set_dc_power(sva.dval)
+				break
+			case "desired_current":
+				set_dc_current(sva.dval)
+			break
+			endswitch
+		case 3: // Live update
+			Variable dval = sva.dval
+			String sval = sva.sval
+			break
+	endswitch
+
+	return 0
+End
+
+Function ThomasMagnetStatus() 
+	NewPanel /W=(459,540,752,696) as "MagnetStatus"
+	Wave/t  hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
+	variable hipapos
+	
+	SetVariable dc_power,pos={1,2},size={240,16},proc=magnet_SetVarProc,title="dc_power"
+	hipapos = gethipapos("/sample/ma1/pwrctrl/dc_power")
+	SetVariable dc_power,limits={0,1,1},value= root:packages:platypus:SICS:hipadaba_paths[hipapos][1]
+	
+	SetVariable nominal_current,pos={1,44},size={240,16},title="nominal current"
+	hipapos = gethipapos("/sample/ma1/sensor/nominal_outp_current")
+	SetVariable nominal_current,value= root:packages:platypus:SICS:hipadaba_paths[1206][1],noedit= 1
+	
+	SetVariable desired_current,pos={0,22},size={240,16},proc=magnet_SetVarProc,title="desired current"
+	hipapos = gethipapos("/sample/ma1/sensor/desired_current")
+	SetVariable desired_current,limits={-30,30,1},value= root:packages:platypus:SICS:hipadaba_paths[1205][1]
+End
+
+//a function to make a quick check connection to the chopper system
+function choppertestconn()
+•make/t/o buf
+•variable/g sockit
+•sockitopenconnection/q/time=2 sockit,CHOPPERserverIP,CHOPPERserverPort,buf
+•	sockitsendnrecv/SMAL/TIME=2 sockit,"user:NCS\r"
+•	sockitsendnrecv/SMAL/TIME=2 sockit,"password:NCS013\r"
+End
