@@ -1487,6 +1487,8 @@ Function Moto_fit_Genetic()
 	//make a coefficient wave related to the data
 	//y is the name of the y wave data
 	test="coef_"+dataset+"_R"
+	Duplicate/O $coefwavestr $test
+	coefwavestr = test
 		
 	//this sets the wave note of the coefficient wave to be the same as motofitcontrol
 	test=cleanupname("coef_"+dataset+"_R", 0)
