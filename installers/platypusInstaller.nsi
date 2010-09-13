@@ -2,12 +2,12 @@
 
 ; Define your application name
 !define APPNAME "motofit"
-!define APPNAMEANDVERSION      "motofit  "
+!define APPNAMEANDVERSION      "platypus  "
 
 ; Main Install settings
 Name "${APPNAMEANDVERSION}"
 InstallDir "$INSTDIR"
-OutFile "./motofitImagInstaller.exe"
+OutFile "./platypusInstaller.exe"
 
 ; Include LogicLibrary
 !include "LogicLib.nsh"
@@ -20,7 +20,7 @@ OutFile "./motofitImagInstaller.exe"
 !insertmacro MUI_PAGE_WELCOME
 
 !define MUI_DIRECTORYPAGE_VARIABLE $INSTDIR
-!define MUI_DIRECTORYPAGE_TEXT_TOP "Where would you like to install Motofit? I suggest you put it into C:\Program Files\Wavemetrics\Igor Pro Folder\User Procedures\ but it's up to you."
+!define MUI_DIRECTORYPAGE_TEXT_TOP "Where would you like to install platypus? I suggest you put it into C:\Program Files\Wavemetrics\Igor Pro Folder\User Procedures\ but it's up to you."
 !insertmacro MUI_PAGE_DIRECTORY
 
 !insertmacro MUI_PAGE_INSTFILES
@@ -31,7 +31,7 @@ OutFile "./motofitImagInstaller.exe"
 !insertmacro MUI_RESERVEFILE_LANGDLL
 
 
-Section "Motofit" Section1
+Section "platypus" Section1
 
 	; Set Section properties
 	SetOverwrite on
@@ -41,29 +41,10 @@ StrLen $0 $1
 ${If} $0 = 0
 Abort "You don't appear to have IGOR installed"
 ${EndIf}
-	
+		
+	SetOutPath "$INSTDIR\motofit\platypus"
+	File "../SLIM/*"
 
-	SetOutPath "$INSTDIR\motofit\"
-	File "../motofit_imag/Motofit_imag/*.*"
-	File "../../XOP Toolkit 5/IgorXOPs5/Abeles/trunk/win/Abeles.xop"
-	File "../../XOP Toolkit 5/IgorXOPs5/Abeles/trunk/win/Abeles Help.ihf"
-
-	SetOutPath "$INSTDIR\motofit\data"
-	File "../motofit_imag/Data/*.*"
-
-	; Set Section Files and Shortcuts
-	SetOutPath "$INSTDIR\motofit"
-;	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/GeneticOptimisation.ipf"
-;	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/MOTOFIT_Global fit 2.ipf"
-
-	SetOutPath "$INSTDIR\motofit\GenCurvefit"
-	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/win/GenCurveFit.xop"
-	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/ExampleExperiment.pxp"
-	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/GenCurveFit Help.ihf"
-	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/ReleaseNotes.txt"
-	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/Structurefitexample.pxp"
-	File "../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/license.txt"
-	
 	SetOutPath "$INSTDIR\motofit\easyHttp"
 	File "../../XOP Toolkit 5/IgorXOPs5/easyHttp/trunk/win/easyHttp.xop"
 	File "../../XOP Toolkit 5/IgorXOPs5/easyHttp/trunk/win/easyHttp Help.ihf"
@@ -98,7 +79,7 @@ ${EndIf}
 	CreateShortCut "Shortcut to Abeles.lnk" "$INSTDIR\motofit\Abeles.xop"
 	CreateShortCut "Shortcut to easyHttp.lnk" "$INSTDIR\motofit\easyHttp\easyHttp.xop"
 	CreateShortCut "Shortcut to multiopenfiles.lnk" "$INSTDIR\motofit\multiopenfiles\multiopenfiles.xop"
-  CreateShortCut "Shortcut to HDF5.lnk" "$1\More Extensions\File Loaders\HDF5.xop"
+  	CreateShortCut "Shortcut to HDF5.lnk" "$1\More Extensions\File Loaders\HDF5.xop"
 	CreateShortCut "Shortcut to XMLutils.lnk" "$INSTDIR\motofit\XMLutils\XMLutils.xop"
 
 	SetOutPath "$1\Igor Procedures"

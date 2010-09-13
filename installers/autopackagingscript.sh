@@ -17,5 +17,14 @@ dropdmg motofitInstaller.mpkg
 rm -r motofitInstaller.mpkg
 mv motofitInstaller.mpkg.dmg motofitInstaller.dmg
 
+rm platypusInstaller.dmg
+
+/Developer/Applications/Utilities/PackageMaker.app/Contents/MacOS/PackageMaker --doc platypus_installer.pmdoc/ --out platypusInstaller.mpkg
+
+dropdmg platypusInstaller.mpkg
+rm -r platypusInstaller.mpkg
+mv platypusInstaller.mpkg.dmg platypusInstaller.dmg
+
 makeNSIS motofitInstaller.nsi
 makeNSIS motofitImagInstaller.nsi
+makeNSIS platypusInstaller.nsi

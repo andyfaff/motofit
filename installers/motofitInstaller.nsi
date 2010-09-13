@@ -48,9 +48,6 @@ ${EndIf}
 	File "../../XOP Toolkit 5/IgorXOPs5/Abeles/trunk/win/Abeles.xop"
 	File "../../XOP Toolkit 5/IgorXOPs5/Abeles/trunk/win/Abeles Help.ihf"
 
-	SetOutPath "$INSTDIR\motofit\platypus"
-	File "../SLIM/*.*"
-
 	SetOutPath "$INSTDIR\motofit\data"
 	File "../motofit/Data/*.*"
 
