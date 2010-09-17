@@ -1,12 +1,12 @@
 #pragma rtGlobals=1
 #pragma IGORVersion=5.02
 	constant kMotoToImag=0
-
-// SVN date:    $Date$
-// SVN author:  $Author$
-// SVN rev.:    $Revision$
-// SVN URL:     $HeadURL$
-// SVN ID:      $Id$
+	
+	// SVN date:    $Date$
+	// SVN author:  $Author$
+	// SVN rev.:    $Revision$
+	// SVN URL:     $HeadURL$
+	// SVN ID:      $Id$
 
 	// Use modern global access method.
 	///MOTOFIT is a program that fits neutron and X-ray reflectivity profiles :written by Andrew Nelson
@@ -58,7 +58,7 @@ Function/s Moto_Dummymotofitstring()
 	string dummystring
 	dummystring="Motofitcontrol:;plotyp:1;SLDpts:500;res:0;usedqwave:0;useconstraint:0;fitcursors:0;holdstring:;"
 	dummystring+="dataset:;useerrors:;coefwave:;V_chisq:;"
-	dummystring+="SLDtype:neutron;multilayer:0;Vmullayers:0;mulrep:0;mulappend:0;inFIT:0;paramsperlayer:4;baselength:8"
+	dummystring+="SLDtype:neutron;multilayer:0;Vmullayers:0;mulrep:0;mulappend:0;inFIT:0;:4;baselength:6"
 	return dummystring
 End
 
@@ -130,11 +130,11 @@ Function plotCalcref()
 
 	//This section pulls up a graph with the reflectivity in it, and a table containing the reflectivity parameters	
 	theoretical_q = qmin+(x)*((qmax-qmin)/num)
-	make/o/d/n=12 coef_Cref={1,1,0,0,2.07,1e-13,1e-6,4,25,3.47,1e-13,4}
+	make/o/d/n=10 coef_Cref={1,1,0,2.07,1e-7,4,25,3.47,0,4}
 	
 	note coef_Cref,motofitcontrol
 	
-	make/o/t/n=12 parameters_Cref={"Numlayers","scale","SLDtop","iSLDtop","SLDbase","iSLDbase","bkg","sigma_base","thick1","SLD1","iSLD1","rough1"}	
+	make/o/t/n=10 parameters_Cref={"Numlayers","scale","SLDtop","SLDbase","bkg","sigma_base","thick1","SLD1","solv1","rough1"}
 	make/o/n=1 resolution={res}
 
 	//this puts all the parameters in a nice convenient panel
@@ -150,22 +150,22 @@ Function plotCalcref()
 	Moto_FTreflectivity()	
 	//add in the FFT of the data to the panel
 	Display/HOST=#/N=FFTplot /W=(230,450,620,620) root:packages:motofit:reflectivity:tempwaves:FFToutput
-	Label/W=reflectivitypanel#FFTplot bottom "size /≈"
+	Label/W=reflectivitypanel#FFTplot bottom "size /A"
 	Legend/W=reflectivitypanel#FFTplot /C/N=text0/J/F=0/A=MC "\\s(FFToutput) Fourier transform of selected dataset"	
 	cursor /F/P/S=2 /H=1/W=reflectivitypanel#FFTplot A FFToutput 0.5,0.5
 	Setwindow reflectivitypanel, hook(FTplot)=Moto_FTplothook
 	SetWindow reflectivitypanel#fftplot, hook(FTplot)=Moto_FTplothook,hookevents=7
-	setactivesubwindow reflectivitypanel
 	STRUCT WMWinHookStruct s
 	s.eventcode=7
 	s.pointnumber=0.5
 	Moto_FTplotHook(s)
+	setactivesubwindow reflectivitypanel
 	
 	//make sure the FT graph is displayed first
 	STRUCT WMTabControlAction TC_Struct
 	TC_Struct.tab = 0
 	moto_thicknesstabProc(TC_Struct)
-		
+	
 	//make a nice graph
 	if(!itemsinlist(winlist("reflectivitygraph", ";", "WIN:1")))
 		Display/K=1/N=reflectivitygraph/w=(10,10,560,350) theoretical_R vs theoretical_q
@@ -177,20 +177,20 @@ Function plotCalcref()
 		Button Snapshot title="snapshot",proc=Moto_genericButtonControl,size={73,24},pos={320,5},fsize=10
 		Button restore title="restore",proc=Moto_genericButtonControl,size={73,24},pos={395,5},fsize=10
 		Button refreshdata title="refresh",size={73,24},proc=Moto_genericButtonControl, pos ={472, 5}, fsize=10
-			
+		
 		Label bottom "Q /A\\S-1\\M"
 		Label left "R"
 		ModifyGraph log(bottom)=0,mode=0
 		ModifyGraph log(left)=(logg)
 		DoWindow/T reflectivitygraph,"reflectivity graph"
 		Display/Host=#/N=SLDplot/W=(0.6,0,1,0.5) sld
-	
+
 		//This section pulls up a graph of the (real SLD profile). 
 		// It automatically updates whenever you change the fit parameters
 		
-		Label left "\\F'Symbol'r\\F'Arial' /10\\S-6\\M ≈\\S-2 "
+		Label left "\\F'Symbol'r\\F'Arial' /10\\S-6\\M Å\\S-2 "
 		ModifyGraph lblPos(left)=42; 
-		Label bottom "z/≈"
+		Label bottom "z/Å"
 		ModifyGraph lblPos(bottom)=30; 
 		Modifygraph rgb(sld)=(0,0,52224)
 		Setactivesubwindow Reflectivitygraph
@@ -200,8 +200,8 @@ Function plotCalcref()
 	Moto_SLDdatabase()
 
 	//bring the reflectivity graph and panel to the front
-	Dowindow/F reflectivitygraph
 	Dowindow/F reflectivitypanel
+	Dowindow/F reflectivitygraph
 	Autopositionwindow/m=1/R=reflectivitygraph reflectivitypanel
 End
 
@@ -220,7 +220,7 @@ Function Moto_genericButtonControl(B_Struct)
 			break
 		case "snapshot":
 			string ywave ="",xwave="",sldwave=""
-			if(!Moto_snapshot(ywave,xwave,sldwave))
+			if(!Moto_snapshot(ywave, xwave, sldwave))
 				if(Findlistitem(ywave,tracenamelist("reflectivitygraph",";",1))==-1)
 					appendtograph/w=reflectivitygraph $("root:"+ywave) vs $("root:"+xwave)
 				endif
@@ -263,50 +263,50 @@ Function Moto_genericButtonControl(B_Struct)
 			string notebooklist = Winlist("Reflectivityfittingreport",";","Win:16")
 			if(itemsinlist(notebooklist)==0)
 				Moto_initialiseReportNotebook()
-		endif
-	
-		Controlinfo/W=reflectivitypanel Typeoffit
-		strswitch (S_Value)
-			case "Genetic":
-				Moto_fit_Genetic()
-				break
-			case "Levenberg-Marquardt":
-				Moto_fit_Levenberg()
-				break
-			case "Genetic + LM":
-				Moto_fit_GenLM()
-				break
-			case "Genetic+MC_Analysis":
-				Moto_fit_GenMC()
-				break
-		endswitch
-		break
-	case "loadcoefwave":
-		SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
-		Loadwave/O/T
-		if(V_flag==0)
-			abort
-		endif
-		String coefwave=removeending(S_Wavenames)
-		String temp=note ($coefwave)
-		String coefnote = Moto_dummymotofitstring()
-	
-		variable ii=0
-		//search through motofitstring and add the bits that are missing.
-		for(ii=0;ii<itemsinlist(coefnote);ii+=1)
-			string item = stringfromlist(ii,coefnote,";")
-			item = stringfromlist(0,item,":")
-			if(strlen(stringbykey(item,temp,":", ";"))==0) // default isn't present
-				temp = replacestringbykey(item,temp,stringbykey(item,motofitcontrol,":",";"))
 			endif
-		endfor
 	
-		note/k $coefwave
-		note $coefwave,temp
-		break
-endswitch
+			Controlinfo/W=reflectivitypanel Typeoffit
+			strswitch (S_Value)
+				case "Genetic":
+					Moto_fit_Genetic()
+					break
+				case "Levenberg-Marquardt":
+					Moto_fit_Levenberg()
+					break
+				case "Genetic + LM":
+					Moto_fit_GenLM()
+					break
+				case "Genetic+MC_Analysis":
+					Moto_fit_GenMC()
+					break
+			endswitch
+			break
+		case "loadcoefwave":
+			SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
+			Loadwave/O/T
+			if(V_flag==0)
+				abort
+			endif
+			String coefwave=removeending(S_Wavenames)
+			String temp=note ($coefwave)
+			String coefnote = Moto_dummymotofitstring()
 	
-return 0
+			variable ii=0
+			//search through motofitstring and add the bits that are missing.
+			for(ii=0;ii<itemsinlist(coefnote);ii+=1)
+				string item = stringfromlist(ii,coefnote,";")
+				item = stringfromlist(0,item,":")
+				if(strlen(stringbykey(item,temp,":", ";"))==0) // default isn't present
+					temp = replacestringbykey(item,temp,stringbykey(item,motofitcontrol,":",";"))
+				endif
+			endfor
+	
+			note/k $coefwave
+			note $coefwave,temp
+			break
+	endswitch
+	
+	return 0
 End
 
 Function Moto_snapshot(ywave,xwave,sldwave)
@@ -320,8 +320,8 @@ Function Moto_snapshot(ywave,xwave,sldwave)
 		if(V_flag)
 			return 1
 		endif
-		ywave = cleanupname(snapstr+"_R",0)
-		xwave = cleanupname(snapstr+"_q",0)
+		ywave = cleanupname(snapstr+"_R", 0)
+		xwave = cleanupname(snapstr+"_q", 0)
 		sldwave = cleanupname("SLD_"+snapstr,0)
 		coefwave = cleanupname("coef_"+snapstr,0)
 		
@@ -342,23 +342,12 @@ Function Moto_snapshot(ywave,xwave,sldwave)
 	Duplicate/o root:coef_cref, root:$coefwave
 	Duplicate/o root:theoretical_R, root:$ywave
 	Duplicate/o root:theoretical_q, root:$xwave
-	Duplicate/o root:sld, root:$sldwave
-	
-	return 0
-End
-
-Function Moto_ChangeQrangebutton(B_Struct)
-	STRUCT WMButtonAction &B_Struct
-	if(B_Struct.eventcode!=2)
-		return 0
-	endif
-	
-	Moto_changeQrangeprompt()
+	Duplicate/o root:sld, root:$sldwave	
 	return 0
 End
 
 Function Moto_changeQrangeprompt()
-	Wave localref_R=root:theoretical_R,localref_Q=root:theoretical_Q
+	Wave localref_R = root:theoretical_R, localref_Q=root:theoretical_Q
 	Variable num=numpnts(localref_R),qmin=localref_q[0],qmax=localref_q[numpnts(localref_q)-1]
 	Prompt num, "Enter number of data points for model: "
 	Prompt qmin, "Enter minimum q-value (A^-1) for model: "
@@ -398,7 +387,7 @@ Function Moto_update()
 	string saveDF=getdatafolder(1)
 	
 	Setdatafolder root:
-	Wave/z coef_Cref,theoretical_R,theoretical_q,multilay,SLD,coef_multiCref
+	Wave/z coef_Cref,theoretical_R,theoretical_q,multikernel,multilay,SLD,coef_multiCref
 	
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:Motofitcontrol
 	//make sure that we're not in a fit
@@ -412,13 +401,13 @@ Function Moto_update()
 		//program will fall over if Vmullayers is not equal to zero.
 		
 		Motofit(coef_Cref,theoretical_R,theoretical_Q)
-		Moto_SLDplot(coef_cref, SLD)
+		Moto_SLDplot(coef_Cref, sld)
 	else
 		Createmultilayer(coef_Cref,multilay)    //the situation when you have a multilayer
 		Kerneltransformation(coef_multicref)
 		Motofit(coef_multiCref,theoretical_R,theoretical_Q)
 		Wave multikernel = root:multikernel
-		Moto_SLDplot(multikernel, SLD)
+		Moto_SLDplot(multikernel, sld)
 	endif
 	
 	//if you change the model, then you may need to update the FFT of the theoretical curve
@@ -431,19 +420,8 @@ Function Moto_update()
 	setdatafolder $saveDF
 End
 
-Function Moto_createmotofitwaves()
-		String savedDataFolder = GetDataFolder(1)		// save
-	newdatafolder/o/s root:packages
-	newdatafolder/o/s root:packages:motofit
-	newdatafolder/o/s root:packages:motofit:reflectivity
-	newdatafolder/o/s root:packages:motofit:reflectivity:tempwaves
-	
-	Variable/g Vmullayers, Vmulrep , Vappendlayer
-	SetDataFolder savedDataFolder	
-End
-
-Function Motofit(w,y,z) :Fitfunc
-	Wave w,y,z
+Function Motofit(w, y, z) :Fitfunc
+	Wave w, y, z
 	//NOTE the "Z" wave is really the x data in disguise
 	//This fit function calls either Parratt- or Abeles-reflectivity, and integrates over a gaussian beam profile. 
 	// Knowledge of dq/q is required.
@@ -452,12 +430,11 @@ Function Motofit(w,y,z) :Fitfunc
 	
 	//Wouldn't be difficult at all to modify users different resolution function
 	//This is where the user should set up their own SLD profile
-	String savedDataFolder = GetDataFolder(1)	
-	
+	String savedDataFolder = GetDataFolder(1)		
 	try
 		//if this datafolder exists then it is likely that the tempwaves have been made.
 		//if it hasn't then make the waves necessary for Motofit to start
-		if(datafolderexists("root:packages:motofit:reflectivity:tempwaves")==0)
+		if(!datafolderexists("root:packages:motofit:reflectivity:tempwaves"))
 			Moto_createmotofitwaves() 
 		endif
 			
@@ -469,36 +446,38 @@ Function Motofit(w,y,z) :Fitfunc
 		variable inFIT=numberbykey("inFIT",motofitcontrol)
 		Variable res=numberbykey("res",motofitcontrol)
 		variable usedqwave=numberbykey("usedqwave",motofitcontrol)
+		
 		string dQwave=cleanupname(removeending(moto_str("dataset"))+"dq",0)
-		dQwave = "root:packages:motofit:reflectivity:temp_dq"
+		dQwave = "root:packages:motofit:reflectivity:temp_dq"	
 		Wave/z dQ=$dQwave
 	
 		//if you're not FITTING, then just use constant dQ/Q
 		if(inFIT==0)
 			usedqwave=0
 		endif
-	
+
 		//don't want to convolve the reflectivity if the background has been added
-		bkg=abs(w[6])
-		w[6]=0
-	
+		bkg=abs(w[4])
+		w[4]=0
+
 		//you have to set this datafolder because V_mulrep, V_appendlayer, V_numlayers are held in this folder!
 		setdatafolder root:packages:motofit:reflectivity:tempwaves
-		
 		switch(usedqwave)
 			case 0:					//case 0 is if usedqwave=0.  This means the user hasn't selected a dQ wave
 				res=(res/100)
 				if (res<0.005)		//if the resolution is less that 1% don't bother doing the convolution
-					Abeles_imagAll(w,y,z)
+					//					variable timer = startmstimer
+					Abelesall(w,y,z)
+					//					print dimsize(y, 0), stopmstimer(timer)
 				else				//calculate the resolution with a convolution
 					//by varying gaussnum you control the accuracy of the interpolation.  Higher=more accurate but a lot slower.
 					//make it an odd number
-					Variable gaussnum=21
+					Variable gaussnum=13
 
 					Make/o/d/n=(gaussnum) root:packages:motofit:reflectivity:tempwaves:gausswave
 					Wave gausswave = root:packages:motofit:reflectivity:tempwaves:gausswave
 					Setscale/I x,-res,res,gausswave
-					Gausswave=gauss(x,0,res/2.35482)
+					Gausswave=gauss(x,0,res/(2*sqrt(2*ln(2))))
 					Variable middle=gausswave[x2pnt(gausswave,0)]
 					Gausswave/=middle
 				
@@ -520,12 +499,13 @@ Function Motofit(w,y,z) :Fitfunc
 					Wave xtemp = root:packages:motofit:reflectivity:tempwaves:xtemp
 					Wave ytemp = root:packages:motofit:reflectivity:tempwaves:ytemp
 				
-					logxtemp=start+p*(abs(start-finish))/(interpnum)
+					logxtemp=(start)+p*(abs(start-finish))/(interpnum)
 					xtemp=alog(logxtemp)
-		
-					//calculate the theoretical curve with a lot of datapoints
-					Abeles_imagAll(w,ytemp,xtemp)
-						
+					//calculate the theoretical curve with a lot of datapoints	
+					//				variable timer = startmstimer
+					AbelesAll(w, ytemp, xtemp)
+					//				print dimsize(ytemp, 0), stopmstimer(timer)
+					
 					//do the resolution convolution
 					setscale/I x,start,logxtemp[numpnts(logxtemp)-1],ytemp
 					convolve/A gausswave ytemp
@@ -552,7 +532,7 @@ Function Motofit(w,y,z) :Fitfunc
 				break
 			case 1:			//if usedqwave=1 then this means the user has selected his own resolution wave (requires 4 column data) 
 				make/o/d/n=(13 * dimsize(z, 0)) root:packages:motofit:reflectivity:tempwaves:ytemp, root:packages:motofit:reflectivity:tempwaves:xtemp
-				make/o/n=13 root:packages:motofit:reflectivity:tempwaves:x13, root:packages:motofit:reflectivity:tempwaves:w13
+				make/o/n=13  root:packages:motofit:reflectivity:tempwaves:x13,  root:packages:motofit:reflectivity:tempwaves:w13
 				Wave xtemp = root:packages:motofit:reflectivity:tempwaves:xtemp, ytemp = root:packages:motofit:reflectivity:tempwaves:ytemp
 				Wave x13 = root:packages:motofit:reflectivity:tempwaves:x13, w13 = root:packages:motofit:reflectivity:tempwaves:w13				
 				y=0
@@ -560,17 +540,16 @@ Function Motofit(w,y,z) :Fitfunc
 				w13={0.13534,0.24935,0.4111,0.60653,0.80074,0.94596,1,0.94596,0.80074,0.60653,0.4111,0.24935,0.13534}
 				
 				xtemp[] = x13[mod(p,13)] * dq[floor(p/13)]+z[floor(p/13)]
-				Abeles_imagall(w,ytemp,xtemp)
+				Abelesall(w,ytemp,xtemp)
 				ytemp *= w13[mod(p,13)]
 				y[] = sum(ytemp, 13 * p, 13 * (p+1) -1)
 				 
-				fastop y = 0.137023*y
-			break
+				y = 0.137023*y
+				break
 		endswitch
 		//add in the linear background again
-
 		y=abs(y)
-		w[6]=bkg
+		w[4]=bkg
 		fastop y=(bkg) + y
 		//how are you fitting the data?
 		switch(plotyp)	
@@ -582,14 +561,25 @@ Function Motofit(w,y,z) :Fitfunc
 				//MatrixOP/O y=(abs(y)+bkg)
 				break
 			case 3:
-				y=y*z^4
+				y=(y*z^4)
 				//MatrixOP/O y=((abs(y)+bkg)*z*z*z*z)
 				break
 			default:	
 		endswitch
 	catch
 	endtry
-	SetDataFolder savedDataFolder	
+	SetDataFolder savedDataFolder
+End
+
+Function Moto_createmotofitwaves()
+	String savedDataFolder = GetDataFolder(1)		// save
+	newdatafolder/o/s root:packages
+	newdatafolder/o/s root:packages:motofit
+	newdatafolder/o/s root:packages:motofit:reflectivity
+	newdatafolder/o/s root:packages:motofit:reflectivity:tempwaves
+	
+	Variable/g Vmullayers, Vmulrep , Vappendlayer
+	SetDataFolder savedDataFolder		
 End
 
 Function Moto_SLDplot(w, sld)
@@ -602,19 +592,19 @@ Function Moto_SLDplot(w, sld)
 	
 	//setup the start and finish points of the SLD profile
 	if (nlayers == 0)
-		zstart= -5-4 * abs(w[7])
+		zstart= -5-4 * abs(w[5])
 	else
-		zstart= -5-4 * abs(w[11])
+		zstart= -5-4 * abs(w[9])
 	endif
 		
 	temp = 0
 	if (nlayers == 0)
-		zend = 5+4*abs(w[7])
+		zend = 5+4*abs(w[5])
 	else	
 		for(ii = 1 ; ii < nlayers + 1 ; ii+=1)
-			temp += abs(w[4*ii+4])
+			temp += abs(w[4*ii+2])
 		endfor 	
-		zend = 5 + temp + 4 * abs(w[7])
+		zend = 5 + temp + 4 * abs(w[5])
 	endif
 	setscale/I x, zstart, zend, sld
 	
@@ -859,7 +849,6 @@ Function Moto_refreshData()
 End
 
 Function Moto_autoscale()
-
 	string traces = tracenamelist("reflectivitygraph",";",1)
 	string xwavestr
 	if(Stringmatch(traces,"*theoretical_R*")==0)
@@ -867,7 +856,7 @@ Function Moto_autoscale()
 	endif
 	traces = removefromlist("theoretical_R",traces)
 
-	variable highestvalue=0,lowestvalue=1000,tracenumber,ii=0
+	variable highestvalue = 0, lowestvalue = 1000, tracenumber , ii = 0
 
 	tracenumber = itemsinlist(traces)
 	
@@ -896,20 +885,21 @@ Function Moto_Reflectivitypanel() : Panel
 	NewPanel /W=(124,62,850,700) as "Reflectivity Panel"
 	ModifyPanel cbRGB=(43520,43520,43520)
 	Dowindow/C reflectivitypanel
-	Moto_changelayerwave(8,1,4)
+	Moto_changelayerwave(6,1,4)
 	
 	SetDrawLayer UserBack
 	Wave/t layerparams = root:packages:motofit:reflectivity:layerparams
+			
 	setdimlabel 1,0,layer, layerparams
 	setdimlabel 1,2, thickness, layerparams
-	setdimlabel 1,5, SLDreal, layerparams
-	setdimlabel 1,8, SLDimag, layerparams
+	setdimlabel 1,5, SLD, layerparams
+	setdimlabel 1,8, solvent, layerparams
 	setdimlabel 1,11, roughness, layerparams
-	
-	ListBox baseparams,pos={92,52},size={146,146},proc=moto_modelchange,frame=0, fsize=12
+		
+	ListBox baseparams,pos={92,52},size={146,146},proc=moto_modelchange,frame=0
 	ListBox baseparams,listWave=root:packages:motofit:reflectivity:baselayerparams
 	ListBox baseparams,selWave=root:packages:motofit:reflectivity:baselayerparams_selwave
-	ListBox baseparams,mode= 6,editStyle= 1,widths={19,89,21}
+	ListBox baseparams,mode= 6,editStyle= 1,widths={19,89,21}, fSize=12
 	
 	ListBox layerparams,pos={40,271},size={600,156},proc=moto_modelchange, fSize=12
 	ListBox layerparams,listWave=root:packages:motofit:reflectivity:layerparams
@@ -918,15 +908,25 @@ Function Moto_Reflectivitypanel() : Panel
 	ListBox layerparams,widths={35,23,86,21,23,86,21,23,86,21,23,86,21}
 	ListBox layerparams,userColumnResize= 0
 		
+	variable/g root:packages:motofit:reflectivity:tempwaves:fringe
+	SetVariable FT_lowQ title="low Q for FFT",bodyWidth=60,value=root:packages:motofit:reflectivity:tempwaves:FTlowQ
+	Setvariable FT_lowQ,pos={160,476},proc=Moto_FTreflectivityhook,limits={0.005,1,0.01}
+	Setvariable FThighQ title = "high Q for FFT",bodyWidth=60,value=root:packages:motofit:reflectivity:tempwaves:FThiQ
+	Setvariable FThighQ,pos={160,496},proc=Moto_FTreflectivityhook,limits={0.005,1,0.01}
+	Setvariable fringe,pos={148,543},size={166,15},proc=Moto_fringespacing,title="layer thickness spacing"
+	Setvariable fringe,limits={0,0,0},barmisc={0,1000},value= root:packages:motofit:reflectivity:tempwaves:fringe
+	SetVariable numfringe,pos={174,522},size={137,16},proc=Moto_fringespacing,title="number of fringes"
+	SetVariable numfringe,limits={0,100,1},value= K0
+
 	TabControl foo,pos={7,2},size={716,633},proc=Moto_fooProc,tabLabel(0)="Fit"
 	TabControl foo,tabLabel(1)="Constraints",tabLabel(2)="Make globals"
 	TabControl foo,value= 0
 		
 	Button Dofit,pos={253,50},size={140,50},proc=Moto_genericButtonControl,title="Do fit"
 	Button Dofit,help={"Performs the fit"},fColor=(65280,32512,16384)
-	Popupmenu Typeoffit,mode=1,bodywidth=140,pos={345,105},value = "Genetic;Levenberg-Marquardt;Genetic + LM;Genetic+MC_Analysis"
+	Popupmenu Typeoffit,mode=1,bodywidth=140,pos={345,107},value = "Genetic;Levenberg-Marquardt;Genetic + LM;Genetic+MC_Analysis"
 
-	Button loaddatas,pos={253,130},size={140,50},proc=Moto_genericButtonControl,title="Load data"
+	Button loaddatas,pos={253,137},size={140,50},proc=Moto_genericButtonControl,title="Load data"
 	Button loaddatas,fColor=(65280,32512,16384)
 	PopupMenu dataset,pos={431,42},size={179,21},proc=Motofit_PopMenuProc,title="dataset"
 	PopupMenu dataset,mode=2,bodyWidth= 139,popvalue="_none_",value= #"Listmatch(WaveList(\"*_R\", \";\",\"\"),\"!coef*\")"
@@ -934,7 +934,7 @@ Function Moto_Reflectivitypanel() : Panel
 	CheckBox useerrors,value= 0
 	CheckBox usedQwave,pos={484,74},size={87,14},proc=Motofit_checkproc,title="use dQ wave?"
 	CheckBox usedQwave,value= 0
-	PopupMenu coefwave,pos={408,118},size={202,21},proc=Moto_changecoefs,title="Model wave"
+	PopupMenu coefwave,pos={408,118},size={202,21},proc=Moto_changecoefs,title="Model"
 	PopupMenu coefwave,mode=1,bodyWidth= 139,popvalue="coef_Cref",value= #"WaveList(\"coef*\",\";\",\"\")"
 	CheckBox fitcursors,pos={483,155},size={116,14},proc=Motofit_checkproc,title="Fit between cursors?"
 	CheckBox fitcursors,help={"To get the cursors on the graph press Ctrl-I.  This enables you to fit over a selected x-range"}
@@ -951,15 +951,16 @@ Function Moto_Reflectivitypanel() : Panel
 	Button Savecoefwave,pos={622,134},size={95,24},proc=Moto_savecoefficients,title="Save model",fsize=10
 	Button loadcoefwave,pos={622,105},size={95,24},proc=Moto_genericButtonControl,title="Load model",fsize=10
 	Button Savefitwave,pos={623,31},size={93,42},proc=moto_savefitwave,title="Save reflectivity \rwaves",fsize=10
-	Button Addcursor,pos={531,223},size={80,21},proc=Moto_addcursor,title="Add cursor"
+	Button Addcursor,pos={531,223},size={80,21},proc=Moto_addcursor,title="Add cursor",fsize=10
 	Button cursorleftA,pos={467,220},size={29,14},proc=Moto_cursorleft,title="<"
 	Button cursorrightA,pos={495,220},size={29,14},proc=Moto_cursorright,title=">"
-	Button cursorleftB,pos={467,236},size={29,14},proc=Moto_cursorleft,title="<"
-	Button cursorrightB,pos={495,236},size={29,14},proc=Moto_cursorright,title=">"
-//	Button croppanel,pos = {1,1},size={50,20},proc = Moto_genericButtonControl,title="_toggleFFT",fsize=8,pos={402,646}
+	Button cursorleftB,pos={467,235},size={29,14},proc=Moto_cursorleft,title="<"
+	Button cursorrightB,pos={495,235},size={29,14},proc=Moto_cursorright,title=">"
+	//	Button croppanel,pos = {1,1},size={50,20},proc = Moto_genericButtonControl,title="_toggleFFT",fsize=8,pos={402,646}
 	
-	Button Addconstraint,pos={36,52},size={119,29},disable=1,proc=Moto_changeconstraint,title="Add constraint"
-	Button removeconstraint,pos={36,85},size={119,30},disable=1,proc=Moto_changeconstraint,title="Remove constraint"
+	
+	Button Addconstraint,pos={36,52},size={119,29},disable=1,proc=Moto_changeconstraint,title="Add constraint",fsize=10
+	Button removeconstraint,pos={36,95},size={119,30},disable=1,proc=Moto_changeconstraint,title="Remove constraint",fsize=10
 	CheckBox useconstraint,pos={483,172},size={111,14},proc=Motofit_checkproc,title="Fit with constraints?"
 	CheckBox useconstraint,value= 0
 	CheckBox usemultilayer,pos={483,189},size={96,14},proc=Setupmultilayer,title="make multilayer?"
@@ -967,7 +968,10 @@ Function Moto_Reflectivitypanel() : Panel
 	PopupMenu SLDtype,pos={25,236},size={189,21},title="SLD type"
 	PopupMenu SLDtype,mode=1,bodyWidth= 140,popvalue="Neutron",value= #"\"Neutron;Xray\""
 	TitleBox hold,pos={184,36},size={26,13},title="hold?",frame=0
-		
+	TabControl thicknesstab, value=1,tabLabel(1)="Fringe spacing"
+	TabControl thicknesstab ,value=0,tabLabel(0)="FFT of data"
+	TabControl thicknesstab ,size={600,200},pos={40,430},proc=Moto_thicknesstabproc
+
 	//	PopupMenu Calculationtype value="Solvent Penetration;imaginary SLD",pos={366,477},proc=Moto_calculationtype
 	
 	PopupMenu con1,pos={415,196},size={137,21},disable=1,title="2nd contrast"
@@ -980,111 +984,88 @@ Function Moto_Reflectivitypanel() : Panel
 	PopupMenu con3,mode=4,popvalue="_none_",value= #"WaveList(\"coef*\",\";\",\"\") +\"_none_\""
 	PopupMenu con4,pos={415,276},size={134,21},disable=1,title="5th contrast"
 	PopupMenu con4,mode=4,popvalue="_none_",value= #"WaveList(\"coef*\",\";\",\"\") +\"_none_\""
-	Button makeglobal,pos={342,38},size={162,76},disable=1,proc=Moto_Makeglobals,title="Make global coefficient wave"
-
+	Button makeglobal,pos={342,38},size={162,76},disable=1,proc=Moto_Makeglobals,title="Make global coefficient wave",fsize=10
 	CheckBox g1,pos={52,63},size={55,14},disable=1,title="1. scale",value= 0
 	CheckBox g0,pos={52,43},size={109,14},disable=1,title="0. Number of layers"
 	CheckBox g0,value= 1
-	
 	CheckBox g2,pos={52,84},size={69,14},disable=1,title="2. SLD top",value= 0
-	CheckBox g3,pos={52,104},size={77,14},disable=1,title="3. iSLD top",value= 0
-	CheckBox g4,pos={52,124},size={48,14},disable=1,title="4. SLD base",value= 0
-	CheckBox g5,pos={52,146},size={62,14},disable=1,title="5. iSLD base",value= 0
-	CheckBox g6,pos={52,166},size={77,14},disable=1,title="6. bkg",value= 0
-	CheckBox g7,pos={52,186},size={77,14},disable=1,title="7. sigbase",value= 0
-
-	CheckBox g8,pos={51,205},size={59,14},disable=1,title="8. thick1",value= 0
-	CheckBox g12,pos={51,226},size={65,14},disable=1,title="12. thick2",value= 0
-	CheckBox g16,pos={51,248},size={65,14},disable=1,title="16. thick3",value= 0
-	CheckBox g20,pos={51,270},size={65,14},disable=1,title="20. thick4",value= 0
-	CheckBox g24,pos={51,292},size={65,14},disable=1,title="24. thick5",value= 0
-	CheckBox g28,pos={51,314},size={65,14},disable=1,title="28. thick6",value= 0
-	CheckBox g32,pos={51,336},size={65,14},disable=1,title="32. thick7",value= 0
-	CheckBox g36,pos={51,358},size={65,14},disable=1,title="36. thick8",value= 0
-	CheckBox g40,pos={51,380},size={65,14},disable=1,title="40. thick9",value= 0
-	CheckBox g44,pos={51,402},size={71,14},disable=1,title="44. thick10",value= 0
-	CheckBox g45,pos={139,402},size={69,14},disable=1,title="45. SLD10",value= 0
-	CheckBox g41,pos={139,380},size={63,14},disable=1,title="41. SLD9",value= 0
-	CheckBox g37,pos={139,358},size={63,14},disable=1,title="37. SLD8",value= 0
-	CheckBox g33,pos={139,336},size={63,14},disable=1,title="33. SLD7",value= 0
-	CheckBox g29,pos={139,314},size={63,14},disable=1,title="29. SLD6",value= 0
-	CheckBox g25,pos={139,292},size={63,14},disable=1,title="25. SLD5",value= 0
-	CheckBox g21,pos={139,271},size={63,14},disable=1,title="21. SLD4",value= 0
-	CheckBox g17,pos={139,249},size={63,14},disable=1,title="17. SLD3",value= 0
-	CheckBox g13,pos={139,226},size={63,14},disable=1,title="13. SLD2",value= 0
-	CheckBox g9,pos={139,205},size={57,14},disable=1,title="9. SLD1",value= 0
-	CheckBox g10,pos={224,205},size={57,14},disable=1,title="10. iSLD1",value= 0
-	CheckBox g14,pos={224,226},size={63,14},disable=1,title="14. iSLD2",value= 0
-	CheckBox g18,pos={224,249},size={63,14},disable=1,title="18. iSLD3",value= 0
-	CheckBox g22,pos={224,271},size={63,14},disable=1,title="22. iSLD4",value= 0
-	CheckBox g26,pos={224,292},size={63,14},disable=1,title="26. iSLD5",value= 0
-	CheckBox g30,pos={224,314},size={63,14},disable=1,title="30. iSLD6",value= 0
-	CheckBox g34,pos={224,336},size={63,14},disable=1,title="34. iSLD7",value= 0
-	CheckBox g38,pos={224,358},size={63,14},disable=1,title="38. iSLD8",value= 0
-	CheckBox g42,pos={224,380},size={63,14},disable=1,title="42. iSLD9",value= 0
-	CheckBox g46,pos={224,402},size={69,14},disable=1,title="46. iSLD10",value= 0
-	CheckBox g47,pos={319,402},size={75,14},disable=1,title="47. rough10",value= 0
-	CheckBox g43,pos={319,380},size={69,14},disable=1,title="43. rough9",value= 0
-	CheckBox g39,pos={319,358},size={69,14},disable=1,title="39. rough8",value= 0
-	CheckBox g35,pos={319,336},size={69,14},disable=1,title="35. rough7",value= 0
-	CheckBox g31,pos={319,314},size={69,14},disable=1,title="31. rough6",value= 0
-	CheckBox g27,pos={319,291},size={69,14},disable=1,title="27. rough5",value= 0
-	CheckBox g23,pos={319,269},size={69,14},disable=1,title="23. rough4",value= 0
-	CheckBox g19,pos={319,247},size={69,14},disable=1,title="19. rough3",value= 0
-	CheckBox g15,pos={319,225},size={69,14},disable=1,title="15. rough2",value= 0
-	CheckBox g11,pos={319,205},size={63,14},disable=1,title="11. rough1",value= 0
-
+	CheckBox g3,pos={52,104},size={77,14},disable=1,title="3. SLD base",value= 0
+	CheckBox g4,pos={52,124},size={48,14},disable=1,title="4. bkg",value= 0
+	CheckBox g5,pos={52,146},size={62,14},disable=1,title="Sig_base",value= 0
+	CheckBox g6,pos={51,185},size={59,14},disable=1,title="6. thick1",value= 0
+	CheckBox g10,pos={51,206},size={65,14},disable=1,title="10. thick2",value= 0
+	CheckBox g14,pos={51,228},size={65,14},disable=1,title="14. thick3",value= 0
+	CheckBox g18,pos={51,250},size={65,14},disable=1,title="18. thick4",value= 0
+	CheckBox g22,pos={51,272},size={65,14},disable=1,title="22. thick5",value= 0
+	CheckBox g26,pos={51,294},size={65,14},disable=1,title="26. thick6",value= 0
+	CheckBox g30,pos={51,316},size={65,14},disable=1,title="30. thick7",value= 0
+	CheckBox g34,pos={51,338},size={65,14},disable=1,title="34. thick8",value= 0
+	CheckBox g38,pos={51,360},size={65,14},disable=1,title="38. thick9",value= 0
+	CheckBox g42,pos={51,382},size={71,14},disable=1,title="42. thick10",value= 0
+	CheckBox g43,pos={139,382},size={69,14},disable=1,title="43. SLD10",value= 0
+	CheckBox g39,pos={139,360},size={63,14},disable=1,title="39. SLD9",value= 0
+	CheckBox g35,pos={139,338},size={63,14},disable=1,title="35. SLD8",value= 0
+	CheckBox g31,pos={139,316},size={63,14},disable=1,title="31. SLD7",value= 0
+	CheckBox g27,pos={139,294},size={63,14},disable=1,title="27. SLD6",value= 0
+	CheckBox g23,pos={139,272},size={63,14},disable=1,title="23. SLD5",value= 0
+	CheckBox g19,pos={139,251},size={63,14},disable=1,title="19. SLD4",value= 0
+	CheckBox g15,pos={139,229},size={63,14},disable=1,title="15. SLD3",value= 0
+	CheckBox g11,pos={139,206},size={63,14},disable=1,title="11. SLD2",value= 0
+	CheckBox g7,pos={139,185},size={57,14},disable=1,title="7. SLD1",value= 0
+	CheckBox g8,pos={224,185},size={57,14},disable=1,title="8. Solv1",value= 0
+	CheckBox g12,pos={224,206},size={63,14},disable=1,title="12. Solv2",value= 0
+	CheckBox g16,pos={224,229},size={63,14},disable=1,title="16. Solv3",value= 0
+	CheckBox g20,pos={224,251},size={63,14},disable=1,title="20. Solv4",value= 0
+	CheckBox g24,pos={224,272},size={63,14},disable=1,title="24. Solv5",value= 0
+	CheckBox g28,pos={224,294},size={63,14},disable=1,title="28. Solv6",value= 0
+	CheckBox g32,pos={224,316},size={63,14},disable=1,title="32. Solv7",value= 0
+	CheckBox g36,pos={224,338},size={63,14},disable=1,title="36. Solv8",value= 0
+	CheckBox g40,pos={224,360},size={63,14},disable=1,title="40. Solv9",value= 0
+	CheckBox g44,pos={224,382},size={69,14},disable=1,title="44. Solv10",value= 0
+	CheckBox g45,pos={319,381},size={75,14},disable=1,title="45. rough10",value= 0
+	CheckBox g41,pos={319,360},size={69,14},disable=1,title="41. rough9",value= 0
+	CheckBox g37,pos={319,338},size={69,14},disable=1,title="37. rough8",value= 0
+	CheckBox g33,pos={319,316},size={69,14},disable=1,title="33. rough7",value= 0
+	CheckBox g29,pos={319,294},size={69,14},disable=1,title="29. rough6",value= 0
+	CheckBox g25,pos={319,271},size={69,14},disable=1,title="25. rough5",value= 0
+	CheckBox g21,pos={319,249},size={69,14},disable=1,title="21. rough4",value= 0
+	CheckBox g17,pos={319,227},size={69,14},disable=1,title="17. rough3",value= 0
+	CheckBox g13,pos={319,205},size={69,14},disable=1,title="13. rough2",value= 0
+	CheckBox g9,pos={319,184},size={63,14},disable=1,title="9. rough1",value= 0
 	PopupMenu nlayers,pos={170,39},size={125,21},disable=1,title="number of layers"
 	PopupMenu nlayers,mode=3,popvalue="0",value= #"\"0;1;2;3;4;5;6;7;8;9;10\""
 	PopupMenu numcontrasts,pos={335,128},size={144,21},disable=1,title=" number of contrasts"
 	PopupMenu numcontrasts,mode=2,popvalue="1",value= #"\"1;2;3;4;5;6;7;8;9;10\""
+	TitleBox compound,pos={498,128},size={50,20}
 
-	TitleBox baseparam,pos={27,53},size={33,13},title="layers",fSize=12,frame=0
+	TitleBox baseparam,pos={28,53},size={34,16},title="layers",fSize=12,frame=0
 	TitleBox baseparam,fStyle=1
-	TitleBox baseparam1,pos={14,69},size={63,13},title="scalefactor",fSize=12
+	TitleBox baseparam1,pos={15,72},size={64,16},title="scalefactor",fSize=12
 	TitleBox baseparam1,frame=0,fStyle=1
-	TitleBox baseparam2,pos={22,86},size={42,13},title="SLDtop",fSize=12,frame=0
+	TitleBox baseparam2,pos={29,91},size={42,16},title="SLDtop",fSize=12,frame=0
 	TitleBox baseparam2,fStyle=1
-	TitleBox baseparam3,pos={22,102},size={51,13},title="iSLDtop",fSize=12,frame=0
-	TitleBox baseparam3,fStyle=1
-	TitleBox baseparam4,pos={18,118},size={21,13},title="SLDbase",fSize=12,frame=0
+	TitleBox baseparam3,pos={10,110},size={81,16},title="SLD subphase",fSize=12
+	TitleBox baseparam3,frame=0,fStyle=1
+	TitleBox baseparam4,pos={35,129},size={21,16},title="bkg",fSize=12,frame=0
 	TitleBox baseparam4,fStyle=1
-	TitleBox baseparam5,pos={18,133},size={63,13},title="iSLDbase",fSize=12
-	TitleBox baseparam5,frame=0,fStyle=1
-	TitleBox baseparam6,pos={33,150},size={63,13},title="bkg",fsize=12,frame=0,fstyle=1
-	TitleBox baseparam7,pos={14,165},size={50,20},title="baserough",fsize=12,frame=0,fstyle=1
+	TitleBox baseparam5,pos={19,148},size={58,16},title="sub rough",fSize=12,frame=0
+	TitleBox baseparam5,fStyle=1
+	TitleBox baseparam6,pos={80,133},size={50,20}
+	TitleBox baseparam0,pos={140,133},size={50,20}
 
-	TitleBox layerparam1,pos={200,133},size={50,20},disable=1
-	TitleBox layerparam2,pos={260,133},size={50,20},disable=1
-	TitleBox layerparam3,pos={320,133},size={50,20},disable=1
-	TitleBox layerparam4,pos={380,133},size={50,20},disable=1
-	
 	//I'm sorry about this, but I can't seem to be able to perform the follwing command in a function
 	string cmd="ValDisplay Chisquare title=\"Chi squared\",pos={252,230},size={170,15},value=root:packages:motofit:reflectivity:chisq"
 	Execute/Q/Z cmd
 	
-    TabControl thicknesstab, value=1,tabLabel(1)="Fringe spacing"
-	TabControl thicknesstab ,value=0,tabLabel(0)="FFT of data"
-	TabControl thicknesstab ,size={600,200},pos={40,430},proc=Moto_thicknesstabproc
-	variable/g root:packages:motofit:reflectivity:tempwaves:fringe
-	SetVariable FT_lowQ title="low Q for FFT",bodyWidth=60,value=root:packages:motofit:reflectivity:tempwaves:FTlowQ
-	Setvariable FT_lowQ,pos={160,476},proc=Moto_FTreflectivityHook,limits={0.005,1,0.01}
-	Setvariable FThighQ title = "high Q for FFT",bodyWidth=60,value=root:packages:motofit:reflectivity:tempwaves:FThiQ
-	Setvariable FThighQ,pos={160,496},proc=Moto_FTreflectivityHook,limits={0.005,1,0.01}
-	Setvariable fringe,pos={148,543},size={166,15},proc=Moto_fringespacing,title="layer thickness spacing"
-	Setvariable fringe,limits={0,0,0},barmisc={0,1000},value= root:packages:motofit:reflectivity:tempwaves:fringe
-	SetVariable numfringe,pos={174,522},size={137,16},proc=Moto_fringespacing,title="number of fringes"
-	SetVariable numfringe,limits={0,100,1},value= K0
-
 End
 
 Function moto_cropPanel()
 	//resizes the reflectivity panel so you can't see FTwindow
-	Movewindow /w=reflectivitypanel 124,62,700,370
+	Movewindow /w=reflectivitypanel 309,218,1039,645
 End
 
 Function moto_thicknesstabProc(TC_Struct)
-STRUCT WMTabControlAction &TC_Struct
+	STRUCT WMTabControlAction &TC_Struct
 	if(TC_Struct.eventcode==-1)
 		return 0
 	endif
@@ -1100,7 +1081,6 @@ STRUCT WMTabControlAction &TC_Struct
 	setvariable fringe,disable=(tab!=1)
 	SetVariable FT_lowQ , disable=(tab!=0)
 	Setvariable FThighQ, disable=(tab!=0)
-
 	return 0
 End
 
@@ -1110,17 +1090,11 @@ Function moto_fooProc(TC_Struct)
 	//this function controls the visibility of the controls when different tabs are selected in the reflectivity panel.
 	//first tab controls
 	
-	variable ii
-	
 	if(TC_Struct.eventcode==-1)
 		return 0
 	endif
+	variable ii
 	
-	tabcontrol foo,value=tab,win=Reflectivitypanel
-	
-	//first tab procedures
-	tabcontrol thicknesstab,disable=(tab!=0)
-		
 	//first tab procedures
 	tabcontrol thicknesstab,disable=(tab!=0)
 	if(tab==0)
@@ -1131,7 +1105,6 @@ Function moto_fooProc(TC_Struct)
 		SetVariable FT_lowQ , disable=(V_Value)
 		Setvariable FThighQ, disable=(V_Value)
 		setwindow reflectivitypanel#FFTplot, hide=v_value
-
 	else
 		setvariable numfringe,disable=(tab!=0)
 		setvariable fringe,disable=(tab!=0)
@@ -1139,17 +1112,24 @@ Function moto_fooProc(TC_Struct)
 		Setvariable FThighQ, disable=(tab!=0)
 		setwindow reflectivitypanel#FFTplot, hide=1
 	endif
-
+	
 	PopupMenu SLDtype,disable=(tab!=0)
 	titlebox hold,disable=(tab!=0)
+	titlebox compound,disable=(tab!=0)
 	Button Dofit,disable= (tab!=0)
 	Popupmenu Typeoffit,disable= (tab!=0)
 		
+	if(tab==0 && Waveexists(root:packages:motofit:reflectivity:tempwaves:FFToutput))
+		setwindow reflectivitypanel#FFTplot, hide = 0
+	else
+		setwindow reflectivitypanel#FFTplot, hide = 1
+	endif
+	
 	Checkbox fitcursors,disable= (tab!=0)
 	Setvariable res,disable= (tab!=0)
 	Valdisplay chisquare,disable= (tab!=0)
 	Button loaddatas,disable= (tab!=0)
-//	button croppanel, disable = (tab!=0)
+	//	button croppanel,disable=(tab!=0)
 	Popupmenu plottype,disable= (tab!=0)
 
 	Popupmenu coefwave,disable= (tab!=0)
@@ -1215,7 +1195,7 @@ Function moto_fooProc(TC_Struct)
 		CheckBox g0,disable=1
 	endif
 	
-	for(ii=2;ii<48;ii+=1)
+	for(ii=2;ii<46;ii+=1)
 		conname="g"+num2str(ii)
 		Checkbox $conname,disable=(tab!=2)
 	endfor
@@ -1507,7 +1487,8 @@ Function Moto_fit_Genetic()
 	//make a coefficient wave related to the data
 	//y is the name of the y wave data
 	test="coef_"+dataset+"_R"
-	duplicate/o $coefwavestr, $test
+	Duplicate/O $coefwavestr $test
+	coefwavestr = test
 		
 	//this sets the wave note of the coefficient wave to be the same as motofitcontrol
 	test=cleanupname("coef_"+dataset+"_R", 0)
@@ -1571,7 +1552,7 @@ Function Moto_fit_Genetic()
 	Setactivesubwindow reflectivitygraph#SLDplot
 	traceexists=TraceNameList("",";",1)
 	String SLDdestination="SLD_"+dataset
-	Wave sld
+	Wave sld = root:sld
 	Duplicate/O sld,$SLDdestination
 	if(Strsearch(traceexists,SLDdestination,0)==-1)
 		AppendToGraph/W=# $SLDdestination
@@ -1590,6 +1571,7 @@ Function Moto_fit_Genetic()
 	return 0
 End
 //end of genetic optimisation
+
 
 Function Moto_fit_Levenberg() 
 	//this function is the button control that starts the fit.
@@ -1810,10 +1792,13 @@ Function Moto_fit_Levenberg()
 
 	//make the SLD curves and fit curves the same colour as the original wave
 	//if the trace isn't on the graph add it.  If it is, don't do anything.
+	Dowindow/F reflectivitygraph
+	Setactivesubwindow reflectivitygraph
 	String traceexists=TraceNameList("",";",1)
-	if(Strsearch(traceexists,fitdestination,0)==-1)
-		string colour=stringfromlist(25,traceinfo("",y,0))			//position 25 is the RGB colour of the Rwave
-		colour=replacestring("x",colour,fitdestination)
+	string colour = greplist(traceinfo("", y, 0), "^rgb(x)*")
+	colour=replacestring("x",colour,fitdestination)
+	
+	if(Strsearch(traceexists,fitdestination,0) == -1)
 		AppendToGraph $fitdestination vs $fitX
 		cmd="modifygraph "+colour
 		Execute/Z cmd
@@ -1827,9 +1812,9 @@ Function Moto_fit_Levenberg()
 	Setactivesubwindow reflectivitygraph#SLDplot
 	traceexists=TraceNameList("",";",1)
 	String SLDdestination="SLD_"+dataset
-	Wave sld
+	Wave sld = root:SLD
 	Duplicate/O sld,$SLDdestination
-	if(Strsearch(traceexists,SLDdestination,0)==-1)
+	if(Strsearch(traceexists, SLDdestination, 0)==-1)
 		AppendToGraph/W=# $SLDdestination
 		colour=replacestring(fitdestination,colour,slddestination)
 		cmd="modifygraph "+colour
@@ -1840,14 +1825,33 @@ Function Moto_fit_Levenberg()
 	//write the fit to the report notebook
 	//b is the ywave
 	Moto_notebookoutput("Reflectivityfittingreport",b,"Levenberg Marquardt")
-	
 	Setactivesubwindow reflectivitygraph
 End
-
 //
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+///
 Function Moto_fit_GenLM()
 	//the fit is done with genetic optimisation then curvefit
 	
@@ -2129,10 +2133,9 @@ Function Moto_fit_GenLM()
 	if(Strsearch(traceexists,fitdestination,0)==-1)
 		AppendToGraph $fitdestination vs $fitX
 	endif
-	
+
 	string colour = greplist(traceinfo("", y, 0), "^rgb(x)*")
 	colour=replacestring("x",colour,fitdestination)	
-
 	cmd="modifygraph "+colour
 	Execute/Z cmd
 	Modifygraph lsize($fitdestination)=0, mode($fitdestination)=0
@@ -2158,7 +2161,6 @@ Function Moto_fit_GenLM()
 	//write the fit to the report notebook
 	//b is the ywave
 	Moto_notebookoutput("Reflectivityfittingreport",b,"GEN/LM")
-	
 	Setactivesubwindow reflectivitygraph
 	
 	return 0
@@ -2427,6 +2429,23 @@ Function Moto_fit_GenMC()
 	return 0
 End
 
+///
+///
+///
+///
+///
+///
+///
+///
+///End of fit types
+///
+///
+///
+///
+///
+///
+///
+
 Function Moto_parse_equalconstraints(constraints)
 	Wave/T constraints 
 
@@ -2454,11 +2473,11 @@ Function Moto_parse_equalconstraints(constraints)
 End
 
 Function Moto_loaddata()
-	//need this extra function, because the menu item can't call loaddatas
+	//need this extra function, because the menu item can't call the generic button control
 	STRUCT WMButtonAction B_Struct
 	B_Struct.eventcode=2
 	B_Struct.ctrlname = "loaddatas"
-    Moto_genericButtonControl(B_Struct)
+	Moto_genericButtonControl(B_Struct)
 End
 
 Function Moto_toRQ4(Q,R,dR,x)
@@ -2525,7 +2544,6 @@ Function Moto_Plottype(PU_Struct)
 	moto_repstr("plotyp",num2str(newdatatype))
 	Dowindow/F Reflectivitygraph
 	setactivesubwindow Reflectivitygraph
-
 	String dataR=listmatch(Wavelist("*R",";",""),"!coef*"),temp,ywave,xwave,ewave
 
 	//if there are any global fits they are produced as a 1D wave, without a corresponding q wave
@@ -2616,7 +2634,7 @@ Function Moto_Plottype(PU_Struct)
 			ModifyGraph logTicks(left)=10
 			break
 		case 3:
-			modifygraph log(left)=0
+			modifygraph log(left)=1
 			Label left "RQ\\S4"
 			ModifyGraph logLabel(left)=0
 			ModifyGraph logTicks(left)=10
@@ -2648,7 +2666,7 @@ Function Moto_Makeglobals(ctrlName) : ButtonControl
 
 	String test,test1,test2,globalstring
 
-	npars=4*nglayers+8
+	npars=4*nglayers+6
 	globalstring=""
 	numfixed=0
 
@@ -2768,7 +2786,7 @@ Function Moto_Makeglobals(ctrlName) : ButtonControl
 
 	//now link the parameters.
 	//you'll have to do a loop, for each of the global parameters, and set them individually.
-	Setdatafolder root:packages:MOTOFITGF:Newglobalfit
+	Setdatafolder root:packages:motofitgf:Newglobalfit
 	Wave NewGF_MainCoefListSelWave
 	for(ii=0;ii<npars;ii+=1)	
 		test=globalstring[ii]
@@ -2792,7 +2810,6 @@ Function Moto_Makeglobals(ctrlName) : ButtonControl
 	sorttabs(TC_Struct,1)
 	MOTO_NewGF_SetTabControlContent(1)
 	MOTO_WM_NewGlobalFit1#SetCoefListFromWave(globalwave, 2, 0, 0)
-
 End
 
 Function Moto_changecoefs(PU_Struct)
@@ -2823,9 +2840,9 @@ Function Moto_changecoefs(PU_Struct)
 		Wave temp=$popstr
 		variable nlayers=temp[0],num_Vmullayers
 		//however, the coefficient wave may be a multilayer, this will estimate the problem
-		if(numpnts(temp)>4*nlayers+8)
+		if(numpnts(temp)>4*nlayers+6)
 			coefnote=Replacestringbykey("multilayer",coefnote,"1")
-			num_Vmullayers=0.25*(numpnts(temp)-(4*nlayers+8))
+			num_Vmullayers=0.25*(numpnts(temp)-(4*nlayers+6))
 			coefnote=Replacestringbykey("Vmullayers",coefnote,num2istr(num_Vmullayers))
 		endif
 		note/K $Popstr
@@ -2854,17 +2871,14 @@ Function Moto_changecoefs(PU_Struct)
 	if(cmpstr(popStr,"coef_multiCref")==0)
 		duplicate/o coef_multicref TEMP_coef_multicref
 	endif
-	
-	redimension/n=(4*coef[0]+8) coef_Cref
-	coef_Cref=coef[p]
-	
+
 	Setupmultilayer("",multilayer)
 
 	if(cmpstr(popStr,"coef_multiCref")==0)
 		duplicate/o  TEMP_coef_multicref coef_multicref
 		killwaves/z TEMP_coef_multicref
 	endif
-
+	
 	Wave/z coef_multicref
 	checkbox usemultilayer,win=reflectivitypanel,value=multilayer
 
@@ -2875,16 +2889,16 @@ Function Moto_changecoefs(PU_Struct)
 	if(cmpstr(popstr,compstr)!=0)
 		Duplicate/O coef $compstr
 	endif
-		
+	
 	//need to get those parameters into the layerwaves for the reflectivitypanel			
 	variable layers = coef[0]
-	variable baselength = str2num(moto_str("baselength"))
-	variable paramsperlayer = str2num(moto_str("paramsperlayer"))
+	variable baselength =6
+	variable paramsperlayer = 4
 	
 	Moto_changelayerwave(baselength,layers,paramsperlayer)
 	Moto_CrefToLayerTable()
 	Moto_LayerTableToCref(coef_Cref)
-	
+
 	//add the motofitcontrol string to the wave that you've just copied
 	note/K coef_Cref
 	note coef_cref,motofitcontrol
@@ -2931,7 +2945,7 @@ Function moto_UpdateControls()
 	variable nlayers=Wcoefwave[0],ii=0,hold,jj=0,kk=0
 	string holdstring=moto_str("holdstring")
 	variable baselength = dimsize(root:packages:motofit:reflectivity:baselayerparams,0)
-	variable paramsperlayer = (dimsize(root:packages:motofit:reflectivity:layerparams,1)-1)/3
+	variable paramsperlayer = 4
 	Wave/T baselayerparams = root:packages:motofit:reflectivity:baselayerparams,layerparams = root:packages:motofit:reflectivity:layerparams
 	Wave baselayerparams_selwave = root:packages:motofit:reflectivity:baselayerparams_selwave,layerparams_selwave = root:packages:motofit:reflectivity:layerparams_selwave
 	
@@ -2978,7 +2992,6 @@ Function moto_UpdateControls()
 	Wave resolution
 	resolution[0]=str2num(moto_Str("res"))
 	setvariable res,value=resolution[0],win=reflectivitypanel
-
 End
 
 Function Moto_savecoefficients(ctrlName) : ButtonControl
@@ -3027,7 +3040,7 @@ Function Moto_savecoefficients(ctrlName) : ButtonControl
 	if(strlen(coefnote)<10)
 		coefnote=Moto_dummymotofitstring()
 		variable baselength = str2num(stringbykey("baselength",coefnote))
-		variable paramsperlayer = str2num(stringbykey("paramsperlayer",coefnote))
+		variable paramsperlayer = 4
 		
 		coefnote=Replacestringbykey("coefwave",coefnote,tempcoef)
 		coefnote=Replacestringbykey("plotyp",coefnote,moto_str("plotyp"))
@@ -3223,7 +3236,6 @@ Function Moto_FTreflectivityHook(SV_Struct)
 	Moto_FTreflectivity()
 End
 
-
 Function Moto_FTreflectivity()
 	//this function estimates layer thicknesses from the FFT of the reflectivity curve.
 	//It uses the cursors to determine the correct zone for transforming.
@@ -3357,7 +3369,6 @@ Function Moto_FTplotHook(s)
 	if(s.eventcode==-1)
 		return 0
 	endif
-	
 	Variable rval= 0
 	switch(s.eventCode)
 		case 5:
@@ -3515,7 +3526,7 @@ Function Moto_SLDdatabase() : Panel
 			Newdatafolder/o root:packages:motofit:reflectivity:SLDdatabase
 		endif
 		PauseUpdate; Silent 1		// building window...
-		NewPanel /K=1/W=(0,0,520,320)
+		NewPanel /k=1/W=(0,0,520,320)
 		Tabcontrol sldtab size = {511,305},tabLabel(0)="calculator",proc=Moto_SldtabControl,fSize=12
 		Tabcontrol sldtab size = {511,305},tabLabel(1)="database",fSize=12
 		Tabcontrol sldtab size = {511,305},tabLabel(2)="SLDmixing",fSize=12
@@ -3768,7 +3779,7 @@ Function getrid()
 End
 
 Function Moto_removeNAN(q,R,dR,dQ)
-	Wave q,R,dR,dQ
+	Wave/z q,R,dR,dQ
 	Variable ii=0
 	for(ii=0;ii<numpnts(q);ii+=1)
 		if(numtype(q[ii])!=0 || numtype(R[ii])!=0 || R[ii]<=0)
@@ -3787,7 +3798,7 @@ Function Moto_removeNAN(q,R,dR,dQ)
 End
 
 Function Moto_localchi2() //menu call
-	Wave coef_Cref = root:coef_Cref ,coef_multiCref=root:coef_multicref
+	Wave/z coef_Cref = root:coef_Cref ,coef_multiCref=root:coef_multicref
 	string callfolder=Getdatafolder(1)
 			
 	controlinfo/w=reflectivitypanel dataset
@@ -4023,9 +4034,9 @@ Function Moto_changelayerwave(baselength,layers,paramsperlayer)
 	variable baselength,layers, paramsperlayer
 	String savedDataFolder = GetDataFolder(1)		// save
 	Setdatafolder root:
-	newdatafolder/o/s packages
-	Newdatafolder/o/S Motofit
-	Newdatafolder/o/s reflectivity
+	newdatafolder /o/s root:packages
+	Newdatafolder/o/S root:packages:Motofit
+	Newdatafolder/o/s root:packages:motofit:reflectivity
 	
 	if(Waveexists(baselayerparams)==0)
 		make/t/n=(baselength,3) baselayerparams
@@ -4080,7 +4091,7 @@ Function Moto_CrefToLayerTable()
 	Setdatafolder root:packages:motofit:reflectivity
 	Wave/T layerparams,baselayerparams
 	
-	variable layers=dimsize(layerparams,0), paramsperlayer = (dimsize(layerparams,1)-1)/3
+	variable layers=dimsize(layerparams,0), paramsperlayer =4
 	variable baselength = dimsize(baselayerparams,0)
 	variable ii,jj,kk=0
 	for(ii=0;ii<baselength;ii+=1)
@@ -4104,11 +4115,8 @@ Function Moto_LayerTableToCref(coefficients)
 	Setdatafolder root:packages:motofit:reflectivity
 	Wave/T layerparams,baselayerparams
 	
-	variable layers=dimsize(layerparams,0), paramsperlayer = round((dimsize(layerparams,1)-1)/3)
+	variable layers=dimsize(layerparams,0), paramsperlayer = 4
 	variable baselength = dimsize(baselayerparams,0)
-	if(layers==0)
-		paramsperlayer = str2num(moto_str("paramsperlayer"))
-	endif
 	
 	//this is a bodgy way of doing this, but it's difficult to update things.
 	//you are changing the number of layers, so you need to change the length of the coefficient wave
@@ -4193,10 +4201,7 @@ Function moto_modelchange(LB_Struct) : ListboxControl
 		Wave layerparams_selwave = root:packages:motofit:reflectivity:layerparams_selwave
 		variable oldlayers = dimsize(layerparams,0)
 		variable howmany = abs(oldlayers-newlayers)
-		variable paramsperlayer = round((dimsize(layerparams,1)-1)/3),ii=0,jj=0
-		if(oldlayers==0)
-			paramsperlayer = str2num(Moto_str("paramsperlayer"))
-		endif
+		variable paramsperlayer = 4,ii=0,jj=0
 		
 		if(oldlayers>newlayers)
 			//this line of code enables the user to remove the layer from where he would like
@@ -4293,7 +4298,7 @@ Function Moto_initialiselayerwave(layer)
 	variable layer
 	Wave/T layerparams=root:packages:motofit:reflectivity:layerparams
 	Wave layerparams_selwave = root:packages:motofit:reflectivity:layerparams_selwave
-	variable paramsperlayer = round((dimsize(layerparams,1)-1)/3)
+	variable paramsperlayer = 4
 	variable ii=0
 	for(ii=0;ii<paramsperlayer;ii+=1)
 		layerparams[layer][3*ii+2] = num2str(0)
@@ -4372,7 +4377,8 @@ Function Moto_AboutPanel()
 	DrawText 11,180,"http://motofit.sourceforge.net"
 
 	DrawText 11,216,"Analysis of multiple contrast X-ray and"
-	DrawText 11,236,"Neutron Reflectometry data"
+	DrawText 11,236,"Neutron Reflectometry data."
+	
 	DrawText 11,256,"Motofit version: " + " $Rev$"
 	DrawPict 270,110,1,1,ProcGlobal#moto
 	
@@ -4504,7 +4510,6 @@ static strconstant GENERAL = "Parse - please enter chemical as element(isotope)n
 Function Moto_SLDLoadScatteringlengths()
 	string saveDF = Getdatafolder(1)
 	setdatafolder root:
-	newdatafolder/o/s root:packages
 	newdatafolder/o/s root:packages:motofit
 	newdatafolder/o/s root:packages:motofit:reflectivity
 	newdatafolder/o/s root:packages:motofit:reflectivity:Slddatabase
@@ -4590,11 +4595,11 @@ Function Moto_SLDcalculateSetvariable(SV_Struct) : Setvariablecontrol
 		
 		strswitch(SV_Struct.ctrlname)
 			case "calcMassDensity":
-			SLD_molvol = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_massdensity*6.023e23)
-			break
+				SLD_molvol = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_massdensity*6.023e23)
+				break
 			case "calcmolvol":
-			SLD_massdensity = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_molvol*6.023e23)
-			break
+				SLD_massdensity = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_molvol*6.023e23)
+				break
 		endswitch
 		
 		Variable/C sld
@@ -4623,13 +4628,13 @@ Function/c Moto_SLDcalculation(chemical,massdensity,type)
 End
 
 Function/S Moto_SLDparsechemical(chemical,type)
-//parses the entered chemical and adds up the total weight and scattering lengths
-string chemical
-variable type
+	//parses the entered chemical and adds up the total weight and scattering lengths
+	string chemical
+	variable type
 
-wave/t scatlengths = root:packages:motofit:reflectivity:slddatabase:scatlengths
+	wave/t scatlengths = root:packages:motofit:reflectivity:slddatabase:scatlengths
 
-String element = ""
+	String element = ""
 	variable isotope, numatoms
 
 	variable/c scatlen, scatlen_tot=cmplx(0,0),sld=cmplx(0,0)
@@ -4846,7 +4851,7 @@ Function Moto_notebookoutput(notebookname,yWave,additionaloutputstr)
 		Display/N=Notebookaddgraph $ywaveStr vs $xwaveStr as "NotebookAddgraph"
 		Appendtograph/W=notebookaddgraph $fit_waveStr vs $fitx_waveStr
 		Label/W=notebookaddgraph left,"R"
-		Label/W=notebookaddgraph bottom,"Q /≈\S-1"
+		Label/W=notebookaddgraph bottom,"Q /√Ö\S-1"
 		ModifyGraph/W=notebookaddgraph mode($ywaveStr)=3,marker=8,msize=2
 		
 		if(plotyp==3 || plotyp==2)
@@ -4923,19 +4928,21 @@ Function moto_holdall()
 End
 
 Function moto_offsetQ(Q,theta,lambda)
-Wave q;variable theta,lambda
+	Wave q;variable theta,lambda
 
-q *= (lambda/(4*Pi))
-q = asin(q)
-q *= (180/Pi)
+	q *= (lambda/(4*Pi))
+	q = asin(q)
+	q *= (180/Pi)
 
-q += theta
+	q += theta
 
-q *=  (Pi/180)
-q = sin(q) 
-q *= (4*Pi/lambda)
+	q *=  (Pi/180)
+	q = sin(q) 
+	q *= (4*Pi/lambda)
 
 End
+
+Function Moto_analyseMCdat([file])	string file	variable fileID	if(paramisdefault(file))		open/r/d fileID		file = S_filename	endif	LoadWave/J/M/D/A=M_montecarlo/K=0/V={" "," $",0,0} file		Moto_montecarlo_SLDcurves($(stringfromlist(0, S_wavenames)), 0.02, 2000)end
 
 Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 	Wave M_montecarlo
@@ -5023,33 +5030,32 @@ Function Moto_SLD_at_depth(w, zed)
 	Variable deltarho,sigma,thick,dist,rhosolv
 	 
 	nlayers=w[0]
-	rhosolv=w[4]
-	
+	rhosolv=w[3]
 	dist=0
 	summ=w[2]
 	for( ii = 0 ; ii < nlayers + 1 ; ii += 1) 
 		if(ii == 0)
-			SLD1=(w[9]/100)*(100-w[10])+(w[10]*rhosolv/100)
+			SLD1=(w[7]/100)*(100-w[8])+(w[8]*rhosolv/100)
 			deltarho=-w[2]+SLD1
 			thick=0
-			sigma=abs(w[11])
+			sigma=abs(w[9])
 			
 			if(nlayers==0)
-				sigma=abs(w[7])
-				deltarho=-w[2]+w[5]
+				sigma=abs(w[5])
+				deltarho=-w[2]+w[3]
 			endif
 		
 		elseif(ii==nlayers)
-			SLD1=(w[4*ii+5]/100)*(100-w[4*ii+6])+(w[4*ii+6]*rhosolv/100)
+			SLD1=(w[4*ii+3]/100)*(100-w[4*ii+4])+(w[4*ii+4]*rhosolv/100)
 			deltarho=-SLD1+rhosolv
-			thick=abs(w[4*ii+4])
-			sigma=abs(w[7])
+			thick=abs(w[4*ii+2])
+			sigma=abs(w[5])
 		else
-			SLD1=(w[4*ii+5]/100)*(100-w[4*ii+6])+(w[4*ii+6]*rhosolv/100)
-			SLD2=(w[4*(ii+1)+5]/100)*(100-w[4*(ii+1)+6])+(w[4*(ii+1)+6]*rhosolv/100)
+			SLD1=(w[4*ii+3]/100)*(100-w[4*ii+4])+(w[4*ii+4]*rhosolv/100)
+			SLD2=(w[4*(ii+1)+3]/100)*(100-w[4*(ii+1)+4])+(w[4*(ii+1)+4]*rhosolv/100)
 			deltarho=-SLD1+SLD2
-			thick=abs(w[4*(ii)+4])
-			sigma=abs(w[4*(ii+1)+7])
+			thick=abs(w[4*(ii)+2])
+			sigma=abs(w[4*(ii+1)+5])
 		endif
 		dist += thick
 		

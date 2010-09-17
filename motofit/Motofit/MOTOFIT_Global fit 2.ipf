@@ -400,7 +400,7 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	
 	if (Options & MOTO_NewGFOptionCALC_RESIDS)
 		DoResid = 1
-		ResidString="/R"
+		ResidString="/R "
 	endif
 	
 	//arjn

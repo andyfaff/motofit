@@ -4942,6 +4942,19 @@ Function moto_offsetQ(Q,theta,lambda)
 
 End
 
+Function Moto_analyseMCdat([file])
+	string file
+	variable fileID
+
+	if(paramisdefault(file))
+		open/r/d fileID
+		file = S_filename
+	endif
+	LoadWave/J/M/D/A=M_montecarlo/K=0/V={" "," $",0,0} file
+	
+	Moto_montecarlo_SLDcurves($(stringfromlist(0, S_wavenames)), 0.02, 2000)
+end
+
 Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 	Wave M_montecarlo
 	variable SLDbin, SLDpts
