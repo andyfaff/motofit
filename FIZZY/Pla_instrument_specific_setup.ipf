@@ -56,14 +56,14 @@
 Function DefaultHistogram()
 	oat_table("X",210.5,209.5,421)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43000,1,freq=23)
+	oat_table("T",0,49000,1,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function testHistogram()
 	oat_table("X",60.5,59.5,201)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43000,1,freq=23)
+	oat_table("T",0,49000,1,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
@@ -71,7 +71,7 @@ End
 Function aHistogram()		//suitable for 40mm HG
 	oat_table("X",40,-39,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=23)
+	oat_table("T",0,43,999,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
@@ -557,9 +557,9 @@ Function regularTasks(s)
 	if(waveexists(frame_deassert))
 		variable theTime = str2num(grabHistoStatus("frame_deassert_time"))
 		if(abs(theTime - ChopperN_delay) > 0.15)
-			theTime = NaN
+	//		theTime = NaN
 		endif
-		if(abs(theTime - ChopperN_delay) > 0.012 && abs(theTime - ChopperN_delay) < 0.15 && !numtype(theTime))
+		if(abs(theTime - ChopperN_delay) > 0.012 && abs(theTime - ChopperN_delay) < 0.15 )//&& !numtype(theTime))
 			//oh dear, the phasing has gone wrong
 			if(NVAR_exists(sentChopperSMS) && sentChopperSMS == 0)
 				//send an SMS
@@ -1883,9 +1883,31 @@ Function createHTML()
 		if(waveexists(frame_deassert))
 			text +="<TR><TD>chopper pulse delay(ms)</TD><TD>"+ num2str(frame_deassert[dimsize(frame_deassert, 0)][1]) + "</TD></TR>\r"
 			display/n=frame_deassert_graph/HIDE=1 frame_deassert[*][1] vs frame_deassert[*][0]
-			ModifyGraph dateInfo(bottom)={0,0,0}
-			SavePICT/win=frame_deassert_graph/e=-5/o/z as SAVELOC + "statusMedia:Picture4.png"
+			ModifyGraph mirror=2
+			ModifyGraph grid(bottom)=2
+			ModifyGraph dateInfo(left)={1,2,0}
+			ModifyGraph dateInfo(bottom)={0,1,-1},dateFormat(bottom)={Default,2,3,2,1,"DayOfMonth-Month-Year",7}
+			ModifyGraph minor(bottom)=1
+			SetAxis left 3.82, 3.91
+			variable phasetimenow=datetime
+			SetAxis bottom (phasetimenow-172800), phasetimenow
+			Label left "Chopper pulse delay / ms"
+			Label bottom "Date"
+			ModifyGraph rgb=(0,0,39168)
+			ModifyGraph lsize=0.75
+			SetDrawEnv linefgc= (52224,0,0),dash= 1,linethick= 0.5
+			SetDrawEnv ycoord= left
+			DrawLine 0,3.876,1,3.876
+			SetDrawEnv linefgc= (52224,0,0),dash= 0,linethick= 0.5
+			SetDrawEnv ycoord= left
+			DrawLine 0,3.864,1,3.864
+			SetDrawEnv linefgc= (52224,0,0),dash= 1,linethick= 0.5
+			SetDrawEnv ycoord= left
+			DrawLine 0,3.852,1,3.852
+
+			SavePICT/win=frame_deassert_graph/e=-5/o/z/b=144 as SAVELOC + "statusMedia:Picture4.png"
 			killwindow frame_deassert_graph
+
 		endif
 			
 		text +="</TABLE>\r"
@@ -2018,6 +2040,7 @@ Function/t createFizzyCommand(type)
 	//attenuate
 	//sics
 	//setexperimentalmode
+	//txtme
 	string cmd=""
 
 	string motor="",motorlist="", samplename="", sicscmd="",mode
@@ -2025,6 +2048,15 @@ Function/t createFizzyCommand(type)
 
 	strswitch(type)
 		case "":
+			break
+		case "txtme":
+			string text = ""
+			prompt text, "what did you want to text?"
+			doprompt "Enter your text", text
+			if(V_Flag)
+				return ""
+			endif
+			sprintf cmd, "txtme(\"%s\")", text
 			break
 		case "run":
 			Wave/t axeslist = root:packages:platypus:SICS:axeslist
@@ -2387,9 +2419,37 @@ End
 
 //a function to make a quick check connection to the chopper system
 function choppertestconn()
-•make/t/o buf
-•variable/g sockit
-•sockitopenconnection/q/time=2 sockit,CHOPPERserverIP,CHOPPERserverPort,buf
-•	sockitsendnrecv/SMAL/TIME=2 sockit,"user:NCS\r"
-•	sockitsendnrecv/SMAL/TIME=2 sockit,"password:NCS013\r"
+	make/t/o buf
+	variable/g sockit
+	sockitopenconnection/q/time=2 sockit,CHOPPERserverIP,CHOPPERserverPort,buf
+	sockitsendnrecv/SMAL/TIME=2 sockit,"user:NCS\r"
+	sockitsendnrecv/SMAL/TIME=2 sockit,"password:NCS013\r"
+End
+
+Function txtme(text)
+	string text
+	text = replacestring(" ", text, "+")
+	string cmd = ""
+	sprintf cmd, "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=r1vergod&to=" + getHipaVal("/user/phone") + "&text=%s", text
+	easyhttp cmd
+ENd
+
+Function TestTask(s)		// This is the function that will be called periodically
+	STRUCT WMBackgroundStruct &s
+	Wave phaseoffset, timer
+	
+	string value = grabHistoStatus("frame_deassert_time")
+	redimension/n=(dimsize(phaseoffset,0) + 1) phaseoffset, timer
+	
+	timer[dimsize(phaseoffset, 0) -1] = datetime
+	phaseoffset[dimsize(phaseoffset, 0) -1] = str2num(value)
+	return 0	// Continue background task
+End
+
+Function StartTestTask()
+	make/n=0/o phaseoffset
+	make/n=0/i/u/o timer
+	Variable numTicks = 1 * 60		// Run every two seconds (120 ticks)
+	CtrlNamedBackground Test, period=numTicks, proc=TestTask
+	CtrlNamedBackground Test, start
 End

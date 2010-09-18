@@ -4761,6 +4761,27 @@ repeats
  times.
 \end_layout
 
+\begin_layout Subsubsection
+txtme(textStr)
+\end_layout
+
+\begin_layout Standard
+Sends an SMS message to the registered mobile phone with the message textStr.
+ 
+\end_layout
+
+\begin_layout Standard
+Set the phone number by using:
+\end_layout
+
+\begin_layout LyX-Code
+hset /user/phone 04xxxxxxxx
+\end_layout
+
+\begin_layout Standard
+where 04xxxxxxxx is the mobile number.
+\end_layout
+
 \begin_layout Section
 How to align a sample (air-solid, solid-liquid)
 \end_layout

@@ -318,7 +318,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 1: //mouse down
 			if(lba.eventmod & 2^4)
-				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner"
+				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;txtme"
 				listwave[row][col] = createFizzyCommand(S_Selection)
 			endif
 			break
@@ -602,7 +602,7 @@ Function startSICS()
 		RenameWindow #,G2_tab2
 		SetActiveSubwindow ##
 		
-		ListBox buffer_tab3,pos={54,45},size={400,637}
+		ListBox buffer_tab3,pos={54,45},size={442,637}
 		ListBox buffer_tab3,listWave=root:packages:platypus:data:batchScan:list_batchbuffer
 		ListBox buffer_tab3,selWave=root:packages:platypus:data:batchScan:sel_batchbuffer
 		ListBox buffer_tab3,row= 1,mode= 7,editStyle= 2,widths={10,90,13,24,34}, fsize=14
@@ -2696,7 +2696,7 @@ Function positioner(posNum)
        //sth
        isrelative = 2^4 & position_selwave[posnum][6]
        if(isRelative)
-               desiredposition = getpos("sth") + str2num(position_listwave[posnum][5])
+              desiredposition = getpos("sth") + str2num(position_listwave[posnum][5]) //relative move is relative to current posn.
        else
                desiredposition =  str2num(position_listwave[posnum][5])
        endif
