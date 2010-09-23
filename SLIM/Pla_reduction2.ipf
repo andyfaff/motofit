@@ -243,7 +243,7 @@ Function ChoDCalculator(fileName, omega, two_theta [,pairing, scanpoint])
 	variable omega, two_theta
 	variable pairing, scanpoint
 	
-	variable chod = 0
+	variable chod = 0, master = -1, slave = -1, ii, jj
 	string tempDF  = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(filename,".nx.hdf"),0)
 
 	Wave chopper1_distance = $(tempDF+":instrument:parameters:chopper1_distance")
@@ -261,7 +261,7 @@ Function ChoDCalculator(fileName, omega, two_theta [,pairing, scanpoint])
 	Wave sample_distance = $(tempDF+":instrument:parameters:sample_distance")
 	Wave DetectorPos = $(tempDF+":instrument:detector:longitudinal_translation")
 	Wave/t mode = $(tempDF+":instrument:parameters:mode")
-		
+	
 	if(omega < 0 || two_theta < 0)
 		print "WARNING, OMEGA isn't set, spectrum is approximate, setting omega, 2theta=0 (CHODcalculator)"
 		omega=0
@@ -272,23 +272,58 @@ Function ChoDCalculator(fileName, omega, two_theta [,pairing, scanpoint])
 	endif
 	
 	if(paramisdefault(pairing))
-		pairing = CHOPPAIRING
+		master = 1
+		slave = 3
 	endif
-	switch(pairing)
+	
+	//assumes that disk closest to the reactor (out of a given pair) is always master
+	for(ii = 1; ii < 5 ; ii+=1)
+		if(pairing & 2^ii)
+			master = ii
+			break
+		endif
+	endfor
+	for(ii = master + 1 ; ii < 5 ; ii+=1)
+		if(pairing & 2^ii)
+			slave = ii
+			break
+		endif
+	endfor
+	
+	switch(master)
+		case 1: 
+			ChoD = 0
+			break
 		case 2:
-			ChoD -= 0.5 * chopper2_distance[scanpoint]
+			ChoD -= chopper2_distance[scanpoint]
 			break
 		case 3:
-			ChoD -= 0.5 * chopper3_distance[scanpoint]
-			break
-		case 4:
-			ChoD -= 0.5 * chopper4_distance[scanpoint]
+			ChoD -= chopper3_distance[scanpoint]
 			break
 		default:
-			print "ERROR: chopper pairing must be 2,3 or 4 (ChoDCalculator)"
+			print "ERROR: master chopper must be 1,2,3 (ChoDCalculator)"
 			return NaN
 			break
 	endswitch
+		
+	switch(slave)
+		case 2:
+			ChoD -= chopper2_distance[scanpoint]
+			break
+		case 3:
+			ChoD -= chopper3_distance[scanpoint]
+			break
+		case 4:
+			ChoD -= chopper4_distance[scanpoint]
+			break
+		default:
+			print "ERROR: slave must be 2,3 or 4 (ChoDCalculator)"
+			return NaN
+			break
+	endswitch
+	//T0 is midway between master and slave, but master may not necessarily be disk 1.
+	//However, all instrument lengths are measured from disk1
+	ChoD /= 2
 	
 	strswitch(mode[scanpoint])
 		case "FOC":

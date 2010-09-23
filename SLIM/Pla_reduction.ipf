@@ -41,7 +41,6 @@
 	Constant CHOPFREQ = 23		//Hz
 	Constant ROUGH_BEAM_POSITION = 150		//Rough direct beam position
 	constant ROUGH_BEAM_WIDTH = 10
-	Constant CHOPPER1_PHASE_OFFSET = -0.7903
 	Constant CHOPPAIRING = 3
 		
 	//StrConstant PATH_TO_DATA = "Macintosh HDD:Users:andrew:Documents:Andy:Platypus:TEMP:"
@@ -703,7 +702,7 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 	//OUTPUT
 	//W_Spec,W_specSD,W_lambda,W_lambdaSD,W_lambdaHIST,W_specTOF,W_specTOFHIST, W_waternorm, W_beampos
 	
-	variable ChoD, toffset, nrebinpnts,ii, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint, dBM1counts
+	variable ChoD, toffset, nrebinpnts,ii, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint, dBM1counts, MASTER_OPENING
 	string tempDF,cDF,tempDFwater
 	Wave/z hmmWater
 	
@@ -890,49 +889,100 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 		// -59 and vice versa.
 		//  Thus a positive phase offset for chopper 4, such as 0.23 degrees, one would operate the choppers at -59.79 degrees.  
 		// If a phase opening of 2 degrees is required then would operate at -60+0.23+2 = -57.79.
+		Wave frequency = $(tempDF+":instrument:disk_chopper:ch1speed")
+		freq  = frequency[scanpoint] / 60
 		
-		
-		if(exists(tempDF + ":instrument:disk_chopper:ch1speed")==1)
-			Wave frequency = $(tempDF+":instrument:disk_chopper:ch1speed")
-			freq  = frequency[scanpoint] / 60
-		
-			Wave ch2speed = $(tempDF + ":instrument:disk_chopper:ch2speed")
-			Wave ch3speed = $(tempDF + ":instrument:disk_chopper:ch3speed")
-			Wave ch4speed = $(tempDF + ":instrument:disk_chopper:ch4speed")
-			Wave ch2phase = $(tempDF + ":instrument:disk_chopper:ch2phase")
-			Wave ch3phase = $(tempDF + ":instrument:disk_chopper:ch3phase")
-			Wave ch4phase = $(tempDF + ":instrument:disk_chopper:ch4phase")
-			Wave ch2phaseoffset = $(tempDF + ":instrument:parameters:chopper2_phase_offset")
-			Wave ch3phaseoffset = $(tempDF + ":instrument:parameters:chopper3_phase_offset")
-			Wave ch4phaseoffset = $(tempDF + ":instrument:parameters:chopper4_phase_offset")
+		Wave ch2speed = $(tempDF + ":instrument:disk_chopper:ch2speed")
+		Wave ch3speed = $(tempDF + ":instrument:disk_chopper:ch3speed")
+		Wave ch4speed = $(tempDF + ":instrument:disk_chopper:ch4speed")
+		Wave ch2phase = $(tempDF + ":instrument:disk_chopper:ch2phase")
+		Wave ch3phase = $(tempDF + ":instrument:disk_chopper:ch3phase")
+		Wave ch4phase = $(tempDF + ":instrument:disk_chopper:ch4phase")
+		Wave ch2phaseoffset = $(tempDF + ":instrument:parameters:chopper2_phase_offset")
+		Wave ch3phaseoffset = $(tempDF + ":instrument:parameters:chopper3_phase_offset")
+		Wave ch4phaseoffset = $(tempDF + ":instrument:parameters:chopper4_phase_offset")
+		pairing = 0
+
+		//perhaps you've swapped the encoder discs around and you want to use a different pairing
+		//there will be slave, master parameters, read the pairing from them.
+		//this is because the hardware readout won't match what you actually used.
+		//these slave and master parameters need to be set manually.
+		if(exists(tempDF+":instrument:parameters:slave") == 1 && exists(tempDF + ":instrument:parameters:master") == 1)
+			Wave slave = $(tempDF+":instrument:parameters:slave")
+			Wave master = $(tempDF+":instrument:parameters:master")
+			phaseangle = 0
+			if(slave < 1 || slave > 4 || master < 1 || master > 4)
+				print "ERROR master/slave pairing is incorrect (processNexusfile)"
+				abort
+			endif
+			pairing = pairing | 2^slave[scanpoint]
+			pairing = pairing | 2^master[scanpoint]
 			
+			switch (master[scanpoint])
+				case 1:
+					D_CX = -chopper1_distance[scanpoint]
+					phaseangle += 0.5 * O_C1d
+					MASTER_OPENING = O_C1
+				break
+				case 2:
+					D_CX = -chopper2_distance[scanpoint]
+					phaseangle += 0.5 * O_C2d
+					MASTER_OPENING = O_C2
+				break
+				case 3:
+					D_CX = -chopper3_distance[scanpoint]
+					phaseangle += 0.5 * O_C3d
+					MASTER_OPENING = O_C3
+				break
+				default:
+					print "ERROR master/slave pairing is incorrect (processNexusfile)"
+				break
+			endswitch			
+			switch (slave[scanpoint])
+				case 2:
+					D_CX += chopper2_distance[scanpoint]
+					phaseangle += 0.5 * O_C2d
+					phaseangle += -ch2phase[scanpoint] - ch2phaseoffset[scanpoint]
+				break
+				case 3:
+					phaseangle += 0.5 * O_C3d
+					phaseangle = -ch3phase[scanpoint] - ch3phaseoffset[scanpoint]
+					D_CX += chopper3_distance[scanpoint]
+				break
+				case 4:
+					phaseangle += 0.5 * O_C4d
+					phaseangle += ch4phase[scanpoint] - ch4phaseoffset[scanpoint]
+					D_CX += chopper4_distance[scanpoint]
+				break
+				default:
+					print "ERROR master/slave pairing is incorrect (processNexusfile)"
+				break
+			endswitch			
+		else
+		//the slave and master parameters don't exist, work out the pairing assuming 1 is the master disk.
+			pairing = pairing | 2^1
+			MASTER_OPENING = O_C1
 			if(abs(ch2speed[scanpoint]) > 10)
-				pairing = 2
+				pairing = pairing | 2^2
 				D_CX = chopper2_distance[scanpoint]
 				phaseangle = -ch2phase[scanpoint] - ch2phaseoffset[scanpoint] + 0.5*(O_C2d+O_C1d)
 			elseif(abs(ch3speed[scanpoint]) > 10)
-				pairing = 3
+				pairing = pairing | 2^3
 				D_CX = chopper3_distance[scanpoint]
-				phaseangle = -ch3phase[scanpoint] - ch3phaseoffset[scanpoint] +0.5*(O_C3d+O_C1d)
+				phaseangle = -ch3phase[scanpoint] - ch3phaseoffset[scanpoint] + 0.5*(O_C3d+O_C1d)
 			else
-				pairing = 4
+				pairing = pairing | 2^4
 				D_CX = chopper4_distance[scanpoint]
-				phaseangle = ch4phase[scanpoint] - ch4phaseoffset[scanpoint] + 0.5*(O_C4d+O_C1d)
+				phaseangle = ch4phase[scanpoint] - ch4phaseoffset[scanpoint] + 0.5*(O_C4d + O_C1d)
 			endif
-		else		
-			D_CX = C_Chopper3_distance
-			pairing = CHOPPAIRING
-			phaseAngle = 0
-			freq = CHOPFREQ
 		endif
-
+		
 		//work out the total flight length
 		chod = ChoDCalculator(fileName, omega, two_theta, pairing = pairing, scanpoint = scanpoint)
 		if(numtype(chod))
 			print "ERROR, chod is NaN (processNexusdata)"
 			abort
 		endif		
-
 		//setup time of flight paraphenalia
 		Wave TOF = $(tempDF+":data:time_of_flight")
 		duplicate/o TOF, $(tempDF+":W_specTOFHIST")
@@ -944,11 +994,14 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 			Wave ch1phaseoffset = $(tempDF + ":instrument:parameters:chopper1_phase_offset")
 			poff = ch1phaseoffset[scanpoint]
 		else
-			poff = CHOPPER1_PHASE_OFFSET
+			print "ERROR chopper1_phase_offset not specified"
+			abort
 		endif
-		variable poffset = 1e6 * poff/(2*360*freq)
-		toffset = poffset + (1e6*O_C1/2/(2*Pi)/freq) - (1e6*phaseAngle/(360*2*freq))
-		W_specTOFHIST -=toffset
+		variable poffset = 1e6 * poff/(2 * 360 * freq)
+		toffset = poffset + (1e6 * MASTER_OPENING/2/(2 * Pi)/freq) - (1e6 * phaseAngle /(360 * 2 * freq))
+		W_specTOFHIST -= toffset
+		
+//		print master, slave, chod, phaseangle, poff, toffset
 		
 		//convert TOF to lambda	
 		TOFtoLambda(W_specTOFHIST,ChoD)
