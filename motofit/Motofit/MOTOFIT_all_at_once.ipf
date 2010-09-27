@@ -2937,6 +2937,34 @@ Function Moto_changecoefs(PU_Struct)
 	Moto_update()
 End
 
+Function Moto_reversemodel(coefs)
+	Wave coefs
+
+	variable ii
+	if(coefs[0] * 4 + 6 != dimsize(coefs, 0))
+		return 1
+	endif
+
+	duplicate/free/d coefs, coefs_copy
+	coefs[2] = coefs_copy[3]
+	coefs[3] = coefs_copy[2]
+
+	for(ii = 0 ; ii < coefs_copy[0] ; ii+=1)
+		coefs[4 * ii + 6] = coefs_copy[4 * (coefs_copy[0] - ii - 1) + 6]
+		coefs[4 * ii + 7] = coefs_copy[4 * (coefs_copy[0] - ii - 1) + 7]
+		coefs[4 * ii + 8] = coefs_copy[4 * (coefs_copy[0] - ii - 1) + 8]
+	endfor
+
+	coefs[9] = coefs_copy[5]
+	coefs[5] = coefs_copy[9]
+
+	for(ii = 1; ii < coefs_copy[0] ; ii+=1)
+		coefs[4  * ii + 9] = coefs_copy[ 4  * (coefs_copy[0] - ii ) + 9]
+	endfor
+
+
+End
+
 Function moto_UpdateControls()
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
 
