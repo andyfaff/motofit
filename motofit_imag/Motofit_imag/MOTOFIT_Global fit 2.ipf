@@ -400,7 +400,7 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	
 	if (Options & MOTO_NewGFOptionCALC_RESIDS)
 		DoResid = 1
-		ResidString="/R"
+		ResidString="/R "
 	endif
 	
 	//arjn
@@ -505,7 +505,7 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	
 	DoUpdate
 	//arjn
-	string funcName
+	string funcName = ""
 	if (isAllAtOnce)
 		funcName = " MOTO_NewGlblFitFuncAllAtOnce"
 	else
@@ -541,7 +541,6 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 			Command += "/I=1"
 		endif
 	endif
-	SaveDF = GetDataFolder(1)
 	
 	//arjn
 	SetDataFolder root:packages:motofitgf:NewGlobalFit
@@ -595,8 +594,12 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 		make/o/n=(numpnts(mastercoefs)) W_Sigma = 0
 	endif
 	print command
-	Execute Command
-		
+	try
+		Execute Command
+	catch
+	endtry
+	print saveDF
+	
 	NVAR/Z V_chisq
 	NVAR/Z fit_npnts = V_npnts
 	NVAR/Z fit_numNaNs = V_numNaNs
