@@ -5026,7 +5026,7 @@ Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 	SLDmin = V_min
 
 	make/n=( (SLDmax - SLDmin ) / SLDbin)/d/o SLDsliceHIST
-	make/n=(MCiters)/free/d SLDslices
+	make/n=(MCiters)/d SLDslices
 		
 	setscale/I x,  SLDmin, SLDmax, SLDsliceHIST
 	make/n=(SLDpts, numpnts(SLDsliceHIST))/o/d SLDimage
