@@ -7,7 +7,7 @@
 ; Main Install settings
 Name "${APPNAMEANDVERSION}"
 InstallDir "$INSTDIR"
-OutFile "./motofitInstaller.exe"
+OutFile "./motofitImagInstaller.exe"
 
 ; Include LogicLibrary
 !include "LogicLib.nsh"
