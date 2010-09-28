@@ -2138,7 +2138,7 @@ Function Moto_fit_GenLM()
 	colour=replacestring("x",colour,fitdestination)	
 	cmd="modifygraph "+colour
 	Execute/Z cmd
-	Modifygraph lsize($fitdestination)=0, mode($fitdestination)=0
+	Modifygraph lsize($fitdestination)=1, mode($fitdestination)=0
 
 	//figure out what the SLD and Zed and coef waves should be called.  Use a stub of the
 	//data wave.
