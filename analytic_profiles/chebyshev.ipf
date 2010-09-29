@@ -1,19 +1,28 @@
 #pragma rtGlobals=1		// Use modern global access method.
 
-constant NUMSTEPS = 100
+constant NUMSTEPS = 60
 constant DELRHO = 0.04
+constant lambda = 1
 
 Function Chebyshevapproximator(w, yy, xx): fitfunc
-Wave w, yy, xx
+	Wave w, yy, xx
 
-variable ii, xmod
-variable chebdegree = dimsize(w, 0) - 7
-variable lastz, lastSLD, numlayers = 0, thicknessoflastlayer=0, MAX_LENGTH
+	Wave coef_forReflectivity = createCoefs_ForReflectivity(w)
+	AbelesAll(coef_forReflectivity, yy, xx)
+	yy = log(yy)
+End
 
-MAX_LENGTH = w[6]
+Function/wave createCoefs_ForReflectivity(w)
+	wave w
+	
+	variable ii, xmod
+	variable chebdegree = dimsize(w, 0) - 7
+	variable lastz, lastSLD, numlayers = 0, thicknessoflastlayer=0, MAX_LENGTH
 
-make/d/free/n=(NUMSTEPS) chebSLD
-setscale/I x, 0, MAX_LENGTH, chebSLD
+	MAX_LENGTH = w[6]
+
+	make/d/free/n=(NUMSTEPS) chebSLD
+	setscale/I x, 0, MAX_LENGTH, chebSLD
 
 	for(ii = 0 ; ii < chebdegree ; ii+=1)
 		multithread		chebSLD += calcCheb(w[ii + 7], MAX_LENGTH, ii,  x)
@@ -40,17 +49,37 @@ setscale/I x, 0, MAX_LENGTH, chebSLD
 		endif
 		lastz = pnt2x(chebsld, ii)
 	endfor
-//	print numlayers
-	AbelesAll(coef_forReflectivity, yy, xx)
-//	yy = yy * x^4
-	yy = log(yy)
+
+	return coef_forReflectivity
 End
 
 
 Threadsafe Function calcCheb(coef, MAX_LENGTH, degree, x)
-variable coef, MAX_LENGTH, degree, x
-variable xmod
+	variable coef, MAX_LENGTH, degree, x
+	variable xmod
 	xmod = 2 * (x/MAX_LENGTH) - 1
 	return coef * chebyshev(degree, xmod) 
 End
 
+Function smoother(coefs, y_obs, y_calc, s_obs)
+	Wave coefs, y_obs, y_calc, s_obs
+
+	variable retval, betas = 0, ii
+	
+	make/n=(numpnts(y_obs))/free/d diff
+	multithread diff = ((y_obs-y_calc)/s_obs)^2
+	retval = sum(diff)
+	
+	Wave coef_forreflectivity = createCoefs_ForReflectivity(coefs)
+	for(ii = 0 ; ii < coef_forreflectivity[0] + 1 ; ii+=1)
+		if(ii == 0)
+			betas += (coef_forreflectivity[2] - coef_forreflectivity[7])^2
+		elseif(ii == coef_forreflectivity[0])
+			betas += (coef_forreflectivity[3] - coef_forreflectivity[(4 * (ii - 1)) + 7])^2
+		else
+			betas += (coef_forreflectivity[4 * (ii-1) + 7] - coef_forreflectivity[4 * ii  + 7])^2
+		endif
+	endfor	
+
+	return retval + lambda * betas
+end
