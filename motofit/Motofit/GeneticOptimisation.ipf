@@ -173,7 +173,7 @@ Function Gen_curvefitpanel_init() : Panel
 	Button cancel_button,pos={463,343},size={103,24},proc=GEN_cancelButtonProc,title="cancel"
 	GroupBox Function_group_tab0,pos={41,63},size={174,199},disable=1,title="Function",mode=1
 	PopupMenu FunctionStr_popup_tab0,pos={52,86},size={148,20},disable=1,proc=gen_functionstr
-	PopupMenu FunctionStr_popup_tab0,mode=2,bodyWidth= 148,value= #"GEN_Functionlists()"
+	PopupMenu FunctionStr_popup_tab0,mode=2,bodyWidth= 148,popvalue = functionstr, value= #"GEN_Functionlists()"
 	GroupBox ydata_group_tab0,pos={275,63},size={232,51},disable=1,title="Y Data"
 	GroupBox xdata_group_tab0,pos={275,127},size={233,133},disable=1,title="X Data"
 	TitleBox xdata_title_tab0,pos={291,144},size={196,12},disable=1,title="If you only have a ywave select _calculated_"
