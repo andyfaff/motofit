@@ -988,7 +988,7 @@ Function gen_graphnowbutton(ba) : ButtonControl
 							make/o/d/n=(numpnts(outputWav)) root:packages:motofit:gencurvefit:tempx
 							Wave tempx = root:packages:motofit:gencurvefit:tempx
 							tempx[] = dimoffset(outputWav,0)+p*dimdelta(outputWav,0)
-							cmd = functionstr+"("+fulloutputpath+","+fullcoefpath+",root:packages:motofit:gencurvefit:tempx)"
+							cmd = functionstr+"("+fullcoefpath+","+fulloutputpath+",root:packages:motofit:gencurvefit:tempx)"
 						else
 							cmd = functionstr+"("+fullcoefpath+","+fulloutputpath+","+fullxwavepath+")"
 						endif

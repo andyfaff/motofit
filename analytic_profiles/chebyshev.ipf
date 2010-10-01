@@ -2,36 +2,52 @@
 
 constant NUMSTEPS = 35
 constant DELRHO = 0.04
-constant lambda = 10
+constant lambda = 20
 
 Function Chebyshevapproximator(w, yy, xx): fitfunc
 	Wave w, yy, xx
 
 	Wave coef_forReflectivity = createCoefs_ForReflectivity(w)
 	AbelesAll(coef_forReflectivity, yy, xx)
-	yy = log(yy)
+	yy =log(yy)
 End
 
 Function/wave createCoefs_ForReflectivity(w)
 	wave w
 	
 	variable ii, xmod
-	variable chebdegree = dimsize(w, 0) - 7
 	variable lastz, lastSLD, numlayers = 0, thicknessoflastlayer=0, MAX_LENGTH
-
-	MAX_LENGTH = w[6]
-
+	variable chebdegree = dimsize(w, 0) - (w[0] * 3 + 7)
+	MAX_LENGTH = w[w[0] * 3 + 6]
+	
 	make/d/free/n=(NUMSTEPS) chebSLD
 	setscale/I x, 0, MAX_LENGTH, chebSLD
 
 	for(ii = 0 ; ii < chebdegree ; ii+=1)
-		multithread		chebSLD += calcCheb(w[ii + 7], MAX_LENGTH, ii,  x)
+		multithread		chebSLD += calcCheb(w[(w[0] * 3 + 7) + ii], MAX_LENGTH, ii,  x)
 	endfor
 
 	make/d/o/n=6 coef_forReflectivity = w
 	lastz = -MAX_LENGTH/(NUMSTEPS - 1)
-	lastSLD = w[2]
 	numlayers = 0
+	
+	//add in the number of layers that already exist
+	redimension/d/n=(dimsize(coef_forreflectivity,0) + 4 * w[0]) coef_forreflectivity
+	for(ii = 0 ; ii < w[0] ; ii+=1)
+		coef_forreflectivity[4 * ii + 6] = w[3 * ii + 6]
+		coef_forreflectivity[4 * ii + 7] = w[3 * ii + 7]
+		coef_forreflectivity[4 * ii + 8] = 0
+		coef_forreflectivity[4 * ii + 9] = w[3 * ii + 8]
+		numlayers += 1
+		coef_forreflectivity[0] = numlayers
+	endfor
+	
+	if(numlayers == 0)
+		lastSLD = w[2]
+	else
+		lastSLD = w[3* (w[0]-1) + 7]
+	endif
+	//now add in the chebyshev
 	for(ii = 0 ; ii < dimsize(chebSLD, 0) ; ii+=1)
 		if(abs(chebSLD[ii] - lastSLD) > delrho)
 			redimension/n=(dimsize(coef_forReflectivity, 0) + 4) coef_forReflectivity
