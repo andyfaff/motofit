@@ -2802,6 +2802,7 @@ Function positions_panel() : Panel
        ListBox position_list,listWave=root:packages:platypus:SICS:position_listwave, win=position_panel
        ListBox position_list,selWave=root:packages:platypus:SICS:position_selwave, win=position_panel
        ListBox position_list,mode= 5,editStyle= 1, win=position_panel
+       Button position_button, title="set positions", pos={221,6},size={320,22}
        SetVariable numpositions,pos={9,8},size={200,15},proc=numpositions_setVarProc,title="Number of positions", win=position_panel
        SetVariable numpositions,limits={1,10,1},value= _NUM:0, win=position_panel
 End

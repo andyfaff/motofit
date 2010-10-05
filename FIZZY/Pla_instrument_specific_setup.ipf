@@ -28,7 +28,7 @@
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
 	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
-	Constant ChopperN_delay = 3.864		// a time delay between the first chopper pulse and chopper N
+	Constant ChopperN_delay = 5.899		// a time delay between the first chopper pulse and chopper N
 	
 	//these motors are removed from the list displayed in the instrument panel.
 	Strconstant ForbiddenMotors ="bat;two_theta"
@@ -56,14 +56,14 @@
 Function DefaultHistogram()
 	oat_table("X",210.5,209.5,421)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49000,1,freq=20)
+	oat_table("T",0,50000,1,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function testHistogram()
 	oat_table("X",60.5,59.5,201)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49000,1,freq=20)
+	oat_table("T",0,50000,1,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
@@ -71,49 +71,49 @@ End
 Function aHistogram()		//suitable for 40mm HG
 	oat_table("X",40,-39,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,43,999,freq=20)
+	oat_table("T",0,50, 1000,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function bHistogram()		//suitable for 40mm HG with FOC
 	oat_table("X",56,-52,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49,999,freq=20)
+	oat_table("T",0,50,1000,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function cHistogram()		//suitable for 30mm HG with FOC hslits(40,30,30,38)
 	oat_table("X",50,-50,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49,999,freq=20)
+	oat_table("T",0,50,1000,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function dHistogram()	//suitable for 40mm HG with FOC + 50mm St4vt
 	oat_table("X",64,-56,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49,999,freq=20)
+	oat_table("T",0,50,1000,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function eHistogram()		//suitable for 25mm HG with FOC
 	oat_table("X",21,-19,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49,999,freq=20)
+	oat_table("T",0,50,1000,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function fHistogram()		//suitable for 30mm HG with SB
 	oat_table("X",25,-24,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49,999,freq=20)
+	oat_table("T",0,50,1000,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function gHistogram()		//suitable for 7mm HG with FOC
 	oat_table("X",10,-10,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49,999,freq=20)
+	oat_table("T",0,50,1000,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
@@ -125,28 +125,28 @@ Function hHistogram()
 //this was measured by Zin Tun and Andrew Nelson on 23/12/2009
 	oat_table("X",54.5,-54.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49,999,freq = 20)
+	oat_table("T",0,50,1000,freq = 20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function iHistogram() //Bills SAW, hslits(10,4,4,20)
 	oat_table("X",5.5,-5.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49,999,freq=20)
+	oat_table("T",0,50,1000,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function jHistogram()		//suitable for hslits(44,35,35,43) "SB"
 	oat_table("X",35,-35,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49,999,freq=20)
+	oat_table("T",0,50,1000,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
 Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
 	oat_table("X",16,-11,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,49, 999,freq=20)
+	oat_table("T",0,50,1000,freq=20)
 	sics_cmd_interest("chopperController status")
 End
 
@@ -1888,7 +1888,7 @@ Function createHTML()
 			ModifyGraph dateInfo(left)={1,2,0}
 			ModifyGraph dateInfo(bottom)={0,1,-1},dateFormat(bottom)={Default,2,3,2,1,"DayOfMonth-Month-Year",7}
 			ModifyGraph minor(bottom)=1
-			SetAxis left 3.82, 3.91
+			SetAxis left 5.8, 6.0
 			variable phasetimenow=datetime
 			SetAxis bottom (phasetimenow-172800), phasetimenow
 			Label left "Chopper pulse delay / ms"
@@ -1897,13 +1897,13 @@ Function createHTML()
 			ModifyGraph lsize=0.75
 			SetDrawEnv linefgc= (52224,0,0),dash= 1,linethick= 0.5
 			SetDrawEnv ycoord= left
-			DrawLine 0,3.876,1,3.876
+			DrawLine 0,5.914,1,5.914
 			SetDrawEnv linefgc= (52224,0,0),dash= 0,linethick= 0.5
 			SetDrawEnv ycoord= left
-			DrawLine 0,3.864,1,3.864
+			DrawLine 0,5.899,1,5.899
 			SetDrawEnv linefgc= (52224,0,0),dash= 1,linethick= 0.5
 			SetDrawEnv ycoord= left
-			DrawLine 0,3.852,1,3.852
+			DrawLine 0,5.885,1,5.885
 
 			SavePICT/win=frame_deassert_graph/e=-5/o/z/b=144 as SAVELOC + "statusMedia:Picture4.png"
 			killwindow frame_deassert_graph
