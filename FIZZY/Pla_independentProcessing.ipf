@@ -251,7 +251,7 @@ End
 
 Threadsafe Function DetectorSentinel()
 	variable sock_sics, sock_bmon3, ii
-	variable val0,val1,val2,val3,val4,val5,val6,val7,val8,val9, bmon3_rate, bmon3_counts
+	variable val0,val1,val2,val3,val4,val5,val6,val7,val8,val9, bmon3_rate, bmon3_counts, lastrate = 0
 	string msg,temp
 	
 	sock_sics=sockitopenconnectionF("137.157.202.139",60003,10)
@@ -272,13 +272,15 @@ Threadsafe Function DetectorSentinel()
 		for(ii=0 ; ii<itemsinlist(msg, "\n") ; ii+=1)
 			sscanf stringfromlist(ii, msg, "\n"), "%d:%d:%g ( %g), %d (%d),%g ( %g, %g, %g)" , val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
 			bmon3_rate = val6
-			if(bmon3_rate > 30000 &&  val4 > bmon3_counts)
+//			print bmon3_rate, val4, bmon3_counts
+			if(bmon3_rate > 12000 && lastrate > 12000)
 				sockitsendmsgF(sock_sics,"INT1712 3\n")
 				temp = ThreadGroupGetDF(0, 200 )
-				sockitsendmsgf(sock_sics,"bat send oscd=0\nrun ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\ndrive bz 250\n")
+				sockitsendmsgf(sock_sics,"bat send oscd=0\ndrive ss1vg 0 ss2vg 0 ss3vg 0 ss4vg 0 bz 250\n")
 				print "DETECTOR RATE IS TOO HIGH, CLOSING SLITS, inserting ATTENUATOR (DetectorSentinel)"
-				temp = ThreadGroupGetDF(0, 10000 )
+				temp = ThreadGroupGetDF(0, 5000 )
 			endif
+			lastrate = bmon3_rate
 			bmon3_counts = val4
 		endfor
 		temp = ThreadGroupGetDF(0, 1000 )
