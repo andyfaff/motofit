@@ -61,6 +61,7 @@
 
 //ARJN 4/2007
 Menu "Motofit"
+	"-"
 	Submenu "MotoGlobalfit"
 		"MotoGlobal Fit", MOTO_WM_NewGlobalFit1#InitNewGlobalFitPanel()
 		"Unload MotoGlobal Fit", MOTO_WM_NewGlobalFit1#UnloadNewGlobalFit()

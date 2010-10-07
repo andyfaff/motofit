@@ -1,8 +1,8 @@
 #pragma rtGlobals=1		// Use modern global access method.
 
-constant NUMSTEPS = 35
-constant DELRHO = 0.04
-constant lambda = 20
+constant NUMSTEPS = 40
+constant DELRHO = 0.02
+constant lambda = 15
 
 Function Chebyshevapproximator(w, yy, xx): fitfunc
 	Wave w, yy, xx
@@ -26,7 +26,7 @@ Function/wave createCoefs_ForReflectivity(w)
 	for(ii = 0 ; ii < chebdegree ; ii+=1)
 		multithread		chebSLD += calcCheb(w[(w[0] * 3 + 7) + ii], MAX_LENGTH, ii,  x)
 	endfor
-
+	
 	make/d/o/n=6 coef_forReflectivity = w
 	lastz = -MAX_LENGTH/(NUMSTEPS - 1)
 	numlayers = 0
@@ -69,6 +69,20 @@ Function/wave createCoefs_ForReflectivity(w)
 	return coef_forReflectivity
 End
 
+Function chebby(w, yy, xx):fitfunc
+	wave w, yy, xx
+
+	variable ii, xmod
+	variable lastz, lastSLD, numlayers = 0, thicknessoflastlayer=0, MAX_LENGTH
+	variable chebdegree = dimsize(w, 0) - (w[0] * 3 + 7)
+	MAX_LENGTH = w[w[0] * 3 + 6]
+	yy=0
+	for(ii = 0 ; ii < chebdegree ; ii+=1)
+		multithread		yy += calcCheb(w[(w[0] * 3 + 7) + ii], MAX_LENGTH, ii,  xx)
+	endfor
+
+
+End
 
 Threadsafe Function calcCheb(coef, MAX_LENGTH, degree, x)
 	variable coef, MAX_LENGTH, degree, x
@@ -94,6 +108,9 @@ Function smoother(coefs, y_obs, y_calc, s_obs)
 			betas += (coef_forreflectivity[3] - coef_forreflectivity[(4 * (ii - 1)) + 7])^2
 		else
 			betas += (coef_forreflectivity[4 * (ii-1) + 7] - coef_forreflectivity[4 * ii  + 7])^2
+		endif
+		if(coef_forreflectivity[4 * (ii-1) + 7] < -0.1) 
+			betas*=10
 		endif
 	endfor	
 

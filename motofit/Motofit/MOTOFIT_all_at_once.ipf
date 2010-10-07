@@ -35,10 +35,16 @@
 	//A free demo version of IGOR is available from WaveMetrics Inc. These experiments and procedures were created using IGOR Pro 5.04
 	//The routines have not been tested on earlier versions of IGOR.
 
+#include "MOTOFIT_Multilayers"
+#include "MOTOFIT_batch"
+#include "GeneticOptimisation"
+#include "MOTOFIT_Fresnel"
+#include "MOTOFIT_Global fit 2"
+#include "MOTOFIT_Xrayreduction"
+#include "MOTOFIT_Setglobalsup"
 
 Menu "Motofit"
 	//this function sets up the user menus at the top of the main IGOR window.
-	"-"
 	"Fit Reflectivity data",plotCalcref()
 	"Load experimental data",Moto_loaddata()
 	"Change Q range of theoretical data", Moto_changeQrangeprompt()
@@ -50,7 +56,6 @@ Menu "Motofit"
 		//	                        "Extract trends", Trends()
 	End
 	"About",Moto_AboutPanel()
-	"-"
 End
 
 Function/s Moto_Dummymotofitstring()
