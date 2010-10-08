@@ -8,6 +8,13 @@
 
 //TODO all distances, chopper frequencies should be read from NeXUS file
 
+#include "Pla_catalogue"
+#include "Pla_nsplice"
+#include "Pla_peakfinder"
+#include "Pla_rebin"
+#include "Pla_reduction2"
+#include "Pla_Reduction3"
+
 //opening of the choppers, in radians
 	Constant O_C1 = 1.04719755
 	Constant O_C2 = 0.17453293
