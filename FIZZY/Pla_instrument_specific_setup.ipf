@@ -14,6 +14,8 @@
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
 
+#define THERMOHAAKE	//JULABO
+
 	Strconstant ICSserverIP  = "137.157.202.139"
 	Constant 	ICSserverPort = 60003
 	Strconstant DASserverIP = "137.157.202.140"
@@ -22,13 +24,15 @@
 	Constant 	DASserverPort_bmon3 = 30002
 	Strconstant CHOPPERserverIP = "137.157.202.137"
 	Constant 	CHOPPERserverPort = 10000
-	Strconstant MOXAserverIP = "137.157.202.145"
+	Strconstant MOXAserverIP = "137.157.202.151"
 	Constant 	MOXA1serverPort = 4001
 	Constant 	MOXA2serverPort = 4002
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
 	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
 	Constant ChopperN_delay = 5.899		// a time delay between the first chopper pulse and chopper N
+
+	
 	
 	//these motors are removed from the list displayed in the instrument panel.
 	Strconstant ForbiddenMotors ="bat;two_theta"
@@ -297,7 +301,7 @@ End
 Function omega_2theta(omega, twotheta)
 	variable omega,twotheta
 	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
-	if(numtype(omega) || numtype(twotheta || omega<0 || twotheta<0))
+	if(numtype(omega) || numtype(twotheta) )//|| omega<0 || twotheta<0)
 		print "ERROR: omega and twotheta must be greater than zero and NOT NaN or Inf"
 	endif
 	sockitsendmsg SOCK_cmd, "::exp_mode::omega_2theta "+num2str(omega)+ " "+num2str(twotheta)+"\n"      	
@@ -2049,6 +2053,21 @@ Function/t createFizzyCommand(type)
 	strswitch(type)
 		case "":
 			break
+		case "julabo_on":
+			julabo_on();
+			break
+		case "julabo_off":
+			julabo_off();
+			break
+		case "julabo_settemp":
+			variable temp = 25
+			prompt temp, "temperature (-20 < temp < 70)"
+			doprompt "Enter a temp for the waterbath", temp
+			if(V_Flag)
+				return ""
+			endif
+			sprintf cmd, "julabo_settemp(%d)", temp
+			break
 		case "txtme":
 			string text = ""
 			prompt text, "what did you want to text?"
@@ -2247,7 +2266,7 @@ End
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-//			JULABO water bath for Platypus
+//			JULABO/THERMOHAAKE water bath for Platypus
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2262,6 +2281,7 @@ Function/t julabo_checkStatus()
 	endif
 	
 	//if can't get the status julabo must be off
+#ifdef JULABO
 	sockitsendnrecv SOCK_MOXA1, "status\r"
 	if(V_Flag || strlen(S_tcp)==0)
 		print "ERROR: didn't get a response from Julabo bath"
@@ -2280,20 +2300,32 @@ Function/t julabo_checkStatus()
 	//what is the current settemp
 	sockitsendnrecv SOCK_MOXA1, "in_sp_00\r"
 	msg += "SETTEMP:" + replacestring("\r", S_tcp, "") + ";"
-	
+#endif
+
 	print msg
 	return msg
 End
 
 Function julabo_on()
 	//assumes julabo is on MOXA port 1
+#ifdef JULABO
 	variable err = MOXA("out_mode_05 1\r", 1)
+#endif
+#ifdef THERMOHAAKE
+	variable err = MOXA("GO \r", 1)
+#endif
 	return err
 End
 
 Function julabo_off()
 	//assumes julabo is on MOXA port 1
+#ifdef JULABO
 	variable err = MOXA("out_mode_05 0\r", 1)
+#endif
+#ifdef THERMOHAAKE
+	variable err = MOXA("ST \r", 1)
+#endif
+
 	return err
 end
 
@@ -2302,8 +2334,13 @@ Function julabo_gettemp()
 	variable err = 0
 	variable temperature = NaN
 	NVAR SOCK_MOXA1 = root:packages:platypus:SICS:SOCK_MOXA1
-
+	
+#ifdef JULABO
 	sockitsendnrecv SOCK_MOXA1, "in_pv_00\r"
+#endif
+#ifdef THERMOHAAKE
+	sockitsendnrecv SOCK_MOXA1, "I\r"
+#endif
 	if(V_Flag)
 		return NaN
 	endif
@@ -2318,14 +2355,28 @@ End
 Function julabo_settemp(temperature)
 	//assumes julabo is on MOXA port 1
 	variable temperature
-	variable err
+	variable err, ii
+	string cmd="00000", cmd2=""
+	
 	if(numtype(temperature))
 		return 1
-	elseif(temperature < 5 || temperature > 60)
-		print "Temperature limits hardcoded to 5 < temp <60, check that tubing can handle these temps (julabo_settemp)"
+	elseif(temperature < -20 || temperature > 70)
+		print "Temperature limits hardcoded to -20 < temp <60, check that tubing can handle these temps (julabo_settemp)"
 		return 1
 	endif
+
+#ifdef JULABO
 	err = MOXA("out_sp_00 "+num2str(temperature)+"\r", 1)
+#endif
+#ifdef THERMOHAAKE
+	sprintf cmd2, "%g", abs(temperature) * 100
+	if(temperature < 0)
+		cmd[0] = "-"
+	endif
+	cmd[5 - strlen(cmd2), strlen(cmd)-1] = cmd2	
+	cmd = "S  " + cmd + "\r"
+	MOXA(cmd, 1)
+#endif
 	return err
 end
 
@@ -2431,6 +2482,7 @@ Function txtme(text)
 	text = replacestring(" ", text, "+")
 	string cmd = ""
 	sprintf cmd, "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=r1vergod&to=" + getHipaVal("/user/phone") + "&text=%s", text
+//	print cmd
 	easyhttp cmd
 ENd
 

@@ -262,11 +262,11 @@ Function ChoDCalculator(fileName, omega, two_theta [,pairing, scanpoint])
 	Wave DetectorPos = $(tempDF+":instrument:detector:longitudinal_translation")
 	Wave/t mode = $(tempDF+":instrument:parameters:mode")
 	
-	if(omega < 0 || two_theta < 0)
-		print "WARNING, OMEGA isn't set, spectrum is approximate, setting omega, 2theta=0 (CHODcalculator)"
-		omega=0
-		two_theta = 0
-	endif
+//	if(omega < 0 || two_theta < 0)
+//		print "WARNING, OMEGA isn't set, spectrum is approximate, setting omega, 2theta=0 (CHODcalculator)"
+//		omega=0
+//		two_theta = 0
+//	endif
 	if(paramisdefault(scanpoint))
 		scanpoint = 0
 	endif

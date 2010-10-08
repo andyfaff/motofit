@@ -283,6 +283,10 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 					//					omega = Pi*sth[0]/180
 					multithread	 omega = atan(((W_beamposA0 + DetectorHeightA0[0]) - (W_directbeampos + DetectorHeightD[0]))/DetectorposA0[0])/2
 					multithread M_twotheta[][] = atan((( (q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (W_directbeampos[p] + DetectorHeightD[0]))/DetectorposA0[0])
+					if(omega[0] < 0)
+						omega = 0 - omega
+						M_twotheta = 0 - M_twotheta
+					endif
 					break
 				case "SB":
 					//					Wave m1ro =  $(angle0DF+":instrument:collimator:rotation");ABORTonRTE
@@ -494,7 +498,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			writeSpecRefXML1D(S_path, fname, W_q, W_ref, W_refSD, W_qSD, "", user[0], samplename[0], angle0, reductionCmd)
 						
 			//write a 2D XMLfile for the offspecular data
-//			write2DXML(S_path, angle0, dontoverwrite)
+			write2DXML(S_path, angle0, dontoverwrite)
 			Sort/R W_q,W_q,W_ref,W_refSD,W_qSD
 			
 			//to keep track of what we have to splice and save
