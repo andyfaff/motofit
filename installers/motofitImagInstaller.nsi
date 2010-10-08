@@ -53,9 +53,10 @@ ${EndIf}
 	File "../motofit_imag/Data/*.*"
 	
 	SetOutPath "$INSTDIR\Igor Procedures"
-	 
-	CreateShortCut "Shortcut to motofit.lnk" "$INSTDIR\User Procedures\motofit"
+	Delete "$INSTDIR\Igor Procedures\Shortcut to motofit.lnk"	 
+	File "../MOTOFIT_loadpackage.ipf"
 
+	;INSTALL ALL THE XOPs
 	SetOutPath "$INSTDIR\Igor Extensions"
 	
 	File "../../XOP Toolkit 5/IgorXOPs5/Abeles/trunk/win/Abeles.xop"

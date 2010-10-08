@@ -44,7 +44,7 @@ ${EndIf}
 	
 	;get rid of previous versions of motofit
 	Delete "$1\User Procedures\motofit\*"
-	
+
 	SetOutPath "$INSTDIR\User Procedures\motofit"
 	File "../motofit/Motofit/*.*"
 
@@ -52,11 +52,12 @@ ${EndIf}
 	File "../motofit/Data/*.*"
 	
 	SetOutPath "$INSTDIR\Igor Procedures"
-	 
-	CreateShortCut "Shortcut to motofit.lnk" "$INSTDIR\User Procedures\motofit"
+	Delete "$INSTDIR\Igor Procedures\Shortcut to motofit.lnk"	 
+	File "../MOTOFIT_loadpackage.ipf"
 
+	;INSTALL ALL THE XOPs
 	SetOutPath "$INSTDIR\Igor Extensions"
-	
+		
 	File "../../XOP Toolkit 5/IgorXOPs5/Abeles/trunk/win/Abeles.xop"
 	File "../../XOP Toolkit 5/IgorXOPs5/Abeles/trunk/win/Abeles Help.ihf"
 
