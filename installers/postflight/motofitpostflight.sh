@@ -9,7 +9,11 @@ then
 	rm -rf /Applications/Igor\ Pro\ Folder/User\ Procedures/motofit
 fi
 
-ln -sf ~/Documents/Wavemetrics/Igor\ Pro\ 6\ User\ Files/User\ Procedures/motofit ~/Documents/Wavemetrics/Igor\ Pro\ 6\ User\ Files/Igor\ Procedures/motofit\ alias
+if [-d ~/Documents/Wavemetrics/Igor\ Pro\ 6\ User\ Files/Igor\ Procedures/motofit\ alias]
+then
+    rm ~/Documents/Wavemetrics/Igor\ Pro\ 6\ User\ Files/Igor\ Procedures/motofit\ alias
+fi
+
 
 if [ -d /Applications/Igor\ Pro\ Folder/Igor\ Extensions/HDF5.xop\ alias ]
 then
