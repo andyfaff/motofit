@@ -48,6 +48,10 @@ ${EndIf}
 	SetOutPath "$INSTDIR\motofit\platypus"
 	File "../SLIM/*"
 
+	SetOutPath "$INSTDIR\Igor Procedures"
+	File "../Pla_loadpackage.ipf"
+	
+	;INSTALL ALL THE XOPs
 	SetOutPath "$INSTDIR\Igor Extensions"
 	
 	File "../../XOP Toolkit 5/IgorXOPs5/Abeles/trunk/win/Abeles.xop"
