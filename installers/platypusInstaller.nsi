@@ -45,9 +45,8 @@ ${EndIf}
 	;get rid of previous versions of motofit
 	Delete "$1\User Procedures\motofit\*"
 	RMDir /r "$1\User Procedures\motofit"
-
 	
-	SetOutPath "$INSTDIR\motofit\platypus"
+	SetOutPath "$INSTDIR\User Procedures\motofit\platypus"
 	File "../SLIM/*"
 
 	SetOutPath "$INSTDIR\Igor Procedures"
