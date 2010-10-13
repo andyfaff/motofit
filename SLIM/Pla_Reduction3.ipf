@@ -255,8 +255,11 @@ End
 Function SLIM_buttonproc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	//this button handler deals with all button press events in the SLIM button window
+	string cDF = getdatafolder(1)
+
 	switch( ba.eventCode )
 		case 2: // mouse up
+			
 			// click code here
 			NVAR lowLambda = root:packages:platypus:data:Reducer:lowLambda
 			NVAR highLambda = root:packages:platypus:data:Reducer:highLambda
@@ -339,7 +342,14 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
 						endif
 					endfor
-										
+					Doalert 1, "Do you want to delete opened files (it reduces IGOR's memory usage)?"
+					if(V_flag == 1)
+						setdatafolder root:packages:platypus:data:Reducer
+						dfref dfr = getdatafolderDFR()
+						for(ii = 0 ; countobjectsdfr(getdatafolderdfr(), 4) && ii < 1000 ; ii += 1)
+							killdatafolder/z $(getindexedObjNameDFR(getdatafolderdfr(), 4, 0))
+						endfor
+					endif		
 					break
 				case "showreducervariables_tab0":
 					reducerVariablesPanel() 
@@ -421,8 +431,9 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					break
 			endswitch	
 			break
+			
 	endswitch
-
+	setdatafolder $cDF
 	return 0
 End
 

@@ -1045,7 +1045,7 @@ Function Gen_doFitButtonProc(ba) : ButtonControl
 					removefromgraph/w=$(winname(0,1)) $output
 				endif
 				cmdToHistory(cmd)
-				execute cmd
+				execute/p/q/z cmd
 				gen_savestatus()
 				
 				killwindow gencurvefitpanel

@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 
-constant NUMSTEPS = 40
-constant DELRHO = 0.02
+constant NUMSTEPS = 44
+constant DELRHO = 0.03
 constant lambda = 15
 
 Function Chebyshevapproximator(w, yy, xx): fitfunc

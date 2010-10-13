@@ -177,7 +177,7 @@ Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 			variable correctionfactor
 			make/d/o w_gausscoefs = {1, 0, T_r/2}
 			for(ii=0 ; ii<numpnts(qq); ii+=1)
-				correctionfactor = integrate1D(myga, 0, footprint*sin(qq[ii]*Pi/180)*0.5)/ integrate1D(myga, 0, t_m)
+				correctionfactor = erf(footprint * sin(qq[ii] * Pi / 180) / (2 * t_m))
 				R[ii] /= correctionfactor
 				dR[ii] /= correctionfactor
 			endfor
@@ -361,9 +361,9 @@ Function SaveXraydata(tempy)
 	wave dQ=$w3
 
 	if(waveexists(dQ))
-		wfprintf refnum, "%g \t %g \t %g \t %g \r",$w0,$w1,$w2,$w3	 //this prints the wave to file.
+		wfprintf refnum, "%g \t %g \t %g \t %g \n",$w0,$w1,$w2,$w3	 //this prints the wave to file.
 	else
-		wfprintf refnum, "%g \t %g \t %g \r",$w0,$w1,$w2	//this prints the coefwave to file.
+		wfprintf refnum, "%g \t %g \t %g \n",$w0,$w1,$w2	//this prints the coefwave to file.
 	endif
 
 	close refnum
