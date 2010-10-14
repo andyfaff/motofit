@@ -64,10 +64,14 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	//produces a reflectivity curve for a given set of angles
 	//returns 0 if successful, non zero otherwise
 	
+	//pathname = a string containing the location of the files, e.g. "C:Documents And Settings:andrew:data:"
 	//scalefactor = data is divided by this number to produce a correct critical edge.
-	//runfilenames = run names for reflected and direct data in key:value; form.  i.e. "PLP303:PLP302;PLP304,1-2:PLP302"	
+	//runfilenames = run names for reflected and direct data in key:value; form.  i.e. reflectrun1:directrun1;reflectrun2:directrun2;
+	//						If your scan has more than one point in it, e.g. kinetic data you can enter a range of points like:
+	//								e.g. "PLP0000304,1-20:PLP0000302"	 would use points 1 to 20 from run 304. (counting starts from 0)
 	//lowLambda = cutoff, wavelengths below this value are discarded.
 	//highLambda = cutoff, wavelengths above this value are discarded.
+	//rebin = dlambda/lambda for rebinning.  e.g. 3% = 3.
 	
 	//OPTIONAL
 	//water = runfile containing water data
@@ -696,6 +700,7 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 	Wave/z rebinning
 	//processes a loaded NeXUS file.
 	//returns 0 if successful, non zero otherwise
+	//pathname = string containing the path to the data
 	//filename = filename for the spectrum, e.g. PLP0001000.  This is used to try and find a datafolder containing the loaded NeXUS data.
 	//background = if you want to subtract a background, then set this variable equal to 1.
 	//lolambda  = low wavelength cutoff for the spectrum
@@ -706,8 +711,8 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 	//manual = 1 for manual specification of specular ridge
 	//rebinning = a wave containing new wavelength bins
 	//isDirect = the spectrum is a direct beam measurement and gravity correction will ensue.
-	//scanpoint = if a datafile contains several images this variable controls which is processed.  If you want to aggregate scanpoints do not specify this optional parameter
-	 //                   you will then be asked what range of points you want to use. Alternatively specify scanpoint = -1 to aggregate all scanpoints
+	//scanpointrange = if a datafile contains several images this variable controls which are processed.  If you omit this parameter SLIM will ask you which points you want
+	// 					if you use a parameter with a null string, i.e. scanpointrange = "", then all scans are aggregated.  If you want to select a range specify it like   scanpointrange = "1-20".
 	 //saveSpectrumLoc = if this variable !=0 then the spectrum is saved to file.
 	
 	//first thing we will do is  average over x, possibly rebin, subtract background on timebin by time bin basis, then integrate over the foreground
