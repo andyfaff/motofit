@@ -65,7 +65,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	//returns 0 if successful, non zero otherwise
 	
 	//scalefactor = data is divided by this number to produce a correct critical edge.
-	//runfilenames = run names for reflected and direct data in key:value; form.  i.e. "PLP303:PLP302;PLP304:PLP302"	
+	//runfilenames = run names for reflected and direct data in key:value; form.  i.e. "PLP303:PLP302;PLP304,1-2:PLP302"	
 	//lowLambda = cutoff, wavelengths below this value are discarded.
 	//highLambda = cutoff, wavelengths above this value are discarded.
 	
@@ -88,7 +88,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	
 	//writes out the file in Q <tab> R <tab> dR <tab> dQ format.
 	
-	string tempStr,cDF,directDF,angle0DF, alreadyLoaded="", toSplice="", direct = "", angle0="",tempDF, reductionCmd
+	string tempStr,cDF,directDF,angle0DF, alreadyLoaded="", toSplice="", direct = "", angle0="",tempDF, reductionCmd, scanpointrange = ""
 	variable ii,D_S2, D_S3, D_SAMPLE,domega, spliceFactor,temp, isDirect, aa,bb,cc,dd,jj,kk
 	
 	cDF = getdatafolder(1)
@@ -155,12 +155,12 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 		endif
 	
 		//iterate through the runnames and check they're valid
-		if(itemsinlist(runfilenames)==0)
+		if(itemsinlist(runfilenames) == 0)
 			print "ERROR no runs will be reduced if you don't give any (reduce)";abort
 		endif
 		
 		if(!paramisdefault(water) && strlen(water)>0)
-			if(!datafolderexists("root:packages:platypus:data:Reducer:"+cleanupname(removeending(water,".nx.hdf"),0)))
+			if(!datafolderexists("root:packages:platypus:data:Reducer:"+cleanupname(removeending(water, ".nx.hdf"),0)))
 				if(loadNexusFile(pathName, water))
 					print "Error loading water run (reduce)"
 					abort
@@ -174,14 +174,16 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			W_rebinboundaries = lowlambda * (1+rebin/100)^p
 		endif
 		for(ii=0 ;  ii< itemsinlist(runfilenames) ; ii+=1)
-			angle0 = stringfromlist(0, stringfromlist(ii,runfilenames), ":")
-			direct = stringbykey(angle0, runfilenames)
+			//these may still have the scanpoints that you want reduced.
+			angle0 = stringfromlist(0, stringfromlist(ii, runfilenames), ":")
+			direct = stringfromlist(0, stringbykey(angle0, runfilenames), ",")
+			
 			if(strlen(angle0)==0 || strlen(direct)==0)
 				print "ERROR parsing the runfilenamesstring (reduce)"; abort
 			endif
 
 			//start off by processing the direct beam run
-			if(whichlistitem(direct,alreadyLoaded)==-1)	//if you've not loaded the direct beam for that angle do so.
+			if(whichlistitem(direct, alreadyLoaded) == -1)	//if you've not loaded the direct beam for that angle do so.
 				isDirect = 1
 				if(rebin)
 					if(processNeXUSfile(S_path, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, rebinning = W_rebinboundaries, manual = manual, normalise=normalise, saveSpectrum = saveSpectrum))
@@ -213,7 +215,8 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 
 			//load in and process reflected angle
 			//when you process the reflected nexus file you have to use the lambda spectrum from the direct beamrun
-			if(processNeXUSfile(S_path, angle0, background, lowLambda, highLambda, water = water, isDirect = 0, expected_centre = expected_centre, rebinning = W_lambdaHISTD, manual=manual, normalise = normalise, saveSpectrum = saveSpectrum))
+			scanpointrange = stringfromlist(1, angle0, ",")
+			if(processNeXUSfile(S_path, angle0, background, lowLambda, highLambda, scanpointrange = scanpointrange, water = water, isDirect = 0, expected_centre = expected_centre, rebinning = W_lambdaHISTD, manual=manual, normalise = normalise, saveSpectrum = saveSpectrum))
 				print "ERROR while processing a reflected beam run (reduce)" ; abort
 			endif
 			
@@ -685,11 +688,11 @@ Function doesNexusfileExist(pathName, filename)
 	endif
 End
 
-Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, water, scanpoint, isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, rebinning, normalise])
+Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, water, scanpointrange, isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, rebinning, normalise])
 	string pathname, fileName
 	variable background, loLambda, hiLambda
-	string water
-	variable scanpoint, isDirect, expected_centre, expected_width, omega, two_theta, manual, saveSpectrum, normalise
+	string water, scanpointrange
+	variable isDirect, expected_centre, expected_width, omega, two_theta, manual, saveSpectrum, normalise
 	Wave/z rebinning
 	//processes a loaded NeXUS file.
 	//returns 0 if successful, non zero otherwise
@@ -713,7 +716,7 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 	//OUTPUT
 	//W_Spec,W_specSD,W_lambda,W_lambdaSD,W_lambdaHIST,W_specTOF,W_specTOFHIST, W_waternorm, W_beampos
 	
-	variable ChoD, toffset, nrebinpnts,ii, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint, dBM1counts, MASTER_OPENING
+	variable ChoD, toffset, nrebinpnts,ii, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint, dBM1counts, MASTER_OPENING, scanpoint
 	string tempDF,cDF,tempDFwater
 	Wave/z hmmWater
 	
@@ -757,7 +760,7 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 			abort
 		endif
 		
-		if(paramisdefault(scanpoint) && dimsize(hmm,0)>1)
+		if(paramisdefault(scanpointrange) && dimsize(hmm, 0) > 1)
 			scanpoint = 0
 			finishingPoint = dimsize(hmm, 0) - 1
 			prompt scanpoint, "startingPoint 0<= scanpoint<="+num2istr(finishingPoint ) 
@@ -776,9 +779,21 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 			if(finishingPoint > dimsize(hmm, 0) -1)
 				finishingPoint = dimsize(hmm, 0) -1
 			endif
-		elseif(!paramisdefault(scanpoint) && scanpoint == -1 && dimsize(hmm, 0) > 1)
+		elseif(!paramisdefault(scanpointrange) && strlen(scanpointrange) == 0)
 			scanpoint = 0
-			finishingPoint = dimsize(hmm, 0) -1
+			finishingPoint = dimsize(hmm, 0) - 1
+		elseif(!paramisdefault(scanpointrange) && strlen(scanpointrange) > 0)
+			//we expect a range like 1-2 or 5-100
+			if(itemsinlist(scanpointrange, "-") == 2)
+				scanpoint = str2num(stringfromlist(0, scanpointrange, "-"))
+				finishingpoint = str2num(stringfromlist(1, scanpointrange, "-"))
+			else	//one number
+				scanpoint = str2num(scanpointrange)
+				finishingpoint = str2num(scanpointrange)
+			endif
+			if(numtype(scanpoint) || numtype(finishingpoint) || scanpoint < 0 || scanpoint > dimsize(hmm, 0) -1)
+				abort "Incorrect range for scanpoints, specify as 1-100 (processNexusfile)"
+			endif
 		endif
 		
 		make/o/i/u/n=(dimsize(hmm,1),dimsize(hmm,2),dimsize(hmm,3)) detector = 0
