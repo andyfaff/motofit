@@ -1,8 +1,8 @@
 #pragma rtGlobals=1		// Use modern global access method.
 
-constant NUMSTEPS = 44
+constant NUMSTEPS = 200
 constant DELRHO = 0.03
-constant lambda = 15
+constant lambda = 20
 
 Function Chebyshevapproximator(w, yy, xx): fitfunc
 	Wave w, yy, xx
@@ -110,7 +110,7 @@ Function smoother(coefs, y_obs, y_calc, s_obs)
 			betas += (coef_forreflectivity[4 * (ii-1) + 7] - coef_forreflectivity[4 * ii  + 7])^2
 		endif
 		if(coef_forreflectivity[4 * (ii-1) + 7] < -0.1) 
-			betas*=10
+			retval*=10
 		endif
 	endfor	
 

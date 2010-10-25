@@ -129,8 +129,8 @@ Function SLDprofile(binSize)
 	
 	variable molecularVolume = cellDimensions[0] * cellDimensions[1] * binsize
 	make/n=(round(cellDimensions[2]/binsize), 2)/o/d MD_profile = 0
-	setscale/P x, 0, binsize, MD_profile
-	
+	make/n=(round(cellDimensions[2]/binsize) + 1)/free bin_edges = binsize * p 
+	setscale/P x, binsize/2, binsize, MD_profile
 	
 	Wave/t scatlengths = root:packages:motofit:reflectivity:SLDdatabase:scatlengths
 	for(ii=0 ; ii< dimsize(scatlengths, 0) ; ii+=1)
@@ -138,7 +138,7 @@ Function SLDprofile(binSize)
 	endfor
 	
 	for(ii=0 ; ii < dimsize(elementpositions, 0) ; ii+=1)
-		zposition = x2pnt(MD_profile, elementpositions[ii][2])
+		zposition = binarysearch(bin_edges, elementpositions[ii][2])
 		findvalue/TXOP=4/text=(elementtype[ii]) scatlengths
 		col=floor(V_value / dimsize(scatlengths, 0))
 		row=V_value-col * dimsize(scatlengths, 0)
