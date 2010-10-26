@@ -58,8 +58,9 @@ Function parseCarFile()
 //	Moto_SLDdatabase()
 End
 
-Function parsePDBFile()
-
+Function parsePDBFile([calculateAsYouGo, statistic, binsize])
+	variable calculateAsYouGo, statistic, binsize
+	
 	string cDF = getdatafolder(1)
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:motofit
@@ -67,13 +68,32 @@ Function parsePDBFile()
 	newdatafolder/o/s root:packages:motofit:reflectivity:SLDdatabase
 
 	string buffer, element,otherCrap, othercrap1, othercrap2, othercrap3, othercrap4
-	variable fileID,  xx,yy,zz, otherCrapV, otherCrapV1, otherCrapV2, otherCrapV3
+	variable fileID,  xx,yy,zz, otherCrapV, otherCrapV1, otherCrapV2, otherCrapV3, otherCrapV4
 	variable lineNumber
+	variable molecularVolume, ii, zposition, nsl, xsl, elem_sel, row, col
 
-	make/n=0/t/o  elementType
-	make/n=(0,3)/o elementPositions
+	if(paramisdefault(calculateAsYouGo))
+		calculateAsYouGo = 0
+	endif
+	if(paramisdefault(statistic))
+		statistic = 0
+	endif
+	if(paramisdefault(binsize))
+		binsize = 1
+	endif
+	
+	Wave/t scatlengths = root:packages:motofit:reflectivity:SLDdatabase:scatlengths
+	for(ii=0 ; ii< dimsize(scatlengths, 0) ; ii+=1)
+		scatlengths[ii][0] = replacestring(" ", scatlengths[ii][0], "")
+	endfor
+	
 	make/n=(3)/o/d  cellDimensions
 
+	if(!calculateAsYouGo)
+		make/n=0/t/o  elementType
+		make/n=(0,3)/o elementPositions
+	endif
+	
 	open/r/M="the PDB file"/T=".pdb" fileID
 	if(!fileID)
 		abort
@@ -88,32 +108,74 @@ Function parsePDBFile()
 
 		if(stringmatch(buffer[0,5], "CRYST1"))
 			sscanf buffer, "%s %f %f %f %s", element, xx, yy, zz, otherCrap
-			cellDimensions = {xx, yy, zz}		
-		endif
-		if(stringmatch(buffer[0,3], "ATOM"))
-			sscanf buffer, "%s %f %s %s %f  %f %f %f", othercrap, othercrapV1, element, otherCrap1, otherCrapV2, xx, yy, zz
-			if(V_flag > 0)
-				if(stringmatch(othercrap1, "SOL"))
-					if(stringmatch(element[0,0], "H"))
-						element[0,0]="D"
-					endif
-				endif
+			cellDimensions = {xx, yy, zz}
+			if(calculateAsYouGo)
+				molecularVolume = cellDimensions[0] * cellDimensions[1] * binsize
+				make/n=(round(cellDimensions[2]/binsize) + 1)/free bin_edges = binsize * p 
 
-				redimension/n=(dimsize(elementtype, 0) + 1, -1) elementType, elementPositions
-				elementType[dimsize(elementtype, 0)- 1] = "0" + element[0,0]
-				elementPositions[dimsize(elementPositions, 0)- 1][0] = xx
-				elementPositions[dimsize(elementPositions, 0)- 1][1] = yy
-				elementPositions[dimsize(elementPositions, 0)- 1][2] = zz			
+				switch(statistic)
+					case 0:
+						make/n=(round(cellDimensions[2]/binsize), 2)/o/d root:MD_profile = 0
+						Wave MD_profile = root:MD_profile
+						setscale/P x, binsize/2, binsize, MD_profile
+					break
+				endswitch
+			endif		
+		endif
+		
+		if(stringmatch(buffer[0,3], "ATOM"))
+			sscanf buffer, "%s %d %s %s %d  %f %f %f %f %f %s %s", othercrap, othercrapV1, otherCrap1, othercrap2, otherCrapV2, xx, yy, zz, othercrapV3, othercrapV4, othercrap3, element
+			if(V_flag > 0)
+//				if(stringmatch(othercrap3, "WAT"))
+//					if(stringmatch(element[0,0], "H"))
+//						element[0,0]="D"
+//					endif
+//				endif
+				element = "0" + element
+	
+				//perhaps the unit cell does not begin at the origin			
+//				zz +=  cellDimensions[2] /2
+				
+				if(!calculateAsYouGo)
+					redimension/n=(dimsize(elementtype, 0) + 1, -1) elementType, elementPositions
+					elementType[dimsize(elementtype, 0)- 1] = "0" + element
+					elementPositions[dimsize(elementPositions, 0)- 1][0] = xx
+					elementPositions[dimsize(elementPositions, 0)- 1][1] = yy
+					elementPositions[dimsize(elementPositions, 0)- 1][2] = zz			
+				else
+					switch(statistic)
+						case 0: 	//SLD profile
+							zposition = binarysearch(bin_edges, zz)
+							findvalue/TXOP=4/text=(element) scatlengths
+							col=floor(V_value / dimsize(scatlengths, 0))
+							row=V_value - col * dimsize(scatlengths, 0)
+							MD_profile[zposition][0] += str2num(scatlengths[row][2])
+							MD_profile[zposition][1] += str2num(scatlengths[row][5])	
+						break
+						
+					endswitch
+				endif
 			endif
 		endif
 	
 		lineNumber +=1
 	while(1)
+	
 
 	if(fileID)
 		close(fileID)
 	endif
 
+	if(calculateAsYouGo)
+		switch(statistic)
+			case 0:
+				MD_profile[][1] *= 2.8179
+				MD_profile /= molecularvolume
+				MD_profile *=10
+			break
+		endswitch
+	endif
+	
 	//initialise SLD database
 //	Moto_SLDdatabase()
 	setdatafolder $cDF
@@ -167,7 +229,7 @@ Function makeintoMotofitInput(MD_profile, type, doReverse)
 	coef_MD[0] = nlayers
 	coef_MD[1] = 1
 	coef_MD[2] = MD_profile[0][type]
-	coef_MD[3] = MD_profile[inf][type]
+	coef_MD[3] = MD_profile[dimsize(MD_profile, 0) - 1][type]
 	coef_MD[4] = 0
 	coef_MD[5] = 0
 
