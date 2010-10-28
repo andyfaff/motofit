@@ -55,11 +55,11 @@ Function parseCarFile()
 	endif
 
 	//initialise SLD database
-//	Moto_SLDdatabase()
+	//	Moto_SLDdatabase()
 End
 
-Function parsePDBFile([calculateAsYouGo, statistic, binsize])
-	variable calculateAsYouGo, statistic, binsize
+Function parsePDBFile([calculateAsYouGo, binsize, zoffset, startFrame, endFrame])
+	variable calculateAsYouGo, binsize, zoffset, startFrame, endFrame
 	
 	string cDF = getdatafolder(1)
 	newdatafolder/o root:packages
@@ -67,19 +67,25 @@ Function parsePDBFile([calculateAsYouGo, statistic, binsize])
 	newdatafolder/o root:packages:motofit:reflectivity
 	newdatafolder/o/s root:packages:motofit:reflectivity:SLDdatabase
 
-	string buffer, element,otherCrap, othercrap1, othercrap2, othercrap3, othercrap4
+	string buffer, element,otherCrap, othercrap1, othercrap2, othercrap3, othercrap4, atomsEncountered = "",  theWavename
 	variable fileID,  xx,yy,zz, otherCrapV, otherCrapV1, otherCrapV2, otherCrapV3, otherCrapV4
 	variable lineNumber
-	variable molecularVolume, ii, zposition, nsl, xsl, elem_sel, row, col
+	variable molecularVolume, ii, zposition, nsl, xsl, elem_sel, row, col, numframes = 0, currentFrame = 0
 
 	if(paramisdefault(calculateAsYouGo))
 		calculateAsYouGo = 0
 	endif
-	if(paramisdefault(statistic))
-		statistic = 0
-	endif
 	if(paramisdefault(binsize))
 		binsize = 1
+	endif
+	if(paramisdefault(zoffset))
+		zoffset = 0
+	endif
+	if(paramisdefault(startFrame))
+		startFrame = 0
+	endif
+	if(paramisdefault(endFrame))
+		endFrame = inf
 	endif
 	
 	Wave/t scatlengths = root:packages:motofit:reflectivity:SLDdatabase:scatlengths
@@ -112,29 +118,40 @@ Function parsePDBFile([calculateAsYouGo, statistic, binsize])
 			if(calculateAsYouGo)
 				molecularVolume = cellDimensions[0] * cellDimensions[1] * binsize
 				make/n=(round(cellDimensions[2]/binsize) + 1)/free bin_edges = binsize * p 
-
-				switch(statistic)
-					case 0:
-						make/n=(round(cellDimensions[2]/binsize), 2)/o/d root:MD_profile = 0
-						Wave MD_profile = root:MD_profile
-						setscale/P x, binsize/2, binsize, MD_profile
-					break
-				endswitch
+				make/n=(round(cellDimensions[2]/binsize), 2)/o/d root:MD_profile = 0
+				Wave MD_profile = root:MD_profile
+				setscale/P x, binsize/2, binsize, MD_profile				
 			endif		
 		endif
+			
+		if(stringmatch(buffer[0, 2], "END"))
+			currentFrame += 1			
+		endif
+		
+		if(startFrame > currentFrame)
+			continue
+		endif
+		if(endFrame < currentFrame)
+			break
+		endif
+		
+		if(startFrame <= currentFrame && endFrame >= currentFrame && stringmatch(buffer[0, 2], "END"))
+			numFrames += 1			
+		endif
+
 		
 		if(stringmatch(buffer[0,3], "ATOM"))
 			sscanf buffer, "%s %d %s %s %d  %f %f %f %f %f %s %s", othercrap, othercrapV1, otherCrap1, othercrap2, otherCrapV2, xx, yy, zz, othercrapV3, othercrapV4, othercrap3, element
 			if(V_flag > 0)
-//				if(stringmatch(othercrap3, "WAT"))
-//					if(stringmatch(element[0,0], "H"))
-//						element[0,0]="D"
-//					endif
-//				endif
+				//				if(stringmatch(othercrap3, "WAT"))
+				//					if(stringmatch(element[0,0], "H"))
+				//						element[0,0]="D"
+				//					endif
+				//				endif
 				element = "0" + element
 	
 				//perhaps the unit cell does not begin at the origin			
-//				zz +=  cellDimensions[2] /2
+				zz +=  zoffset
 				
 				if(!calculateAsYouGo)
 					redimension/n=(dimsize(elementtype, 0) + 1, -1) elementType, elementPositions
@@ -143,17 +160,30 @@ Function parsePDBFile([calculateAsYouGo, statistic, binsize])
 					elementPositions[dimsize(elementPositions, 0)- 1][1] = yy
 					elementPositions[dimsize(elementPositions, 0)- 1][2] = zz			
 				else
-					switch(statistic)
-						case 0: 	//SLD profile
-							zposition = binarysearch(bin_edges, zz)
-							findvalue/TXOP=4/text=(element) scatlengths
-							col=floor(V_value / dimsize(scatlengths, 0))
-							row=V_value - col * dimsize(scatlengths, 0)
-							MD_profile[zposition][0] += str2num(scatlengths[row][2])
-							MD_profile[zposition][1] += str2num(scatlengths[row][5])	
-						break
-						
-					endswitch
+					//SLD profile
+					zposition = binarysearch(bin_edges, zz)
+					findvalue/TXOP=4/text=(element) scatlengths
+					col=floor(V_value / dimsize(scatlengths, 0))
+					row=V_value - col * dimsize(scatlengths, 0)
+					MD_profile[zposition][0] += str2num(scatlengths[row][2])
+					MD_profile[zposition][1] += str2num(scatlengths[row][5])	
+					
+					//if you've not encountered the atom before, add it to the list
+					if(findlistitem(element, atomsencountered) == -1)
+						atomsencountered += ";" + element
+						theWavename = cleanupname(element, 0)
+						make/o/n=(round(cellDimensions[2] / binsize)) $("root:" + theWavename) = 0
+						Wave poop = $("root:" + theWaveName)
+						setscale/P x, binsize/2, binsize, poop				
+						poop[zposition] += 1
+						Waveclear poop
+					else
+						theWavename = cleanupname(element, 0)
+						Wave poop = $("root:" + theWaveName)
+						poop[zposition] += 1
+						Waveclear poop
+					endif
+					
 				endif
 			endif
 		endif
@@ -167,19 +197,16 @@ Function parsePDBFile([calculateAsYouGo, statistic, binsize])
 	endif
 
 	if(calculateAsYouGo)
-		switch(statistic)
-			case 0:
-				MD_profile[][1] *= 2.8179
-				MD_profile /= molecularvolume
-				MD_profile *=10
-			break
-		endswitch
+
+		MD_profile[][1] *= 2.8179
+		MD_profile /= molecularvolume
+		MD_profile *=10
 	endif
 	
 	//initialise SLD database
-//	Moto_SLDdatabase()
+	//	Moto_SLDdatabase()
 	setdatafolder $cDF
-
+	print "NUMBER OF FRAMES: ", numframes
 End
 
 Function SLDprofile(binSize)
