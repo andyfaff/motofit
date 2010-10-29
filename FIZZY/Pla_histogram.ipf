@@ -68,7 +68,7 @@ Function grabData(data,axes,axis_sizes,[axesrequested])
 	endif
 	
 	sprintf cmd,"http://%s:%d/admin/savedataview.egi?data_saveopen_format=ZIPBIN&data_saveopen_action=OPENONLY&type=%s",DASserverIP,DASserverport,axesrequested
-	easyHttp/PASS="manager:ansto" cmd,data
+	easyHttp/PROX=""/PASS="manager:ansto" cmd,data
 	if(V_Flag)
 		Print "Error while speaking to Histogram Server (grabData)"
 		return 1
@@ -119,7 +119,7 @@ Function/t grabHistoStatus(keyvalue)
 	string retStr,cmd
 
 	sprintf cmd,"http://%s:%d/admin/textstatus.egi",DASserverIP,DASserverport
-	easyHttp/PASS="manager:ansto" cmd
+	easyHttp/PROX=""/PASS="manager:ansto" cmd
 
 	if(V_Flag)
 		Print "Error while speaking to Histogram Server (grabHistoStatus)"
@@ -139,7 +139,7 @@ Function/t grabAllHistoStatus()
 	string retStr,cmd
 	
 	sprintf cmd,"http://%s:%d/admin/textstatus.egi",DASserverIP,DASserverport
-	easyHttp/PASS="manager:ansto" cmd
+	easyHttp/PROX=""/PASS="manager:ansto" cmd
 	
 	if(V_Flag)
 		Print "Error while speaking to Histogram Server (grabAllHistoStatus)"
@@ -155,7 +155,7 @@ Function printHistoStatus()
 	//this function prints the status of the Histogram server from it's text status
 	string cmd
 	sprintf cmd,"http://%s:%d/admin/textstatus.egi",DASserverIP,DASserverport
-	easyHttp/PASS="manager:ansto" cmd
+	easyHttp/PROX=""/PASS="manager:ansto" cmd
 
 	if(V_Flag)
 		Print "Error while speaking to Histogram Server (printHistoStatus)"
@@ -314,7 +314,7 @@ Function stopAndPrimeDetector(presettype,preset)
 
 	//stop the detector
 	sprintf cmd,"http://%s:%d/admin/stopdaq.egi?viewdata",DASserverIP,DASserverport
-	easyHttp/PASS="manager:ansto" cmd
+	easyHttp/PROX=""/PASS="manager:ansto" cmd
 	if(V_Flag)
 		Print "Error while speaking to Histogram Server (stopAndPrimeDetector)"
 		return 1
@@ -344,7 +344,7 @@ Function stopAndPrimeDetector(presettype,preset)
 
 	//release the control of the server
 	sprintf cmd,"http://%s:%d/admin/seizereleasecontrolconfig.egi?",DASserverIP,DASserverport
-	easyHttp/PASS="manager:ansto" cmd
+	easyHttp/PROX=""/PASS="manager:ansto" cmd
 	if(V_Flag)
 		Print "Error while speaking to Histogram Server (stopAndPrimeDetector)"
 		return 1
@@ -390,7 +390,7 @@ Function pauseDetector(pauseORrestart)
 	//seize control of the server
 	string cmd
 	sprintf cmd,"http://%s:%d/admin/seizereleasecontrolconfig.egi?",DASserverIP,DASserverport
-	easyHttp/PASS="manager:ansto" cmd
+	easyHttp/PROX=""/PASS="manager:ansto" cmd
 	if(V_Flag)
 		Print "Error while speaking to Histogram Server (pauseDetector)"
 		return 1
@@ -402,7 +402,7 @@ Function pauseDetector(pauseORrestart)
 
 		case 1:		//pause acquisition
 			sprintf cmd,"http://%s:%d/admin/guienablesoftveto.egi?vetodata",DASserverIP,DASserverport
-			easyHttp/PASS="manager:ansto" cmd
+			easyHttp/PROX=""/PASS="manager:ansto" cmd
 			if(V_Flag)
 				Print "Error while speaking to Histogram Server (pauseDetector)"
 				return 1
@@ -410,7 +410,7 @@ Function pauseDetector(pauseORrestart)
 			break
 		case 0:		//restart after a pause
 			sprintf cmd,"http://%s:%d/admin/guidisablesoftveto.egi?vetodata?",DASserverIP,DASserverport
-			easyHttp/PASS="manager:ansto" cmd
+			easyHttp/PROX=""/PASS="manager:ansto" cmd
 			if(V_Flag)
 				Print "Error while speaking to Histogram Server (pauseDetector)"
 				return 1
@@ -419,7 +419,7 @@ Function pauseDetector(pauseORrestart)
 	endswitch
 	//release the control of the server
 	sprintf cmd,"http://%s:%d/admin/seizereleasecontrolconfig.egi?",DASserverIP,DASserverport
-	easyHttp/PASS="manager:ansto" cmd
+	easyHttp/PROX=""/PASS="manager:ansto" cmd
 	if(V_Flag)
 		Print "Error while speaking to Histogram Server (pauseDetector)"
 		return 1

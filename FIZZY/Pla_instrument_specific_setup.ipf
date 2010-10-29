@@ -30,7 +30,7 @@
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
 	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
-	Constant ChopperN_delay = 5.899		// a time delay between the first chopper pulse and chopper N
+	Constant ChopperN_delay = 2.865		// a time delay between the first chopper pulse and chopper N
 
 	
 	
@@ -424,6 +424,7 @@ Function Instrument_Specific_Setup()
 
 	//speak to the MOXA box at the sample area.
 	make/t/o root:packages:platypus:SICS:MOXAbuf
+	Wave/t MOXAbuf = root:packages:platypus:SICS:MOXAbuf
 	sockitopenconnection/q/time=2 SOCK_MOXA1,MOXAserverIP,MOXA1serverPort,MOXAbuf
 	sockitopenconnection/q/time=2 SOCK_MOXA2,MOXAserverIP,MOXA2serverPort,MOXAbuf
 	sockitopenconnection/q/time=2 SOCK_MOXA3,MOXAserverIP,MOXA3serverPort,MOXAbuf
@@ -563,7 +564,7 @@ Function regularTasks(s)
 		if(abs(theTime - ChopperN_delay) > 0.15)
 	//		theTime = NaN
 		endif
-		if(abs(theTime - ChopperN_delay) > 0.012 && abs(theTime - ChopperN_delay) < 0.15 )//&& !numtype(theTime))
+		if(abs(theTime - ChopperN_delay) > 0.018 && abs(theTime - ChopperN_delay) < 0.15 )//&& !numtype(theTime))
 			//oh dear, the phasing has gone wrong
 			if(NVAR_exists(sentChopperSMS) && sentChopperSMS == 0)
 				//send an SMS
@@ -1999,28 +2000,28 @@ Function createHTML()
 		string cmd=""
 
 		sprintf cmd,"http://%s:%d/admin//viewdataoptionsgui.egi?&scaling_type=LOG&log_scaling_range=4",DASserverIP,DASserverport
-		easyHttp/PASS="manager:ansto" cmd
+		easyHttp/PROX=""/PASS="manager:ansto" cmd
 
 		sprintf cmd,"http://%s:%d/admin/selectviewdatagui.egi?&type=TOTAL_HISTOGRAM_YT",DASserverIP,DASserverport
-		easyHttp/PASS="manager:ansto" cmd
+		easyHttp/PROX=""/PASS="manager:ansto" cmd
 
 		sprintf cmd,"http://%s:%d/admin/openimageinformatgui.egi?open_format=DISLIN_PNG&open_colour_table=RRAIN&open_plot_zero_pixels=DISABLE&open_annotations=ENABLE", DASserverIP, DASserverport
-		easyHttp/FILE=SAVELOC+"statusMedia:Picture1.png" /PASS="manager:ansto" cmd
+		easyHttp/PROX=""/FILE=SAVELOC+"statusMedia:Picture1.png" /PASS="manager:ansto" cmd
 
 		sprintf cmd,"http://%s:%d/admin/selectviewdatagui.egi?&type=TOTAL_HISTOGRAM_T",DASserverIP,DASserverport
-		easyHttp/PASS="manager:ansto" cmd
+		easyHttp/PROX=""/PASS="manager:ansto" cmd
 	
 		sprintf cmd,"http://%s:%d/admin/openimageinformatgui.egi?open_format=DISLIN_PNG&open_colour_table=RRAIN&open_plot_zero_pixels=DISABLE&open_annotations=ENABLE", DASserverIP, DASserverport
-		easyHttp/FILE=SAVELOC+"statusMedia:Picture2.png" /PASS="manager:ansto" cmd
+		easyHttp/PROX=""/FILE=SAVELOC+"statusMedia:Picture2.png" /PASS="manager:ansto" cmd
 
 		sprintf cmd,"http://%s:%d/admin/selectviewdatagui.egi?&type=TOTAL_HISTOGRAM_Y",DASserverIP,DASserverport
-		easyHttp/PASS="manager:ansto" cmd
+		easyHttp/PROX=""/PASS="manager:ansto" cmd
 
 		sprintf cmd,"http://%s:%d/admin/openimageinformatgui.egi?open_format=DISLIN_PNG&open_colour_table=RRAIN&open_plot_zero_pixels=DISABLE&open_annotations=ENABLE", DASserverIP, DASserverport
-		easyHttp/FILE=SAVELOC+"statusMedia:Picture3.png" /PASS="manager:ansto" cmd
+		easyHttp/PROX=""/FILE=SAVELOC+"statusMedia:Picture3.png" /PASS="manager:ansto" cmd
 		
 		sprintf cmd,"http://%s:%d/admin/selectviewdatagui.egi?&type=RATEMAP_YT",DASserverIP,DASserverport
-		easyHttp/PASS="manager:ansto" cmd
+		easyHttp/PROX=""/PASS="manager:ansto" cmd
 		
 	catch
 		if(fileID)
@@ -2483,7 +2484,7 @@ Function txtme(text)
 	string cmd = ""
 	sprintf cmd, "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=r1vergod&to=" + getHipaVal("/user/phone") + "&text=%s", text
 //	print cmd
-	easyhttp cmd
+	easyhttp/PROX=HTTP_PROXY cmd
 ENd
 
 Function TestTask(s)		// This is the function that will be called periodically
