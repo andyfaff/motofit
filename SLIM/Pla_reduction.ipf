@@ -977,7 +977,7 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 				break
 				case 3:
 					phaseangle += 0.5 * O_C3d
-					phaseangle = -ch3phase[scanpoint] - ch3phaseoffset[scanpoint]
+					phaseangle += -ch3phase[scanpoint] - ch3phaseoffset[scanpoint]
 					D_CX += chopper3_distance[scanpoint]
 				break
 				case 4:
