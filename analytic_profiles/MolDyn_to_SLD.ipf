@@ -123,8 +123,12 @@ Function parsePDBFile([calculateAsYouGo, binsize, zoffset, startFrame, endFrame]
 				setscale/P x, binsize/2, binsize, MD_profile				
 			endif		
 		endif
-			
-		if(stringmatch(buffer[0, 2], "END"))
+
+		if(startFrame <= currentFrame && endFrame >= currentFrame && stringmatch(buffer, "END"))
+			numFrames += 1			
+		endif
+					
+		if(stringmatch(buffer, "END"))
 			currentFrame += 1			
 		endif
 		
@@ -135,14 +139,32 @@ Function parsePDBFile([calculateAsYouGo, binsize, zoffset, startFrame, endFrame]
 			break
 		endif
 		
-		if(startFrame <= currentFrame && endFrame >= currentFrame && stringmatch(buffer[0, 2], "END"))
-			numFrames += 1			
-		endif
 
 		
 		if(stringmatch(buffer[0,3], "ATOM"))
-			sscanf buffer, "%s %d %s %s %d  %f %f %f %f %f %s %s", othercrap, othercrapV1, otherCrap1, othercrap2, otherCrapV2, xx, yy, zz, othercrapV3, othercrapV4, othercrap3, element
-			if(V_flag > 0)
+				//# 1 -  6        Record name     "ATOM  "
+				//# 7 - 11        Integer         serial        Atom serial number.
+				//#13 - 16        Atom            name          Atom name.
+				//#17             Character       altLoc        Alternate location indicator.
+				//#18 - 20        Residue name    resName       Residue name.
+				//#22             Character       chainID       Chain identifier.
+				//#23 - 26        Integer         resSeq        Residue sequence number.
+				//#27             AChar           iCode         Code for insertion of residues.
+				//#31 - 38        Real(8.3)       x             Orthogonal coordinates for X in
+				//#39 - 46        Real(8.3)       y             Orthogonal coordinates for Y in
+				//#47 - 54        Real(8.3)       z             Orthogonal coordinates for Z in
+				//#55 - 60        Real(6.2)       occupancy     Occupancy.
+				//#61 - 66        Real(6.2)       tempFactor    Temperature factor.
+				//#73 - 76        LString(4)      segID         Segment identifier, left-justified.
+				//#77 - 78        LString(2)      element       Element symbol, right-justified.
+				//#79 - 80        LString(2)      charge        Charge on the atom.
+				//#    "%-6s%5d%2s%-3s%4s%2s%4d%4s%8.3f%8.3f%8.3f%6.2f%6.2f%4s%2s%2s\n"
+				
+				element = replacestring(" ", buffer[76,77], "")
+				xx = str2num(buffer[30,37])
+				yy = str2num(buffer[38,45])
+				zz = str2num(buffer[46,53])
+	
 				//				if(stringmatch(othercrap3, "WAT"))
 				//					if(stringmatch(element[0,0], "H"))
 				//						element[0,0]="D"
@@ -185,7 +207,6 @@ Function parsePDBFile([calculateAsYouGo, binsize, zoffset, startFrame, endFrame]
 					endif
 					
 				endif
-			endif
 		endif
 	
 		lineNumber +=1
@@ -197,10 +218,18 @@ Function parsePDBFile([calculateAsYouGo, binsize, zoffset, startFrame, endFrame]
 	endif
 
 	if(calculateAsYouGo)
-
 		MD_profile[][1] *= 2.8179
 		MD_profile /= molecularvolume
 		MD_profile *=10
+		if(numtype(numframes) == 0 && numframes > 0)
+			MD_profile /=numframes
+		endif
+		for(ii = 0 ; ii < itemsinlist(atomsencountered) ; ii+=1)
+			Wave/z poop = $("root:" + cleanupname(stringfromlist(ii, atomsencountered), 0))
+			if(waveexists(poop) && numtype(numframes) == 0 && numframes > 0)
+				poop /=numframes
+			endif
+		endfor
 	endif
 	
 	//initialise SLD database
