@@ -40,7 +40,7 @@ Function catalogue(pathName[, start, finish])
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o/s root:packages:platypus:catalogue
-	make/o/t/n=(1,7) runlist
+	make/o/t/n=(1,8) runlist
 	
 	if(paramisdefault(start))
 		start = 1
@@ -91,12 +91,13 @@ Function catalogue(pathName[, start, finish])
 			jj+=1
 		endfor
 		setdimlabel 1,0,run_number, runlist
-		setdimlabel 1,1,sample, runlist
-		setdimlabel 1,2,vslits, runlist
-		setdimlabel 1,3,omega, runlist
-		setdimlabel 1,4,run_time, runlist
-		setdimlabel 1,5,total_counts, runlist
-		setdimlabel 1,6,mon1_counts, runlist
+		setdimlabel 1, 1, starttime, runlist
+		setdimlabel 1,2,sample, runlist
+		setdimlabel 1,3,vslits, runlist
+		setdimlabel 1,4,omega, runlist
+		setdimlabel 1,5,run_time, runlist
+		setdimlabel 1,6,total_counts, runlist
+		setdimlabel 1,7,mon1_counts, runlist
 		dowindow/k Platypus_run_list
 		edit/k=1/N=Platypus_run_list runlist.ld as "Platypus Run List"
 	catch
@@ -151,6 +152,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 			abort
 		endif
 	endif
+	runlist[row][1] = start_time[0]
  
 	//user
 	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]","","user","",1))
@@ -212,7 +214,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/sample","","name",name[0],1))
 			abort
 		endif
-		runlist[row][1] = name[0]
+		runlist[row][2] = name[0]
 	endif
 
 
@@ -363,7 +365,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 //	tempStr += num2str(second_vertical_gap[0])+","
 //	tempStr += num2str(third_vertical_gap[0])+","
 //	tempStr += num2str(fourth_vertical_gap[0])+")"
-	runlist[row][2]= tempStr
+	runlist[row][3]= tempStr
 	
 	//parameters
 	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument","","parameters","",1))
@@ -382,7 +384,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/parameters","","omega",num2str(omega[0]),1))
 			abort
 		endif
-		runlist[row][3] = num2str(omega[0])
+		runlist[row][4] = num2str(omega[0])
 	endif
 
 	
@@ -412,7 +414,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/detector","","time",num2str(timer[0]),1))
 			abort
 		endif
-		runlist[row][4] = num2str(timer[0])
+		runlist[row][5] = num2str(timer[0])
 	endif
 	
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/detector/total_counts"
@@ -421,7 +423,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/detector","","total_counts",num2str(total_counts[0]),1))
 			abort
 		endif
-		runlist[row][5] = num2str(total_counts[0])
+		runlist[row][6] = num2str(total_counts[0])
 	endif
 	
 	hdf5loaddata/z/q/o hdfref,"/entry1/monitor/bm1_counts"
@@ -430,7 +432,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/detector","","total_counts",num2str(bm1_counts[0]),1))
 			abort
 		endif
-		runlist[row][6] = num2str(bm1_counts[0])
+		runlist[row][7] = num2str(bm1_counts[0])
 	endif
 	 
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/detector/vertical_translation"
