@@ -59,6 +59,7 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 			abort
 		endif
 		pathinfo PLA_PATH_TO_INPUT
+		inputpathstr = S_path
 	else
 		NewPath/o/q/z PLA_PATH_TO_INPUT inputPathStr
 		pathinfo PLA_PATH_TO_INPUT
