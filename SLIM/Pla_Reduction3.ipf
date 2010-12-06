@@ -29,7 +29,7 @@ Function addFilesTogether()
 	string filenames = ""
 	variable ii
 
-	string pathSep,pathname
+	string pathSep, outputPathStr
 	strswitch(UpperStr(IgorInfo(2)))
 		case "MACINTOSH":
 			pathSep = ":"
@@ -39,29 +39,29 @@ Function addFilesTogether()
 			break
 	endswitch
 										
-	pathName = Parsefilepath(1, Stringfromlist(0, S_filename), pathSep, 1, 0)
-	NewPath/o/q/z PATH_TO_DATA pathName
+	outputPathStr = Parsefilepath(1, Stringfromlist(0, S_filename), pathSep, 1, 0)
+	NewPath/o/q/z PLA_PATH_TO_OUTPUT outputPathStr
 	for(ii=0 ; ii<itemsinlist(S_filename); ii+=1)
 		filenames += Parsefilepath(0, Stringfromlist(ii, S_filename), pathSep, 1, 0)+";"
 	endfor
-	madd(pathname, filenames)
+	madd(outputPathStr, filenames)
 End
 
 
-Function downloadPlatypusData([pathname, lowFi, hiFi])
-	string pathname
+Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
+	string inputPathStr
 	variable lowFi, hiFi
 	string user="user", password=""
 	
-	if(paramisdefault(pathname))
-		newpath/o/c/q/z/M="Where would you like to store your Platypus data?" PATH_TO_DATA
+	if(paramisdefault(inputPathStr))
+		newpath/o/c/q/z/M="Where would you like to store your Platypus data?" PLA_PATH_TO_INPUT
 		if(V_Flag)
 			abort
 		endif
-		pathinfo PATH_TO_DATA
+		pathinfo PLA_PATH_TO_INPUT
 	else
-		NewPath/o/q/z PATH_TO_DATA pathName
-		pathinfo path_to_data
+		NewPath/o/q/z PLA_PATH_TO_INPUT inputPathStr
+		pathinfo PLA_PATH_TO_INPUT
 		if(!V_Flag)
 			Doalert 0, "Please enter a valid filepath for the data source"
 			return 1
@@ -84,14 +84,14 @@ Function downloadPlatypusData([pathname, lowFi, hiFi])
 		endif
 	endfor
 	print "Starting to download Platypus data."
-	string cmd= "easyHttp/PASS=\""+user+":"+password+"\"/FILE="+S_path+"data.zip \"http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi?lowFi="+num2istr(lowFi)+"&hiFi="+num2istr(hiFi)+"\""
+	string cmd= "easyHttp/PASS=\""+user+":"+password+"\"/FILE="+inputPathStr+"data.zip \"http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi?lowFi="+num2istr(lowFi)+"&hiFi="+num2istr(hiFi)+"\""
 	//	print cmd
-	easyHttp/PASS=user+":"+password/FILE=S_path+"data.zip" "http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi?lowFi="+num2istr(lowFi)+"&hiFi="+num2istr(hiFi)
+	easyHttp/PASS=user+":"+password/FILE=inputPathStr+"data.zip" "http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi?lowFi="+num2istr(lowFi)+"&hiFi="+num2istr(hiFi)
 	if(V_Flag)
 		print "Error while downloading Platypus data (downloadPlatypusData)"
 		return 1
 	endif
-	zipfile/o/e S_Path, S_Path+"data.zip"
+	zipfile/o/e inputPathStr, inputPathStr + "data.zip"
 	print "Finished downloading Platypus data."
 End
 
@@ -109,7 +109,9 @@ Function  reducerpanel() : Panel
 	
 	make/n=(100,10)/o root:packages:platypus:data:Reducer:angledata_sel
 	make/n=(100,10)/o/t root:packages:platypus:data:Reducer:angledata_list
-	string/g root:packages:platypus:data:Reducer:pathName
+	string/g root:packages:platypus:data:Reducer:inputpathStr
+	string/g root:packages:platypus:data:Reducer:outputpathStr
+	
 	variable/g root:packages:platypus:data:Reducer:lowLambda=2.8
 	variable/g root:packages:platypus:data:Reducer:highLambda=18
 	variable/g root:packages:platypus:data:Reducer:expected_centre=ROUGH_BEAM_POSITION
@@ -118,13 +120,19 @@ Function  reducerpanel() : Panel
 	variable/g root:packages:platypus:data:Reducer:manualbeamfind=0
 	variable/g root:packages:platypus:data:Reducer:normalisebymonitor=1
 	variable/g root:packages:platypus:data:Reducer:saveSpectrum=0
+	variable/g root:packages:platypus:data:Reducer:saveoffspec=0
 		
-	SVAR pathName = root:packages:platypus:data:Reducer:pathName
-	pathInfo PATH_TO_DATA
+	SVAR inputpathStr = root:packages:platypus:data:Reducer:inputpathStr
+	pathInfo PLA_PATH_TO_INPUT
 	if(V_Flag)
-		pathname = S_Path
+		inputpathStr = S_Path
 	endif
-
+	SVAR outputpathStr = root:packages:platypus:data:Reducer:outputpathStr
+	pathInfo PLA_PATH_TO_OUTPUT
+	if(V_Flag)
+		outputpathStr = S_Path
+	endif
+	
 	Wave/t angledata_list = root:packages:platypus:data:Reducer:angledata_list
 	Wave angledata_sel= root:packages:platypus:data:Reducer:angledata_sel
 	setdimlabel 1,0,reduce,angledata_list
@@ -153,15 +161,23 @@ Function  reducerpanel() : Panel
 	
 	SetVariable dataSource_tab0,pos={288,10},size={326,16},title="Data directory"
 	SetVariable dataSource_tab0,fSize=10
-	SetVariable dataSource_tab0,value= root:packages:platypus:data:Reducer:pathName,noedit= 1
+	SetVariable dataSource_tab0,value= root:packages:platypus:data:Reducer:inputpathStr,noedit= 1
+	SetVariable dataOut_tab0,pos={288,30},size={326,16},title="Output directory"
+	SetVariable dataOut_tab0,fSize=10
+	SetVariable dataOut_tab0,value= root:packages:platypus:data:Reducer:outputpathStr,noedit= 1
+	
 	//	checkbox rebinning_tab0,pos={574,30},title="rebin?",fsize=10
-	Button showreducervariables_tab0,pos={381,52},size={152,16},proc=SLIM_buttonproc,title="show reducer variables"
+	Button showreducervariables_tab0,pos={348,52},size={152,16},proc=SLIM_buttonproc,title="show reducer variables"
 	Button showreducervariables_tab0,fSize=9
 
 	Button changedatasource_tab0,pos={630,11},size={44,16},proc=SLIM_buttonproc,title="change"
 	Button changedatasource_tab0,fSize=9
+	
+	Button changedataout_tab0,pos={630,31},size={44,16},proc=SLIM_buttonproc,title="change"
+	Button changedataout_tab0,fSize=9
 
-	Button downloadPlatdata_tab0,pos={381,30},size={152,16},proc=SLIM_buttonproc,title="Download Platypus data"
+
+	Button downloadPlatdata_tab0,pos={518,53},size={152,16},proc=SLIM_buttonproc,title="Download Platypus data"
 	Button downloadPlatdata_tab0,fSize=9
 	
 	Button clear_tab0,pos={99,55},size={86,17},proc=SLIM_buttonproc,title="clear"
@@ -170,7 +186,7 @@ End
 Function  reducerVariablesPanel() : Panel
 	PauseUpdate; Silent 1		// building window...
 	Dowindow/k SLIMvarpanel
-	NewPanel /K=1 /W=(385,164,588,350)
+	NewPanel /K=1 /W=(385,164,588,370)
 	Dowindow/c SLIMvarpanel
 	
 	Newdatafolder/o root:packages
@@ -199,6 +215,8 @@ Function  reducerVariablesPanel() : Panel
 	CheckBox normalise_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:normalisebymonitor
 	CheckBox saveSpectrum_tab0,pos={9,157},size={94,14},title="save spectrum?", win=SLIMvarpanel
 	CheckBox saveSpectrum_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:saveSpectrum
+	CheckBox saveoffspec_tab0,pos={9,178},size={94,14},title="save offspecular map?", win=SLIMvarpanel
+	CheckBox saveoffspec_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:saveoffspec
 End
 
 Function SLIM_listproc(lba) : ListBoxControl
@@ -215,12 +233,12 @@ Function SLIM_listproc(lba) : ListBoxControl
 			break
 		case 4:
 			if(lba.eventmod==17 && col > 0)		
-				pathinfo path_to_data
+				pathinfo PLA_PATH_TO_INPUT
 				if(!V_Flag)
 					Doalert 0, "Please enter a valid filepath for the data source"	
 					return 0
 				else
-					filenames = indexedfile(path_to_data,-1,".hdf")	
+					filenames = indexedfile(PLA_PATH_TO_INPUT, -1, ".hdf")	
 					filenames = sortlist(filenames,";",17)
 				endif
 				popupcontextualmenu "-Filldown-;"+filenames
@@ -265,13 +283,15 @@ Function SLIM_buttonproc(ba) : ButtonControl
 			NVAR highLambda = root:packages:platypus:data:Reducer:highLambda
 			Wave/t angledata_list = root:packages:platypus:data:Reducer:angledata_list
 			Wave angledata_sel= root:packages:platypus:data:Reducer:angledata_sel
-			SVAR pathName = root:packages:platypus:data:Reducer:pathName
+			SVAR inputpathStr = root:packages:platypus:data:Reducer:inputpathStr
+			SVAR outputpathStr = root:packages:platypus:data:Reducer:outputpathStr
 			NVAR expected_centre = root:packages:platypus:data:Reducer:expected_centre
 			NVAR rebinpercent = root:packages:platypus:data:Reducer:rebinpercent
 			NVAR backgroundsbn =  root:packages:platypus:data:Reducer:backgroundsbn
 			NVAR manualbeamfind =  root:packages:platypus:data:Reducer:manualbeamfind
 			NVAR normalisebymonitor = root:packages:platypus:data:Reducer:normalisebymonitor
 			NVAR saveSpectrum =  root:packages:platypus:data:Reducer:saveSpectrum
+			NVAR saveoffspec =  root:packages:platypus:data:Reducer:saveoffspec
 			
 			variable rebinning,ii,jj, dontoverwrite = 0
 			string tempDF,filenames, water = ""
@@ -280,11 +300,16 @@ Function SLIM_buttonproc(ba) : ButtonControl
 
 			strswitch(ba.ctrlname)
 				case "reduce_tab0":
-					pathinfo path_to_data
+					pathinfo PLA_PATH_TO_INPUT
 					if(!V_Flag)
 						Doalert 0, "Please enter a valid filepath for the data source"
 						return 0
 					endif			
+					pathinfo PLA_PATH_TO_OUTPUT
+					if(!V_Flag)
+						Doalert 0, "Please enter a valid filepath for the data source"
+						return 0
+					endif	
 
 					//did you want to rebin?
 					rebinning = rebinpercent
@@ -335,10 +360,12 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							angledata_list[ii][2] = "1"
 							print "Warning setting scale factor to 1 ", angledata_list[ii][3]
 						endif
-						sprintf cmd, " reduce(\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g)", replacestring("\\", pathname, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, dontoverwrite, normalisebymonitor, saveSpectrum
+						
+						string template =  " reduce(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
+						sprintf cmd, template, replacestring("\\", inputpathStr, "\\\\"), replacestring("\\", outputpathStr, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, dontoverwrite, normalisebymonitor, saveSpectrum, saveoffspec
 						cmdToHistory(cmd)
 						
-						if(reduce(pathName, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_centre = expected_centre, manual=manualbeamfind, dontoverwrite = dontoverwrite, normalise = normalisebymonitor, saveSpectrum = saveSpectrum))
+						if(reduce(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_centre = expected_centre, manual=manualbeamfind, dontoverwrite = dontoverwrite, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec))
 							print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
 						endif
 					endfor
@@ -355,17 +382,17 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					reducerVariablesPanel() 
 					break
 				case "downloadPlatdata_tab0":
-					pathinfo path_to_data
+					pathinfo PLA_PATH_TO_INPUT
 					if(!V_Flag)
 						downloadplatypusdata()
-						pathinfo path_to_data
-						pathName = S_path
+						pathinfo PLA_PATH_TO_INPUT
+						inputPathStr = S_path
 					else
-						downloadplatypusdata(pathname = S_path)
+						downloadplatypusdata(inputPathStr = inputPathStr)
 					endif
 					break
 				case "plot_tab0":
-					pathinfo path_to_data
+					pathinfo PLA_PATH_TO_INPUT
 					if(!V_Flag)
 						Doalert 0, "Please enter a valid filepath for the data source"
 						return 0
@@ -373,15 +400,15 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					//did you want to rebin?
 					rebinning = rebinpercent
 										
-					NewPath/o/q/z PATH_TO_DATA pathName
-					pathinfo path_to_data
+					NewPath/o/q/z PLA_PATH_TO_INPUT inputPathStr
+					pathinfo PLA_PATH_TO_INPUT
 					if(!V_Flag)
 						Doalert 0, "Please enter a valid filepath for the data source"
 						return 0
 					endif	
 					
 					//find the files with the new multiopenfiles XOP
-					multiopenfiles/P=PATH_TO_DATA/M="Select the files you wish to view"/F=".hdf;.xml;.itx;.xrdml;"
+					multiopenfiles/P=PLA_PATH_TO_INPUT/M="Select the files you wish to view"/F=".hdf;.xml;.itx;.xrdml;"
 					if(V_Flag!=0)
 						return 0
 					endif
@@ -396,8 +423,8 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							break
 					endswitch
 										
-					pathName = Parsefilepath(1, Stringfromlist(0, S_filename), pathSep, 1, 0)
-					NewPath/o/q/z PATH_TO_DATA pathName
+					inputPathStr = Parsefilepath(1, Stringfromlist(0, S_filename), pathSep, 1, 0)
+					NewPath/o/q/z PLA_PATH_TO_INPUT inputPathStr
 					
 					filenames = ""
 
@@ -409,10 +436,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						return 0
 					endif
 					
-					sprintf cmd, "slim_plot(\"%s\",\"%s\",%g,%g,%g,expected_centre=%g, rebinning=%g, manual=%g, normalise=%g, saveSpectrum = %g)",pathName, filenames, lowLambda,highLambda, backgroundsbn,expected_centre, rebinpercent, manualbeamfind, normalisebymonitor, saveSpectrum
+					sprintf cmd, "slim_plot(\"%s\",\"%s\",\"%s\",%g,%g,%g,expected_centre=%g, rebinning=%g, manual=%g, normalise=%g, saveSpectrum = %g)",inputPathStr, outputPathStr, filenames, lowLambda,highLambda, backgroundsbn,expected_centre, rebinpercent, manualbeamfind, normalisebymonitor, saveSpectrum
 					cmdToHistory(cmd)
 						
-					if(slim_plot(pathName,fileNames,lowLambda,highLambda,backgroundsbn, expected_centre=expected_centre, rebinning = rebinpercent, manual = manualbeamfind, normalise = normalisebymonitor, saveSpectrum = saveSpectrum))
+					if(slim_plot(inputPathStr, outputPathStr, fileNames,lowLambda,highLambda,backgroundsbn, expected_centre=expected_centre, rebinning = rebinpercent, manual = manualbeamfind, normalise = normalisebymonitor, saveSpectrum = saveSpectrum))
 						print "ERROR while trying to plot (SLIM_buttonproc)"
 						return 0
 					endif
@@ -423,10 +450,17 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					angledata_sel[][1] = 2^5				
 					break
 				case "changedatasource_tab0":
-					newpath/z/q/o path_to_data
+					newpath/z/q/o PLA_PATH_TO_INPUT
 					if(!V_Flag)
-						pathinfo path_to_data			
-						pathName = S_path
+						pathinfo PLA_PATH_TO_INPUT			
+						inputpathStr = S_path
+					endif
+					break
+				case "changedataout_tab0":
+					newpath/z/q/o PLA_PATH_TO_OUTPUT
+					if(!V_Flag)
+						pathinfo PLA_PATH_TO_OUTPUT			
+						outputpathStr = S_path
 					endif
 					break
 			endswitch	
@@ -438,8 +472,8 @@ Function SLIM_buttonproc(ba) : ButtonControl
 End
 
 
-Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expected_centre, rebinning, manual, normalise, saveSpectrum])
-	String pathName,fileNames
+Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, [expected_centre, rebinning, manual, normalise, saveSpectrum])
+	String inputpathStr, outputPathStr, fileNames
 	variable lowlambda, highlambda, background, expected_centre, rebinning, manual, normalise, saveSpectrum
 		
 	if(paramisdefault(expected_centre))
@@ -457,8 +491,8 @@ Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expecte
 	endif
 
 	
-	Newpath/o/q/z PATH_TO_DATA pathName
-	PathInfo PATH_TO_DATA
+	Newpath/o/q/z PLA_PATH_TO_INPUT inputpathStr
+	PathInfo PLA_PATH_TO_INPUT
 	if(!V_Flag)
 		print "ERROR please set valid path (SLIM_PLOT)"
 		return 1
@@ -467,12 +501,12 @@ Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expecte
 	variable ii
 	string tempDF,tempFileNameStr
 	
-	for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
-		tempFileNameStr = stringfromlist(ii,fileNames)
+	for(ii=0 ; ii<itemsinlist(filenames) ; ii += 1)
+		tempFileNameStr = stringfromlist(ii, fileNames)
 		
 		//trying to plot reduced data
 		if(stringmatch(".xml",tempfilenamestr[strlen(tempfilenamestr)-4,strlen(tempfilenamestr)-1]))
-			if(SLIM_plot_reduced(pathName,filenames))
+			if(SLIM_plot_reduced(inputPathStr, filenames))
 				print "ERROR while trying to plot reduced data (SLIM_PLOT)"
 				return 1
 			endif
@@ -480,7 +514,7 @@ Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expecte
 		endif
 		
 		if(stringmatch(".itx",tempfilenamestr[strlen(tempfilenamestr)-4,strlen(tempfilenamestr)-1]))
-			if(SLIM_plot_scans(pathName,filenames))
+			if(SLIM_plot_scans(inputPathStr, filenames))
 				print "ERROR while trying to plot reduced data (SLIM_PLOT)"
 				return 1
 			endif
@@ -488,7 +522,7 @@ Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expecte
 		endif
 		
 		if(stringmatch(".xrdml",tempfilenamestr[strlen(tempfilenamestr)-6,strlen(tempfilenamestr)-1]))	
-			if(SLIM_plot_xrdml(pathName,filenames))
+			if(SLIM_plot_xrdml(inputPathStr, filenames))
 				print "ERROR while trying to plot XRDML data (SLIM_PLOT)"
 				return 1
 			endif
@@ -496,21 +530,21 @@ Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expecte
 		endif
 		
 		//now try to plot NeXUS data
-		if(!stringmatch(".nx.hdf",tempfilenamestr[strlen(tempfilenamestr)-7,strlen(tempfilenamestr)-1]))
+		if(!stringmatch(".nx.hdf", tempfilenamestr[strlen(tempfilenamestr)-7,strlen(tempfilenamestr)-1]))
 			Doalert 0, "ERROR: this isn't a NeXUS file"
 			return 1
 		endif
 		tempFileNameStr = removeending(stringfromlist(ii,fileNames),".nx.hdf")
 		
 		if(paramisdefault(rebinning) || rebinning <= 0)
-			if(processNeXUSfile(S_path, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, manual=manual, normalise = normalise, savespectrum = saveSpectrum))
+			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, manual=manual, normalise = normalise, savespectrum = saveSpectrum))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1
 			endif
 		else
 			make/o/d/n= (round(log(highlambda/lowlambda)/log(1+rebinning/100))+1) W_rebinBoundaries
 			W_rebinboundaries = lowlambda * (1+rebinning/100)^p
-			if(processNeXUSfile(S_path, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, rebinning=W_rebinboundaries,manual=manual, normalise = normalise, savespectrum = saveSpectrum))
+			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, rebinning=W_rebinboundaries,manual=manual, normalise = normalise, savespectrum = saveSpectrum))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1
 			endif		
@@ -552,9 +586,9 @@ Function SLIM_plot(pathName,fileNames,lowlambda,highLambda, background, [expecte
 	endif
 End
 
-Function SLIM_plot_scans(pathName,filenames)
-	String pathname, fileNames
-	print "SLIM_plot_scans("+pathname+","+filenames+")"
+Function SLIM_plot_scans(inputpathStr,filenames)
+	String inputpathStr, fileNames
+	print "SLIM_plot_scans("+inputpathStr+","+filenames+")"
 	variable ii, fnumber
 	string cDF, tempStr1,tempStr
 	
@@ -566,8 +600,8 @@ Function SLIM_plot_scans(pathName,filenames)
 	newdatafolder/o root:packages:platypus:data:Reducer
 	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
 	
-	Newpath/o/q/z PATH_TO_DATA pathName
-	pathinfo PATH_TO_DATA
+	Newpath/o/q/z PLA_PATH_TO_INPUT inputpathStr
+	pathinfo PLA_PATH_TO_INPUT
 	if(!V_flag)//path doesn't exist
 		print "ERROR please set valid path (SLIM_PLOT_scans)"
 		return 1	
@@ -583,7 +617,7 @@ Function SLIM_plot_scans(pathName,filenames)
 		
 		for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
 			string fname = stringfromlist(ii,filenames)
-			loadWave/o/q/T/P=PATH_TO_DATA, fname
+			loadWave/o/q/T/P=PLA_PATH_TO_INPUT, fname
 			sscanf fname, "FIZscan%d%*[.]itx", fnumber
 			Wave wav0 = $(stringfromlist(0, S_wavenames))
 			Wave wav1 = $(stringfromlist(1, S_wavenames))
@@ -609,8 +643,8 @@ Function SLIM_plot_scans(pathName,filenames)
 	endtry
 End
 
-Function SLIM_plot_reduced(pathName,filenames)
-	string pathName, filenames
+Function SLIM_plot_reduced(inputPathStr, filenames)
+	string inputPathStr, filenames
 	variable ii,numwaves,jj
 	string loadedWavenames
 	string cDF = getdatafolder(1)
@@ -621,8 +655,8 @@ Function SLIM_plot_reduced(pathName,filenames)
 	newdatafolder/o root:packages:platypus:data:Reducer
 	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
 
-	Newpath/o/q/z PATH_TO_DATA pathName
-	pathinfo PATH_TO_DATA
+	Newpath/o/q/z PLA_PATH_TO_INPUT inputPathStr
+	pathinfo PLA_PATH_TO_INPUT
 	if(!V_flag)//path doesn't exist
 		print "ERROR please set valid path (SLIM_PLOT_reduced)"
 		return 1	
@@ -639,7 +673,7 @@ Function SLIM_plot_reduced(pathName,filenames)
 		for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
 			string fname = stringfromlist(ii,filenames)
 
-			variable fileID = xmlopenfile(S_path+fname)
+			variable fileID = xmlopenfile(inputPathStr+fname)
 			if(fileID < 1)
 				print "ERROR opening xml file (SLIM_PLOT_reduced)"
 				abort
@@ -704,8 +738,8 @@ Function SLIM_plot_reduced(pathName,filenames)
 	endtry
 End
 
-Function SLIM_plot_xrdml(pathName,filenames)
-	string pathName, filenames
+Function SLIM_plot_xrdml(inputPathStr, filenames)
+	string inputPathStr, filenames
 	variable err
 	variable ii,numwaves,jj
 	string loadedWavenames
@@ -717,8 +751,8 @@ Function SLIM_plot_xrdml(pathName,filenames)
 	newdatafolder/o root:packages:platypus:data:Reducer
 	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
 
-	Newpath/o/q/z PATH_TO_DATA pathName
-	pathinfo PATH_TO_DATA
+	Newpath/o/q/z PLA_PATH_TO_INPUT inputpathStr
+	pathinfo PLA_PATH_TO_INPUT
 	if(!V_flag)//path doesn't exist
 		print "ERROR please set valid path (SLIM_PLOT_reduced)"
 		return 1	
@@ -735,7 +769,7 @@ Function SLIM_plot_xrdml(pathName,filenames)
 
 		for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
 			base = removeending(stringfromlist(ii, filenames), ".xrdml")		
-			theFile = S_path + stringfromlist(ii, filenames)
+			theFile = inputpathStr + stringfromlist(ii, filenames)
 			theFile = parsefilepath(5, theFile, "*", 0, 0)
 			
 			if(reduceXpertPro(theFile, scalefactor=1, footprint=NaN))
@@ -771,7 +805,8 @@ Function button_SLIM_PLOT(ba) : ButtonControl
 	NVAR highLambda = root:packages:platypus:data:Reducer:highLambda
 	Wave/t angledata_list = root:packages:platypus:data:Reducer:angledata_list
 	NVAR rebinpercent = root:packages:platypus:data:Reducer:rebinpercent
-	SVAR pathName = root:packages:platypus:data:Reducer:pathName
+	SVAR inputPathStr = root:packages:platypus:data:Reducer:inputPathStr
+	SVAR outputPathStr = root:packages:platypus:data:Reducer:outputPathStr
 	NVAR backgroundsbn =  root:packages:platypus:data:Reducer:backgroundsbn
 	NVAR manualbeamfind =  root:packages:platypus:data:Reducer:manualbeamfind
 	NVAR normalisebymonitor = root:packages:platypus:data:Reducer:normalisebymonitor
@@ -793,7 +828,7 @@ Function button_SLIM_PLOT(ba) : ButtonControl
 					
 					rebinning = rebinpercent
 
-					SLIM_plot(pathName,fileNames,lowLambda,highLambda, backgroundsbn, rebinning = rebinning, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, manual = manualbeamfind)
+					SLIM_plot(inputPathStr, outputPathStr, fileNames,lowLambda,highLambda, backgroundsbn, rebinning = rebinning, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, manual = manualbeamfind)
 					if(!stringmatch(stringfromlist(0,filenames),"*.xml") && !stringmatch(stringfromlist(0,filenames),"*.xrdml"))
 						SLIM_redisplay(type,isLog)
 					endif

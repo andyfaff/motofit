@@ -50,16 +50,17 @@
 	constant ROUGH_BEAM_WIDTH = 10
 	Constant CHOPPAIRING = 3
 		
+	//We'll have two
 	//StrConstant PATH_TO_DATA = "Macintosh HDD:Users:andrew:Documents:Andy:Platypus:TEMP:"
 
 
-Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum])
-	string pathName
+Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec])
+	string inputPathStr, outputPathStr
 	variable scalefactor
 	string runfilenames
 	variable lowLambda,highLambda, rebin
 	string water
-	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum
+	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec
 	
 	//produces a reflectivity curve for a given set of angles
 	//returns 0 if successful, non zero otherwise
@@ -81,6 +82,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	//dontoverwrite = 1 if you want to create unique names everytime you reduce the file. (default == 0)
 	//normalise = 1 if you want to normalise by beam monitor counts (default == 1)
 	//saveSpectrum = 1 if you want to save the spectrum (default == 0)
+	//saveoffspec=1 if you want to save an offspecular map (default == 0)
 	
 	//this function must load the data using loadNexusfile, then call processNexusfile which produces datafolders containing
 	//containing the spectrum (W_spec, W_specSD, W_lambda, W_lambdaSD,W_specTOFHIST,W_specTOF,W_LambdaHIST)
@@ -92,7 +94,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	
 	//writes out the file in Q <tab> R <tab> dR <tab> dQ format.
 	
-	string tempStr,cDF,directDF,angle0DF, alreadyLoaded="", toSplice="", direct = "", angle0="",tempDF, reductionCmd, scanpointrange = ""
+	string tempStr,cDF,directDF,angle0DF, alreadyLoaded="", toSplice="", direct = "", angle0="",tempDF, reductionCmd, scanpointrange = "", cmd = ""
 	variable ii,D_S2, D_S3, D_SAMPLE,domega, spliceFactor,temp, isDirect, aa,bb,cc,dd,jj,kk
 	
 	cDF = getdatafolder(1)
@@ -127,18 +129,27 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 	if(paramisdefault(saveSpectrum))
 		saveSpectrum = 0
 	endif
+	if(paramisdefault(saveoffspec))
+		saveoffspec = 0
+	endif
 	
 	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
-	sprintf reductionCmd, "reduce(\"%s\",%g,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g)",pathName, scalefactor, runfilenames,lowLambda,highLambda, rebin, background,water, expected_centre, manual, dontoverwrite, normalise, saveSpectrum
+	sprintf reductionCmd, "reduce(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)",inputPathStr, outputPathStr, scalefactor, runfilenames,lowLambda,highLambda, rebin, background,water, expected_centre, manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
 	
 	try
 		setdatafolder "root:packages:platypus:data:Reducer"
 		//set the data to load
-		Newpath/o/q/z PATH_TO_DATA,pathName
-		PATHinfo PATH_TO_DATA
+		Newpath/o/q/z PLA_PATH_TO_INPUT,inputPathStr
+		PATHinfo PLA_PATH_TO_INPUT
 		if(!V_flag)
-			print "ERROR pathname not valid (loadNexusfile)";abort
+			print "ERROR path not valid (loadNexusfile)";abort
 		endif
+		Newpath/o/q/z PLA_PATH_TO_OUTPUT,outputPathStr
+		PATHinfo PLA_PATH_TO_OUTPUT
+		if(!V_flag)
+			print "ERROR path not valid (loadNexusfile)";abort
+		endif
+		
 
 		//check the scalefactor is reasonable
 		if(numtype(scalefactor) || scalefactor==0)
@@ -165,7 +176,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 		
 		if(!paramisdefault(water) && strlen(water)>0)
 			if(!datafolderexists("root:packages:platypus:data:Reducer:"+cleanupname(removeending(water, ".nx.hdf"),0)))
-				if(loadNexusFile(pathName, water))
+				if(loadNexusFile(inputPathStr, water))
 					print "Error loading water run (reduce)"
 					abort
 				endif
@@ -190,11 +201,11 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			if(whichlistitem(direct, alreadyLoaded) == -1)	//if you've not loaded the direct beam for that angle do so.
 				isDirect = 1
 				if(rebin)
-					if(processNeXUSfile(S_path, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, rebinning = W_rebinboundaries, manual = manual, normalise=normalise, saveSpectrum = saveSpectrum))
+					if(processNeXUSfile(inputPathStr, outputPathStr, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, rebinning = W_rebinboundaries, manual = manual, normalise=normalise, saveSpectrum = saveSpectrum))
 						print "ERROR while processing a direct beam run (reduce)" ; abort
 					endif
 				else
-					if(processNeXUSfile(S_path, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, manual = manual, normalise = normalise, saveSpectrum = saveSpectrum))
+					if(processNeXUSfile(inputPathStr, outputPathStr, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, manual = manual, normalise = normalise, saveSpectrum = saveSpectrum))
 						print "ERROR while processing a direct beam run (reduce)" ; abort
 					endif				
 				endif
@@ -220,7 +231,7 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			//load in and process reflected angle
 			//when you process the reflected nexus file you have to use the lambda spectrum from the direct beamrun
 			scanpointrange = stringfromlist(1, angle0, ",")
-			if(processNeXUSfile(S_path, angle0, background, lowLambda, highLambda, scanpointrange = scanpointrange, water = water, isDirect = 0, expected_centre = expected_centre, rebinning = W_lambdaHISTD, manual=manual, normalise = normalise, saveSpectrum = saveSpectrum))
+			if(processNeXUSfile(inputPathStr, outputPathStr, angle0, background, lowLambda, highLambda, scanpointrange = scanpointrange, water = water, isDirect = 0, expected_centre = expected_centre, rebinning = W_lambdaHISTD, manual=manual, normalise = normalise, saveSpectrum = saveSpectrum))
 				print "ERROR while processing a reflected beam run (reduce)" ; abort
 			endif
 			
@@ -487,25 +498,25 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 			variable fileID
 			string fname = cutfilename(angle0)
 			if(dontoverwrite)
-				fname = uniqueFileName(S_path, fname, ".dat")
+				fname = uniqueFileName(outputPathStr, fname, ".dat")
 			endif
-			open/P=path_to_data/z=1 fileID as fname + ".dat"
+			open/P=PLA_PATH_TO_OUTPUT/z=1 fileID as fname + ".dat"
 			
 			if(V_flag==0)
 				fprintf fileID, "Q (1/A)\t Ref\t dRef (SD)\t dq(FWHM, 1/A)\n"
 				wfprintf fileID, "%g\t %g\t %g\t %g\n" W_q,W_ref,W_refSD,W_qSD
 				close fileID
 			endif
-			
-			pathinfo path_to_data
-			
+						
 			//this only writes XML for a single file
 			Wave/t user = $(angle0DF + ":user:name")
 			Wave/t samplename = $(angle0DF + ":sample:name")			
-			writeSpecRefXML1D(S_path, fname, W_q, W_ref, W_refSD, W_qSD, "", user[0], samplename[0], angle0, reductionCmd)
+			writeSpecRefXML1D(outputPathStr, fname, W_q, W_ref, W_refSD, W_qSD, "", user[0], samplename[0], angle0, reductionCmd)
 						
 			//write a 2D XMLfile for the offspecular data
-			write2DXML(S_path, angle0, dontoverwrite)
+			if(saveoffspec)
+				write2DXML(outputPathStr, angle0, dontoverwrite)
+			endif
 			Sort/R W_q,W_q,W_ref,W_refSD,W_qSD
 			
 			//to keep track of what we have to splice and save
@@ -519,13 +530,16 @@ Function reduce(pathName, scalefactor,runfilenames, lowlambda, highlambda, rebin
 		//delrefpoints.  If you want to do this then do the reduction, delrefpoints, then call splicefiles again.
 		fname = stringfromlist(0, toSplice)
 		if(dontoverwrite)
-			fname = uniqueFileName(S_path, "c_" + fname, ".xml")
+			fname = uniqueFileName(outputPathStr, "c_" + fname, ".xml")
 		else
 			fname = "c_" + fname
 		endif
-			
-		print "splicefiles(\"" + replacestring("\\", pathname, "\\\\") + "\",\"" + fname + "\",\"" + toSplice + "\",  rebin = " + num2str(rebin) + ")"
-		if(spliceFiles(pathName, fname, toSplice, rebin = rebin))
+			sprintf reductionCmd, "reduce(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g)",inputPathStr, outputPathStr, scalefactor, runfilenames,lowLambda,highLambda, rebin, background,water, expected_centre, manual, dontoverwrite, normalise, saveSpectrum
+
+		sprintf cmd, "spliceFiles(\"%s\",\"%s\",\"%s\" , rebin=%g)", outputPathStr, fname, toSplice, rebin
+
+		print cmd
+		if(spliceFiles(outputPathStr, fname, toSplice, rebin = rebin))
 			print "ERROR while splicing (reduce)";abort
 		endif		
 	catch
@@ -576,17 +590,17 @@ Function/t cutFileName(filename)
 	return ret
 End
 
-Function/t uniqueFileName(pathStr, filename, ext)
-	string pathStr, filename, ext
+Function/t uniqueFileName(outputPathStr, filename, ext)
+	string outputPathStr, filename, ext
 		string theFiles, theUniqueName = ""
 		variable ii
-		Newpath/o/q/z PATH_TO_DATA, pathStr
-		PATHinfo PATH_TO_DATA
+		Newpath/o/q/z PLA_PATH_TO_OUTPUT, outputPathStr
+		PATHinfo PLA_PATH_TO_OUTPUT
 		if(!V_flag)
 			print "ERROR pathname not valid (uniqueFileName)";abort
 		endif
 		
-		theFiles = indexedFile(PATH_TO_DATA, -1, ext)
+		theFiles = indexedFile(PLA_PATH_TO_OUTPUT, -1, ext)
 		theUniqueName = filename
 		//the file already exists, increment a number
 		for(ii=1; whichListItem(theUniqueName + ext, theFiles) > -1 ; ii+=1)
@@ -616,9 +630,9 @@ Function expandStrIntoPossibleFileName(fileStub, righteousFileName)
 	return 0
 End
 
-Function loadNeXUSfile(pathname, filename)
-	string pathname, fileName
-	//loads a NeXUS file, fileName, from the path contained in the pathName string.
+Function loadNeXUSfile(inputPathStr, filename)
+	string inputPathStr, fileName
+	//loads a NeXUS file, fileName, from the path contained in the inputPathStr string.
 	//returns 0 if successful, non zero otherwise
 	string tempDF = "",cDF = "", temp
 	variable fileRef, err, number
@@ -630,8 +644,8 @@ Function loadNeXUSfile(pathname, filename)
 	Newdatafolder /o root:packages:platypus:data
 	Newdatafolder /o root:packages:platypus:data:Reducer
 	
-	Newpath/o/q/z PATH_TO_DATA, pathName
-	pathinfo PATH_TO_DATA
+	Newpath/o/q/z PLA_PATH_TO_INPUT, inputPathStr
+	pathinfo PLA_PATH_TO_INPUT
 	if(!V_flag)//path doesn't exist
 		print "ERROR please set valid path (SLIM_PLOT_scans)"
 		return 1	
@@ -646,14 +660,14 @@ Function loadNeXUSfile(pathname, filename)
 		tempDF = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(filename,".nx.hdf"),0)
 
 		for(;;)
-			if(doesNexusfileExist("PATH_TO_DATA", filename+".nx.hdf"))
-				hdf5openfile/P=PATH_TO_DATA/r/z fileRef as filename+".nx.hdf"
+			if(doesNexusfileExist("PLA_PATH_TO_INPUT", filename+".nx.hdf"))
+				hdf5openfile/P=PLA_PATH_TO_INPUT/r/z fileRef as filename+".nx.hdf"
 			else
 				doalert 1, "Couldn't find beam file: "+filename+". Do you want to try and download it from the server?"
 				if(V_flag==2)
 					print "ERROR: couldn't open beam file: (loadNexusfile)"; abort
 				else
-					if(downloadplatypusdata(pathname=pathname, lowFi = number, hiFi = number +1))
+					if(downloadplatypusdata(inputpathStr=inputPathStr, lowFi = number, hiFi = number +1))
 						print "ERROR while trying to download platypus data from server (loadNexusfile)";abort
 					endif
 				endif
@@ -680,10 +694,10 @@ Function loadNeXUSfile(pathname, filename)
 	return 0
 End
 
-Function doesNexusfileExist(pathName, filename)
-	string pathName, fileName
+Function doesNexusfileExist(inputPathNameStr, filename)
+	string inputPathNameStr, fileName
 
-	string files = indexedfile($pathName, -1, ".hdf")
+	string files = indexedfile($inputPathNameStr, -1, ".hdf")
 	variable pos = whichlistitem(filename, files)
 	if(pos==-1)
 		return 0
@@ -692,8 +706,8 @@ Function doesNexusfileExist(pathName, filename)
 	endif
 End
 
-Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, water, scanpointrange, isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, rebinning, normalise])
-	string pathname, fileName
+Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, rebinning, normalise])
+	string inputPathStr, outputPathStr, fileName
 	variable background, loLambda, hiLambda
 	string water, scanpointrange
 	variable isDirect, expected_centre, expected_width, omega, two_theta, manual, saveSpectrum, normalise
@@ -742,15 +756,15 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 	
 	try
 		//try and load the data
-		if(loadNeXUSfile(pathname, filename))
-			print "problem whilst loading NeXUS file: ",  pathname + filename, " (processNexusfile)"
+		if(loadNeXUSfile(inputPathStr, filename))
+			print "problem whilst loading NeXUS file: ",  inputPathStr + filename, " (processNexusfile)"
 			abort
 		endif
 		
 		//check the data is loaded
 		tempDF = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(filename,".nx.hdf"),0)
 		if(!datafolderexists(tempDF))
-			print "ERROR: you have not loaded ",filename," (processNexusfile)"
+			print "ERROR: you have not loaded ", filename," (processNexusfile)"
 			abort
 		endif
 			
@@ -1209,7 +1223,7 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 	
 		//you may want to save the spectrum to file
 		if(!paramisdefault(saveSpectrum) && saveSpectrum)
-			if(writeSpectrum(pathname, filename, filename, W_spec, W_specSD, W_lambda, W_lambdaSD))
+			if(writeSpectrum(outputPathStr, filename, filename, W_spec, W_specSD, W_lambda, W_lambdaSD))
 				print "ERROR whilst writing spectrum to file (processNexusfile)"
 			endif
 		endif
@@ -1224,8 +1238,8 @@ Function processNeXUSfile(pathname, filename, background, loLambda, hiLambda[, w
 	endtry
 End
 
-Function writeSpectrum(pathname, fname, runnumber, II, dI, lambda, dlambda)
-String pathname, fname, runnumber
+Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda)
+String outputPathStr, fname, runnumber
 Wave II, dI, lambda, dlambda
 //a function to save a spectrum file to disc.
 //pathname = string containing the path to where the data needs to be saved.
@@ -1238,17 +1252,17 @@ Wave II, dI, lambda, dlambda
 	variable fileID
 	string data = ""
 	
-	Newpath/o/q/c/z PATH_TO_DATA, pathname
+	Newpath/o/q/c/z PLA_PATH_TO_OUTPUT, outputPathStr
 	if(V_FLAG)
 		print "ERROR output path doesn't exist (writeSpectrum)"
 		return 1
 	endif
-	pathinfo PATH_TO_DATA
+	pathinfo PLA_PATH_TO_OUTPUT
 	if(!V_FLAG)
 		print "ERROR output path doesn't exist (writeSpectrum)"
 		return 1
 	endif
-	fileID = XMLcreatefile(S_path + fname + ".spectrum", "REFroot", "", "")
+	fileID = XMLcreatefile(outputPathStr + fname + ".spectrum", "REFroot", "", "")
 	if(fileID < 1)
 		print "ERROR couldn't create XML file (writeSpecRefXML1D)"
 		return 1
@@ -1295,8 +1309,8 @@ Wave II, dI, lambda, dlambda
 End
 
 
-Function writeSpecRefXML1D(pathname, fname, qq, RR, dR, dQ, exptitle, user, samplename, runnumbers, rednnote)
-	String pathname, fname
+Function writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, exptitle, user, samplename, runnumbers, rednnote)
+	String outputPathStr, fname
 	wave qq, RR, dR, dQ
 	String exptitle, user, samplename, runnumbers, rednnote	//a function to write an XML description of the reduced dataset.
 	//pathname is a folder path, e.g. faffmatic:Users:andrew:Desktop: 	REQUIRED
@@ -1311,19 +1325,19 @@ Function writeSpecRefXML1D(pathname, fname, qq, RR, dR, dQ, exptitle, user, samp
 	variable fileID,ii,jj
 	string qqStr="",RRstr="",dRStr="", dqStr = "", prefix = ""
 	
-	Newpath/o/q/c/z PATH_TO_DATA, pathname
+	Newpath/o/q/c/z PLA_PATH_TO_OUTPUT, outputPathStr
 	if(V_FLAG)
 		print "ERROR output path doesn't exist (writeSpecRefXML1D)"
 		return 1
 	endif
-	pathinfo PATH_TO_DATA
+	pathinfo PLA_PATH_TO_OUTPUT
 	if(!V_FLAG)
 		print "ERROR output path doesn't exist (writeSpecRefXML1D)"
 		return 1
 	endif
 	
 	//create the XMLfile
-	fileID = XMLcreatefile(S_path + fname + ".xml", "REFroot", "", "")
+	fileID = XMLcreatefile(outputPathStr + fname + ".xml", "REFroot", "", "")
 	if(fileID < 1)
 		print "ERROR couldn't create XML file (writeSpecRefXML1D)"
 	endif
@@ -1382,8 +1396,8 @@ Function writeSpecRefXML1D(pathname, fname, qq, RR, dR, dQ, exptitle, user, samp
 	xmlclosefile(fileID,1)
 End
 
-Function write2DXML(pathName,runnumbers, dontoverwrite)
-	string pathName,runnumbers
+Function write2DXML(outputPathStr, runnumbers, dontoverwrite)
+	string outputPathStr, runnumbers
 	variable dontoverwrite
 	
 	//a function to write an XML description of the reduced dataset.
@@ -1396,23 +1410,24 @@ Function write2DXML(pathName,runnumbers, dontoverwrite)
 		return 1
 	endif
 	
-	if(!Datafolderexists(df+stringfromlist(0,runnumbers)))
+	if(!Datafolderexists(df + stringfromlist(0,runnumbers)))
 		print "ERROR one or more of the runs doesn't exist (write2DXML)"
 		return 1
 	endif
 	filename = "off_" + cutfilename(stringfromlist(0, runnumbers)) + ".xml"
 	
-	pathinfo PATH_TO_DATA
+	Newpath/o/q/c/z PLA_PATH_TO_OUTPUT, outputPathStr
+	pathinfo PLA_PATH_TO_OUTPUT
 	if(!V_FLAG)
-		print "ERROR output path doesn't exist (writexml)"
+		print "ERROR output path doesn't exist (write2Dxml)"
 		return 1
 	endif
 	
 	if(dontoverwrite)
-		filename = uniqueFileName(S_path, filename, ".xml")
+		filename = uniqueFileName(outputPathStr, filename, ".xml")
 	endif
 		
-	fileID = XMLcreatefile(S_Path + filename, "REFroot", "", "")
+	fileID = XMLcreatefile(outputPathStr + filename, "REFroot", "", "")
 
 	xmladdnode(fileID,"//REFroot","","REFentry","",1)
 	XMLsetattr(fileID,"//REFroot/REFentry[1]","","time",Secs2Date(DateTime,0) + " "+Secs2Time(DateTime,3))
@@ -1473,8 +1488,8 @@ Function write2DXML(pathName,runnumbers, dontoverwrite)
 	xmlclosefile(fileID,1)
 End
 
-Function madd(pathname, filenames)
-	string pathname, filenames
+Function madd(inputPathStr, filenames)
+	string inputPathStr, filenames
 
 	variable ii,jj, kk, fileIDadd, fileIDcurrent, err=0
 	string nodes = "",temp, addfile, cDF, nodename, attributes
@@ -1484,8 +1499,8 @@ Function madd(pathname, filenames)
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o/s $"root:packages:platypus:temp"
 
-	newpath/o/q/z PATH_TO_DATA, pathname
-	pathinfo PATH_TO_DATA
+	newpath/o/q/z PLA_PATH_TO_INPUT, inputPathStr
+	pathinfo PLA_PATH_TO_INPUT
 	if(!V_Flag)
 		print "ERROR while creating path (madd)"; abort
 	endif
@@ -1504,18 +1519,18 @@ Function madd(pathname, filenames)
 	try
 		for(ii=0 ; ii<itemsinlist(filenames); ii+=1)
 			temp = removeending( stringfromlist(ii,filenames), ".nx.hdf")+".nx.hdf"
-			if(!doesnexusfileexist("PATH_TO_DATA", temp))
+			if(!doesnexusfileexist("PLA_PATH_TO_INPUT", temp))
 				print "ERROR one of the filenames doesn't exist (madd)";abort	
 			endif
 		endfor
 
 		temp = removeending( stringfromlist(0,filenames), ".nx.hdf")+".nx.hdf"
-		copyfile/o pathname+temp as pathname+"ADD_"+temp
+		copyfile/o inputPathStr+temp as inputPathStr+"ADD_"+temp
 		if(V_Flag)
 			print "ERROR copying file failed (madd)";abort
 		endif
 
-		addfile = pathname+"ADD_"+temp
+		addfile = inputPathStr + "ADD_"+temp
 
 		hdf5openfile/Z fileIDadd as addfile
 		if(V_Flag)
@@ -1524,7 +1539,7 @@ Function madd(pathname, filenames)
 
 		for(ii=1 ; ii<itemsinlist(filenames) ; ii+=1)
 			temp = removeending( stringfromlist(ii,filenames), ".nx.hdf")+".nx.hdf"
-			hdf5openfile/R/Z fileIDcurrent as pathname+temp
+			hdf5openfile/R/Z fileIDcurrent as inputPathStr + temp
 			if(V_Flag)
 				print "ERROR opening add file (madd)";abort
 			endif
@@ -1533,7 +1548,7 @@ Function madd(pathname, filenames)
 				attributes = ""
 				nodename = stringfromlist(jj, nodes)
 				
-				hdf5loaddata/q/z fileIDadd,nodename
+				hdf5loaddata/q/z fileIDadd, nodename
 				if(V_Flag)
 					print "ERROR while loading a dataset (madd)";abort
 				endif
@@ -1586,26 +1601,26 @@ Function delReducedPoints()
 	variable theFile
 	Open/R/D/M="Please select the XML file to remove points from."/T=".xml" theFile
 	if(strlen(S_filename) > 0)
-		string pathInStr = ParseFilePath(1, S_filename, ":", 1, 0)
+		string inputPathStr = ParseFilePath(1, S_filename, ":", 1, 0)
 		string fileInStr = ParseFilePath(0, S_filename, ":", 1, 0)
 		string pointsToDelete = ""
 		prompt pointsToDelete, ""
 		string help = "Please enter individual points numbers, or ranges.  A typical string is \"0; 20-31\" which would delete point 0 and points 20 to 31"
 		Doprompt/help = help "Enter the points to delete", pointsToDelete
 		if(!V_flag)
-			delrefpoints(pathInStr, fileInStr, pointsToDelete)
+			delrefpoints(inputPathStr, fileInStr, pointsToDelete)
 		endif
 	endif
 End
 
-Function delrefpoints(pathname, filename, pointlist)
-	string pathname, filename, pointlist
+Function delrefpoints(inputPathStr, filename, pointlist)
+	string inputPathStr, filename, pointlist
 
 	string data,temp
-	variable fileID,ii, numtoremove,lower,upper
+	variable fileID,ii, numtoremove, lower, upper
 
 	try
-		fileID = xmlopenfile(pathname+filename)
+		fileID = xmlopenfile(inputPathStr + filename)
 		if(fileID < 1)
 			print "ERROR couldn't open XML file";abort
 		endif
@@ -1687,8 +1702,8 @@ Function delrefpoints(pathname, filename, pointlist)
 	endif
 End
 
-Function spliceFiles(pathName, fname, filesToSplice, [factors, rebin])
-	string pathName, fname, filesToSplice, factors
+Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
+	string outputPathStr, fname, filesToSplice, factors
 	variable rebin
 	//this function splices different reduced files together.
 	
@@ -1706,8 +1721,8 @@ Function spliceFiles(pathName, fname, filesToSplice, [factors, rebin])
 		newdatafolder/o root:packages:platypus:data:reducer
 		newdatafolder/o/s root:packages:platypus:data:reducer:temp
 	 
-		newpath/o/q/z PATH_TO_DATA, pathname
-		pathinfo PATH_TO_DATA
+		newpath/o/q/z PLA_PATH_TO_OUTPUT, outputPathStr
+		pathinfo PLA_PATH_TO_OUTPUT
 		if(!V_FLAG)
 			print "ERROR output path doesn't exist (writexml)"
 			return 1
@@ -1715,7 +1730,7 @@ Function spliceFiles(pathName, fname, filesToSplice, [factors, rebin])
 		
 		//load in each of the files
 		for(ii = 0 ; ii < itemsinlist(filesToSplice) ; ii += 1)
-			fileID = xmlopenfile(S_path + stringfromlist(ii, filesToSplice) + ".xml")
+			fileID = xmlopenfile(outputPathStr + stringfromlist(ii, filesToSplice) + ".xml")
 			if(fileID < 1)
 				print "ERROR couldn't open individual file (spliceFiles)";abort
 			endif
@@ -1796,7 +1811,14 @@ Function spliceFiles(pathName, fname, filesToSplice, [factors, rebin])
 			duplicate/o W_dq_rebin, tempDQ
 		endif
 		
-		open/P=PATH_TO_DATA/z=1 fileIDcomb as  fname + ".dat"
+		newpath/o/q/z PLA_PATH_TO_OUTPUT, outputPathStr
+		pathinfo PLA_PATH_TO_OUTPUT
+		if(!V_FLAG)
+			print "ERROR output path doesn't exist (writexml)"
+			return 1
+		endif
+		
+		open/P=PLA_PATH_TO_OUTPUT/z=1 fileIDcomb as  fname + ".dat"
 		if(V_flag)
 			print "ERROR writing combined file (aplicefiles)";	 abort
 		endif
@@ -1806,7 +1828,7 @@ Function spliceFiles(pathName, fname, filesToSplice, [factors, rebin])
 		close fileIDcomb
 		
 		//now write a spliced XML file
-		writeSpecRefXML1D(pathname, fname, tempQQ, tempRR, tempDR, tempDQ, "", user, samplename, filestosplice, rednnote)
+		writeSpecRefXML1D(outputPathStr, fname, tempQQ, tempRR, tempDR, tempDQ, "", user, samplename, filestosplice, rednnote)
 
 	catch
 		if(fileID)
