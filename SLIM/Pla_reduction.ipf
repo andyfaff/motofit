@@ -139,17 +139,15 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 	try
 		setdatafolder "root:packages:platypus:data:Reducer"
 		//set the data to load
-		Newpath/o/q/z PLA_PATH_TO_INPUT,inputPathStr
-		PATHinfo PLA_PATH_TO_INPUT
-		if(!V_flag)
-			print "ERROR path not valid (loadNexusfile)";abort
-		endif
-		Newpath/o/q/z PLA_PATH_TO_OUTPUT,outputPathStr
-		PATHinfo PLA_PATH_TO_OUTPUT
-		if(!V_flag)
-			print "ERROR path not valid (loadNexusfile)";abort
-		endif
 		
+		GetFileFolderInfo/q/z inputPathStr
+		if(V_flag > 1)//path doesn't exist
+			print "ERROR please give valid input path (reduce)";abort
+		endif		
+		GetFileFolderInfo/q/z outputPathStr
+		if(V_flag > 1)//path doesn't exist
+			print "ERROR please give valid output path (reduce)";abort
+		endif
 
 		//check the scalefactor is reasonable
 		if(numtype(scalefactor) || scalefactor==0)
@@ -500,7 +498,10 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 			if(dontoverwrite)
 				fname = uniqueFileName(outputPathStr, fname, ".dat")
 			endif
-			open/P=PLA_PATH_TO_OUTPUT/z=1 fileID as fname + ".dat"
+			
+			newpath/o/q/z pla_temppath_write, outputpathStr
+			open/P=pla_temppath_write/z=1 fileID as fname + ".dat"
+			killpath/z pla_temppath_write
 			
 			if(V_flag==0)
 				fprintf fileID, "Q (1/A)\t Ref\t dRef (SD)\t dq(FWHM, 1/A)\n"
@@ -594,13 +595,15 @@ Function/t uniqueFileName(outputPathStr, filename, ext)
 	string outputPathStr, filename, ext
 		string theFiles, theUniqueName = ""
 		variable ii
-		Newpath/o/q/z PLA_PATH_TO_OUTPUT, outputPathStr
-		PATHinfo PLA_PATH_TO_OUTPUT
-		if(!V_flag)
-			print "ERROR pathname not valid (uniqueFileName)";abort
-		endif
 		
-		theFiles = indexedFile(PLA_PATH_TO_OUTPUT, -1, ext)
+		GetFileFolderInfo/q/z outputPathStr
+		if(V_flag > 1)//path doesn't exist
+			print "ERROR please give valid path (uniqueFileName)"
+			return ""	
+		endif
+		newpath/o/q/z pla_temppath_write, outputPathStr		
+		theFiles = indexedFile(pla_temppath_write, -1, ext)
+		killpath/z pla_temppath_write
 		theUniqueName = filename
 		//the file already exists, increment a number
 		for(ii=1; whichListItem(theUniqueName + ext, theFiles) > -1 ; ii+=1)
@@ -644,12 +647,12 @@ Function loadNeXUSfile(inputPathStr, filename)
 	Newdatafolder /o root:packages:platypus:data
 	Newdatafolder /o root:packages:platypus:data:Reducer
 	
-	Newpath/o/q/z PLA_PATH_TO_INPUT, inputPathStr
-	pathinfo PLA_PATH_TO_INPUT
-	if(!V_flag)//path doesn't exist
-		print "ERROR please set valid path (SLIM_PLOT_scans)"
+	GetFileFolderInfo/q/z inputPathStr
+	if(V_flag > 1)//path doesn't exist
+		print "ERROR please give valid path (SLIM_PLOT_scans)"
 		return 1	
 	endif
+	newpath/o/q/z pla_temppath_loadNeXUSfile, inputpathStr
 	
 	//full file path may be given
 	filename = removeending(parsefilepath(0, filename, "*", 1, 0), ".nx.hdf")	
@@ -660,8 +663,8 @@ Function loadNeXUSfile(inputPathStr, filename)
 		tempDF = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(filename,".nx.hdf"),0)
 
 		for(;;)
-			if(doesNexusfileExist("PLA_PATH_TO_INPUT", filename+".nx.hdf"))
-				hdf5openfile/P=PLA_PATH_TO_INPUT/r/z fileRef as filename+".nx.hdf"
+			if(doesNexusfileExist(inputPathStr, filename+".nx.hdf"))
+				hdf5openfile/P=pla_temppath_loadNeXUSfile/r/z fileRef as filename+".nx.hdf"
 			else
 				doalert 1, "Couldn't find beam file: "+filename+". Do you want to try and download it from the server?"
 				if(V_flag==2)
@@ -683,6 +686,7 @@ Function loadNeXUSfile(inputPathStr, filename)
 			hdf5closefile fileRef
 		endif
 		setdatafolder $cDF
+		killpath/z pla_temppath_loadNeXUSfile
 		killdatafolder/z $tempDF	
 		return 1
 	endtry
@@ -691,14 +695,17 @@ Function loadNeXUSfile(inputPathStr, filename)
 		hdf5closefile fileRef
 	endif	
 	setdatafolder $cDF
+	killpath/z pla_temppath_loadNeXUSfile
 	return 0
 End
 
-Function doesNexusfileExist(inputPathNameStr, filename)
-	string inputPathNameStr, fileName
-
-	string files = indexedfile($inputPathNameStr, -1, ".hdf")
+Function doesNexusfileExist(inputPathStr, filename)
+	string inputPathStr, fileName
+	
+	newpath/o/q/z pla_temppath_doesNexusfileExist, inputpathStr
+	string files = indexedfile(pla_temppath_doesNexusfileExist, -1, ".hdf")
 	variable pos = whichlistitem(filename, files)
+	killpath/z pla_temppath_doesNexusfileExist
 	if(pos==-1)
 		return 0
 	else
@@ -1252,16 +1259,12 @@ Wave II, dI, lambda, dlambda
 	variable fileID
 	string data = ""
 	
-	Newpath/o/q/c/z PLA_PATH_TO_OUTPUT, outputPathStr
-	if(V_FLAG)
-		print "ERROR output path doesn't exist (writeSpectrum)"
-		return 1
+	GetFileFolderInfo/q/z outputPathStr
+	if(V_flag > 1)//path doesn't exist
+		print "ERROR please give valid path (writeSpectrum)"
+		return 1	
 	endif
-	pathinfo PLA_PATH_TO_OUTPUT
-	if(!V_FLAG)
-		print "ERROR output path doesn't exist (writeSpectrum)"
-		return 1
-	endif
+	
 	fileID = XMLcreatefile(outputPathStr + fname + ".spectrum", "REFroot", "", "")
 	if(fileID < 1)
 		print "ERROR couldn't create XML file (writeSpecRefXML1D)"
@@ -1305,7 +1308,6 @@ Wave II, dI, lambda, dlambda
 	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dlambda","","units","A")
 
 	xmlclosefile(fileID,1)
-
 End
 
 
@@ -1325,17 +1327,12 @@ Function writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, exptitle, user,
 	variable fileID,ii,jj
 	string qqStr="",RRstr="",dRStr="", dqStr = "", prefix = ""
 	
-	Newpath/o/q/c/z PLA_PATH_TO_OUTPUT, outputPathStr
-	if(V_FLAG)
-		print "ERROR output path doesn't exist (writeSpecRefXML1D)"
-		return 1
+	GetFileFolderInfo/q/z outputPathStr
+	if(V_flag > 1)//path doesn't exist
+		print "ERROR please give valid path (writeSpecRefXML1D)"
+		return 1	
 	endif
-	pathinfo PLA_PATH_TO_OUTPUT
-	if(!V_FLAG)
-		print "ERROR output path doesn't exist (writeSpecRefXML1D)"
-		return 1
-	endif
-	
+		
 	//create the XMLfile
 	fileID = XMLcreatefile(outputPathStr + fname + ".xml", "REFroot", "", "")
 	if(fileID < 1)
@@ -1416,11 +1413,10 @@ Function write2DXML(outputPathStr, runnumbers, dontoverwrite)
 	endif
 	filename = "off_" + cutfilename(stringfromlist(0, runnumbers)) + ".xml"
 	
-	Newpath/o/q/c/z PLA_PATH_TO_OUTPUT, outputPathStr
-	pathinfo PLA_PATH_TO_OUTPUT
-	if(!V_FLAG)
-		print "ERROR output path doesn't exist (write2Dxml)"
-		return 1
+	GetFileFolderInfo/q/z outputPathStr
+	if(V_flag > 1)//path doesn't exist
+		print "ERROR please give valid path (write2Dxml)"
+		return 1	
 	endif
 	
 	if(dontoverwrite)
@@ -1499,11 +1495,12 @@ Function madd(inputPathStr, filenames)
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o/s $"root:packages:platypus:temp"
 
-	newpath/o/q/z PLA_PATH_TO_INPUT, inputPathStr
-	pathinfo PLA_PATH_TO_INPUT
-	if(!V_Flag)
-		print "ERROR while creating path (madd)"; abort
+	GetFileFolderInfo/q/z inputPathStr
+	if(V_flag > 1)//path doesn't exist
+		print "ERROR please give valid path (madd)"
+		return 1	
 	endif
+
 	//nodes += "/entry1/data/hmm;"
 	//nodes += "/entry1/data/time;"
 	//nodes += "/entry1/data/total_counts;"
@@ -1519,12 +1516,12 @@ Function madd(inputPathStr, filenames)
 	try
 		for(ii=0 ; ii<itemsinlist(filenames); ii+=1)
 			temp = removeending( stringfromlist(ii,filenames), ".nx.hdf")+".nx.hdf"
-			if(!doesnexusfileexist("PLA_PATH_TO_INPUT", temp))
+			if(!doesnexusfileexist(inputPathStr, temp))
 				print "ERROR one of the filenames doesn't exist (madd)";abort	
 			endif
 		endfor
 
-		temp = removeending( stringfromlist(0,filenames), ".nx.hdf")+".nx.hdf"
+		temp = removeending( stringfromlist(0, filenames), ".nx.hdf")+".nx.hdf"
 		copyfile/o inputPathStr+temp as inputPathStr+"ADD_"+temp
 		if(V_Flag)
 			print "ERROR copying file failed (madd)";abort
@@ -1721,13 +1718,12 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 		newdatafolder/o root:packages:platypus:data:reducer
 		newdatafolder/o/s root:packages:platypus:data:reducer:temp
 	 
-		newpath/o/q/z PLA_PATH_TO_OUTPUT, outputPathStr
-		pathinfo PLA_PATH_TO_OUTPUT
-		if(!V_FLAG)
-			print "ERROR output path doesn't exist (writexml)"
-			return 1
+	 	GetFileFolderInfo/q/z outputPathStr
+		if(V_flag > 1)//path doesn't exist
+			print "ERROR please give valid path (spliceFiles)"
+			return 1	
 		endif
-		
+					
 		//load in each of the files
 		for(ii = 0 ; ii < itemsinlist(filesToSplice) ; ii += 1)
 			fileID = xmlopenfile(outputPathStr + stringfromlist(ii, filesToSplice) + ".xml")
@@ -1811,14 +1807,10 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 			duplicate/o W_dq_rebin, tempDQ
 		endif
 		
-		newpath/o/q/z PLA_PATH_TO_OUTPUT, outputPathStr
-		pathinfo PLA_PATH_TO_OUTPUT
-		if(!V_FLAG)
-			print "ERROR output path doesn't exist (writexml)"
-			return 1
-		endif
-		
-		open/P=PLA_PATH_TO_OUTPUT/z=1 fileIDcomb as  fname + ".dat"
+		newpath/z/o/q pla_temppath_write, outputpathStr
+		open/P=PLA_temppath_write/z=1 fileIDcomb as  fname + ".dat"
+		killpath/z pla_temppath_write
+
 		if(V_flag)
 			print "ERROR writing combined file (aplicefiles)";	 abort
 		endif
@@ -1839,7 +1831,6 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 		endif
 		err=1
 	endtry
-	
 	setdatafolder $cDF
 	killdatafolder/z 	root:packages:platypus:data:reducer:temp
 	return err
