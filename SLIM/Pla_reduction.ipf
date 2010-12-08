@@ -141,11 +141,11 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 		//set the data to load
 		
 		GetFileFolderInfo/q/z inputPathStr
-		if(V_flag > 1)//path doesn't exist
+		if(V_flag)//path doesn't exist
 			print "ERROR please give valid input path (reduce)";abort
 		endif		
 		GetFileFolderInfo/q/z outputPathStr
-		if(V_flag > 1)//path doesn't exist
+		if(V_flag)//path doesn't exist
 			print "ERROR please give valid output path (reduce)";abort
 		endif
 
@@ -597,7 +597,7 @@ Function/t uniqueFileName(outputPathStr, filename, ext)
 		variable ii
 		
 		GetFileFolderInfo/q/z outputPathStr
-		if(V_flag > 1)//path doesn't exist
+		if(V_flag)//path doesn't exist
 			print "ERROR please give valid path (uniqueFileName)"
 			return ""	
 		endif
@@ -648,7 +648,7 @@ Function loadNeXUSfile(inputPathStr, filename)
 	Newdatafolder /o root:packages:platypus:data:Reducer
 	
 	GetFileFolderInfo/q/z inputPathStr
-	if(V_flag > 1)//path doesn't exist
+	if(V_flag)//path doesn't exist
 		print "ERROR please give valid path (SLIM_PLOT_scans)"
 		return 1	
 	endif
@@ -1260,7 +1260,7 @@ Wave II, dI, lambda, dlambda
 	string data = ""
 	
 	GetFileFolderInfo/q/z outputPathStr
-	if(V_flag > 1)//path doesn't exist
+	if(V_flag)//path doesn't exist
 		print "ERROR please give valid path (writeSpectrum)"
 		return 1	
 	endif
@@ -1328,7 +1328,7 @@ Function writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, exptitle, user,
 	string qqStr="",RRstr="",dRStr="", dqStr = "", prefix = ""
 	
 	GetFileFolderInfo/q/z outputPathStr
-	if(V_flag > 1)//path doesn't exist
+	if(V_flag)//path doesn't exist
 		print "ERROR please give valid path (writeSpecRefXML1D)"
 		return 1	
 	endif
@@ -1414,7 +1414,7 @@ Function write2DXML(outputPathStr, runnumbers, dontoverwrite)
 	filename = "off_" + cutfilename(stringfromlist(0, runnumbers)) + ".xml"
 	
 	GetFileFolderInfo/q/z outputPathStr
-	if(V_flag > 1)//path doesn't exist
+	if(V_flag)//path doesn't exist
 		print "ERROR please give valid path (write2Dxml)"
 		return 1	
 	endif
@@ -1496,7 +1496,7 @@ Function madd(inputPathStr, filenames)
 	newdatafolder/o/s $"root:packages:platypus:temp"
 
 	GetFileFolderInfo/q/z inputPathStr
-	if(V_flag > 1)//path doesn't exist
+	if(V_flag)//path doesn't exist
 		print "ERROR please give valid path (madd)"
 		return 1	
 	endif
@@ -1719,7 +1719,7 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 		newdatafolder/o/s root:packages:platypus:data:reducer:temp
 	 
 	 	GetFileFolderInfo/q/z outputPathStr
-		if(V_flag > 1)//path doesn't exist
+		if(V_flag)//path doesn't exist
 			print "ERROR please give valid path (spliceFiles)"
 			return 1	
 		endif

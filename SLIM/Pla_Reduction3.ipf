@@ -62,7 +62,7 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 		killpath/z PLA_temppath_dPD
 	else
 		getfilefolderinfo/z/q inputpathStr
-		if(V_flag > 0)
+		if(V_flag)
 			Doalert 0, "The path where you wanted to save is not valid (downloadPlatypusData)"
 			abort
 		endif
@@ -232,7 +232,7 @@ Function SLIM_listproc(lba) : ListBoxControl
 		case 4:
 			if(lba.eventmod==17 && col > 0)		
 				GetFileFolderInfo/q/z inputpathStr
-				if(V_flag > 1)//path doesn't exist
+				if(V_flag)//path doesn't exist
 					Doalert 0, "Please enter a valid filepath for the data source"
 					return 0	
 				endif
@@ -301,12 +301,12 @@ Function SLIM_buttonproc(ba) : ButtonControl
 			strswitch(ba.ctrlname)
 				case "reduce_tab0":
 					GetFileFolderInfo/q/z inputpathStr
-					if(V_flag > 1)//path doesn't exist
+					if(V_flag)//path doesn't exist
 						Doalert 0, "Please enter a valid filepath for the data source"
 						return 0	
 					endif
 					GetFileFolderInfo/q/z outputpathStr
-					if(V_flag > 1)//path doesn't exist
+					if(V_flag)//path doesn't exist
 						Doalert 0, "Please enter a valid filepath for the output files"
 						return 0	
 					endif
@@ -383,7 +383,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					break
 				case "downloadPlatdata_tab0":
 					GetFileFolderInfo/q/z inputpathStr
-					if(V_flag > 1)//path doesn't exist
+					if(V_flag)//path doesn't exist
 						Doalert 0, "Please enter a valid filepath to place the downloaded files"
 						return 0	
 					endif
@@ -399,7 +399,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					endif
 					
 					GetFileFolderInfo/q/z thePathstring
-					if(V_flag > 1)//path doesn't exist
+					if(V_flag)//path doesn't exist
 						Doalert 0, "Please enter a valid filepath for the data source"
 						return 0	
 					endif
@@ -472,7 +472,8 @@ End
 Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, [expected_centre, rebinning, manual, normalise, saveSpectrum])
 	String inputpathStr, outputPathStr, fileNames
 	variable lowlambda, highlambda, background, expected_centre, rebinning, manual, normalise, saveSpectrum
-		
+	
+	string slimplotstring = ""
 	if(paramisdefault(expected_centre))
 		expected_centre = ROUGH_BEAM_POSITION
 	endif
@@ -488,7 +489,7 @@ Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, 
 	endif
 
 	GetFileFolderInfo/q/z inputPathStr
-	if(V_flag > 1)//path doesn't exist
+	if(V_flag)//path doesn't exist
 		print "ERROR please give valid input path (SLIM_plot)"
 		return 1	
 	endif
@@ -568,7 +569,12 @@ Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, 
 	dowindow/k SLIM_PLOTwin
 	display/K=1/W=(30,0,600,350) as "SLIM plot (C) Andrew Nelson + ANSTO 2008"
 	dowindow/c SLIM_PLOTwin
-	setwindow SLIM_PLOTwin, userdata=filenames
+	setwindow SLIM_PLOTwin, userdata(filenames) = filenames
+	setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr
+	
+	sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\",%g, %g, %d, expected_centre = %g, rebinning=%g, manual=%d, normalise=%d, saveSpectrum=%d)", inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, expected_centre, rebinning, manual, normalise, saveSpectrum
+	setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
+	
 	controlbar/W=SLIM_PLOTwin 30
 	popupmenu/z graphtype,win=SLIM_PLOTwin, bodyWidth=160,proc=popup_SLIM_PLOT
 	popupmenu/z graphtype,win=SLIM_PLOTwin, value="SPEC vs Lambda;SPEC vs TOF;Detector vs Lambda;Detector vs TOF;Ref vs Q;Ref vs Lambda;Ref vs TOF"
@@ -596,7 +602,7 @@ Function SLIM_plot_scans(inputpathStr,filenames)
 	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
 	
 	GetFileFolderInfo/q/z inputpathStr
-	if(V_flag > 1)//path doesn't exist
+	if(V_flag)//path doesn't exist
 		print "ERROR please give valid path (SLIM_plot_scans)"
 		return 1
 	endif
@@ -607,7 +613,7 @@ Function SLIM_plot_scans(inputpathStr,filenames)
 		display/K=1 as "SLIM plot (C) Andrew Nelson + ANSTO 2008"
 		dowindow/c SLIM_PLOTwin
 		//		controlbar/W=SLIM_PLOTwin 30
-		//		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Refresh",size={100,20}, fColor=(0,52224,26368)
+	//		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Refresh",size={100,20}, fColor=(0,52224,26368)
 		setwindow SLIM_PLOTwin, userdata=filenames
 		
 		
@@ -654,7 +660,7 @@ Function SLIM_plot_reduced(inputPathStr, filenames)
 	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
 
 	GetFileFolderInfo/q/z inputpathStr
-	if(V_flag > 1)//path doesn't exist
+	if(V_flag)//path doesn't exist
 		print "ERROR please give valid path (SLIM_plot_reduced)"
 		return 1
 	endif
@@ -749,7 +755,7 @@ Function SLIM_plot_xrdml(inputPathStr, filenames)
 	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
 
 	GetFileFolderInfo/q/z inputpathStr
-	if(V_flag > 1)//path doesn't exist
+	if(V_flag)//path doesn't exist
 		print "ERROR please give valid path (SLIM_plot_xrdml)"
 		return 1
 	endif
@@ -809,22 +815,24 @@ Function button_SLIM_PLOT(ba) : ButtonControl
 	NVAR saveSpectrum =  root:packages:platypus:data:Reducer:saveSpectrum
 	
 	variable background,isLOG,type, rebinning
-	string fileNames = ""
+	string fileNames = "", pathStr = "", slimplotstring = ""
 
 	switch( ba.eventCode )
 		case 2: // mouse up
 			strswitch(ba.ctrlname)
 				case "refresh":
-					filenames = GetUserData("SLIM_PLOTwin","",filenames)
+					filenames = GetUserData("SLIM_PLOTwin","","filenames")
+					pathStr = GetUserData("SLIM_PLOTwin","","pathStr")
+					slimplotstring = GetUserData("SLIM_PLOTwin","","slimplotstring")
 					
 					controlinfo/w=SLIM_PLOTwin isLog
 					isLog = V_Value
 					controlinfo graphtype
 					type = V_Value-1			
-					
 					rebinning = rebinpercent
 
-					SLIM_plot(inputPathStr, outputPathStr, fileNames,lowLambda,highLambda, backgroundsbn, rebinning = rebinning, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, manual = manualbeamfind)
+					execute/q/z slimplotstring
+				//	SLIM_plot(pathStr, pathStr, fileNames,lowLambda,highLambda, backgroundsbn, rebinning = rebinning, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, manual = manualbeamfind)
 					if(!stringmatch(stringfromlist(0,filenames),"*.xml") && !stringmatch(stringfromlist(0,filenames),"*.xrdml"))
 						SLIM_redisplay(type,isLog)
 					endif
@@ -869,7 +877,7 @@ End
 
 Function SLIM_redisplay(mode,isLog)
 	variable mode,isLog
-	string fileNames="",tempDF,abscissa,ordinate,existingtraces,annotation,datafolderStr,existingimages
+	string fileNames="",tempDF,abscissa,ordinate,existingtraces,annotation,datafolderStr,existingimages, pathStr, slimplotstring
 	variable ii,rows,cols,numgraphs,jj,colpos,rowpos,tempVar
 	variable/c origin
 	//we should offer plots of 
@@ -895,7 +903,10 @@ Function SLIM_redisplay(mode,isLog)
 		Legend/k/N=$("text"+num2istr(ii))
 	endfor
 
-	fileNames = GetUserData("SLIM_PLOTwin","",filenames)
+	fileNames = GetUserData("SLIM_PLOTwin","","filenames")
+	pathStr = GetUserData("SLIM_PLOTwin","","pathStr")
+	slimplotstring = GetUserData("SLIM_PLOTwin","","slimplotstring")
+	
 	numgraphs = itemsinlist(filenames)
 	rows = ceil(numgraphs/4)
 	if(numgraphs>3)
