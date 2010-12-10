@@ -669,9 +669,11 @@ Function loadNeXUSfile(inputPathStr, filename, [outputPathStr])
 			if(doesNexusfileExist(inputPathStr, filename+".nx.hdf"))
 				newpath/o/q/z pla_temppath_loadNeXUSfile, inputpathStr
 				hdf5openfile/P=pla_temppath_loadNeXUSfile/r/z fileRef as filename+".nx.hdf"
+				break
 			elseif(!paramisdefault(outputPathStr) && doesNexusfileExist(outputPathStr, filename+".nx.hdf"))
 				newpath/o/q/z pla_temppath_loadNeXUSfile, outputpathStr
 				hdf5openfile/P=pla_temppath_loadNeXUSfile/r/z fileRef as filename+".nx.hdf"
+				break
 			else
 				doalert 1, "Couldn't find beam file: "+filename+". Do you want to try and download it from the server?"
 				if(V_flag==2)
@@ -681,8 +683,6 @@ Function loadNeXUSfile(inputPathStr, filename, [outputPathStr])
 						print "ERROR while trying to download platypus data from server (loadNexusfile)";abort
 					endif
 				endif
-			else
-				break
 			endif
 		endfor
 		newdatafolder/o $tempDF
