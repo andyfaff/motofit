@@ -54,13 +54,13 @@
 	//StrConstant PATH_TO_DATA = "Macintosh HDD:Users:andrew:Documents:Andy:Platypus:TEMP:"
 
 
-Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec])
+Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, freeMemory])
 	string inputPathStr, outputPathStr
 	variable scalefactor
 	string runfilenames
 	variable lowLambda,highLambda, rebin
 	string water
-	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec
+	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, freeMemory
 	
 	//produces a reflectivity curve for a given set of angles
 	//returns 0 if successful, non zero otherwise
@@ -83,6 +83,7 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 	//normalise = 1 if you want to normalise by beam monitor counts (default == 1)
 	//saveSpectrum = 1 if you want to save the spectrum (default == 0)
 	//saveoffspec=1 if you want to save an offspecular map (default == 0)
+	//freememory = 1 if you want to remove the loaded files from memory at the end of the reduction (default==1)
 	
 	//this function must load the data using loadNexusfile, then call processNexusfile which produces datafolders containing
 	//containing the spectrum (W_spec, W_specSD, W_lambda, W_lambdaSD,W_specTOFHIST,W_specTOF,W_LambdaHIST)
@@ -132,6 +133,9 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 	if(paramisdefault(saveoffspec))
 		saveoffspec = 0
 	endif
+	if(paramisdefault(freeMemory))
+		freeMemory = 1
+	endif
 	
 	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
 	sprintf reductionCmd, "reduce(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)",inputPathStr, outputPathStr, scalefactor, runfilenames,lowLambda,highLambda, rebin, background,water, expected_centre, manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
@@ -174,7 +178,7 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 		
 		if(!paramisdefault(water) && strlen(water)>0)
 			if(!datafolderexists("root:packages:platypus:data:Reducer:"+cleanupname(removeending(water, ".nx.hdf"),0)))
-				if(loadNexusFile(inputPathStr, water))
+				if(loadNexusFile(inputPathStr, water, outputPathStr = outputpathStr))
 					print "Error loading water run (reduce)"
 					abort
 				endif
@@ -633,10 +637,11 @@ Function expandStrIntoPossibleFileName(fileStub, righteousFileName)
 	return 0
 End
 
-Function loadNeXUSfile(inputPathStr, filename)
-	string inputPathStr, fileName
-	//loads a NeXUS file, fileName, from the path contained in the inputPathStr string.
+Function loadNeXUSfile(inputPathStr, filename, [outputPathStr])
+	string inputPathStr, fileName, outputPathStr
+	//loads a NeXUS file, fileName, from the path contained in the inputPathStr string.  If it's not found in inputPathStr, try and find it in outputPathStr
 	//returns 0 if successful, non zero otherwise
+	
 	string tempDF = "",cDF = "", temp
 	variable fileRef, err, number
 
@@ -652,7 +657,6 @@ Function loadNeXUSfile(inputPathStr, filename)
 		print "ERROR please give valid path (SLIM_PLOT_scans)"
 		return 1	
 	endif
-	newpath/o/q/z pla_temppath_loadNeXUSfile, inputpathStr
 	
 	//full file path may be given
 	filename = removeending(parsefilepath(0, filename, "*", 1, 0), ".nx.hdf")	
@@ -661,9 +665,12 @@ Function loadNeXUSfile(inputPathStr, filename)
 	try
 		//open the file and load the data
 		tempDF = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(filename,".nx.hdf"),0)
-
 		for(;;)
 			if(doesNexusfileExist(inputPathStr, filename+".nx.hdf"))
+				newpath/o/q/z pla_temppath_loadNeXUSfile, inputpathStr
+				hdf5openfile/P=pla_temppath_loadNeXUSfile/r/z fileRef as filename+".nx.hdf"
+			elseif(!paramisdefault(outputPathStr) && doesNexusfileExist(outputPathStr, filename+".nx.hdf"))
+				newpath/o/q/z pla_temppath_loadNeXUSfile, outputpathStr
 				hdf5openfile/P=pla_temppath_loadNeXUSfile/r/z fileRef as filename+".nx.hdf"
 			else
 				doalert 1, "Couldn't find beam file: "+filename+". Do you want to try and download it from the server?"
@@ -763,8 +770,8 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	
 	try
 		//try and load the data
-		if(loadNeXUSfile(inputPathStr, filename))
-			print "problem whilst loading NeXUS file: ",  inputPathStr + filename, " (processNexusfile)"
+		if(loadNeXUSfile(inputPathStr, filename, outputPathStr = outputpathStr))
+			print "problem whilst loading NeXUS file: ",  filename, " (processNexusfile)"
 			abort
 		endif
 		
