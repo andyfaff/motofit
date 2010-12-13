@@ -29,8 +29,8 @@
 	Constant 	MOXA2serverPort = 4002
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
-	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
-	Constant ChopperN_delay = 2.865		// a time delay between the first chopper pulse and chopper N
+	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:current:"
+	Constant ChopperN_delay = 2.491		// a time delay between the first chopper pulse and chopper N
 
 	
 	
@@ -2489,12 +2489,13 @@ ENd
 
 Function TestTask(s)		// This is the function that will be called periodically
 	STRUCT WMBackgroundStruct &s
-	Wave phaseoffset, timer
+	Wave phaseoffset, timer, theticks
 	
 	string value = grabHistoStatus("frame_deassert_time")
-	redimension/n=(dimsize(phaseoffset,0) + 1) phaseoffset, timer
+	redimension/n=(dimsize(phaseoffset,0) + 1) phaseoffset, timer, theticks
 	
 	timer[dimsize(phaseoffset, 0) -1] = datetime
+	theticks[dimsize(phaseoffset, 0) -1] = ticks
 	phaseoffset[dimsize(phaseoffset, 0) -1] = str2num(value)
 	return 0	// Continue background task
 End
@@ -2502,7 +2503,8 @@ End
 Function StartTestTask()
 	make/n=0/o phaseoffset
 	make/n=0/i/u/o timer
-	Variable numTicks = 1 * 60		// Run every two seconds (120 ticks)
+	make/n=0/i/u/o theticks
+	Variable numTicks = 1 * 10		// Run every two seconds (120 ticks)
 	CtrlNamedBackground Test, period=numTicks, proc=TestTask
 	CtrlNamedBackground Test, start
 End
