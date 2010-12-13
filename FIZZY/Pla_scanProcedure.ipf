@@ -627,7 +627,7 @@ Function finishScan(status)
 	endif
 
 	//save the scan itself, not the overall data, just counts vs position
-	Newpath/o/q/z PATH_TO_DATA, PATH_TO_DATA
+	Newpath/o/q/z PATH_TO_DATA, PATH_TO_DATA+"extras:"
 	PATHinfo PATH_TO_DATA
 	if(V_flag)
 		if(!NVAR_exists(FIZscanFileNumber))
