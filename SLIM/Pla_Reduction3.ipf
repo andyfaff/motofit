@@ -591,7 +591,7 @@ Function SLIM_plot_scans(inputpathStr,filenames)
 	String inputpathStr, fileNames
 	print "SLIM_plot_scans("+inputpathStr+","+filenames+")"
 	variable ii, fnumber
-	string cDF, tempStr1,tempStr
+	string cDF, tempStr1,tempStr, slimplotstring
 	
 	cDF = getdatafolder(1)
 
@@ -614,8 +614,11 @@ Function SLIM_plot_scans(inputpathStr,filenames)
 		dowindow/c SLIM_PLOTwin
 		//		controlbar/W=SLIM_PLOTwin 30
 	//		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Refresh",size={100,20}, fColor=(0,52224,26368)
-		setwindow SLIM_PLOTwin, userdata=filenames
 		
+		sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\", 0, 0, 0)", inputpathStr, inputpathStr, fileNames
+		setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
+		setwindow SLIM_PLOTwin, userdata(filenames) = filenames
+		setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr
 		
 		for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
 			string fname = stringfromlist(ii,filenames)
@@ -650,7 +653,7 @@ End
 Function SLIM_plot_reduced(inputPathStr, filenames)
 	string inputPathStr, filenames
 	variable ii,numwaves,jj
-	string loadedWavenames
+	string loadedWavenames, slimplotstring
 	string cDF = getdatafolder(1)
 
 	newdatafolder/o root:packages
@@ -671,8 +674,12 @@ Function SLIM_plot_reduced(inputPathStr, filenames)
 		dowindow/c SLIM_PLOTwin
 		controlbar/W=SLIM_PLOTwin 30
 		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Refresh",size={100,20}, fColor=(0,52224,26368)
-		setwindow SLIM_PLOTwin, userdata=filenames
-		
+	
+		sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\", 0, 0, 0)", inputpathStr, inputpathStr, fileNames
+		setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
+		setwindow SLIM_PLOTwin, userdata(filenames) = filenames
+		setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr		
+
 		for(ii = 0 ; ii < itemsinlist(filenames) ; ii += 1)
 			string fname = stringfromlist(ii, filenames)
 
@@ -747,7 +754,7 @@ Function SLIM_plot_xrdml(inputPathStr, filenames)
 	variable ii,numwaves,jj
 	string loadedWavenames
 	string cDF = getdatafolder(1)
-	string theFile, base
+	string theFile, base, slimplotstring
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o root:packages:platypus:data
@@ -766,8 +773,11 @@ Function SLIM_plot_xrdml(inputPathStr, filenames)
 		dowindow/c SLIM_PLOTwin
 		controlbar/W=SLIM_PLOTwin 30
 		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Refresh",size={100,20}, fColor=(0,52224,26368)
-		setwindow SLIM_PLOTwin, userdata=removeending(filenames, ";")
 		
+		sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\", 0, 0, 0)", inputpathStr, inputpathStr, fileNames
+		setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
+		setwindow SLIM_PLOTwin, userdata(filenames) = filenames
+		setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr			
 
 		for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
 			base = removeending(stringfromlist(ii, filenames), ".xrdml")		

@@ -192,8 +192,11 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 		endif
 		for(ii=0 ;  ii< itemsinlist(runfilenames) ; ii+=1)
 			//these may still have the scanpoints that you want reduced.
-			angle0 = stringfromlist(0, stringfromlist(ii, runfilenames), ":")
-			direct = stringfromlist(0, stringbykey(angle0, runfilenames), ",")
+			string theCombination = stringfromlist(ii, runfilenames)
+			angle0 = stringfromlist(0, theCombination, ":")
+			scanpointrange = stringfromlist(1, angle0, ",")
+			angle0 = stringfromlist(0, angle0, ",")
+			direct = stringfromlist(1, theCombination, ":")
 			
 			if(strlen(angle0)==0 || strlen(direct)==0)
 				print "ERROR parsing the runfilenamesstring (reduce)"; abort
@@ -232,7 +235,6 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 
 			//load in and process reflected angle
 			//when you process the reflected nexus file you have to use the lambda spectrum from the direct beamrun
-			scanpointrange = stringfromlist(1, angle0, ",")
 			if(processNeXUSfile(inputPathStr, outputPathStr, angle0, background, lowLambda, highLambda, scanpointrange = scanpointrange, water = water, isDirect = 0, expected_centre = expected_centre, rebinning = W_lambdaHISTD, manual=manual, normalise = normalise, saveSpectrum = saveSpectrum))
 				print "ERROR while processing a reflected beam run (reduce)" ; abort
 			endif
