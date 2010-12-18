@@ -1,4 +1,4 @@
-#pragma rtGlobals=1		// Use modern global access method.
+#pragma rtGlobals=3		// Use modern global access method.
 
 Function Pla_openStreamer(folderStr, [dataset])
 	string folderStr
@@ -82,68 +82,73 @@ Function Pla_openStreamer(folderStr, [dataset])
 	setdatafolder $cDF
 End
 
-Structure Pla_timePeriod
-variable start_time
-variable end_time
-Endstructure
-
-Function Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, duration)
+Function Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, numTimeSlices)
 	//they should be monotonically sorted histogram edges for x, y and t.
 	Wave xbins, ybins, tbins
 	//how many frames per sec
-	variable framefrequency
-	//what time period do you want to select
-	Struct Pla_timePeriod &duration
+	variable framefrequency, numTimeSlices
 
-	variable numevents, period, startPoint, endPoint, ii, xpos, ypos, tpos, timeProportion, totalEvents, totalTime
+	variable numevents, period, ii, xpos, ypos, tpos, slicepos, totalEvents, totalTime, timeSliceDuration
+	variable numxbins, numtbins, numybins
 	string cDF
 	cDF = getdatafolder(1)
 	//setup the datafolders
 	Setdatafolder root:packages:platypus:data:Reducer:streamer
 	
-	Wave xx, yy, tt, ff
-	make/n=(1, dimsize(tbins, 0) - 1, dimsize(ybins, 0) - 1, dimsize(xbins, 0) - 1)/I/U/O hmm
-	hmm=0
 	//the frames will be sorted in time, so one can only do the events in the duration period.
-	period = 1/framefrequency
+	period = 1 / framefrequency
+
+	Wave xx, yy, tt, ff
+
+	totalTime = (ff[dimsize(ff, 0) - 1] + 1) * period
+	numxbins = dimsize(xbins, 0) - 1
+	numybins = dimsize(ybins, 0) - 1
+	numtbins = dimsize(tbins, 0) - 1
+	//make the detector image
+	make/n=(numTimeSlices, numtbins, numybins, numxbins)/I/U/O detector
+	detector = 0
 	
-	if(!numtype(duration.start_time))
-		startPoint = round(binarysearchinterp(ff, duration.start_time * period))
-	else
-		startPoint = 0
-	endif
+	timeSliceDuration = totalTime / numTimeSlices
+
+	make/o/n=(numTimeSlices + 1)/free slicebins
+	slicebins = p * timesliceduration * framefrequency
 	
-	if(!numtype(duration.end_time))
-		endPoint = round(binarysearchinterp(ff, duration.end_time * period))
-	else
-		endPoint = dimsize(xx, 0)
-	endif
-	timeProportion = (endPoint-StartPoint) / dimsize(xx, 0)
-	totalTime = ff[dimsize(ff, 0) - 1] * period
-	
-	for(ii = startPoint ; ii < endPoint ; ii += 1)
+	numevents = dimsize(yy, 0)
+	for(ii = 0 ; ii < numevents ; ii += 1)
 		xpos = binarysearch(xbins, xx[ii])
-		if(xpos > 0)
+		if(xpos >= 0)
+			slicepos = binarysearch(slicebins, ff[ii])
 			ypos = binarysearch(ybins, yy[ii])
 			tpos = binarysearch(tbins, tt[ii])
-			if(tpos > 0 && ypos > 0 )
-				hmm[0][tpos][ypos][xpos] += 1
+			if(xpos == numxbins )
+				xpos -= 1
+			endif
+			if(ypos == numybins )
+				ypos -= 1
+			endif
+			if(tpos == numtbins )
+				tpos -= 1
+			endif
+			if(slicepos == numTimeSlices )
+				slicepos -= 1
+			endif
+			
+			if(tpos >= 0 && ypos >= 0 && slicepos >= 0)
+				detector[slicepos][tpos][ypos][xpos] += 1
 				totalEvents += 1
 			endif
 		endif
 	endfor
-	Note/k hmm, "Events:"+num2istr(totalEvents) + ";timeProportion:" + num2str(timeProportion) + ";time:" + num2str(totalTime)
+	Note/k detector, "Events:"+num2istr(totalEvents)
 	
+	killwaves/z xx, yy, tt, ff
 	setdatafolder $cDF
 End
 
 Function streamer_test()
-	Struct Pla_timePeriod duration
-	duration.start_time = inf
-	duration.end_time = inf
 	Wave xbins, ybins, tbins
 	variable timer = startmstimer
-	Pla_openStreamer("foobar:Users:anz:Desktop:kinetic_test:DAQ_2010-12-17T13-13-30")	
-	Pla_streamedDetectorImage(xbins, ybins, tbins, 20, duration)
+	Pla_openStreamer("faffmatic:Users:andrew:Documents:Andy:Motofit:motofit:tests:SLIM:DAQ_2010-12-17T13-13-30")	
+	Pla_streamedDetectorImage(xbins, ybins, tbins, 20, 10)
 	print stopmstimer(timer) /1e6
 End
