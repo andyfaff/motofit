@@ -1,4 +1,4 @@
-#pragma rtGlobals=1		// Use modern global access method.
+#pragma rtGlobals=3		// Use modern global access method.
 
 // SVN date:    $Date$
 // SVN author:  $Author$
@@ -6,11 +6,12 @@
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
 
-Function Pla_2DintRebin(x_init, data, dataSD, x_rebin)
+Function Pla_PlaneIntRebin(x_init, data, dataSD, x_rebin)
 	Wave x_init, data, dataSD, x_rebin
 
-	//Rebins 2D histogrammed data into boundaries set by xy_rebin.
+	//Rebins 3D histogrammed data [x][y][slice] into boundaries set by xy_rebin.
 	//makes the waves M_rebin and M_RebinSD.
+	//each slice is done individually
 
 	//it uses linear interpolation to work out the proportions of which original cells should be placed
 	//in the new bin boundaries.
@@ -19,19 +20,19 @@ Function Pla_2DintRebin(x_init, data, dataSD, x_rebin)
 	// It does not make sense to rebin to smaller bin boundaries.
 
 	variable ii,jj
-	make/o/d/n=(numpnts(x_rebin)-1,dimsize(data,1)) M_rebin,M_rebinSD
+	make/o/d/n=(dimsize(x_rebin, 0) - 1, dimsize(data, 1), dimsize(data, 2)) M_rebin,M_rebinSD
 
 	if(checkSorted(x_rebin) || checkSorted(x_init))
 		print "The x_rebin and x_init must be monotonically increasing (Pla_2DintRebin)"
 		return 1
 	endif
 	
-	if(wavedims(x_init)!=1 || wavedims(data)!=2 || wavedims(dataSD)!=2 || wavedims(x_rebin)!=1)
+	if(wavedims(x_init) != 2 || wavedims(data) != 3 || wavedims(dataSD) != 3 || wavedims(x_rebin)!=1 || dimsize(x_init, 1) != dimsize(data, 2))
 		print "One of the wave dimensions is wrong (Pla_intrebin)"	
 		return 1
 	endif
 	
-	if(numpnts(x_init)-1!= dimsize(data,0) || numpnts(data)!=numpnts(dataSD))
+	if(dimsize(x_init, 0) - 1 != dimsize(data, 0) || numpnts(data) != numpnts(dataSD))
 		print "data and dataSD must have one less point in the y-direction than y_init (Pla_intRebin)"
 		return 1
 	endif
@@ -47,32 +48,35 @@ Function Pla_2DintRebin(x_init, data, dataSD, x_rebin)
 //		imagetransform/D=W_rebin/G=(ii) putcol M_rebin
 //		imagetransform/D=W_rebinSD/G=(ii) putcol M_rebinSD
 //	endfor
-
-	Make/o/DF/N=(dimsize(data, 1))/free dfw
-	MultiThread dfw = Pla_2DintRebinWorker(x_init, data, dataSD, x_rebin, p)
-	DFREF df
-	for(ii = 0 ; ii < dimsize(data, 1) ; ii+=1)
-		df = dfw[ii]
-		imagetransform/D=df:W_rebin/G=(ii) putcol M_rebin
-		imagetransform/D=df:W_rebinSD/G=(ii) putcol M_rebinSD
-	endfor	
+	for(jj = 0 ; jj < dimsize(data, 2) ; jj += 1)
+		imagetransform/g=(jj) getcol x_init
+		Wave W_extractedCol	
+		Make/o/DF/N=(dimsize(data, 1))/free dfw
+		MultiThread dfw = Pla_2DintRebinWorker(W_extractedCol, data, dataSD, x_rebin, p, jj)
+		DFREF df
+		for(ii = 0 ; ii < dimsize(data, 1) ; ii+=1)
+			df = dfw[ii]
+			imagetransform/D=df:W_rebin/G=(ii)/P=(jj) putcol M_rebin
+			imagetransform/D=df:W_rebinSD/G=(ii)/P=(jj) putcol M_rebinSD
+		endfor	
+	endfor
 	
 	killwaves/z tempcol,W_extractedcol,W_rebin,W_rebinSD, tempcolSD, dfw
 end
 
-Threadsafe Function/DF Pla_2DintRebinWorker(x_init, data, dataSD, x_rebin, qq)
+Threadsafe Function/DF Pla_2DintRebinWorker(x_init, data, dataSD, x_rebin, qq, layer)
 	Wave x_init, data, dataSD, x_rebin
-	variable qq
+	variable qq, layer
 	//a parallelised way of doing a wavelength rebin, called by Pla_2
 	DFREF dfSav= GetDataFolderDFR()
 	// Create a free data folder to hold the extracted and filtered plane 
 	DFREF dfFree= NewFreeDataFolder()
 	SetDataFolder dfFree
 		
-	imagetransform/g=(qq) getcol data
+	imagetransform/g=(qq)/P=(layer) getcol data
 	Wave W_extractedcol
 	duplicate/o W_extractedcol, tempCol
-	imagetransform/g=(qq) getcol dataSD
+	imagetransform/g=(qq)/P=(layer) getcol dataSD
 	duplicate/o W_extractedcol tempColSD
 	Pla_intRebin(x_init, tempCol, tempColSD, x_rebin)
 	Wave W_rebin, W_rebinSD

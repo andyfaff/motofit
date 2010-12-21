@@ -1,4 +1,4 @@
-#pragma rtGlobals=1		// Use modern global access method.
+#pragma rtGlobals=3		// Use modern global access method.
 //background offset is the separation between the specridge and the region taken to be background.
 	constant BACKGROUNDOFFSET = 2
 
@@ -19,15 +19,15 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 	//foreground area
 	
 	
-	//measurement is taken to be a 2d wave [time][y]
+	//measurement is taken to be a 3d wave [time][y][layers]
 	
 	//output:
 	//M_topandtail
 	//M_topandtailSD
-	//W_spec
-	//W_specSD
+	//M_spec
+	//M_specSD
 
-	variable ii,jj,tempVar,foregroundwidth,backgroundwidth
+	variable ii,jj,kk,tempVar,foregroundwidth,backgroundwidth
 	variable/c retval
 	String cDF = getdatafolder(1)
 
@@ -40,32 +40,32 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 		//directory for the reduction package
 		Newdatafolder /o/s root:packages:platypus:data:Reducer
 
-		if(Wavedims(measurement) != 2 || Wavedims(measurementSD) != 2)
-			print "ERROR: whilst reducing, dataset should be 2D [time][y] (topAndTail)"
+		if(Wavedims(measurement) != 3 || Wavedims(measurementSD) != 3)
+			print "ERROR: whilst reducing, dataset should be 3D [time][y][layers] (topAndTail)"
 			abort
 		endif
 
-		make/o/d/n=(dimsize(measurement,0),dimsize(measurement,1)) root:packages:platypus:data:reducer:M_topAndTail
+		make/o/d/n=(dimsize(measurement,0),dimsize(measurement,1), dimsize(measurement, 2)) root:packages:platypus:data:reducer:M_topAndTail
 		Wave M_topAndTail= root:packages:platypus:data:reducer:M_topAndTail
-		M_topAndTail[][] = measurement[p][q]
+		M_topAndTail[][][] = measurement[p][q][r]
 		
 		//make an error wave
 		duplicate/o measurementSD, M_topAndTailSD
 		
 		//do the background subtraction
 		if(background)
-			backgroundWidth = 1.7*peak_FWHM
+			backgroundWidth = 1.7 * peak_FWHM
 		else
 			backgroundwidth = 0
 		endif
 
 		variable loPx, hiPx
-		foregroundwidth = peak_FWHM *1.7
-		loPx = floor(peak_centre - foregroundwidth/2)
-		hiPx = ceil(peak_centre + foregroundwidth/2)
+		foregroundwidth = peak_FWHM * 1.7
+		loPx = floor(peak_centre - foregroundwidth / 2)
+		hiPx = ceil(peak_centre + foregroundwidth / 2)
 		
 		if(backgroundwidth > 0)
-			if(Pla_linbkg(M_topAndTail,M_topAndTailSD,loPx, hiPx, backgroundwidth))
+			if(Pla_linbkg(M_topAndTail, M_topAndTailSD,loPx, hiPx, backgroundwidth))
 				print "ERROR: whilst reducing: (topAndTail)"
 				abort
 			endif
@@ -76,38 +76,45 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 		endif
 
 		//now we have M_imagebkg and M_imagebkgSD, copy those back into M_topAndTail
-		duplicate/o M_imagebkg,M_topAndTail,temp
-		duplicate/o M_imagebkgSD,M_topAndTailSD,tempSD
+		Multithread M_topandtail = M_imagebkg
+		Multithread M_topandtailSD = M_imagebkgSD
+	 	
+		duplicate/o M_imagebkg, temp
+		duplicate/o M_imagebkgSD, tempSD
 
 		//now lets produce the background subtracted, integrated spectrum
-		deletepoints/M=1 hiPx+1, dimsize(temp,1), temp,tempSD
-		deletepoints/M=1 0, loPx, temp,tempSD
-		imagetransform sumallrows temp
-		duplicate/o W_sumrows W_spec
+		deletepoints/M=1 hiPx+1, dimsize(temp, 1), temp, tempSD
+		deletepoints/M=1 0, loPx, temp, tempSD
+		make/d/o/n=(dimsize(temp, 0), dimsize(temp, 2)) M_spec = 0, M_specSD
+		for(ii = 0 ; ii < dimsize(temp, 2) ; ii += 1)
+			imagetransform/p=(ii) sumallrows temp
+			Wave W_sumrows
+			M_spec[][ii] = W_sumrows[p]
+		endfor
 	
 		//now create the SD of the integrated, background subtracted TOF spectrum
-		duplicate/o W_spec,W_specSD
 		variable count1,count2
-		count1=dimsize(W_specSD, 0)
+		count1 = dimsize(M_specSD, 0)
 		count2 = dimsize(tempSD, 1)
-
-		for(ii=0 ; ii < count1 ; ii+=1)
-			for(jj=0 ; jj<count2 ; jj+=1)
-				W_specSD[ii] += (tempSD[ii][jj]^2)
+		for(kk = 0 ; kk < dimsize(M_spec, 1) ; kk += 1)
+			for(ii = 0 ; ii < count1 ; ii += 1)
+				for(jj = 0 ; jj < count2 ; jj += 1)
+					M_specSD[ii][kk] += (tempSD[ii][jj][kk]^2)
+				endfor
 			endfor
 		endfor
-		W_specSD = sqrt(W_specSD)
+		M_specSD = sqrt(M_specSD)
 		
 		//make a record of the beam position on the detector by storing it in the wave note
 		//these values were found above using findspecridge
 		//these values are only applicable for reflected beams.  Direct beam centres depend on wavelength.
 		//also make a note of the integration region on the detector, these are INCLUSIVE
-		note/k W_spec
+		note/k M_spec
 		note/k M_topandtail
 		string tempStr =  "centre:"+num2str(peak_centre)+";FWHM:"+num2str(peak_FWHM)
 		tempStr +=";loPx:"+num2str(loPx)
 		tempStr +=";hiPx:"+num2str(hiPx)
-		note W_spec, tempStr
+		note M_spec, tempStr
 		note M_topandtail, tempStr
 		
 		killwaves/z M_sumplanes,xx,W_sumcols,W_sumrows,W_integrate,W_integratex,W_peakinfo,M_imagebkg,M_imagebkgSD,temp,tempSD,M_rebin,M_rebinSD
@@ -156,10 +163,12 @@ Function createWaterNormalisationWave(waterrun, fileName)
 		
 		//this averages over x
 		imagetransform sumplanes, M_waternorm
+		Wave M_sumplanes
 		duplicate/o M_sumplanes, M_waternorm
 		killwaves/z M_sumplanes
 
 		imagetransform sumallcols M_waternorm 
+		Wave W_sumcols
 		duplicate/o W_sumcols,W_waternorm
 
 		duplicate/o W_waternorm, W_waternormSD
@@ -177,8 +186,8 @@ Function createWaterNormalisationWave(waterrun, fileName)
 	return 0		
 End
 
-Function findSpecRidge(ytWave, searchIncrement , tolerance, expected_centre, expected_width, retval)
-	Wave ytWave
+Function findSpecRidge(tynWave, searchIncrement , tolerance, expected_centre, expected_width, retval)
+	Wave tynWave
 	variable searchIncrement, tolerance
 	variable   expected_centre, expected_width
 	variable/c &retval 
@@ -186,25 +195,34 @@ Function findSpecRidge(ytWave, searchIncrement , tolerance, expected_centre, exp
 
 	variable ii,jj
 
-	if(wavedims(ytWave) != 2)
-		print "ERROR incorrect size for ytWave, not 2dimensional (findSpecRidge)"
+	//detector wave (ytnwave) is expected to be 3 dimensional, i.e. ytwave[t][y][layer]
+	//we will do the beam locating on the SUM of all the layers!
+	
+	if(wavedims(tynWave) != 3)
+		print "ERROR incorrect size for ytWave, not 3dimensional (findSpecRidge)"
 		return 1
 	endif
-	if(searchIncrement > dimsize(yTwave,0))
+	if(searchIncrement > dimsize(tynWave,0))
 		print "ERROR increment is larger than the first dimension (findSpecRidge)"
 		return 1
 	endif
-
+	
+	//we are going to do the search on the sum of the planes
+	imagetransform sumplanes tynWave
+	Wave M_sumplanes
+	
 	try
-		make/o/d/n=(dimsize(ytwave,1)) subSection = 0, subSectionX=p
+		make/o/d/n=(dimsize(M_sumplanes, 1))/free subSection = 0, subSectionX=p
 		make/o/d/n=(0) peakCentre,peakFWHM
 
-		for(ii=0 ; ii< floor(dimsize(ytWave,0) / searchIncrement) ; ii+=1)
-			redimension/n=(ii+1, -1) peakCentre,peakFWHM
-		
-			for(jj = ii*searchIncrement ; jj < (ii+1) * searchIncrement ; jj+=1)
-				subsection[] += ytWave[dimsize(ytwave,0)-jj-1][p]
-			endfor
+		for(ii=0 ; ii< floor(dimsize(M_sumplanes, 0) / searchIncrement) ; ii+=1)
+			redimension/n=(ii+1, -1) peakCentre, peakFWHM
+			
+			Duplicate/o/free/r=[ dimsize(M_sumplanes, 0) - (ii + 1) * searchincrement, dimsize(M_sumplanes, 0) - 1][0, dimsize(M_sumplanes, 1) - 1] M_sumplanes, subimage
+			imagetransform sumallcols subimage
+			Wave W_sumcols
+			subsection = W_sumcols
+
 			Pla_findpeakdetails(subsection, subsectionX,expected_centre = expected_centre, expected_width = expected_width)
 			Wave W_peakInfo
 			if((2.35482 * W_peakInfo[7]/sqrt(2) < expected_width && abs(W_peakInfo[6] - expected_centre) <  2*expected_width))
@@ -222,15 +240,15 @@ Function findSpecRidge(ytWave, searchIncrement , tolerance, expected_centre, exp
 		endfor
 	catch
 		print "PROBLEM whilst finding specular ridge (findSpecRidge)"
-		killwaves/z subSection, subsectionX,W_peakinfo,peakCentre,peakFWHM
+		killwaves/z subSection, subsectionX,W_peakinfo,peakCentre,peakFWHM, M_sumplanes, W_sumcols
 	
 		return 1
 	endtry
 
-	killwaves/z subSection, subsectionX,W_peakinfo,peakCentre,peakFWHM
+	killwaves/z subSection, subsectionX,W_peakinfo,peakCentre,peakFWHM, M_sumplanes, W_sumcols
 
-	if(imag(retval) >  expected_width || abs(real(retval) - expected_centre) >  expected_width)
-		print "PROBLEM, there was no significant specular beam detected: ", Getwavesdatafolder(ytwave,0) , "(findspecularridge)"
+	if(imag(retval) >  expected_width || abs(real(retval) - expected_centre) >  2 * expected_width)
+		print "PROBLEM, there was no significant specular beam detected: ", Getwavesdatafolder(tynwave,0) , "(findspecularridge)"
 		retval = cmplx(NaN,NaN)
 		return 1
 	endif
@@ -262,11 +280,11 @@ Function ChoDCalculator(fileName, omega, two_theta [,pairing, scanpoint])
 	Wave DetectorPos = $(tempDF+":instrument:detector:longitudinal_translation")
 	Wave/t mode = $(tempDF+":instrument:parameters:mode")
 	
-//	if(omega < 0 || two_theta < 0)
-//		print "WARNING, OMEGA isn't set, spectrum is approximate, setting omega, 2theta=0 (CHODcalculator)"
-//		omega=0
-//		two_theta = 0
-//	endif
+	//	if(omega < 0 || two_theta < 0)
+	//		print "WARNING, OMEGA isn't set, spectrum is approximate, setting omega, 2theta=0 (CHODcalculator)"
+	//		omega=0
+	//		two_theta = 0
+	//	endif
 	if(paramisdefault(scanpoint))
 		scanpoint = 0
 	endif
@@ -365,47 +383,34 @@ Function ChoDCalculator(fileName, omega, two_theta [,pairing, scanpoint])
 	return chod
 End
 
-Function TOFtoLambda(TOF, distance)
-	Wave TOF
+Threadsafe Function TOFtoLambda(TOF, distance)
+	variable TOF
 	variable distance
 	//convert TOF to lambda.
 	//time of flight in microseconds, flight distance in mm, time offset in microseconds
-	//output in W_lambda, in Angstrom
-
-	//make the wave to put it in
-	make/o/d/n=(numpnts(TOF)) W_lambda
-	Wave W_lambda
-
-	W_lambda = P_MN*(TOF[p])*1e-3/distance
-	W_lambda *=1e10
-
-	return 0
+	//output in Angstrom
+	return 1e7 * P_MN * TOF / distance
 End
 
-Function LambdatoTOF(Lambda, distance)
-	Wave Lambda
+Threadsafe Function LambdatoTOF(Lambda, distance)
+	variable Lambda
 	variable distance
 	//convert  lambda to TOF
 	//time of flight in microseconds, flight distance in mm, time offset in microseconds
-	//output in W_lambda, in Angstrom
 
 	//make the wave to put it in
-	make/o/d/n=(numpnts(lambda)) W_TOF
 	
-	W_tof = (lambda/P_MN)*distance * 1e-7
-
-	return 0
+	return  (lambda/P_MN)*distance * 1e-7
 End
 
-Function LambdaToQ(Qq, lambda,omega)
-	Wave qq
-	Wave lambda
-	Wave omega
+Threadsafe Function LambdaToQ(lambda, omega)
+	variable lambda
+	variable omega
 
 	//converts wave containing lambda values, and an incident angle to Q vector.  
 	//lambda in Angstrom
 	//omega in radians
-	qq = 4*Pi*sin(omega)/lambda
+	return 4 * Pi * sin(omega) / lambda
 End
 
 Function histToPoint(w)
@@ -415,8 +420,7 @@ Function histToPoint(w)
 	W_point /=2
 End
 
-
-Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
+Function Pla_linbkg(image, imageSD, loPx, hiPx, backgroundwidth)
 	Wave image,imageSD
 	variable loPx, hiPx, backgroundwidth
 	
@@ -444,7 +448,7 @@ Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
 	duplicate/o image, M_imagebkg,M_imagebkgSD
 	make/o/d/n=(dimsize(image,1)) W_mask
 
-	variable ii,degfree=-2
+	variable ii,degfree=-2, jj, numplanes = 0
 	for(ii=0 ; ii<dimsize(image,1); ii+=1)
 		if((ii>=y0 && ii < y1)||(ii > y2 && ii<=y3))
 			W_mask[ii] = 1
@@ -487,35 +491,37 @@ Function Pla_linbkg(image,imageSD,loPx, hiPx, backgroundwidth)
 	//		endif
 	//	endfor
 	
-	Make/o/DF/N=(dimsize(image,0))/free dfw
-	Multithread dfw= Pla_linbkgworker(image, imageSD, W_mask, p,  y0, y1, y2, y3)
-	DFREF df= dfw[0]		
-	Duplicate/O df:W_templine, M_imagebkg
-	Duplicate/O df:W_templineSD, M_imagebkgSD
-	Variable nmax=dimsize(image,0)
-	for(ii=1;ii<nmax;ii+=1)
-		df= dfw[ii]
-		Concatenate {df:W_templine}, M_imagebkg
-		Concatenate {df:W_templineSD}, M_imagebkgSD
+	duplicate/o image, M_imagebkg, M_imagebkgSD
+	multithread M_imagebkg = 0
+	multithread M_imagebkgSD = 0
+	
+	for(ii = 0 ; ii < dimsize(image, 2) ; ii += 1)
+		Make/o/DF/N=(dimsize(image,0))/free dfw
+		Multithread dfw= Pla_linbkgworker(image, imageSD, W_mask, p,  y0, y1, y2, y3, ii)
+		for(jj = 0 ; jj < dimsize(image, 0) ; jj += 1)
+			DFREF df= dfw[jj]
+			Wave W_templine = df:W_templine
+			Wave W_templineSD = df:W_templineSD
+			M_imagebkg[jj][][ii] =  W_templine[q]
+			M_imagebkgSD[jj][][ii] =  W_templineSD[q]
+		endfor
+		killwaves/z dfw 
 	endfor
-	KillWaves/z dfw
-	matrixtranspose M_imagebkg
-	matrixtranspose M_imagebkgSD
 
-	M_imagebkg*=-1
-	M_imagebkg+=image
-	M_imagebkgSD *= M_imagebkgSD
-	M_imagebkgSD += imageSD^2
-	M_imagebkgSD = sqrt(M_imagebkgSD)
+	Multithread	M_imagebkg *= -1
+	Multithread	M_imagebkg += image
+	Multithread	M_imagebkgSD *= M_imagebkgSD
+	Multithread	M_imagebkgSD += imageSD^2
+	Multithread	M_imagebkgSD = sqrt(M_imagebkgSD)
 
 	killwaves/z W_extractedrow,W_Coef,W_mask,W_sigma,W_templine,W_templineSD,M_Covar,W_paramconfidenceinterval
 	killwaves/z UC_W_templine, LC_W_templine, UP_W_templine, LP_W_templine
 	return 0 
 End
 
-Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2, y3)
+Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2, y3, layer)
 	Wave image, imageSD, W_mask
-	variable  pp,  y0, y1, y2, y3
+	variable  pp,  y0, y1, y2, y3, layer
 	string tempSTr
 	variable temp
 
@@ -523,8 +529,8 @@ Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2,
 	// Create a free data folder to hold the extracted and filtered plane 
 	DFREF dfFree= NewFreeDataFolder()
 	SetDataFolder dfFree
-
-	imagetransform/g=(pp) getrow image
+	
+	imagetransform/g=(pp)/p=(layer) getrow image
 	Wave W_extractedRow
 		
 	make/o/d/n=2 W_coef
@@ -554,7 +560,7 @@ Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2,
 		Wave UP_W_templine,LP_W_templine
 		W_templine = W_coef[0] + p*W_coef[1]
 		W_templineSD = (p > leftx(UP_W_templine) && p < rightx(UP_W_templine)) ? 0.5*(UP_W_templine(p)-LP_W_templine(p)) : 0
-//		W_templineSD[] = 0.5*(UP_W_templine(p)-LP_W_templine(p))
+		//		W_templineSD[] = 0.5*(UP_W_templine(p)-LP_W_templine(p))
 	endif
 
 	SetDataFolder dfSav
@@ -562,7 +568,7 @@ Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2,
 	return dfFree
 End
 
-Function Pla_CPInterval(fitfunction,xx, covar, params, conflevel, DegFree)
+Function Pla_CPInterval(fitfunction, xx, covar, params, conflevel, DegFree)
 	//confidence level should be between 0 and 100
 	String fitfunction
 	Variable xx
@@ -610,7 +616,7 @@ Function Pla_CPInterval(fitfunction,xx, covar, params, conflevel, DegFree)
 	return tP*sqrt(YVar)
 end
 
-Function Pla_calcDerivs(fitfunction,xx, params, dyda, epsilon)
+Function Pla_calcDerivs(fitfunction, xx, params, dyda, epsilon)
 	string fitfunction
 	Variable xx
 	Wave params
@@ -637,7 +643,7 @@ Function Pla_calcDerivs(fitfunction,xx, params, dyda, epsilon)
 	endif
 end
 
-Threadsafe Function myline(w,x):fitfunc
+Threadsafe Function myline(w, x):fitfunc
 	Wave w;variable x
 	return w[0]+w[1]*x
 end
@@ -647,30 +653,33 @@ Threadsafe Function myGAUSS(w,x):fitfunc
 	return w[0]+w[1]*exp(-((w[2]-x)/w[3])^2)
 end
 
-Function correct_for_gravity(data, dataSD, lambda, trajectory, lowLambda, highLambda,loBin,hiBin)
+Function correct_for_gravity(data, dataSD, lambda, trajectory, lowLambda, highLambda, loBin, hiBin)
 	Wave data, dataSD, lambda
-	variable trajectory,  lowLambda,highLambda, loBin, hiBin
+	variable trajectory,  lowLambda, highLambda, loBin, hiBin
 	//this function provides a gravity corrected yt plot, given the data, its associated errors, the wavelength corresponding to each of the time
 	//bins, and the trajectory of the neutrons.  Low lambda and high Lambda are wavelength cutoffs to igore.
 	
-	
 	//output:
-	//corrected data,dataSD
-	//W_gravCorrCoefs.  THis is a theoretical prediction where the spectral ridge is for each timebin.  This will be used to calculate the actual angle
+	//corrected data, dataSD
+	//M_gravCorrCoefs.  THis is a theoretical prediction where the spectral ridge is for each timebin.  This will be used to calculate the actual angle
 	//	of incidence in the reduction process.
 
-	variable ii, totaldeflection, err = 0, travel_distance = 0
+	variable ii, jj, totaldeflection, err = 0, travel_distance
 	try
-
-		if(numpnts(data) != numpnts(dataSD) || dimsize(data,0) != numpnts(lambda))
+		if(numpnts(data) != numpnts(dataSD) || dimsize(data, 0) != dimsize(lambda, 0))
 			print "ERROR the data dimension aren't consistent (correct_for_gravity)"
 			err = 1
 			abort
 		endif
+		if(dimsize(lambda, 1) != dimsize(data, 2))
+			print "ERROR the data and wavelength matrix must be 2D (correct_for_gravity)"
+			err = 1
+			abort
+		endif
 
-		make/d/o/n=(dimsize(data, 0), dimsize(data, 1)) M_gravitycorrected, M_gravitycorrectedSD
-		make/d/o/n=(dimsize(data,1)) Xsection, XsectionSD
-		make/d/o/n=(dimsize(data,1)+1) Xsection_px, Xsection_px_rebin
+		make/d/o/n=(dimsize(data, 0), dimsize(data, 1), dimsize(data, 2)) M_gravitycorrected, M_gravitycorrectedSD
+		make/d/o/n=(dimsize(data, 1)) Xsection, XsectionSD
+		make/d/o/n=(dimsize(data, 1) + 1) Xsection_px, Xsection_px_rebin
 		Xsection_px = p-0.5				//subtract half a pixel because we need to work on histogrammed data.
 		
 		//find out the correct travel_distance to do.  This is empirical
@@ -678,53 +687,58 @@ Function correct_for_gravity(data, dataSD, lambda, trajectory, lowLambda, highLa
 		//this is only likely to work for reasonable wavelengths
 		//will fall over if two beams hit the detector
 		centre_wavelength(data, loBin, hiBin)
-		Wave W_centrewavelength
+		Wave M_centrewavelength
 		
-		duplicate/o lambda, W_mask
+		make/n=(dimsize(lambda, 0))/free/d W_mask = lambda[p][0]
 		//if the wavelength is ridiculous mask the point
-		W_mask = W_mask<lowlambda ? NaN : W_mask[p]
-		W_mask = W_mask>highLambda ? NaN : W_mask[p]
-		W_mask = W_mask<2 ? NaN : W_mask[p]
-		W_mask = W_mask>18 ? NaN : W_mask[p]
+		W_mask = W_mask < lowlambda ? NaN : W_mask[p]
+		W_mask = W_mask > highLambda ? NaN : W_mask[p]
+		W_mask = W_mask < 2 ? NaN : W_mask[p]
+		W_mask = W_mask > 18 ? NaN : W_mask[p]
 
 		//if the centre isn't within a reasonable range of detector pixels ignore it.
-		W_mask[] = W_centrewavelength[p] < 30 ? NaN : W_mask[p]
-		W_mask[] = W_centrewavelength[p] > 190 ? NaN : W_mask[p]
-		
+		make/n=(3, dimsize(data, 2)) /o/d M_gravCorrCoefs = 0
+
 		make/o/n=3/d W_coef = {3000,ROUGH_BEAM_POSITION,0}
 		make/o/t W_constraints = {"W_coef[0]<6000","W_coef[0]>1500","W_coef[1]<190","W_coef[1]>30"}
-		variable V_fiterror = 0
-		FuncFit/H="001"/NTHR=0/n/q deflec W_coef  W_centrewavelength /X=lambda /M=W_mask /C=W_constraints 
-		if(V_Fiterror)
-			print "ERROR while finding gravity correction (correct_for_gravity)"
-			abort
-		endif
-		travel_distance = W_coef[0]
-		duplicate/o W_coef, W_gravCorrCoefs
 		
+		for(jj = 0 ; jj < dimsize(data, 2) ; jj += 1)
+			W_mask[] = M_centrewavelength[p][jj] < 30 ? NaN : W_mask[p]
+			W_mask[] = M_centrewavelength[p][jj] > 190 ? NaN : W_mask[p]
 				
-		//now rebin the detector accounting for the gravity correction
-		for(ii=0 ; ii<dimsize(lambda,0) ; ii+=1)
-			totaldeflection = deflection(lambda[ii], travel_distance, trajectory)/Y_PIXEL_SPACING
-			Xsection_px_rebin = Xsection_px + totaldeflection
-
-			//extract a row
-			imagetransform/g=(ii) getRow data
-			Wave W_extractedRow
-			Xsection = W_extractedRow
-	
-			imagetransform/g=(ii) getRow dataSD
-			XsectionSD = W_extractedRow
-	
-			//now rebin and insert back into M_gravitycorrected
-			if(Pla_intRebin(Xsection_px, Xsection, XsectionSD, Xsection_px_rebin))
-				print "ERROR encountered while rebinning (correction_for_gravity)"
-				err = 1
+			variable V_fiterror = 0
+			FuncFit/H="001"/NTHR=0/n/q deflec W_coef  M_centrewavelength[][jj] /X=lambda[][jj] /M=W_mask /C=W_constraints 
+			if(V_fiterror)
+				print "ERROR while finding gravity correction (correct_for_gravity)"
 				abort
 			endif
-			Wave W_rebin, W_rebinSD
-			M_gravitycorrected[ii][] = W_rebin[q]
-			M_gravitycorrectedSD[ii][] = W_rebinSD[q]
+			travel_distance = W_coef[0]
+
+			M_gravCorrCoefs[][jj] = W_coef[p]
+				
+			//now rebin the detector accounting for the gravity correction
+			for(ii = 0 ; ii < dimsize(lambda, 0) ; ii += 1)
+				totaldeflection = deflection(lambda[ii], travel_distance, trajectory)/Y_PIXEL_SPACING
+				Xsection_px_rebin = Xsection_px + totaldeflection
+
+				//extract a row
+				imagetransform/g=(ii)/P=(jj) getRow data
+				Wave W_extractedRow
+				Xsection = W_extractedRow
+	
+				imagetransform/g=(ii)/P=(jj) getRow dataSD
+				XsectionSD = W_extractedRow
+	
+				//now rebin and insert back into M_gravitycorrected
+				if(Pla_intRebin(Xsection_px, Xsection, XsectionSD, Xsection_px_rebin))
+					print "ERROR encountered while rebinning (correction_for_gravity)"
+					err = 1
+					abort
+				endif
+				Wave W_rebin, W_rebinSD
+				M_gravitycorrected[ii][][jj] = W_rebin[q]
+				M_gravitycorrectedSD[ii][][jj] = W_rebinSD[q]
+			endfor
 		endfor
 	catch
 
@@ -767,43 +781,43 @@ End
 Function centre_wavelength(data, lobin, hibin)
 	Wave data
 	variable lobin, hibin
-	//finds out where the spectral ridge is for each time bin in a yt plot.
-	make/o/d/n=(dimsize(data,0)) W_centreWavelength = NaN
-	variable ii
+	//finds out where the spectral ridge is for each time bin in a ytn plot.
+	make/o/d/n=(dimsize(data,0), dimsize(data, 2)) M_centreWavelength = NaN
+	variable ii, jj
 		
-	make/o/n=(dimsize(data,1)) xdata = p
+	make/o/n=(dimsize(data, 1)) xdata = p
 	
-//	for(ii=0 ; ii <dimsize(data,0) ; ii+=1)
-//		//extract a row
-//		variable V_fiterror = 0
-//		imagetransform/g=(ii) getRow data
-//		Wave W_extractedRow
-//		
-//		W_centrewavelength[ii] = Pla_peakcentroid(xdata, W_extractedrow, x0= loBin, x1 = hiBin)
-//		//		curvefit/n=1/q/NTHR=2 gauss  data[ii][]
-//		//		Wave W_coef
-//		//		if(!V_fiterror)
-//		//			W_centrewavelength[ii] = W_coef[2]
-//		//		else
-//		//			W_centrewavelength[ii] = NaN
-//		//		endif
-//	endfor
-	
-	Make/o/DF/N=(dimsize(data, 0))/free dfw
-	 dfw = Pla_centre_wavelengthworker(xdata, data, p, loBin, hiBin)
-	DFREF df
-	for(ii = 0 ; ii < dimsize(data, 0) ; ii+=1)
-		df = dfw[ii]
-		Wave theResult = df:theResult
-		W_centrewavelength[ii] = theResult[0]
-	endfor	
-	
+	//	for(ii=0 ; ii <dimsize(data,0) ; ii+=1)
+	//		//extract a row
+	//		variable V_fiterror = 0
+	//		imagetransform/g=(ii) getRow data
+	//		Wave W_extractedRow
+	//		
+	//		W_centrewavelength[ii] = Pla_peakcentroid(xdata, W_extractedrow, x0= loBin, x1 = hiBin)
+	//		//		curvefit/n=1/q/NTHR=2 gauss  data[ii][]
+	//		//		Wave W_coef
+	//		//		if(!V_fiterror)
+	//		//			W_centrewavelength[ii] = W_coef[2]
+	//		//		else
+	//		//			W_centrewavelength[ii] = NaN
+	//		//		endif
+	//	endfor
+	for(ii = 0 ; ii < dimsize(data, 2) ; ii += 1)
+		Make/o/DF/N=(dimsize(data, 0))/free dfw
+		Multithread dfw[] = Pla_centre_wavelengthworker(xdata, data, p, loBin, hiBin, ii)
+		DFREF df
+		for(jj= 0 ; jj < dimsize(data, 0) ; jj += 1)
+			df = dfw[jj]
+			Wave theResult = df:theResult
+			M_centrewavelength[jj][ii] = theResult[0]
+		endfor	
+	endfor
 	killwaves/z W_coef, xdata, dfw
 End
 
-Threadsafe Function/DF Pla_centre_wavelengthworker(xdata, data, pp, loBin, hiBin)
+Threadsafe Function/DF Pla_centre_wavelengthworker(xdata, data, pp, loBin, hiBin, layer)
 	Wave xdata, data
-	variable pp, lobin, hibin
+	variable pp, lobin, hibin, layer
 	
 	//a parallelised way of doing a wavelength rebin, called by Pla_2
 	DFREF dfSav= GetDataFolderDFR()
@@ -812,7 +826,7 @@ Threadsafe Function/DF Pla_centre_wavelengthworker(xdata, data, pp, loBin, hiBin
 	SetDataFolder dfFree
 		
 	make/n=1/d theResult
-	imagetransform/g=(pp) getRow data
+	imagetransform/g=(pp)/P=(layer) getRow data
 	Wave W_extractedRow
 		
 	theResult[0] = Pla_peakcentroid(xdata, W_extractedrow, x0= loBin, x1 = hiBin)

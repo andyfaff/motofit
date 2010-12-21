@@ -408,7 +408,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 									
 					//find the files with the new multiopenfiles XOP
 					Newpath/o/q/z pla_temppath_read, thePathstring
-					multiopenfiles/P=pla_temppath_read/M="Select the files you wish to view"/F=".hdf;.xml;.itx;.xrdml;"
+					multiopenfiles/P=pla_temppath_read/M="Select the files you wish to view"/F=".hdf;.xml;.itx;.xrdml;.spectrum;"
 					killpath/z pla_temppath_read
 					if(V_Flag!=0)
 						return 0
@@ -516,7 +516,15 @@ Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, 
 			endif
 			return 0
 		endif
-		
+
+		if(stringmatch(".spectrum", tempfilenamestr[strlen(tempfilenamestr) - 9, strlen(tempfilenamestr) - 1]))	
+			if(SLIM_plot_spectrum(inputPathStr, filenames))
+				print "ERROR while trying to plot spectrum data (SLIM_PLOT)"
+				return 1
+			endif
+			return 0
+		endif
+				
 		if(stringmatch(".xrdml",tempfilenamestr[strlen(tempfilenamestr)-6,strlen(tempfilenamestr)-1]))	
 			if(SLIM_plot_xrdml(inputPathStr, filenames))
 				print "ERROR while trying to plot XRDML data (SLIM_PLOT)"
@@ -809,6 +817,91 @@ Function SLIM_plot_xrdml(inputPathStr, filenames)
 	return err
 ENd
 
+Function SLIM_plot_spectrum(inputPathStr, filenames)
+	string inputPathStr, filenames
+	variable err
+	variable ii,numwaves,jj, fileID
+	string loadedWavenames
+	string cDF = getdatafolder(1)
+	string theFile, base, slimplotstring
+	
+	newdatafolder/o root:packages
+	newdatafolder/o root:packages:platypus
+	newdatafolder/o root:packages:platypus:data
+	newdatafolder/o root:packages:platypus:data:Reducer
+	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
+
+	GetFileFolderInfo/q/z inputpathStr
+	if(V_flag)//path doesn't exist
+		print "ERROR please give valid path (SLIM_plot_spectrum)"
+		return 1
+	endif
+	
+	try
+		dowindow/k SLIM_PLOTwin
+		display/K=1 as "SLIM plot (C) Andrew Nelson + ANSTO 2008"
+		dowindow/c SLIM_PLOTwin
+		controlbar/W=SLIM_PLOTwin 30
+		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Refresh",size={100,20}, fColor=(0,52224,26368)
+		
+		sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\", 0, 0, 0)", inputpathStr, inputpathStr, fileNames
+		setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
+		setwindow SLIM_PLOTwin, userdata(filenames) = filenames
+		setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr			
+
+		for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
+			base = removeending(stringfromlist(ii, filenames), ".spectrum")		
+			theFile = inputpathStr + stringfromlist(ii, filenames)
+			theFile = parsefilepath(5, theFile, "*", 0, 0)
+
+			fileID = xmlopenfile(thefile)
+			if(fileID < 1)
+				print "ERROR couldn't open spectrum file (SLIM_plot_spectrum)"
+				 abort
+			endif			
+			xmlwavefmxpath(fileID, "//R[1]", "","")
+			Wave/t M_xmlcontent
+			make/n=(dimsize(M_Xmlcontent, 0))/d $(base + "_R")
+			Wave RR= $(base + "_R")
+			RR = str2num(M_xmlcontent[p][0])
+
+			xmlwavefmxpath(fileID, "//lambda[1]", "","")
+			Wave/t M_xmlcontent
+			make/n=(dimsize(M_Xmlcontent, 0))/d $(base + "_lambda")
+			Wave lambda = $(base + "_lambda")
+			lambda = str2num(M_xmlcontent[p][0])
+
+			xmlwavefmxpath(fileID, "//dR[1]", "","")
+			Wave/t M_xmlcontent
+			make/n=(dimsize(M_Xmlcontent, 0))/d $(base + "_dI")
+			Wave dR = $(base + "_dI")
+			dR = str2num(M_xmlcontent[p][0])
+			
+			//puts files into  root:packages:Xpert
+			appendtograph/w=SLIM_PLOTwin RR vs lambda
+			ErrorBars/T=0 $nameofwave(RR) Y,wave=(dR, dR)
+			ModifyGraph log(left)=1
+			if(fileID> 0)
+				xmlclosefile(fileiD, 0)
+			endif
+
+		endfor
+		CommonColors("SLIM_PLOTwin")
+		Legend/C/N=text0/A=MC
+		cursor/A=1/W=SLIM_PLOTwin/H=1/F/P A $(stringfromlist(0,tracenamelist("SLIM_PLOTwin",";",1))) 0.5,0.5
+		showinfo
+		setdatafolder $cDF
+		return 0
+	catch
+		err = 1
+		if(fileID> 0)
+			xmlclosefile(fileiD, 0)
+		endif
+	endtry
+	
+	setdatafolder $cDF
+	return err
+ENd
 
 Function button_SLIM_PLOT(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
@@ -930,24 +1023,24 @@ Function SLIM_redisplay(mode,isLog)
 		Wave/z W_ref = $(tempDF+":W_ref")
 		Wave/z W_refSD = $(tempDF+":W_refSD")
 		Wave/z W_q = $(tempDF+":W_q")
-		Wave W_spectof = $(tempDF+":W_spectof")
-		Wave W_lambda = $(tempDF+":W_lambda")
-		Wave W_spec = $(tempDF+":W_spec")
-		Wave W_specSD = $(tempDF+":W_specSD")
+		Wave M_spectof = $(tempDF+":M_spectof")
+		Wave M_lambda = $(tempDF+":M_lambda")
+		Wave M_spec = $(tempDF+":M_spec")
+		Wave M_specSD = $(tempDF+":M_specSD")
 		Wave M_topandtail = $(tempDF+":M_topandtail")
-		Wave W_specTOFHIST = $(tempDF+":W_specTOFHIST")
-		Wave W_lambdaHIST = $(tempDF+":W_lambdaHIST")
+		Wave M_specTOFHIST = $(tempDF+":M_specTOFHIST")
+		Wave M_lambdaHIST = $(tempDF+":M_lambdaHIST")
 		
 		switch(mode)
 			case 0:
-				appendtograph/w=SLIM_PLOTwin W_spec vs W_lambda
-				ErrorBars/T=0 $("W_Spec#"+num2istr(ii)) Y,wave=(W_specSD,W_specSD)
+				appendtograph/w=SLIM_PLOTwin M_spec vs M_lambda
+				ErrorBars/T=0 $("M_Spec#"+num2istr(ii)) Y,wave=(M_specSD, M_specSD)
 				ModifyGraph log(left)=isLog
 				Label bottom "lambda"
 				break
 			case 1:
-				appendtograph/w=SLIM_PLOTwin W_Spec vs W_spectof
-				ErrorBars/T=0 $("W_Spec#"+num2istr(ii)) Y,wave=(W_specSD,W_specSD)
+				appendtograph/w=SLIM_PLOTwin M_Spec vs M_spectof
+				ErrorBars/T=0 $("M_Spec#"+num2istr(ii)) Y,wave=(M_specSD, M_specSD)
 				ModifyGraph log(left)=isLog
 				Label bottom "TOF(us)"
 				break
@@ -961,7 +1054,7 @@ Function SLIM_redisplay(mode,isLog)
 				if(isLOG)
 					M_tempSLIMPLOT = log(M_tempSLIMplot)
 				endif
-				AppendImage/w=SLIM_PLOTwin/L=$ordinate/B=$abscissa M_tempSLIMPLOT vs {W_lambdaHIST,*}
+				AppendImage/w=SLIM_PLOTwin/L=$ordinate/B=$abscissa M_tempSLIMPLOT vs {M_lambdaHIST,*}
 				ModifyImage/w=SLIM_PLOTwin  $("M_tempSLIMPLOT#"+num2str(ii)) ctab={0,*,Rainbow,0}
 				ModifyImage/w=SLIM_PLOTwin $("M_tempSLIMPLOT#"+num2str(ii)) minRGB=(0,0,0),maxRGB=0
 				ModifyGraph/w=SLIM_PLOTwin freePos($ordinate)={0,$abscissa},freePos($abscissa)={0,$ordinate}
@@ -984,7 +1077,7 @@ Function SLIM_redisplay(mode,isLog)
 				if(isLOG)
 					M_tempSLIMPLOT = log(M_tempSLIMplot)
 				endif
-				AppendImage/w=SLIM_PLOTwin/L=$("L"+num2istr(ii))/B=$("B"+num2istr(ii)) M_tempSLIMPLOT vs {W_specTOFHIST,*}
+				AppendImage/w=SLIM_PLOTwin/L=$("L"+num2istr(ii))/B=$("B"+num2istr(ii)) M_tempSLIMPLOT vs {M_specTOFHIST,*}
 				ModifyImage/w=SLIM_PLOTwin  $("M_tempSLIMPLOT#"+num2str(ii)) ctab={0,*,Rainbow,0}
 				ModifyImage/w=SLIM_PLOTwin $("M_tempSLIMPLOT#"+num2str(ii)) minRGB=(0,0,0),maxRGB=0
 				ModifyGraph/w=SLIM_PLOTwin freePos($ordinate)={0,$abscissa},freePos($abscissa)={0,$ordinate}
@@ -1008,7 +1101,7 @@ Function SLIM_redisplay(mode,isLog)
 				break
 			case 5:
 				if(waveexists(W_ref) && Waveexists(W_q) && Waveexists(W_refSD))
-					appendtograph/w=SLIM_PLOTwin W_ref vs W_lambda
+					appendtograph/w=SLIM_PLOTwin W_ref vs M_lambda
 					tempVar = itemsinlist(greplist(tracenamelist("SLIM_PLOTwin",";",1),"^W_ref"))
 					ErrorBars/T=0 $("W_ref#"+num2istr(tempVar-1))  Y,wave=(W_refSD,W_refSD)
 					ModifyGraph log(left)=isLog
@@ -1017,7 +1110,7 @@ Function SLIM_redisplay(mode,isLog)
 				break
 			case 6:
 				if(waveexists(W_ref) && Waveexists(W_q) && Waveexists(W_refSD))
-					appendtograph/w=SLIM_PLOTwin W_ref vs W_spectof
+					appendtograph/w=SLIM_PLOTwin W_ref vs M_spectof
 					tempVar = itemsinlist(greplist(tracenamelist("SLIM_PLOTwin",";",1),"^W_ref"))
 					ErrorBars/T=0 $("W_ref#"+num2istr(tempVar-1))  Y,wave=(W_refSD,W_refSD)
 					ModifyGraph log(left)=isLog
