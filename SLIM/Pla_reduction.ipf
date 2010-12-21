@@ -1565,6 +1565,7 @@ Function writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, exptitle, user,
 	
 	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]","","reductionnote",rednnote,1)
 	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]/reductionnote[1]","","software","SLIM")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]/reductionnote[1]","","version", num2istr(Pla_getVersion()))
 	
 	//create ASCII representation of data
 	sockitWaveToString/TXT qq, qqStr
@@ -2274,4 +2275,12 @@ Function reduceManyXrayFiles()
 
 	setdatafolder $cDF
 	return err
+End
+
+Function Pla_getVersion()
+	string versionStr = "$Rev$"
+	string template="$Rev"
+	variable version
+	sscanf versionStr, template+": %d $", version
+	return version
 End
