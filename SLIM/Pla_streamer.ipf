@@ -32,7 +32,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	
 	if(dataset < 0 || dataset > numdatasets - 1)
 		print "ERROR dataset number must be 0 < n < ", numdatasets - 1
-		abort
+		return 1
 	endif	
 	
 	//load in the entire file
@@ -40,7 +40,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	open/r/z fileID as binaryFileStr
 	if(fileID < 1)
 		print "ERROR, couldn't open file (Pla_openstreamer)"
-		abort
+		return 1
 	endif
 	fstatus fileID
 	theData = padstring(theData, V_logEOF, 0)
@@ -50,7 +50,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	theData = zipDecode(theData)
 	if(strlen(theData) == 0)
 		print "ERROR whilst opening stream file (Pla_openstreamer)"
-		abort	
+		return 1	
 	endif
 	Sockitstringtowave 64+32, theData
 	Wave W_stringtowave
@@ -75,15 +75,16 @@ Function Pla_openStreamer(folderStr, [dataset])
        killwaves W_stringtowave
 	catch
 		 close fileID
-	
 	endtry
 	
 	close fileID
 	setdatafolder $cDF
+	return 0
 End
 
-Function Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, numTimeSlices)
+Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, numTimeSlices)
 	//they should be monotonically sorted histogram edges for x, y and t.
+	//produces a wave root:packages:platypus:data:Reducer:streamer:Detector[slice][t][y][x]
 	Wave xbins, ybins, tbins
 	//how many frames per sec
 	variable framefrequency, numTimeSlices
@@ -143,6 +144,7 @@ Function Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, numTimeS
 	
 	killwaves/z xx, yy, tt, ff
 	setdatafolder $cDF
+	return detector
 End
 
 Function streamer_test()
