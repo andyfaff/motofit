@@ -120,7 +120,7 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, num
 		if(xpos >= 0)
 			slicepos = binarysearch(slicebins, ff[ii])
 			ypos = binarysearch(ybins, yy[ii])
-			tpos = binarysearch(tbins, tt[ii])
+			tpos = binarysearch(tbins, tt[ii]/1000)
 			if(xpos == numxbins )
 				xpos -= 1
 			endif

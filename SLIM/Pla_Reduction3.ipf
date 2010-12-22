@@ -853,19 +853,19 @@ Function SLIM_plot_spectrum(inputPathStr, filenames)
 			endif			
 			xmlwavefmxpath(fileID, "//R[1]", "","")
 			Wave/t M_xmlcontent
-			make/n=(dimsize(M_Xmlcontent, 0))/d $(base + "_R")
+			make/n=(dimsize(M_Xmlcontent, 0))/d/o $(base + "_R")
 			Wave RR= $(base + "_R")
 			RR = str2num(M_xmlcontent[p][0])
 
 			xmlwavefmxpath(fileID, "//lambda[1]", "","")
 			Wave/t M_xmlcontent
-			make/n=(dimsize(M_Xmlcontent, 0))/d $(base + "_lambda")
+			make/n=(dimsize(M_Xmlcontent, 0))/d/o $(base + "_lambda")
 			Wave lambda = $(base + "_lambda")
 			lambda = str2num(M_xmlcontent[p][0])
 
 			xmlwavefmxpath(fileID, "//dR[1]", "","")
 			Wave/t M_xmlcontent
-			make/n=(dimsize(M_Xmlcontent, 0))/d $(base + "_dI")
+			make/n=(dimsize(M_Xmlcontent, 0))/d/o $(base + "_dI")
 			Wave dR = $(base + "_dI")
 			dR = str2num(M_xmlcontent[p][0])
 			

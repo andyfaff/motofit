@@ -1013,11 +1013,11 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				if(numTimeSlices < 0 || numtype(numTimeSlices))
 					numTimeSlices = 1
 				endif
-				if(Pla_openStreamer(eventStreaming, dataset = scanpoint))
+				if(Pla_openStreamer(inputPathStr + eventStreamingFile, dataset = scanpoint))
 					print "ERROR opening streaming dataset (processNexusfile)"
 					abort
 				endif
-				make/o/d/n=(numTimeSlices) BM1counts = bm1_counts/numTimeSlices
+				make/o/d/n=(numTimeSlices) BM1counts = bm1_counts[scanpoint]/numTimeSlices
 				make/o/d/n=(numTimeSlices) dBM1counts = sqrt(BM1counts)
 			
 				//now histogram the events.
@@ -1027,8 +1027,8 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				Wave streamedDetector = Pla_streamedDetectorImage(xbins, ybins, tbins, frequency[scanpoint] / 60, numTimeSlices)
 			
 				make/o/d/n=(dimsize(tbins, 0) - 1, dimsize(ybins, 0) - 1, numTimeSlices) detector = 0
-				for(ii = 0 ; ii < dimsize(hmm, 3) ; ii += 1)
-					multithread detector[][][] += hmm[r][p][q][ii]
+				for(ii = 0 ; ii < dimsize(streamedDetector, 3) ; ii += 1)
+					multithread detector[][][] += streamedDetector[r][p][q][ii]
 				endfor
 				duplicate/o detector, detectorSD
 				multithread detectorSD = sqrt(detectorSD)	
