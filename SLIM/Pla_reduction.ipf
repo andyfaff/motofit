@@ -511,7 +511,6 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		//therefore SORT->WRITE->REVERSE SORT
 		//
 		make/n=(dimsize(M_q, 0))/d/free qq, RR, dR, dQ
-		newpath/o/q/z pla_temppath_write, outputpathStr
 
 		for(ii = 0 ; ii < numspectra ; ii += 1)
 			RR[] = W_ref[p][ii]
@@ -523,9 +522,10 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 			
 			fname = cutfilename(angle0)
 			if(dontoverwrite)
-				fname = uniqueFileName(outputPathStr, fname, ".xml")
+				fname = uniqueFileName(outputPathStr, fname, ".dat")
 			endif
-			open/P=pla_temppath_write/z=1 fileID as fname + ".dat"
+			newpath/o/q/z pla_temppath_write, outputpathStr
+			open/P=pla_temppath_write fileID as fname + ".dat"
 			
 			if(V_flag == 0)
 				fprintf fileID, "Q (1/A)\t Ref\t dRef (SD)\t dq(FWHM, 1/A)\n"
@@ -534,6 +534,10 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 			endif
 			
 			//this only writes XML for a single file
+			fname = cutfilename(angle0)
+			if(dontoverwrite)
+				fname = uniqueFileName(outputPathStr, fname, ".xml")
+			endif
 			Wave/t user = $(angle0DF + ":user:name")
 			Wave/t samplename = $(angle0DF + ":sample:name")			
 			writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, "", user[0], samplename[0], angle0, reductionCmd)
@@ -663,7 +667,7 @@ Function/t uniqueFileName(outputPathStr, filename, ext)
 	newpath/o/q/z pla_temppath_write, outputPathStr		
 	theFiles = indexedFile(pla_temppath_write, -1, ext)
 	killpath/z pla_temppath_write
-	theUniqueName = filename
+	theUniqueName = filename + "_0"
 	//the file already exists, increment a number
 	for(ii=1; whichListItem(theUniqueName + ext, theFiles) > -1 ; ii+=1)
 		theUniqueName = filename + "_" + num2istr(ii)
