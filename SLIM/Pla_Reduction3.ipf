@@ -368,15 +368,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						if(reduce(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_centre = expected_centre, manual=manualbeamfind, dontoverwrite = dontoverwrite, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec))
 							print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
 						endif
-					endfor
-					Doalert 1, "Do you want to delete opened files (it reduces IGOR's memory usage)?"
-					if(V_flag == 1)
-						setdatafolder root:packages:platypus:data:Reducer
-						dfref dfr = getdatafolderDFR()
-						for(ii = 0 ; countobjectsdfr(getdatafolderdfr(), 4) && ii < 1000 ; ii += 1)
-							killdatafolder/z $(getindexedObjNameDFR(getdatafolderdfr(), 4, 0))
-						endfor
-					endif		
+					endfor	
 					break
 				case "showreducervariables_tab0":
 					reducerVariablesPanel() 

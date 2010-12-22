@@ -85,7 +85,7 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 		//now lets produce the background subtracted, integrated spectrum
 		deletepoints/M=1 hiPx+1, dimsize(temp, 1), temp, tempSD
 		deletepoints/M=1 0, loPx, temp, tempSD
-		make/d/o/n=(dimsize(temp, 0), dimsize(temp, 2)) M_spec = 0, M_specSD
+		make/d/o/n=(dimsize(temp, 0), dimsize(temp, 2)) M_spec = 0, M_specSD = 0
 		for(ii = 0 ; ii < dimsize(temp, 2) ; ii += 1)
 			imagetransform/p=(ii) sumallrows temp
 			Wave W_sumrows
@@ -138,7 +138,7 @@ Function createWaterNormalisationWave(waterrun, fileName)
 	
 	string cDF = getdatafolder(1)
 	variable tempVar, retval=0, lowestX, highestX
-	string waterDF = getwavesdatafolder(waterrun,1)
+	string waterDF = getwavesdatafolder(waterrun, 1)
 	string tempDF = "root:packages:platypus:data:Reducer:"+filename
 	
 	waterDF = removelistitem(itemsinlist(waterDF,":")-1,waterDF,":")
@@ -157,7 +157,7 @@ Function createWaterNormalisationWave(waterrun, fileName)
 		Wave watXbin = $(waterDF+"data:x_bin")
 		Wave dataXbin = $(tempDF+":data:x_bin")
 		highestX = (binarysearch(watXbin, dataXbin[0]))
-		lowestX = (binarysearch(watXbin, dataXbin[dimsize(dataXbin,0)]))
+		lowestX = (binarysearch(watXbin, dataXbin[dimsize(dataXbin,0) - 1]))
 		deletepoints/M=2 lowestX+1, dimsize(M_waternorm, 2), M_waternorm
 		deletepoints/M=2 0, highestX, M_waternorm
 		

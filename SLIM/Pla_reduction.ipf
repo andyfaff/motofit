@@ -54,13 +54,13 @@
 	//We'll have two
 	//StrConstant PATH_TO_DATA = "Macintosh HDD:Users:andrew:Documents:Andy:Platypus:TEMP:"
 
-Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilename, lowlambda, highlambda, rebin, [scanpointrange, eventStreaming, water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, freeMemory])
+Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilename, lowlambda, highlambda, rebin, [scanpointrange, eventStreaming, water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
 	string inputPathStr, outputPathStr
 	variable scalefactor
 	string runfilename
 	variable lowLambda,highLambda, rebin
 	string scanpointrange, eventStreaming, water
-	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, freeMemory
+	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose
 	
 	//produces a reflectivity curve for a given angle
 	//ONLY ONE ANGLE IS REDUCED
@@ -88,7 +88,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	//background = whether you want to subtract background (1=TRUE, 0 = FALSE), 1 is default
 	//expected_centre = where you expect to see the specular ridge, in detector pixels
 	//manual = 1 if you would like to manually choose beam centres/FWHM, otherwise it is done automatically
-	//dontoverwrite = 1 if you want to create unique names everytime you reduce the file. (default == 0)
+	//dontoverwrite = 1 if you want to create unique names everytime you reduce the file. (default == 1)
 	//normalise = 1 if you want to normalise by beam monitor counts (default == 1)
 	//saveSpectrum = 1 if you want to save the reflected file spectrum (default == 0)
 	//saveoffspec=1 if you want to save an offspecular map (default == 0)
@@ -122,6 +122,8 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	endif
 	if(paramisdefault(scanpointrange))
 		scanpointrange = ""
+	else
+		scanpointrange = replacestring(" ", scanpointrange, "")
 	endif
 	if(paramisdefault(eventStreaming))
 		eventStreaming = ""
@@ -136,7 +138,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		manual = 0
 	endif
 	if(paramisdefault(dontoverwrite))
-		dontoverwrite = 0
+		dontoverwrite = 1
 	endif
 	if(paramisdefault(normalise))
 		normalise = 1
@@ -147,14 +149,19 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	if(paramisdefault(saveoffspec))
 		saveoffspec = 0
 	endif
-	if(paramisdefault(freeMemory))
-		freeMemory = 1
+	if(paramisdefault(water))
+		water = ""
 	endif
+	if(paramisdefault(verbose))
+		verbose = 1
+	endif
+	
 	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
 	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=\"%s\",water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
 	sprintf reductionCmd, cmd, inputPathStr, outputPathStr, scalefactor, runfilename, lowLambda, highLambda, rebin, background, scanpointrange, eventstreaming, water, expected_centre, manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
-	print reductionCmd
-	
+	if(verbose)
+		print reductionCmd
+	endif
 	try
 		setdatafolder "root:packages:platypus:data:Reducer"
 		//set the data to load
@@ -192,11 +199,9 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		endif
 		
 		if(!paramisdefault(water) && strlen(water)>0)
-			if(!datafolderexists("root:packages:platypus:data:Reducer:"+cleanupname(removeending(water, ".nx.hdf"),0)))
-				if(loadNexusFile(inputPathStr, water, outputPathStr = outputpathStr))
-					print "Error loading water run (reduce)"
-					abort
-				endif
+			if(loadNexusFile(inputPathStr, water, outputPathStr = outputpathStr))
+				print "Error loading water run (reduce)"
+				abort
 			endif
 		endif
 		
@@ -315,8 +320,8 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 			case "POLANAL":
 			case "MT":
 				//					omega = Pi*sth[0]/180
-				multithread	 omega[][] = atan(((M_beamposA0[p][q] + DetectorHeightA0[0]) - (M_directbeampos[p][q] + DetectorHeightD[0]))/DetectorposA0[0])/2
-				multithread M_twotheta[][][] = atan((( (q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (M_directbeampos[p][r] + DetectorHeightD[0]))/DetectorposA0[0])
+				multithread omega[][] = atan(((M_beamposA0[p][q] + DetectorHeightA0[0]) - (M_directbeampos[p][0] + DetectorHeightD[0]))/DetectorposA0[0])/2
+				multithread M_twotheta[][][] = atan((( (q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (M_directbeampos[p][0] + DetectorHeightD[0]))/DetectorposA0[0])
 				if(omega[0][0] < 0)
 					omega = 0 - omega
 					M_twotheta = 0 - M_twotheta
@@ -325,13 +330,13 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 			case "SB":
 				//					Wave m1ro =  $(angle0DF+":instrument:collimator:rotation");ABORTonRTE
 				//					omega = m1ro[0]
-				multithread omega[][] = atan(((M_beamposA0[p][q] + DetectorHeightA0[0]) - (M_directbeampos[p][q] + DetectorHeightD[0]))/(2*DetectorposA0[0]))
-				multithread M_twotheta[][][] = omega[p][r] + atan((((q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (M_directbeampos[p][r] + DetectorHeightD[0]) - (DetectorposA0[0] * tan(omega[p][r])))/DetectorposA0[0])
+				multithread omega[][] = atan(((M_beamposA0[p][q] + DetectorHeightA0[0]) - (M_directbeampos[p][0] + DetectorHeightD[0]))/(2*DetectorposA0[0]))
+				multithread M_twotheta[][][] = omega[p][r] + atan((((q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (M_directbeampos[p][0] + DetectorHeightD[0]) - (DetectorposA0[0] * tan(omega[p][r])))/DetectorposA0[0])
 				break
 			case "DB":		//angle of incidence for DB is always 4.8
 				//					omega = 4.8 * Pi/180
-				multithread omega[][] = atan(((M_beamposA0[p][q] + DetectorHeightA0[0]) - (M_directbeampos[p][q] + DetectorHeightD[0]))/(2*DetectorposA0[0]))
-				multithread M_twotheta[][][] = omega[p][r]+ atan((((q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (M_directbeampos[p][r] + DetectorHeightD[0]) - (DetectorposA0[0] * tan(omega[p][r])))/DetectorposA0[0])
+				multithread omega[][] = atan(((M_beamposA0[p][q] + DetectorHeightA0[0]) - (M_directbeampos[p][0] + DetectorHeightD[0]))/(2*DetectorposA0[0]))
+				multithread M_twotheta[][][] = omega[p][r]+ atan((((q * Y_PIXEL_SPACING) + DetectorHeightA0[0]) - (M_directbeampos[p][0] + DetectorHeightD[0]) - (DetectorposA0[0] * tan(omega[p][r])))/DetectorposA0[0])
 				break
 		endswitch
 		print "corrected angle of incidence for ",angle0, " is: ~",180*omega[0][0]/pi
@@ -346,11 +351,11 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		//this step probably produces negative reflectivities, or NaN if M_specD is 0.
 		//ALSO, 
 		//M_refSD has the potential to be NaN is M_topandtailA0 or M_specD is 0.
-		multithread M_ref[][][] = M_topandtailA0[p][q][r] / M_specD[p][r]
-//			M_refSD[][] =   (M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2 +(W_specDSD[p] / W_specD[p])^2 
+		multithread M_ref[][][] = M_topandtailA0[p][q][r] / M_specD[p][0]
+		//			M_refSD[][] =   (M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2 +(W_specDSD[p] / W_specD[p])^2 
 		M_refSD = 0	
 		multithread M_refSD[][][] += numtype((M_topandtailA0SD[p][q][r] / M_topandtailA0[p][q][r])^2) ? 0 : (M_topandtailA0SD[p][q][r] / M_topandtailA0[p][q][r])^2
-		multithread M_refSD[][][] += numtype((M_specDSD[p][r] / M_specD[p][r])^2) ? 0 : (M_specDSD[p][r] / M_specD[p][r])^2						
+		multithread M_refSD[][][] += numtype((M_specDSD[p][0] / M_specD[p][0])^2) ? 0 : (M_specDSD[p][0] / M_specD[p][0])^2						
 		
 		//now calculate the Q values for the detector pixels.  Each pixel has different 2theta and different wavelength, ASSUME that they have the same angle of incidence
 		multithread M_qz[][][]  = 2 * Pi * (1 / M_lambda[p][r]) * (sin(M_twotheta[p][q][r] - omega[p][r]) + sin(M_omega[p][q][r]))
@@ -387,119 +392,119 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		//multiply by bmon1_direct/bmon1_angle0
 		
 		//			//there should exist a global variable by the name of angle0DF + BM1counts, which is the summed BM1 count.
-//			//this normalisation can be done in processNexus file
-//			NVAR/z bmon1_counts_direct = $(directDF) + ":bm1counts"
-//			NVAR/z bmon1_counts_angle0 = $(angle0DF) + ":bm1counts"
-//			
-//			if(nvar_exists(bmon1_counts_direct) && nvar_exists(bmon1_counts_angle0))
-//				if(bmon1_counts_direct != 0 && bmon1_counts_angle0 != 0)
-//					temp =  ((sqrt(bmon1_counts_direct)/bmon1_counts_direct)^2 + (sqrt(bmon1_counts_angle0)/bmon1_counts_angle0)^2) //(dratio/ratio)^2
-//					
-//					multithread M_refSD += temp		//M_refSD is still fractional variance at this point.
-//					multithread M_ref *= bmon1_counts_direct/bmon1_counts_angle0
-//				endif
-//			endif
+		//			//this normalisation can be done in processNexus file
+		//			NVAR/z bmon1_counts_direct = $(directDF) + ":bm1counts"
+		//			NVAR/z bmon1_counts_angle0 = $(angle0DF) + ":bm1counts"
+		//			
+		//			if(nvar_exists(bmon1_counts_direct) && nvar_exists(bmon1_counts_angle0))
+		//				if(bmon1_counts_direct != 0 && bmon1_counts_angle0 != 0)
+		//					temp =  ((sqrt(bmon1_counts_direct)/bmon1_counts_direct)^2 + (sqrt(bmon1_counts_angle0)/bmon1_counts_angle0)^2) //(dratio/ratio)^2
+		//					
+		//					multithread M_refSD += temp		//M_refSD is still fractional variance at this point.
+		//					multithread M_ref *= bmon1_counts_direct/bmon1_counts_angle0
+		//				endif
+		//			endif
 
-			//M_refSD is still (dr/r)^2
+		//M_refSD is still (dr/r)^2
 		multithread M_refSD = sqrt(M_refSD)
 		multithread M_refSD *= M_ref
 			
-			//now cut out the pixels that aren't in the reflected beam
-//			deletepoints/M=1 hiPx+1, dimsize(M_ref,1), M_ref,M_refSD, M_qz, M_qzSD, M_omega, M_twotheta
-//			deletepoints/M=1 0, loPx, M_ref,M_refSD, M_qz, M_qzSD, M_omega, M_twotheta
+		//now cut out the pixels that aren't in the reflected beam
+		//			deletepoints/M=1 hiPx+1, dimsize(M_ref,1), M_ref,M_refSD, M_qz, M_qzSD, M_omega, M_twotheta
+		//			deletepoints/M=1 0, loPx, M_ref,M_refSD, M_qz, M_qzSD, M_omega, M_twotheta
 
-			//get a beam profile for normalisation, not all pixels contribute equally to the reflectivity signal
-//			make/o/d/n=(hiPx-loPx+1)  $(angle0DF + ":beam_profile")
-//			Wave beam_profile = $(angle0DF + ":beam_profile")
-//			for(jj=0 ; jj< numpnts(beam_profile) ; jj+=1)
-//				imagetransform/g=(loPx+jj) sumcol M_topandtailA0
-//				beam_profile[jj] = V_Value
-//			endfor		
-//			Wavestats/q/m=1 beam_profile
-//			beam_profile /= (V_sum)
-//			M_ref[][] *= (beam_profile[q])
+		//get a beam profile for normalisation, not all pixels contribute equally to the reflectivity signal
+		//			make/o/d/n=(hiPx-loPx+1)  $(angle0DF + ":beam_profile")
+		//			Wave beam_profile = $(angle0DF + ":beam_profile")
+		//			for(jj=0 ; jj< numpnts(beam_profile) ; jj+=1)
+		//				imagetransform/g=(loPx+jj) sumcol M_topandtailA0
+		//				beam_profile[jj] = V_Value
+		//			endfor		
+		//			Wavestats/q/m=1 beam_profile
+		//			beam_profile /= (V_sum)
+		//			M_ref[][] *= (beam_profile[q])
 
-/////////////////////////////
-/////////////////////////////
-			//constant wavelength binning, comment out if performing constant Q
-/////////////////////////////
-/////////////////////////////
-			make/n=(dimsize(M_qHIST, 0) - 1, numspectra)/o/d M_q, M_qSD
-			M_q[][]  = 0.5 * (M_qHIST[p][q] + M_qHIST[p + 1][q])
+		/////////////////////////////
+		/////////////////////////////
+		//constant wavelength binning, comment out if performing constant Q
+		/////////////////////////////
+		/////////////////////////////
+		make/n=(dimsize(M_qHIST, 0) - 1, numspectra)/o/d M_q, M_qSD
+		M_q[][]  = 0.5 * (M_qHIST[p][q] + M_qHIST[p + 1][q])
 
-//			LambdatoQ(W_qHIST, W_lambdaHIST, omega)
-			Multithread M_q[][] = LambdaToQ(M_lambda[p][q], omega[p][q])
+		//			LambdatoQ(W_qHIST, W_lambdaHIST, omega)
+		Multithread M_q[][] = LambdaToQ(M_lambda[p][q], omega[p][q])
 			
-			M_qSD[][] = (M_lambdaSD[p][q]/M_lambda[p][q])^2+(domega/omega[p][q])^2
-			M_qSD = sqrt(M_qSD)
-			M_qSD *= M_q
+		M_qSD[][] = (M_lambdaSD[p][q]/M_lambda[p][q])^2+(domega/omega[p][q])^2
+		M_qSD = sqrt(M_qSD)
+		M_qSD *= M_q
 			
-			make/d/n=(dimsize(M_q, 0), numspectra)/free W_ref = 0, W_refSD = 0
+		make/d/n=(dimsize(M_q, 0), numspectra)/free W_ref = 0, W_refSD = 0
 
-			duplicate/o M_ref, $(angle0DF+":M_reftemp")
-			duplicate/o M_refSD, $(angle0DF+":M_refSDtemp")
+		duplicate/o M_ref, $(angle0DF+":M_reftemp")
+		duplicate/o M_refSD, $(angle0DF+":M_refSDtemp")
 
-			Wave M_reftemp = $(angle0DF + ":M_reftemp")
-			Wave M_refSDtemp = $(angle0DF + ":M_refSDtemp")
+		Wave M_reftemp = $(angle0DF + ":M_reftemp")
+		Wave M_refSDtemp = $(angle0DF + ":M_refSDtemp")
 			
-			deletepoints/M=1 hiPx + 1, dimsize(M_ref, 1), M_reftemp, M_refSDtemp
-			deletepoints/M=1 0, loPx, M_reftemp, M_refSDtemp
+		deletepoints/M=1 hiPx + 1, dimsize(M_ref, 1), M_reftemp, M_refSDtemp
+		deletepoints/M=1 0, loPx, M_reftemp, M_refSDtemp
 
-			for(ii = 0 ; ii < numspectra ; ii += 1)
-				imagetransform/P=(ii) sumallrows M_reftemp
-				Wave W_sumrows
-				W_ref[][ii] = W_sumrows[p]
+		for(ii = 0 ; ii < numspectra ; ii += 1)
+			imagetransform/P=(ii) sumallrows M_reftemp
+			Wave W_sumrows
+			W_ref[][ii] = W_sumrows[p]
 			
-				for(jj = 0 ; jj < dimsize(M_reftemp, 1) ; jj += 1)
-					W_refSD[][ii] += M_refSDtemp[p][jj][ii]^2
-				endfor
-				W_refSD = sqrt(W_refSD)	
+			for(jj = 0 ; jj < dimsize(M_reftemp, 1) ; jj += 1)
+				W_refSD[][ii] += M_refSDtemp[p][jj][ii]^2
 			endfor
+		endfor
+		W_refSD = sqrt(W_refSD)	
 
-/////////////////////////////
-/////////////////////////////			
-			//Constant Q - doesn't work at the moment
-/////////////////////////////
-/////////////////////////////
-			//work out Q bins			
-//			histtopoint(W_qHIST)
-//			Wave W_point
-//			duplicate/o W_point, $(angle0DF + ":W_q")
-//			duplicate/o W_point, $(angle0DF + ":W_qSD")
-//			Wave W_q = $(angle0DF + ":W_q")
-//			Wave W_qSD = $(angle0DF + ":W_qSD")
-//			LambdatoQ(W_qHIST, W_lambdaHIST, omega)
-//			LambdatoQ(W_q, W_lambda, omega)
-//			//assume that W_qSD is the same as the middle row.
-//			W_qSD[] = M_qzSD[p][dimsize(M_qzSD,1)/2]
-//			
-//			Pla_histogram(W_qHIST, M_qz, M_ref, M_refSD)
-//			Wave W_signal, W_signalSD, W_binfiller
-//			duplicate/o W_signal, $(angle0DF + ":W_ref")
-//			duplicate/o W_signalSD, $(angle0DF + ":W_refSD")
-//			killwaves/Z W_signal, W_signalSD
-//			Wave W_ref = $(angle0DF + ":W_ref")
-//			Wave W_refSD = $(angle0DF + ":W_refSD")
-//			//			W_ref/=W_binfiller
-//			//			W_refSD/=W_binfiller
-//			
-//			//now we have to get rid of points at the start and end, because const Qz is diagonal on the detector - some Qz bins
-//			//are filled with a lot fewer points, it's just easiest to delete them.
-//			//Do the low Q end first (highest bin number).
-//			//work out the highest Qz value, this will be at the top left
-//			//need to work out which W_qHIST bin it falls into
-//			variable loQcutoff = binarysearch(W_qHIST, M_qz[inf][inf])
-//			variable hiQcutoff = binarysearch(W_qHIST, M_qz[0][0])
-//			//need to get rid of all Q points higher than this.  First for the point values, then for the histoversions
-//			deletepoints/M=0 loQcutoff+1, dimsize(W_q,0), W_q, W_ref,W_refSD, W_qSD, W_lambda
-//			deletepoints/M=0 loQcutoff+1, dimsize(W_q,0), W_beamposA0, W_specA0, W_specA0SD, W_specTOF, M_topandtailA0
-//			deletepoints/M=0 loQcutoff+1, dimsize(W_q,0), M_topandtailA0SD, W_lambdaSD, omega, M_qz, M_ref, M_refSD, M_qzSD, M_omega, M_twotheta
-//			deletepoints/M=0 loQcutoff+2, dimsize(W_qHIST,0), W_qHIST, W_specTOFHIST, W_lambdaHIST
-//			
-//			deletepoints/M=0 0, hiQcutoff, W_q, W_ref,W_refSD, W_qSD, W_lambda
-//			deletepoints/M=0 0, hiQcutoff, W_beamposA0, W_specA0, W_specA0SD, W_specTOF, M_topandtailA0
-//			deletepoints/M=0 0, hiQcutoff, M_topandtailA0SD, W_lambdaSD, omega, M_qz, M_ref, M_refSD, M_qzSD, M_omega, M_twotheta
-//			deletepoints/M=0 0, hiQcutoff, W_qHIST, W_specTOFHIST, W_lambdaHIST		
+		/////////////////////////////
+		/////////////////////////////			
+		//Constant Q - doesn't work at the moment
+		/////////////////////////////
+		/////////////////////////////
+		//work out Q bins			
+		//			histtopoint(W_qHIST)
+		//			Wave W_point
+		//			duplicate/o W_point, $(angle0DF + ":W_q")
+		//			duplicate/o W_point, $(angle0DF + ":W_qSD")
+		//			Wave W_q = $(angle0DF + ":W_q")
+		//			Wave W_qSD = $(angle0DF + ":W_qSD")
+		//			LambdatoQ(W_qHIST, W_lambdaHIST, omega)
+		//			LambdatoQ(W_q, W_lambda, omega)
+		//			//assume that W_qSD is the same as the middle row.
+		//			W_qSD[] = M_qzSD[p][dimsize(M_qzSD,1)/2]
+		//			
+		//			Pla_histogram(W_qHIST, M_qz, M_ref, M_refSD)
+		//			Wave W_signal, W_signalSD, W_binfiller
+		//			duplicate/o W_signal, $(angle0DF + ":W_ref")
+		//			duplicate/o W_signalSD, $(angle0DF + ":W_refSD")
+		//			killwaves/Z W_signal, W_signalSD
+		//			Wave W_ref = $(angle0DF + ":W_ref")
+		//			Wave W_refSD = $(angle0DF + ":W_refSD")
+		//			//			W_ref/=W_binfiller
+		//			//			W_refSD/=W_binfiller
+		//			
+		//			//now we have to get rid of points at the start and end, because const Qz is diagonal on the detector - some Qz bins
+		//			//are filled with a lot fewer points, it's just easiest to delete them.
+		//			//Do the low Q end first (highest bin number).
+		//			//work out the highest Qz value, this will be at the top left
+		//			//need to work out which W_qHIST bin it falls into
+		//			variable loQcutoff = binarysearch(W_qHIST, M_qz[inf][inf])
+		//			variable hiQcutoff = binarysearch(W_qHIST, M_qz[0][0])
+		//			//need to get rid of all Q points higher than this.  First for the point values, then for the histoversions
+		//			deletepoints/M=0 loQcutoff+1, dimsize(W_q,0), W_q, W_ref,W_refSD, W_qSD, W_lambda
+		//			deletepoints/M=0 loQcutoff+1, dimsize(W_q,0), W_beamposA0, W_specA0, W_specA0SD, W_specTOF, M_topandtailA0
+		//			deletepoints/M=0 loQcutoff+1, dimsize(W_q,0), M_topandtailA0SD, W_lambdaSD, omega, M_qz, M_ref, M_refSD, M_qzSD, M_omega, M_twotheta
+		//			deletepoints/M=0 loQcutoff+2, dimsize(W_qHIST,0), W_qHIST, W_specTOFHIST, W_lambdaHIST
+		//			
+		//			deletepoints/M=0 0, hiQcutoff, W_q, W_ref,W_refSD, W_qSD, W_lambda
+		//			deletepoints/M=0 0, hiQcutoff, W_beamposA0, W_specA0, W_specA0SD, W_specTOF, M_topandtailA0
+		//			deletepoints/M=0 0, hiQcutoff, M_topandtailA0SD, W_lambdaSD, omega, M_qz, M_ref, M_refSD, M_qzSD, M_omega, M_twotheta
+		//			deletepoints/M=0 0, hiQcutoff, W_qHIST, W_specTOFHIST, W_lambdaHIST		
 			
 		//
 		//now write the individual wave out to a file.  It is reverse sorted in q, sorted in lambda, and we want to keep that.
@@ -518,7 +523,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 			
 			fname = cutfilename(angle0)
 			if(dontoverwrite)
-				fname = uniqueFileName(outputPathStr, fname, ".dat")
+				fname = uniqueFileName(outputPathStr, fname, ".xml")
 			endif
 			open/P=pla_temppath_write/z=1 fileID as fname + ".dat"
 			
@@ -555,13 +560,13 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 End
 
 
-Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec])
+Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
 	string inputPathStr, outputPathStr
 	variable scalefactor
 	string runfilenames
 	variable lowLambda,highLambda, rebin
 	string water
-	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec
+	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose
 	
 	//produces a reflectivity curve for a given set of angles
 	//if you want to do kinetic reduction (e.g.  you want to examine streamed data, or reduce the individual plots within a single file) use reduceASingleFile directly
@@ -577,7 +582,7 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 		numpairs = itemsinlist(runfilenames)
 		for(ii = 0 ; ii < numpairs ; ii += 1)
 			thePair = stringfromlist(ii, runfilenames)
-			ifname = reduceASingleFile(inputPathStr, outputPathStr, scalefactor, thePair, lowlambda, highlambda, rebin, water=water, scanpointrange = "", background=background, expected_centre=expected_centre, manual=manual, dontoverwrite=dontoverwrite, normalise=normalise, saveSpectrum=savespectrum, saveoffspec=saveoffspec)
+			ifname = reduceASingleFile(inputPathStr, outputPathStr, scalefactor, thePair, lowlambda, highlambda, rebin, water=water, scanpointrange = "", background=background, expected_centre=expected_centre, manual=manual, dontoverwrite=dontoverwrite, normalise=normalise, saveSpectrum=savespectrum, saveoffspec=saveoffspec,verbose=verbose)
 			if(strlen(ifname) == 0)
 				print "ERROR whilst calling reduceasinglefile (reduce)"
 				abort
@@ -590,10 +595,14 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 		else
 			fname = "c_" + stringfromlist(0, toSplice)
 		endif	
-		sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, fname, toSplice, rebin
-		print cmd
-		if(spliceFiles(outputPathStr, fname, toSplice, rebin = rebin))
-			print "ERROR while splicing (reduce)";abort
+
+		if(itemsinlist(toSplice) > 1)
+			sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, fname, toSplice, rebin
+			print cmd
+		
+			if(spliceFiles(outputPathStr, fname, toSplice, rebin = rebin))
+				print "ERROR while splicing (reduce)";abort
+			endif
 		endif		
 	catch
 		
@@ -643,23 +652,23 @@ End
 
 Function/t uniqueFileName(outputPathStr, filename, ext)
 	string outputPathStr, filename, ext
-		string theFiles, theUniqueName = ""
-		variable ii
+	string theFiles, theUniqueName = ""
+	variable ii
 		
-		GetFileFolderInfo/q/z outputPathStr
-		if(V_flag)//path doesn't exist
-			print "ERROR please give valid path (uniqueFileName)"
-			return ""	
-		endif
-		newpath/o/q/z pla_temppath_write, outputPathStr		
-		theFiles = indexedFile(pla_temppath_write, -1, ext)
-		killpath/z pla_temppath_write
-		theUniqueName = filename
-		//the file already exists, increment a number
-		for(ii=1; whichListItem(theUniqueName + ext, theFiles) > -1 ; ii+=1)
-			theUniqueName = filename + "_" + num2istr(ii)
-		endfor 
-		return theUniqueName
+	GetFileFolderInfo/q/z outputPathStr
+	if(V_flag)//path doesn't exist
+		print "ERROR please give valid path (uniqueFileName)"
+		return ""	
+	endif
+	newpath/o/q/z pla_temppath_write, outputPathStr		
+	theFiles = indexedFile(pla_temppath_write, -1, ext)
+	killpath/z pla_temppath_write
+	theUniqueName = filename
+	//the file already exists, increment a number
+	for(ii=1; whichListItem(theUniqueName + ext, theFiles) > -1 ; ii+=1)
+		theUniqueName = filename + "_" + num2istr(ii)
+	endfor 
+	return theUniqueName
 End
 
 Function expandStrIntoPossibleFileName(fileStub, righteousFileName)
@@ -766,11 +775,12 @@ Function doesNexusfileExist(inputPathStr, filename)
 	endif
 End
 
-Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, rebinning, normalise])
+Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose])
 	string inputPathStr, outputPathStr, fileName
 	variable background, loLambda, hiLambda
 	string water, scanpointrange, eventStreaming
-	variable isDirect, expected_centre, expected_width, omega, two_theta, manual, saveSpectrum, normalise
+	variable isDirect, expected_centre, expected_width, omega, two_theta, manual, saveSpectrum, normalise,verbose
+	
 	Wave/z rebinning
 	//processes a loaded NeXUS file.
 	//returns 0 if successful, non zero otherwise
@@ -791,7 +801,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	//eventStreaming = if there is only one spectrum to be processed (as would be the case if there is only one point in the file, or if the scanpoint range is e.g. 1>1) then this string is used to load
 	//						neutron event based data.  The string should have the form  "DAQ_2010-12-20T12-12-12:4".  This means split a single acquisition into 4 individual spectra containing
 	//						the data in the first quarter of time, 2nd quarter of time, etc.
-	 //saveSpectrumLoc = if this variable !=0 then the spectrum is saved to file.
+	//saveSpectrumLoc = if this variable !=0 then the spectrum is saved to file.
 	
 	//first thing we will do is  average over x, possibly rebin, subtract background on timebin by time bin basis, then integrate over the foreground
 	//files will be loaded into root:packages:platypus:data:Reducer:+cleanupname(removeending(fileStr,".nx.hdf"),0)
@@ -801,7 +811,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	
 	variable ChoD, toffset, nrebinpnts,ii, jj, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint, MASTER_OPENING
 	variable originalScanPoint, scanpoint, numTimeSlices, numSpectra, typeOfIntegration
-	string tempDF, cDF,tempDFwater, eventStreamingFile
+	string tempDF, cDF,tempDFwater, eventStreamingFile, cmd, proccmd
 	Wave/z hmmWater
 	
 	//create the data folder structure
@@ -830,6 +840,14 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	if(paramisdefault(expected_centre))
 		expected_centre = ROUGH_BEAM_POSITION
 	endif
+	if(paramisdefault(verbose))
+		verbose = 1
+	endif
+	if(paramisdefault(water))
+		water = ""
+	endif
+
+	
 	//figure out if you are doing a directbeam run
 	if(paramisdefault(isDirect))
 		Doalert 1,"Is "+ filename + " a direct beamrun?"
@@ -839,7 +857,6 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			isDirect = 0
 		endif
 	endif
-
 
 	try
 		//try and load the data
@@ -879,7 +896,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 
 			doprompt filename + ", start and finish points: "+filename, scanpoint, finishingPoint
 			if(V_Flag)
-			print "DIDN'T WANT TO ENTER A scanpoint (processNexusFile)"
+				print "DIDN'T WANT TO ENTER A scanpoint (processNexusFile)"
 				abort
 			endif
 			scanpoint = round(scanpoint)
@@ -903,7 +920,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				finishingpoint = str2num(scanpointrange)
 			endif
 			scanpoint = round(scanpoint)
-			finishingpoint = round(scanpoint)
+			finishingpoint = round(finishingpoint)
 			if(numtype(scanpoint) || numtype(finishingpoint) || scanpoint < -1 || scanpoint > dimsize(hmm, 0) -1)
 				abort "Incorrect range for scanpoints, specify as 1-100 (processNexusfile)"
 			endif
@@ -1084,7 +1101,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		//work out what the total expected width of the beam is
 		//from De Haan1995
 		if(paramisdefault(expected_width))
-			calculated_width = 2 * (ss3vg[scanpoint]/2 + ((ss2vg[scanpoint] + ss3vg[scanpoint])*(detectorpos[scanpoint]+sample_distance[scanpoint]-slit3_distance[scanpoint])/(2*(slit3_distance[scanpoint]-slit2_distance[scanpoint])))) / Y_PIXEL_SPACING
+			calculated_width = 2 * (ss3vg[scanpoint]/2 + ((ss2vg[scanpoint] + ss3vg[scanpoint])*(detectorpos[scanpoint]+sample_distance[0]-slit3_distance[0])/(2*(slit3_distance[0]-slit2_distance[0])))) / Y_PIXEL_SPACING
 			expected_width = 2.5* calculated_width +2
 		endif
 			
@@ -1155,7 +1172,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				Wave slave = $(tempDF+":instrument:parameters:slave")
 				Wave master = $(tempDF+":instrument:parameters:master")
 				phaseangle = 0
-				if(slave < 1 || slave > 4 || master < 1 || master > 4)
+				if(slave[0] < 1 || slave[0] > 4 || master[0] < 1 || master[0] > 4)
 					print "ERROR master/slave pairing is incorrect (processNexusfile)"
 					abort
 				endif
@@ -1289,7 +1306,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			Wave detector, detectorSD
 			
 			redimension/n=(dimsize(rebinning, 0), -1) M_lambdaHIST, M_specTOFHIST
-			M_lambdaHIST = rebinning			
+			M_lambdaHIST[][] = rebinning[p][q]			
 			Multithread M_specTOFHIST[][] = LambdatoTOF(M_lambdaHIST[p][q], chod)			
 			killwaves/z W_tof, M_rebin, M_rebinSD
 			
@@ -1420,10 +1437,32 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			endif
 		endif
 	
-	killwaves/z W_point, detector, detectorSD
-	setdatafolder $cDF
-	return 0
-catch
+		killwaves/z W_point, detector, detectorSD
+		setdatafolder $cDF
+	
+		if(verbose)
+			if(waveexists(rebinning))
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_centre=%g, expected_width=%g, omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
+			else
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_centre=%g, expected_width=%g, omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, normalise,verbose		
+			endif
+			print proccmd
+		endif
+		return 0
+	catch
+	
+		if(verbose)
+			if(!paramisdefault(rebinning) && waveexists(rebinning))
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_centre=%g, expected_width=%g, omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
+			else
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_centre=%g, expected_width=%g, omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, normalise,verbose		
+			endif
+			print proccmd
+		endif
 		killwaves/z W_point, detector, detectorSD
 		setdatafolder $cDF
 		return 1
@@ -1431,16 +1470,16 @@ catch
 End
 
 Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda)
-String outputPathStr, fname, runnumber
-Wave II, dI, lambda, dlambda
-//a function to save a spectrum file to disc.
-//pathname = string containing the path to where the data needs to be saved.
-//fname = the filename of the the file you want to write
-//runnumber = the runnumber of the file
-//II = the wave containing the intensities
-//dI = the uncertainty in the intensities (SD)
-//lambda = the wavelength (A)
-//dlambda = the uncertainty in wavelength (FWHM)
+	String outputPathStr, fname, runnumber
+	Wave II, dI, lambda, dlambda
+	//a function to save a spectrum file to disc.
+	//pathname = string containing the path to where the data needs to be saved.
+	//fname = the filename of the the file you want to write
+	//runnumber = the runnumber of the file
+	//II = the wave containing the intensities
+	//dI = the uncertainty in the intensities (SD)
+	//lambda = the wavelength (A)
+	//dlambda = the uncertainty in wavelength (FWHM)
 	variable fileID, kk
 	string data = "", uniquefName
 	
@@ -1476,6 +1515,10 @@ Wave II, dI, lambda, dlambda
 		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run[1]","","filename", runnumber +".nx.hdf")
 	
 		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","dim", num2istr(dimsize(II, 0)))
+		
+		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]","","reductionnote","",1)
+		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]/reductionnote[1]","","software","SLIM")
+		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]/reductionnote[1]","","version", num2istr(Pla_getVersion()))
 		
 		imagetransform/g=(kk) getCol II
 		Wave W_extractedCol
@@ -1925,7 +1968,7 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 		newdatafolder/o root:packages:platypus:data:reducer
 		newdatafolder/o/s root:packages:platypus:data:reducer:temp
 	 
-	 	GetFileFolderInfo/q/z outputPathStr
+		GetFileFolderInfo/q/z outputPathStr
 		if(V_flag)//path doesn't exist
 			print "ERROR please give valid path (spliceFiles)"
 			return 1	
