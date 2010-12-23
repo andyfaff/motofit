@@ -642,6 +642,7 @@ Function finishScan(status)
 		else
 			FIZscanFileNumber += 1
 		endif
+		Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
 		string fname =  "FIZscan" + num2str(FIZscanFileNumber) + ".itx"
 		save/o/t/p=PATH_TO_DATA position, counts as fname
 		print "FPXscan (position vs counts) saved to ", parsefilepath(5, S_Path+fname, "*", 0, 1)
