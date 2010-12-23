@@ -499,7 +499,7 @@ Function catalogueFIZ(pathName[, start, finish])
 
 //Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
 
-		make/o/t/N=(0, 5) runlist
+		make/o/t/N=(0, 6) runlist
 		for(ii = 0 ; ii < itemsinlist(fizfiles) ; ii+=1)
 			sscanf stringfromlist(ii, fizfiles), "FIZscan%d%*[.]itx", fnum
 			if(fnum >= firstfile && fnum <= lastfile && fnum >= start && fnum <= finish)
@@ -514,16 +514,18 @@ Function catalogueFIZ(pathName[, start, finish])
 			string theNote = note(wav0)			
 			redimension/n=(dimsize(runlist, 0) + 1, -1) runlist						
 			runlist[ii][0] = num2str(fnum)
-			runlist[ii][1] = stringbykey("data", theNote)
-			runlist[ii][2] = stringbykey("DAQ", theNote)
-			runlist[ii][3] = stringbykey("DATE", theNote)
-			runlist[ii][4] = stringbykey("TIME", theNote)
+			runlist[ii][1] = num2istr(dimsize(wave0, 0))
+			runlist[ii][2] = stringbykey("data", theNote)
+			runlist[ii][3] = stringbykey("DAQ", theNote)
+			runlist[ii][4] = stringbykey("DATE", theNote)
+			runlist[ii][5] = stringbykey("TIME", theNote)
 		endfor
 		setdimlabel 1,0,run_number, runlist
-		setdimlabel 1, 1, datefilename, runlist
-		setdimlabel 1,2,DAQfolder, runlist
-		setdimlabel 1,3,theDate, runlist
-		setdimlabel 1,4,theTime, runlist
+		setdimlabel 1,1,num_points, runlist
+		setdimlabel 1, 2, datefilename, runlist
+		setdimlabel 1,3, DAQfolder, runlist
+		setdimlabel 1,4,theDate, runlist
+		setdimlabel 1,5,theTime, runlist
 		edit/k=1/N=Platypus_run_list runlist.ld as "Platypus Run List"
 	catch
 	endtry
