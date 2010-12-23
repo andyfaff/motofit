@@ -8,7 +8,25 @@
 
 
 Menu "Platypus"
-	"Catalogue data",catalogueNexusdata()
+	"Catalogue HDF data",catalogueNexusdata()
+	"Catalogue FIZ data", catalogueFIZdata()
+End
+
+Function catalogueFIZdata()
+	newpath/o/z/q/M="Where are the FIZ files?" PATH_TO_DATAFILES
+	if(V_flag)
+		print "ERROR path to data is incorrect (catalogueFIZdata)"
+		return 1
+	endif
+	pathinfo PATH_TO_DATAFILES
+	variable start=1,finish=100000
+	prompt start,"start"
+	prompt finish,"finish"
+	Doprompt "Enter the start and end files",start, finish
+	If(V_flag)
+		abort
+	endif
+	catalogueFIZ(S_path,start=start,finish=finish)	
 End
 	
 Function catalogueNexusdata()
@@ -25,11 +43,11 @@ Function catalogueNexusdata()
 	If(V_flag)
 		abort
 	endif
-	catalogue(S_path,start=start,finish=finish)
+	catalogueHDF(S_path,start=start,finish=finish)
 	print "file:///"+S_path+"catalogue.xml" 
 End
 
-Function catalogue(pathName[, start, finish])
+Function catalogueHDF(pathName[, start, finish])
 	String pathName
 	variable start, finish
 
@@ -442,4 +460,75 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 			abort
 		endif 
 	endif
+End
+
+Function catalogueFIZ(pathName[, start, finish])
+	String pathName
+	variable start, finish
+
+	string cDF = getdatafolder(1)
+	string fizfiles,tempStr
+	variable temp,ii,jj,firstfile, lastfile, fnum
+
+	newdatafolder/o root:packages
+	newdatafolder/o root:packages:platypus
+	newdatafolder/o/s root:packages:platypus:catalogue
+	
+	if(paramisdefault(start))
+		start = 1
+	endif
+
+	try
+		newpath/o/z/q PATH_TO_DATAFILES, pathname
+		if(V_flag)
+			print "ERROR path to data is incorrect (catalogueFIZ)"
+			abort
+		endif
+	
+		fizfiles = sortlist(indexedfile(PATH_TO_DATAFILES,-1,".itx"),";",16)
+		fizfiles = replacestring(".itx", fizfiles,"")
+		fizfiles = greplist(fizfiles, "^FIZscan")
+		
+		sscanf stringfromlist(0, fizfiles), "FIZscan%d%*[.]itx", firstfile
+		sscanf stringfromlist(itemsinlist(fizfiles)-1, fizfiles),"FIZscan%d%*[.]itx",lastfile
+		if(paramisdefault(finish))
+			finish = lastfile
+		endif
+	
+		jj = 0
+
+//Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
+
+		make/o/t/N=(0, 5) runlist
+		for(ii = 0 ; ii < itemsinlist(fizfiles) ; ii+=1)
+			sscanf stringfromlist(ii, fizfiles), "FIZscan%d%*[.]itx", fnum
+			if(fnum >= firstfile && fnum <= lastfile && fnum >= start && fnum <= finish)
+			else
+				continue
+			endif
+			loadWave/o/q/T/P=PATH_TO_DATAFILES, stringfromlist(ii, fizfiles) + ".itx"
+
+			Wave wav0 = $(stringfromlist(0, S_wavenames))
+			Wave wav1 = $(stringfromlist(1, S_wavenames))
+			
+			string theNote = note(wav0)			
+			redimension/n=(dimsize(runlist, 0) + 1, -1) runlist						
+			runlist[ii][0] = num2str(fnum)
+			runlist[ii][1] = stringbykey("data", theNote)
+			runlist[ii][2] = stringbykey("DAQ", theNote)
+			runlist[ii][3] = stringbykey("DATE", theNote)
+			runlist[ii][4] = stringbykey("TIME", theNote)
+		endfor
+		setdimlabel 1,0,run_number, runlist
+		setdimlabel 1, 1, datefilename, runlist
+		setdimlabel 1,2,DAQfolder, runlist
+		setdimlabel 1,3,theDate, runlist
+		setdimlabel 1,4,theTime, runlist
+		edit/k=1/N=Platypus_run_list runlist.ld as "Platypus Run List"
+	catch
+	endtry
+
+	Killpath/z PATH_TO_DATAFILES
+
+	setdatafolder $cDF
 End
