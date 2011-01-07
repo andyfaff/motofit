@@ -627,35 +627,11 @@ Function finishScan(status)
 	endif
 
 	//save the scan itself, not the overall data, just counts vs position
-<<<<<<< .mine
 	Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
 	string fname =  "FIZscan" + num2str(getFIZscanNumberAndIncrement()) + ".itx"
 	save/o/t position, counts as PATH_TO_DATA + "FIZ:" + fname
 	print "FPXscan (position vs counts) saved to ", PATH_TO_DATA + "FIZ:" + fname
 	print "file saved as: ", gethipaval("/experiment/file_name")
-=======
-	Newpath/o/q/z PATH_TO_DATA, PATH_TO_DATA+"extras:"
-	PATHinfo PATH_TO_DATA
-	if(V_flag)
-		if(!NVAR_exists(FIZscanFileNumber))
-			string files = greplist(IndexedFile(PATH_TO_DATA, -1, ".itx", "IGR0"), "^FIZscan")	// all Igor text files
-			string lastfile = ""
-			files = sortlist(files, ";", 16)
-			lastfile = stringfromlist(itemsinlist(files) - 1, files)
-			lastfile = removeending(lastfile, ".itx")
-			lastfile = replacestring("FIZscan", lastfile, "")
-			Variable/g root:packages:platypus:data:scan:FIZscanFileNumber = str2num(lastfile) + 1
-			NVAR/z FIZscanFileNumber = root:packages:platypus:data:scan:FIZscanFileNumber
-		else
-			FIZscanFileNumber += 1
-		endif
-		Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
-		string fname =  "FIZscan" + num2str(FIZscanFileNumber) + ".itx"
-		save/o/t/p=PATH_TO_DATA position, counts as fname
-		print "FPXscan (position vs counts) saved to ", parsefilepath(5, S_Path+fname, "*", 0, 1)
-		print "file saved as: ", gethipaval("/experiment/file_name")
-	endif
->>>>>>> .r374
 	
 	//display the scan in an easy to killgraph
 	Dowindow/k fpxScan
