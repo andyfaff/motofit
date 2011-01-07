@@ -1,4 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
+#pragma IgorVersion = 6.2
 
 // SVN date:    $Date$
 // SVN author:  $Author$
