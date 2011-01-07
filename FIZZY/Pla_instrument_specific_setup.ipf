@@ -29,7 +29,7 @@
 	Constant 	MOXA2serverPort = 4002
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
-	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:current:"
+	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
 	Constant ChopperN_delay = 2.491		// a time delay between the first chopper pulse and chopper N
 
 	
