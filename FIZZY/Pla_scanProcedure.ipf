@@ -627,6 +627,13 @@ Function finishScan(status)
 	endif
 
 	//save the scan itself, not the overall data, just counts vs position
+<<<<<<< .mine
+	Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
+	string fname =  "FIZscan" + num2str(getFIZscanNumberAndIncrement()) + ".itx"
+	save/o/t position, counts as PATH_TO_DATA + "FIZ:" + fname
+	print "FPXscan (position vs counts) saved to ", PATH_TO_DATA + "FIZ:" + fname
+	print "file saved as: ", gethipaval("/experiment/file_name")
+=======
 	Newpath/o/q/z PATH_TO_DATA, PATH_TO_DATA+"extras:"
 	PATHinfo PATH_TO_DATA
 	if(V_flag)
@@ -648,6 +655,7 @@ Function finishScan(status)
 		print "FPXscan (position vs counts) saved to ", parsefilepath(5, S_Path+fname, "*", 0, 1)
 		print "file saved as: ", gethipaval("/experiment/file_name")
 	endif
+>>>>>>> .r374
 	
 	//display the scan in an easy to killgraph
 	Dowindow/k fpxScan
@@ -774,6 +782,30 @@ Function finishScan(status)
 	ValDisplay/z progress_tab1, win=SICScmdpanel, limits={0,0,0}
 	ctrlnamedbackground scanTask, kill=1
 	return err
+End
+
+//grab the file number that you need to save the FIZscan to
+Function getFIZscanNumberAndIncrement()
+	variable fileID, fizscannumber = 0
+	string theLine = ""
+	open/z fileID as PATH_TO_DATA + "FIZ:fizscannumber"
+	if(V_flag != 0)
+		return -1
+	endif
+	fstatus fileID
+	theLine = padString(theLine, V_logEOF, 0x20)
+	freadline fileID, theLine
+
+	fizscannumber = str2num(theLine)
+	if(fizscannumber > 0)
+		fizscannumber += 1
+	endif
+
+	fsetpos fileID, 0
+	fprintf fileID, "%d", fizscannumber
+
+	close fileID
+	return fizscannumber
 End
 
 Function fillScanStats(w,point,full)
