@@ -67,33 +67,44 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	//ONLY ONE ANGLE IS REDUCED
 	//returns the unique reduced file name if succesful, or a 0 length string otherwise
 	
-	//pathname = a string containing the location of the file, e.g. "C:Documents And Settings:andrew:data:"
-	//scalefactor = data is divided by this number to produce a correct critical edge.
-	//runfilename = run names for reflected and direct data in key:value; form.  i.e. reflectrun1:directrun1
-	//						If your scan has more than one point in it, e.g. kinetic data you can enter a range of points using scanpoint range.
-	//lowLambda = cutoff, wavelengths below this value are discarded.
-	//highLambda = cutoff, wavelengths above this value are discarded.
-	//rebin = dlambda/lambda for rebinning.  e.g. 3% = 3.
-	
-	//OPTIONAL
-	//water = runfile containing water data for detector normalisation
-	//scanpointrange = if a datafile contains several images this variable controls which are processed.
-	//						e.g. "1>20"	 would use points 1 to 20 from the reflected beam run. (counting starts from 0)
-	//						If you set the range to -1, then individual scans in a single file are reduced separately.
-	//						If the range isn't specified then individual scans in a single file are accumulated.
-	//						If there is only one scan point (specified, or not specified) AND the eventStreaming string is set,then the neutron events are 
-	//						split into different images.  This is useful for kinetic data.
-	//eventStreaming = name of folder containing the streamed events.  This string should also contain the number of splits, e.g.
-	//							DAQ_2010-12-20T12-12-12:4 would split the events in that file into 4 sub files which you could then analyse.
-
-	//background = whether you want to subtract background (1=TRUE, 0 = FALSE), 1 is default
-	//expected_centre = where you expect to see the specular ridge, in detector pixels
-	//manual = 1 if you would like to manually choose beam centres/FWHM, otherwise it is done automatically
-	//dontoverwrite = 1 if you want to create unique names everytime you reduce the file. (default == 1)
-	//normalise = 1 if you want to normalise by beam monitor counts (default == 1)
-	//saveSpectrum = 1 if you want to save the reflected file spectrum (default == 0)
-	//saveoffspec=1 if you want to save an offspecular map (default == 0)
-	//freememory = 1 if you want to remove the loaded files from memory at the end of the reduction (default==1)
+//	inputPathStr - string containing the place where the data resides, e.g. "C:platypus:My Documents:Desktop:data"
+//	outputPathStr - string containing the place where the reduced data will reside, e.g. "C:platypus:My Documents:Desktop:data:output"
+//	
+//	scalefactor - data is divided by this variable to produce a correct critical edge, should normally be 1.
+//	
+//	runfilename - string containing run names for the reflected and direct beams in key:value form, i.e. - "PLP0003011:PLP0003010" (reflected:direct)
+//	
+//	lowlambda - variable specifying the low wavelength cutoff (Angstrom)
+//	
+//	highlambda - variable specifying the high wavelength cutoff (Angstrom)
+//	
+//	rebin - variable specifying the rebin percentage, e.g 3 for 3% dq/q rebinning.
+//	
+//	OPTIONAL
+//	scanpointrange -  if a datafile contains several images this string controls which are processed. e.g. "1>20"
+//	would integrate points 1 to 20 from the reflected beam run. (counting starts from 0).  If you set the range to -1,
+//   then individual scans in a single file are reduced separately. If the range isn't specified then individual scans in a single file are integrated. 
+//	 If there is only one scan point (specified, or not specified) AND the eventStreaming string is set, then the neutron events are split into different images.  This is useful for kinetic data.
+//	
+//	eventStreaming - name of folder containing the streamed events.  This string should also contain the number of splits, e.g. "DAQ_2010-12-20T12-12-12:4" would split the events in that file into 4 sub files which you could then analyse.
+//	
+//	water - string containing the water runfile for detector normalisation
+//	
+//	background - variable specifying whether you want to subtract background (1=true, 0 = false), 1 is default.
+//	
+//	expected_centre - variable specifying where you expect to see the specular ridge, in detector pixels
+//	
+//	manual - variable specifying  whether you would like to manually choose beam centres/FWHM, otherwise it is done automatically
+//	
+//	dontoverwrite = variable specifying if you want to create unique names everytime you reduce the file. (default == 1)
+//	
+//	normalise - variable specifying whether you want to normalise by beam monitor counts (default == 1)
+//	
+//	saveSpectrum - variable specifying whether you want to normalise by beam monitor counts (default == 0)
+//	
+//	 saveoffspec - variable specifying whether you want to save the offspecular reflectivity map (default == 0)
+//	
+//	verbose - variable specifying if you want verbose output (default == 1)
 	
 	//this function must load the data using loadNexusfile, then call processNexusfile which produces datafolders containing
 	//containing the spectrum (W_spec, W_specSD, W_lambda, W_lambdaSD,W_specTOFHIST,W_specTOF,W_LambdaHIST)
