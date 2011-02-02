@@ -16,6 +16,7 @@
 #include "Pla_reduction2"
 #include "Pla_Reduction3"
 #include "Pla_streamer"
+#include "EP_errorPropagation"
 
 //opening of the choppers, in radians
 	Constant O_C1 = 1.04719755
