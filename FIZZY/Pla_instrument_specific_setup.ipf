@@ -125,8 +125,8 @@ End
 
 
 Function hHistogram()	
-//suitable for hslits(44,40,37,44) which gives a 40mm widebeam onto sample with FOC guide.
-//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
+	//suitable for hslits(44,40,37,44) which gives a 40mm widebeam onto sample with FOC guide.
+	//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
 	oat_table("X",54.5,-54.5,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50,1000,freq = 20)
@@ -347,11 +347,11 @@ Function UserDefinedEstopBehaviour()
 	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 
 	sockitsendmsg sock_interupt,"INT1712 3\n"
-//	doxopidle
+	//	doxopidle
 	sleep/t 20
 	sockitsendmsg SOCK_interest,"bat send oscd=0\nrun ss1vg 0 ss2vg 0 ss3vg 0 ss4vg 0\ndrive bz 250\n"
-//	sockitsendmsg SOCK_interest,"run ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\n"
-//	sockitsendmsg SOCK_interest,"run bz 250\n"
+	//	sockitsendmsg SOCK_interest,"run ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\n"
+	//	sockitsendmsg SOCK_interest,"run bz 250\n"
 	print "performing Estop - stopping motors, stopping acquisitions, closing slits, putting attenuator in"
 	fpxstop()
 	batchScanStop()
@@ -458,13 +458,13 @@ Function Instrument_Specific_Setup()
 End
 
 Function scanReadyToBeStopped(currentPoint)
-variable currentpoint
+	variable currentpoint
 
-//string filename = gethipaval("/experiment/file_name")
-//this function is called by scanbkgtask (fpxScan) and can be used to see if a scan point should be finished, e.g. enough stats, etc.
-//return 0 if you want the scan to continue, return 1 if you want the scanpoint to stop.
+	//string filename = gethipaval("/experiment/file_name")
+	//this function is called by scanbkgtask (fpxScan) and can be used to see if a scan point should be finished, e.g. enough stats, etc.
+	//return 0 if you want the scan to continue, return 1 if you want the scanpoint to stop.
 
-return 0
+	return 0
 End
 
 Function experimentDetailsWizard()
@@ -562,7 +562,7 @@ Function regularTasks(s)
 	if(waveexists(frame_deassert))
 		variable theTime = str2num(grabHistoStatus("frame_deassert_time"))
 		if(abs(theTime - ChopperN_delay) > 0.15)
-	//		theTime = NaN
+			//		theTime = NaN
 		endif
 		if(abs(theTime - ChopperN_delay) > 0.018 && abs(theTime - ChopperN_delay) < 0.15 )//&& !numtype(theTime))
 			//oh dear, the phasing has gone wrong
@@ -2206,7 +2206,7 @@ Function/t createFizzyCommand(type)
 				return ""
 			endif
 			sprintf cmd, "positioner(%g)",s1
-		break
+			break
 		case "_none_":
 		default:
 			break
@@ -2384,48 +2384,48 @@ end
 
 //STUFF FOR BRUKER BEC MAGNET
 Function set_dc_power(on)
-variable on
-NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
-string cmd = ""
-on = round(on)
-if(on < 0 || on > 1)
-	return 1
-endif
-sprintf cmd, "hset /sample/ma1/pwrctrl/dc_power %d \n", on
-print cmd
-sockitsendmsg sock_interest, cmd
-return 0
+	variable on
+	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
+	string cmd = ""
+	on = round(on)
+	if(on < 0 || on > 1)
+		return 1
+	endif
+	sprintf cmd, "hset /sample/ma1/pwrctrl/dc_power %d \n", on
+	print cmd
+	sockitsendmsg sock_interest, cmd
+	return 0
 End
 
 Function/t get_dc_power()
-string power = getHipaval("/sample/ma1/pwrctrl/dc_power")
-print power
-return power
+	string power = getHipaval("/sample/ma1/pwrctrl/dc_power")
+	print power
+	return power
 End
 
 Function set_dc_current(current)
-variable current
-NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
-string cmd = ""
-if(current < -30 || current > 30)
-	return 1
-endif
-sprintf cmd, "hset /sample/ma1/sensor/desired_current %3.2f \n", current
-print cmd
-sockitsendmsg sock_interest, cmd
-return 0
+	variable current
+	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
+	string cmd = ""
+	if(current < -30 || current > 30)
+		return 1
+	endif
+	sprintf cmd, "hset /sample/ma1/sensor/desired_current %3.2f \n", current
+	print cmd
+	sockitsendmsg sock_interest, cmd
+	return 0
 End
 
 Function/t get_dc_current()
-string power = getHipaval("/sample/ma1/sensor/desired_current")
-print power
-return power
+	string power = getHipaval("/sample/ma1/sensor/desired_current")
+	print power
+	return power
 End
 
 Function/t get_nom_current()
-string power = getHipaval("/sample/ma1/sensor/nominal_outp_current")
-print power
-return power
+	string power = getHipaval("/sample/ma1/sensor/nominal_outp_current")
+	print power
+	return power
 End
 
 Function magnet_SetVarProc(sva) : SetVariableControl
@@ -2435,12 +2435,12 @@ Function magnet_SetVarProc(sva) : SetVariableControl
 		case 1: // mouse up
 		case 2: // Enter key
 			strswitch (sva.ctrlname)
-			case "dc_power":
-				set_dc_power(sva.dval)
-				break
-			case "desired_current":
-				set_dc_current(sva.dval)
-			break
+				case "dc_power":
+					set_dc_power(sva.dval)
+					break
+				case "desired_current":
+					set_dc_current(sva.dval)
+					break
 			endswitch
 		case 3: // Live update
 			Variable dval = sva.dval
@@ -2472,10 +2472,11 @@ End
 //a function to make a quick check connection to the chopper system
 function choppertestconn()
 	make/t/o buf
-	variable/g sockit
+	variable sockit
 	sockitopenconnection/q/time=2 sockit,CHOPPERserverIP,CHOPPERserverPort,buf
 	sockitsendnrecv/SMAL/TIME=2 sockit,"user:NCS\r"
 	sockitsendnrecv/SMAL/TIME=2 sockit,"password:NCS013\r"
+	return sockit
 End
 
 Function txtme(text)
@@ -2483,28 +2484,122 @@ Function txtme(text)
 	text = replacestring(" ", text, "+")
 	string cmd = ""
 	sprintf cmd, "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=r1vergod&to=" + getHipaVal("/user/phone") + "&text=%s", text
-//	print cmd
+	//	print cmd
 	easyhttp/PROX=HTTP_PROXY cmd
 ENd
 
 Function TestTask(s)		// This is the function that will be called periodically
 	STRUCT WMBackgroundStruct &s
-	Wave phaseoffset, timer, theticks
+	Wave phaseoffset, timer, theticks, wasNoise
 	
-	string value = grabHistoStatus("frame_deassert_time")
-	redimension/n=(dimsize(phaseoffset,0) + 1) phaseoffset, timer, theticks
+	string msg = grabAllHistoStatus()
+	string value = ""
+	variable entry = dimsize(phaseoffset,0)
+	redimension/n=(entry + 1, -1) phaseoffset, timer, theticks, wasNoise
 	
 	timer[dimsize(phaseoffset, 0) -1] = datetime
 	theticks[dimsize(phaseoffset, 0) -1] = ticks
-	phaseoffset[dimsize(phaseoffset, 0) -1] = str2num(value)
+	
+	value = stringbykey("frame_deassert_time_num",msg,":","\r")
+	phaseoffset[entry][0] = str2num(value)
+	if(str2num(value) > 1)
+		wasNoise[entry] = 1
+	else
+		wasNoise[entry] = 0
+	endif
+	
+	value = stringbykey("frame_deassert_time_0",msg,":","\r")
+	phaseoffset[entry][1] = str2num(value)
+
+	value = stringbykey("frame_deassert_time_1",msg,":","\r")
+	phaseoffset[entry][2] = str2num(value)
+
+//	value = stringbykey("frame_deassert_time_2",msg,":","\r")
+//	phaseoffset[entry][3] = str2num(value)
+
+	value = stringbykey("frame_deassert_time",msg,":","\r")
+	phaseoffset[entry][3] = str2num(value)
+	
 	return 0	// Continue background task
 End
 
 Function StartTestTask()
-	make/n=0/o phaseoffset
+	make/n=(0,4)/o phaseoffset
+	make/n=(0)/o wasNoise
 	make/n=0/i/u/o timer
 	make/n=0/i/u/o theticks
-	Variable numTicks = 1 * 10		// Run every two seconds (120 ticks)
+	Variable numTicks = 1 * 6		// Run every two seconds (120 ticks)
 	CtrlNamedBackground Test, period=numTicks, proc=TestTask
 	CtrlNamedBackground Test, start
+End
+
+Structure ChopperPhaseStruct
+Struct WMBackgroundStruct s
+variable disc
+variable sockit
+variable desiredtimeoffset
+Endstructure
+
+Function chopperRephaseArator(s)
+	STRUCT ChopperPhaseStruct &s
+	//disc number that you're trying to rephase
+	//sockit = TCP handle to chopper connection
+	//desiredtimeoffset = the time (in ms) between your master and slave
+	
+	string msg = ""
+	string cmd = "", state = ""
+	variable actualTimeOffset, timedifference, requestedphase, requestedspeed, phaseDifference
+	variable newphase
+	if(s.disc < 2 || s.disc > 4)
+		return 1
+	endif
+	variable timer = startmstimer
+	actualTimeOffset = str2num(grabHistoStatus("frame_deassert_time"))
+	if(abs(actualTimeoffset - s.desiredTimeOffset) < 0.01 || abs(actualTimeoffset - s.desiredTimeOffset) > 0.23)
+		print "NO REPHASE"
+		return 0
+	endif
+	
+	sprintf cmd,"#SOS#STATE %d:\r", s.disc
+	sockitsendnrecv/time=5/smal s.sockit, cmd ,msg
+	if(V_flag)
+		print "can't speak to choppers to rephaserator"
+		return 1
+	endif
+	
+	//print V_flag, msg
+	if(V_flag || strlen(msg) == 0)
+		print "comms error"
+		return 1
+	endif
+	
+	requestedphase = numberbykey("RPHASE", msg, "= ", "#")
+	requestedspeed = numberbykey("RSPEED", msg, "= ", "#")/60
+	state = stringbykey(" State", msg, "= ", "#")
+
+	if(numtype(requestedphase) || numtype(requestedspeed))
+		print "comms error"
+		return 1
+	endif
+	if(stringmatch(state, " Synchron.") == 0)
+		print "disc must be synchronised"
+		return 1
+	endif
+	if(abs(requestedspeed) < 15)
+		print "Speed may not be right for rephasing"
+		return 1
+	endif
+
+	timedifference = s.desiredtimeoffset - actualtimeoffset
+	phaseDifference = timedifference * 1e-3 * requestedspeed * 360
+	if(requestedphase > 0)
+		newphase = requestedphase + phasedifference
+	else
+		newphase = requestedphase - phasedifference
+	endif
+
+	sprintf cmd,"#SOS#PHASE %d: %3.2f\r", s.disc, newphase
+	sockitsendmsg s.sockit, cmd
+	print stopmstimer(timer)/1e6
+	return 0
 End
