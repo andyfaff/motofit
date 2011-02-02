@@ -1391,6 +1391,92 @@ Function adjustAOI(s):setvariablecontrol
 	endif
 End
 
+Function SLIM_plot_offspec(inputPathStr, filenames)
+//plots a map of a 2D offspecular dataset
+	string inputPathStr, filenames
+
+	variable ii,numwaves,jj, val
+	string loadedWavenames, slimplotstring, axes
+	string cDF = getdatafolder(1)
+
+	newdatafolder/o root:packages
+	newdatafolder/o root:packages:platypus
+	newdatafolder/o root:packages:platypus:data
+	newdatafolder/o root:packages:platypus:data:Reducer
+	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
+	
+	GetFileFolderInfo/q/z inputpathStr
+	if(V_flag)//path doesn't exist
+		print "ERROR please give valid path (SLIM_plot_reduced)"
+		return 1
+	endif
+	
+	try		
+		for(ii = 0 ; ii < itemsinlist(filenames) ; ii += 1)
+			string fname = stringfromlist(ii, filenames)
+			variable fileID = xmlopenfile(inputPathStr + fname)
+			if(fileID < 1)
+				print "ERROR opening xml file (SLIM_PLOT_reduced)"
+				abort
+			endif
+			fname = removeending(fname,".xml")
+			axes = xmlstrfmxpath(fileID, "//REFdata/@axes", "", "")
+			if(itemsinlist(axes) != 2)
+				print "ERROR not an offspecular file"
+				abort
+			endif
+			
+			xmlwavefmXPATH(fileID,"//Qz","","")
+			Wave/t M_xmlcontent
+			make/o/d/n=(dimsize(M_xmlcontent,0)) $cleanupname(fname+"_qz",0)
+			Wave qz = $cleanupname(fname+"_qz",0)
+			qz = str2num(M_xmlcontent[p][0])
+			
+			xmlwavefmXPATH(fileID,"//R","","")
+			Wave/t M_xmlcontent
+			make/o/d/n=(dimsize(M_xmlcontent,0)) $cleanupname(fname+"_R",0)
+			Wave RR = $cleanupname(fname+"_R",0)
+			RR = str2num(M_xmlcontent[p][0])
+
+			xmlwavefmXPATH(fileID,"//dR","","")
+			Wave/t M_xmlcontent
+			make/o/d/n=(dimsize(M_xmlcontent,0)) $cleanupname(fname+"_E",0)
+			Wave EE = $cleanupname(fname+"_E",0)
+			EE = str2num(M_xmlcontent[p][0])
+
+			xmlwavefmXPATH(fileID,"//Qy","","")
+			Wave/t M_xmlcontent
+			make/o/d/n=(dimsize(M_xmlcontent,0)) $cleanupname(fname+"_qy",0)
+			Wave qy = $cleanupname(fname+"_qy",0)
+			qy = str2num(M_xmlcontent[p][0])
+			
+			xmlclosefile(fileID,0)
+			
+			sort/R Qz, Qz, Qy,RR,EE
+			val = binarysearch(Qz, 0)
+			deletepoints val+1, dimsize(Qz, 0), Qz, Qy, RR, EE
+			
+			sort/R Qy, Qz, Qy,RR,EE
+			val = binarysearch(Qy, -1e-3)
+			deletepoints val+1, dimsize(Qy, 0), Qz, Qy, RR, EE
+
+
+			EP_log(RR, EE, RR, EE)
+			sort RR, Qz, Qy,RR,EE
+			val = binarysearch(RR, -Inf)
+			deletepoints 0, val + 1, RR, Qz, Qy, EE
+			killwaves/z M_xmlcontent,W_xmlcontentnodes
+			Display/K=1
+			AppendXYZContour RR vs {qy, qz}
+		endfor
+		setdatafolder $cDF
+		return 0
+	catch
+		setdatafolder $cDF
+		return 0
+	endtry
+End
+
 
 //#pragma rtGlobals=1		// Use modern global access method.
 //Function offspec_XRMLmap()
