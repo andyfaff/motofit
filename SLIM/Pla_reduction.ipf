@@ -312,16 +312,15 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		duplicate/o M_topandtailA0, $(angle0DF + ":M_qy")					
 		duplicate/o M_topandtailA0, $(angle0DF + ":M_qzSD")			
 		duplicate/o M_topandtailA0, $(angle0DF + ":M_ref")
-		duplicate/o M_topandtailA0, $(angle0DF + ":M_refSD")	
-		duplicate/o M_lambdaHIST, $(angle0DF + ":M_qHIST")
+		duplicate/o M_topandtailA0, $(angle0DF + ":M_refSD")
+		duplicate/free M_lambdaHIST, M_qHIST
 		Wave M_twotheta = $(angle0DF + ":M_twotheta")
 		Wave M_omega = $(angle0DF + ":M_omega")
 		Wave M_qz = $(angle0DF + ":M_qz")
+		Wave M_ref = $(angle0DF + ":M_ref")
+		Wave M_refSD = $(angle0DF + ":M_refSD")
 		Wave M_qy = $(angle0DF + ":M_qy")
 		Wave M_qzSD = $(angle0DF + ":M_qzSD")
-		Wave M_ref =  $(angle0DF + ":M_ref")
-		Wave M_refSD =  $(angle0DF + ":M_refSD")
-		Wave M_qHIST = $(angle0DF + ":M_qHIST")
 
 		variable loPx, hiPx
 		loPx = numberbykey( "loPx", note(M_topandtailA0))
@@ -442,24 +441,16 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		//constant wavelength binning, comment out if performing constant Q
 		/////////////////////////////
 		/////////////////////////////
-		make/n=(dimsize(M_qHIST, 0) - 1, numspectra)/o/d M_q, M_qSD
-		M_q[][]  = 0.5 * (M_qHIST[p][q] + M_qHIST[p + 1][q])
+		make/n=(dimsize(M_qHIST, 0) - 1, numspectra)/free/d W_q = 0, W_qSD = 0, W_ref = 0, W_refSD = 0
 
-		//			LambdatoQ(W_qHIST, W_lambdaHIST, omega)
-		Multithread M_q[][] = LambdaToQ(M_lambda[p][q], omega[p][q])
-			
-		M_qSD[][] = (M_lambdaSD[p][q]/M_lambda[p][q])^2+(domega/omega[p][q])^2
-		M_qSD = sqrt(M_qSD)
-		M_qSD *= M_q
-			
-		make/d/n=(dimsize(M_q, 0), numspectra)/free W_ref = 0, W_refSD = 0
+		Multithread W_q[][] = LambdaToQ(M_lambda[p][q], omega[p][q])			
+		Multithread W_qSD[][] = (M_lambdaSD[p][q]/M_lambda[p][q])^2+(domega/omega[p][q])^2
+		Multithread W_qSD = sqrt(W_qSD)
+		Multithread W_qSD *= W_q
 
-		duplicate/o M_ref, $(angle0DF+":M_reftemp")
-		duplicate/o M_refSD, $(angle0DF+":M_refSDtemp")
+		duplicate/free M_ref, M_reftemp
+		duplicate/free M_refSD, M_refSDtemp
 
-		Wave M_reftemp = $(angle0DF + ":M_reftemp")
-		Wave M_refSDtemp = $(angle0DF + ":M_refSDtemp")
-			
 		deletepoints/M=1 hiPx + 1, dimsize(M_ref, 1), M_reftemp, M_refSDtemp
 		deletepoints/M=1 0, loPx, M_reftemp, M_refSDtemp
 
@@ -523,13 +514,14 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		//now write the individual wave out to a file.  It is reverse sorted in q, sorted in lambda, and we want to keep that.
 		//therefore SORT->WRITE->REVERSE SORT
 		//
-		make/n=(dimsize(M_q, 0))/d/free qq, RR, dR, dQ
-
+		make/n=(dimsize(W_q, 0))/d/free qq = 0, RR = 0, dR = 0, dQ = 0
+		make/n=(dimsize(M_ref, 0), dimsize(M_ref, 1))/free/d qz2D, qy2D, RR2d, EE2d 
+		
 		for(ii = 0 ; ii < numspectra ; ii += 1)
 			RR[] = W_ref[p][ii]
 			dR[] = W_refSD[p][ii]
-			qq[] = M_q[p][ii]
-			dQ[] = M_qSD[p][ii]
+			qq[] = W_q[p][ii]
+			dQ[] = W_qSD[p][ii]
 	
 			Sort qq, qq, RR, dR, dQ
 			
@@ -557,21 +549,26 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 						
 			//write a 2D XMLfile for the offspecular data
 			if(saveoffspec)
-				write2DXML(outputPathStr, angle0, dontoverwrite)
+				Multithread qz2D[][] = M_qz[p][q][ii]
+				Multithread qy2D[][] = M_qy[p][q][ii]
+				Multithread RR2d[][] = M_Ref[p][q][ii]
+				Multithread EE2d[][] = M_RefSD[p][q][ii]
+							
+				fname = cutfilename(angle0)
+				if(dontoverwrite)
+					fname = uniqueFileName(outputPathStr, "off_" + fname, ".xml")
+				endif
+				write2DXML(outputPathStr, fname, qz2D, qy2D, RR2d, EE2d, "", user[0], samplename[0], angle0, reductionCmd)
 			endif
 		endfor
 		
-		killpath/z pla_temppath_write
-	
-	catch
-		killwaves/z M_q,M_ref,M_qSD,M_refSD, M_reftemp, M_refSDtemp
-		
+		killpath/z pla_temppath_write	
+	catch		
 		Print "ERROR: an abort was encountered in (reduceASingleFile)"
 		setdatafolder $cDF
 		return ""
 	endtry
 
-	killwaves/z W_q,W_ref,W_qSD,W_refSD, M_reftemp, M_refSDtemp
 	setdatafolder $cDF
 	return fname
 End
@@ -1568,7 +1565,6 @@ Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda)
 	Killwaves/z W_extractedCol
 End
 
-
 Function writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, exptitle, user, samplename, runnumbers, rednnote)
 	String outputPathStr, fname
 	wave qq, RR, dR, dQ
@@ -1652,25 +1648,15 @@ Function writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, exptitle, user,
 	xmlclosefile(fileID,1)
 End
 
-Function write2DXML(outputPathStr, runnumbers, dontoverwrite)
-	string outputPathStr, runnumbers
-	variable dontoverwrite
+Function	 write2DXML(outputPathStr, fname, qz2d, qy2d, RR2d, EE2d, exptitle, user, samplename, runnumbers, rednnote)
+	String outputPathStr, fname
+	wave qz2d, qy2d, RR2d, EE2d
+	String exptitle, user, samplename, runnumbers, rednnote
 	
 	//a function to write an XML description of the reduced dataset.
 	variable fileID,ii,jj, numspectra
 	string df = "root:packages:platypus:data:Reducer:"
 	string qzStr = "", RRstr = "", dRStr = "", qyStr = "", filename, prefix = ""
-
-	if(itemsinlist(runnumbers) == 0)
-		print "ERROR, no runs to write (write2DXML)"
-		return 1
-	endif
-	
-	if(!Datafolderexists(df + stringfromlist(0, runnumbers)))
-		print "ERROR one or more of the runs doesn't exist (write2DXML)"
-		return 1
-	endif
-	filename = "off_" + cutfilename(stringfromlist(0, runnumbers)) + ".xml"
 	
 	GetFileFolderInfo/q/z outputPathStr
 	if(V_flag)//path doesn't exist
@@ -1678,78 +1664,59 @@ Function write2DXML(outputPathStr, runnumbers, dontoverwrite)
 		return 1	
 	endif
 	
-	Wave qy = $(df+stringfromlist(ii, runnumbers) + ":M_qy")
-	Wave RR = $(df+stringfromlist(ii, runnumbers) + ":M_Ref")
-	Wave qz = $(df+stringfromlist(ii, runnumbers) + ":M_qz")
-	Wave dR = $(df+stringfromlist(ii, runnumbers) + ":M_refSD")
+	fileID = XMLcreatefile(outputPathStr + fname + ".xml", "REFroot", "", "")
 
-	numspectra = dimsize(RR, 2)
+	xmladdnode(fileID,"//REFroot","","REFentry","",1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]","","time",Secs2Date(DateTime,0) + " "+Secs2Time(DateTime,3))
+
+	xmladdnode(fileID,"//REFroot/REFentry[1]","","Title","",1)
+
+	xmladdnode(fileID,"//REFroot/REFentry[1]","","User",user,1)
+
+	xmladdnode(fileID,"//REFroot/REFentry[1]","","REFsample","",1)
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFsample","","ID", samplename, 1)
+
+	xmladdnode(fileID,"//REFroot/REFentry[1]","","REFdata","",1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","axes","Qz;Qy")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","rank","2")
+
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","type","POINT")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","spin","UNPOLARISED")
 	
-	make/d/n=(dimsize(RR, 0), dimsize(RR, 1))/free Rplane, qyplane, qzplane, RSDplane
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Run","",1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run[1]","","filename",stringfromlist(0,runnumbers)+".nx.hdf")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run[1]","","preset","")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run[1]","","size","")
 	
-	for(ii = 0 ; numspectra ; ii += 1)
-		if(dontoverwrite)
-			filename = uniqueFileName(outputPathStr, filename, ".xml")
-		endif
-		Rplane[][] = RR[p][q][ii]
-		qyplane[][] = qy[p][q][ii]
-		qzplane[][] = qz[p][q][ii]
-		RSDplane[][] = dR[p][q][ii]
-		
-		fileID = XMLcreatefile(outputPathStr + filename, "REFroot", "", "")
+	SVAR reductionCmd = $(df + stringfromlist(ii , runnumbers) + ":reductionCmd")
+	xmladdnode(fileID, "//REFroot/REFentry[1]/REFdata/Run[1]", "", "reductionnote", reductionCmd, 1)
+	XMLsetattr(fileID, "//REFroot/REFentry[1]/REFdata/Run[1]/reductionnote[1]", "", "software", "SLIM")
 
-		xmladdnode(fileID,"//REFroot","","REFentry","",1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]","","time",Secs2Date(DateTime,0) + " "+Secs2Time(DateTime,3))
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]","","Title","",1)
-
-		Wave/t user = $(df+stringfromlist(0,runnumbers)+":user:name")
-		xmladdnode(fileID,"//REFroot/REFentry[1]","","User",user[0],1)
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]","","REFsample","",1)
-		Wave/t samplename = $(df+stringfromlist(0, runnumbers)+":sample:name")
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFsample","","ID", samplename[0], 1)
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]","","REFdata","",1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","axes","Qz;Qy")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","rank","2")
-
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","type","POINT")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","spin","UNPOLARISED")
+	sockitwavetostring/TXT qz2d, qzStr
+	sockitwavetostring/TXT RR2d, RRStr
+	sockitwavetostring/TXT qy2d, qyStr
+	sockitwavetostring/TXT EE2d, dRStr
 	
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Run","",1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run[1]","","filename",stringfromlist(0,runnumbers)+".nx.hdf")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run[1]","","preset","")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run[1]","","size","")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata", "", "dim", num2istr(dimsize(RR2d, 0)) + ";" + num2istr(dimsize(RR2d, 1)))
+
+	xmladdnode(fileID, "//REFroot/REFentry[1]/REFdata","","R", RRStr, 1)
+	XMLsetattr(fileID, "//REFroot/REFentry[1]/REFdata/R","","uncertainty","dR")
+
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Qz",qzStr,1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qz","","uncertainty","")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qz","","units","1/A")
+
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Qy",qyStr,1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qy","","uncertainty","")
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qy","","units","1/A")
+
+	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dR",dRStr,1)
+	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dR","","type","SD")
+
+	xmlclosefile(fileID, 1)
 	
-		SVAR reductionCmd = $(df + stringfromlist(ii , runnumbers) + ":reductionCmd")
-		xmladdnode(fileID, "//REFroot/REFentry[1]/REFdata/Run[1]", "", "reductionnote", reductionCmd, 1)
-		XMLsetattr(fileID, "//REFroot/REFentry[1]/REFdata/Run[1]/reductionnote[1]", "", "software", "SLIM")
-
-		sockitwavetostring/TXT qzplane, qzStr
-		sockitwavetostring/TXT Rplane, RRStr
-		sockitwavetostring/TXT qyplane, qyStr
-		sockitwavetostring/TXT RSDplane, dRStr
-	
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata", "", "dim", num2istr(dimsize(Rplane, 0)) + ";" + num2istr(dimsize(Rplane, 1)))
-
-		xmladdnode(fileID, "//REFroot/REFentry[1]/REFdata","","R", RRStr, 1)
-		XMLsetattr(fileID, "//REFroot/REFentry[1]/REFdata/R","","uncertainty","dR")
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Qz",qzStr,1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qz","","uncertainty","")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qz","","units","1/A")
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Qy",qyStr,1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qy","","uncertainty","")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qy","","units","1/A")
-
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dR",dRStr,1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dR","","type","SD")
-
-		xmlclosefile(fileID, 1)
-	endfor
 End
+
 
 Function madd(inputPathStr, filenames)
 	string inputPathStr, filenames
