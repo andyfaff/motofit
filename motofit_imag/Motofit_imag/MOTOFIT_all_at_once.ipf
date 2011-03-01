@@ -5071,7 +5071,7 @@ Function Moto_SLD_at_depth(w, zed)
 			
 			if(nlayers==0)
 				sigma=abs(w[7])
-				deltarho=-w[2]+w[5]
+				deltarho=-w[2]+w[4]
 			endif
 		
 		elseif(ii==nlayers)
