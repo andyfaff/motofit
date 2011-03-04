@@ -101,10 +101,6 @@ Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
 	//when we calculate the standard deviation on the intensity carry the variance through the calculation
 	//and convert to SD at the end.
 			
-	if(checkSorted(x_rebin) || checkSorted(x_init))
-		print "The x_rebin and x_init must be monotonically increasing (Pla_intRebin)"
-		return 1
-	endif
 	
 	if(wavedims(X_init)!=1 || wavedims(y_init)!=1 || wavedims(s_init)!=1 || wavedims(X_rebin)!=1)
 		print "All supplied waves must be 1D (Pla_intrebin)"	
@@ -120,7 +116,7 @@ Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
 	make/o/d/n =(numpnts(x_rebin)-1) W_rebin=0,W_RebinSD=0
 	
 	variable ii=0, kk = 0
-	variable lowlim,upperlim
+	variable lowlim,upperlim, lowcelloc, uppercelloc
 	
 	for(ii=0; ii< numpnts(x_rebin)-1 ; ii+=1)
 		//this gives the approximate position of where the new bin would start in the old bin		
@@ -136,31 +132,39 @@ Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
 		
 		//lower limit for your rebinned data may be outside the original histogram boundary
 		//set it to the lowest point in this case
-		if(numtype(lowlim) && numtype(upperlim) == 0)
+		if(numtype(lowlim))
 			lowlim = 0
 		endif
+
+		//upperlimit has escaped, so set to the highest from the original data.		
+		if(numtype(upperlim))
+			upperlim = numpnts(x_init) - 1
+		endif
 		
-		//lower limit for rebinned boundary is in the original boundaries
-		//but upperlimit has escaped, so set to the highest from the original data.
-		if(numtype(lowlim)==0 && numtype(upperlim) )
-			upperlim = numpnts(x_init)-1
+		lowcelloc = trunc(lowlim)
+		uppercelloc = trunc(upperlim)
+		if(lowcelloc > numpnts(y_init) -1 )
+			lowcelloc = numpnts(y_init) -1
+		endif
+		if(uppercelloc > numpnts(y_init) -1)
+			uppercelloc = numpnts(y_init) -1
 		endif
 		
 		//now need to add the counts together
 		
 		//both upperlimit and lower limit rebin boundaries aren't the same unbinned cell
 		//need to take a proportion of a lower and upper cell 
-		if(trunc(lowlim) != trunc(upperlim))
-			W_rebin[ii]  =  y_init[trunc(lowlim)]*(ceil(lowlim) - lowlim)
-			W_rebin[ii] += y_init[trunc(upperlim)]*(upperlim - trunc(upperlim))
+		if(lowcelloc != uppercelloc)
+			W_rebin[ii]  =  y_init[lowcelloc]*(ceil(lowlim) - lowlim)
+			W_rebin[ii] += y_init[uppercelloc]*(upperlim - trunc(upperlim))
 			
-			W_RebinSD[ii]  = (s_init[trunc(lowlim)]*(ceil(lowlim) - lowlim))^2
-			W_RebinSD[ii] += (s_init[trunc(upperlim)]*(upperlim - trunc(upperlim)))^2
+			W_RebinSD[ii]  = (s_init[lowcelloc]*(ceil(lowlim) - lowlim))^2
+			W_RebinSD[ii] += (s_init[uppercelloc]*(upperlim - trunc(upperlim)))^2
 		else
 			//the upper and lower limits are in the same binned cell.  Need to work out
 			//what proportion of the original cell is occupied by the difference between the limits
-			W_rebin[ii] =	y_init[trunc(lowlim)]*(upperlim-lowlim)
-			W_RebinSD[ii] =	(s_init[trunc(lowlim)]*(upperlim-lowlim))^2
+			W_rebin[ii] =	y_init[lowcelloc] * (upperlim - lowlim)
+			W_RebinSD[ii] =	(s_init[lowcelloc]*(upperlim - lowlim))^2
 		endif
 		
 		//if the upper and lower limits span several of the original data, then you need to add counts 
@@ -171,10 +175,11 @@ Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
 				W_RebinSD[ii] += (s_init[ceil(lowlim) + kk])^2
 			endfor
 		endif
-		
-		W_RebinSD[ii] = sqrt(W_RebinSD[ii])
+				
 	endfor
+	W_RebinSD = sqrt(W_RebinSD)
 End
+
 
 Function Pla_histogram(W_bins, W_q, W_R, W_Rsd)
 	Wave W_bins, W_q, W_R, W_Rsd
