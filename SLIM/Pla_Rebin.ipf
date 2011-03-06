@@ -86,6 +86,47 @@ Threadsafe Function/DF Pla_2DintRebinWorker(x_init, data, dataSD, x_rebin, qq, l
 	return dfFree	
 End
 
+Function rb(x_init, y_init, s_init, x_rebin)
+	Wave x_init, y_init, s_init,x_rebin
+	//Rebins histogrammed data into boundaries set by x_rebin.
+	//makes the waves W_rebin and W_RebinSD.
+
+	//it uses linear interpolation to work out the proportions of which original cells should be placed
+	//in the new bin boundaries.
+
+	// Precision will normally be lost.  
+	// It does not make sense to rebin to smaller bin boundaries.
+	
+	//when we calculate the standard deviation on the intensity carry the variance through the calculation
+	//and convert to SD at the end.
+	variable ii = 0
+	make/free/d/n=(dimsize(x_rebin, 0)) pos
+	make/free/d/n=(dimsize(s_init, 0)) var_init = s_init^2
+	
+	pos = binarysearchinterp(x_init, x_rebin)
+	for(ii = 0 ; ii < dimsize(pos, 0) && numtype(pos[ii]); ii+=1)
+			pos[ii] = 0
+	endfor
+	
+	for(ii = dimsize(pos, 0) - 1; ii >=0 && numtype(pos[ii]); ii -=1)
+			pos[ii] = dimsize(x_init, 0) - 1
+	endfor
+	
+	make/d/n=(dimsize(y_init, 0))/o cumsum, cumsumVar
+	cumsum = sum(y_init, 0, p)
+	cumsumVar = sum(var_init, 0, p)
+	
+	insertpoints 0, 1, cumsum, cumsumVar
+
+	make/n=(dimsize(x_rebin, 0) - 1)/d/o W_rebin, W_rebinSD
+	W_rebin = 0
+	W_rebinSD = 0
+	
+	W_rebin[] = cumsum[pos[p + 1]] - cumsum[pos[p]] 
+	W_rebinSD[] = (cumsumVar[p+1] - cumsumVar[p]) // * ((pos[p+1] - pos[p])-trunc((pos[p+1] - pos[p])))^2 
+	W_rebinSD = (W_rebinSD)
+End	
+
 Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
 	Wave x_init, y_init, s_init,x_rebin
 

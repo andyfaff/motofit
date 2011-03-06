@@ -44,7 +44,7 @@
 	//Physical Constants
 	Constant PLANCK = 6.624e-34
 	Constant NEUTRONMASS = 1.6749286e-27
-	Constant P_MN = 3.9548e-7
+	Constant P_MN = 3.95603e-7
 	
 	//the constants below may change frequently
 	Constant Y_PIXEL_SPACING = 1.177	//in mm
