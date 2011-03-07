@@ -86,7 +86,7 @@ Threadsafe Function/DF Pla_2DintRebinWorker(x_init, data, dataSD, x_rebin, qq, l
 	return dfFree	
 End
 
-Function rb(x_init, y_init, s_init, x_rebin)
+Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
 	Wave x_init, y_init, s_init,x_rebin
 	//Rebins histogrammed data into boundaries set by x_rebin.
 	//makes the waves W_rebin and W_RebinSD.
@@ -112,7 +112,7 @@ Function rb(x_init, y_init, s_init, x_rebin)
 			pos[ii] = dimsize(x_init, 0) - 1
 	endfor
 	
-	make/d/n=(dimsize(y_init, 0))/o cumsum, cumsumVar
+	make/d/n=(dimsize(y_init, 0))/free cumsum, cumsumVar
 	cumsum = sum(y_init, 0, p)
 	cumsumVar = sum(var_init, 0, p)
 	
@@ -123,103 +123,109 @@ Function rb(x_init, y_init, s_init, x_rebin)
 	W_rebinSD = 0
 	
 	W_rebin[] = cumsum[pos[p + 1]] - cumsum[pos[p]] 
-	W_rebinSD[] = (cumsumVar[p+1] - cumsumVar[p]) // * ((pos[p+1] - pos[p])-trunc((pos[p+1] - pos[p])))^2 
-	W_rebinSD = (W_rebinSD)
+	W_rebinSD[] = (cumsumVar[pos[p+1]] - cumsumVar[pos[p]])
+	
+	duplicate/free pos, celloc
+	celloc= ceil(pos[p]) - 1 < 0 ? 0 : ceil(pos[p]) - 1
+
+	W_rebinSD[] -=  (ceil(pos[p+1])-pos[p+1]) * s_init[celloc[p+1]]^2 * (1-ceil(pos[p+1])+pos[p+1])
+	W_rebinSD[] -=  (ceil(pos[p])-pos[p]) * s_init[celloc[p]]^2 * (1-ceil(pos[p])+pos[p])
+	W_rebinSD = sqrt(W_rebinSD)
 End	
 
-Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
-	Wave x_init, y_init, s_init,x_rebin
-
-	//Rebins histogrammed data into boundaries set by x_rebin.
-	//makes the waves W_rebin and W_RebinSD.
-
-	//it uses linear interpolation to work out the proportions of which original cells should be placed
-	//in the new bin boundaries.
-
-	// Precision will normally be lost.  
-	// It does not make sense to rebin to smaller bin boundaries.
-	
-	//when we calculate the standard deviation on the intensity carry the variance through the calculation
-	//and convert to SD at the end.
-			
-	
-	if(wavedims(X_init)!=1 || wavedims(y_init)!=1 || wavedims(s_init)!=1 || wavedims(X_rebin)!=1)
-		print "All supplied waves must be 1D (Pla_intrebin)"	
-		return 1
-	endif
-	
-	if(numpnts(X_init)-1!= numpnts(y_init) || numpnts(y_init)!=numpnts(s_init))
-		print "y_init and s_init must have one less point than x_init (Pla_intRebin)"
-		return 1
-	endif
-
-	
-	make/o/d/n =(numpnts(x_rebin)-1) W_rebin=0,W_RebinSD=0
-	
-	variable ii=0, kk = 0
-	variable lowlim,upperlim, lowcelloc, uppercelloc
-	
-	for(ii=0; ii< numpnts(x_rebin)-1 ; ii+=1)
-		//this gives the approximate position of where the new bin would start in the old bin		
-		lowlim = binarysearchinterp(x_init,x_rebin[ii])
-		upperlim = binarysearchinterp(x_init,x_rebin[ii+1])	
-		
-		//if your rebin x boundaries are set outisde those of the initial data then you won't get any counts.
-		if(numtype(lowlim) && numtype(upperlim))
-			W_rebin[ii] = 0
-			W_RebinSD[ii] = 0
-			continue
-		endif
-		
-		//lower limit for your rebinned data may be outside the original histogram boundary
-		//set it to the lowest point in this case
-		if(numtype(lowlim))
-			lowlim = 0
-		endif
-
-		//upperlimit has escaped, so set to the highest from the original data.		
-		if(numtype(upperlim))
-			upperlim = numpnts(x_init) - 1
-		endif
-		
-		lowcelloc = trunc(lowlim)
-		uppercelloc = trunc(upperlim)
-		if(lowcelloc > numpnts(y_init) -1 )
-			lowcelloc = numpnts(y_init) -1
-		endif
-		if(uppercelloc > numpnts(y_init) -1)
-			uppercelloc = numpnts(y_init) -1
-		endif
-		
-		//now need to add the counts together
-		
-		//both upperlimit and lower limit rebin boundaries aren't the same unbinned cell
-		//need to take a proportion of a lower and upper cell 
-		if(lowcelloc != uppercelloc)
-			W_rebin[ii]  =  y_init[lowcelloc]*(ceil(lowlim) - lowlim)
-			W_rebin[ii] += y_init[uppercelloc]*(upperlim - trunc(upperlim))
-			
-			W_RebinSD[ii]  = (s_init[lowcelloc]*(ceil(lowlim) - lowlim))^2
-			W_RebinSD[ii] += (s_init[uppercelloc]*(upperlim - trunc(upperlim)))^2
-		else
-			//the upper and lower limits are in the same binned cell.  Need to work out
-			//what proportion of the original cell is occupied by the difference between the limits
-			W_rebin[ii] =	y_init[lowcelloc] * (upperlim - lowlim)
-			W_RebinSD[ii] =	(s_init[lowcelloc]*(upperlim - lowlim))^2
-		endif
-		
-		//if the upper and lower limits span several of the original data, then you need to add counts 
-		//from each individual cell.
-		if((ceil(lowlim) < trunc(upperlim)) && (trunc(upperlim) - ceil(lowlim) >= 1))
-			for(kk = 0 ; kk < trunc(upperlim) - ceil(lowlim) ;kk += 1)
-				W_rebin[ii] += y_init[ceil(lowlim) + kk]
-				W_RebinSD[ii] += (s_init[ceil(lowlim) + kk])^2
-			endfor
-		endif
-				
-	endfor
-	W_RebinSD = sqrt(W_RebinSD)
-End
+//Threadsafe Function Pla_rb(x_init, y_init, s_init, x_rebin)
+//	Wave x_init, y_init, s_init,x_rebin
+//
+//	//Rebins histogrammed data into boundaries set by x_rebin.
+//	//makes the waves W_rebin and W_RebinSD.
+//
+//	//it uses linear interpolation to work out the proportions of which original cells should be placed
+//	//in the new bin boundaries.
+//
+//	// Precision will normally be lost.  
+//	// It does not make sense to rebin to smaller bin boundaries.
+//	
+//	//when we calculate the standard deviation on the intensity carry the variance through the calculation
+//	//and convert to SD at the end.
+//			
+//	
+//	if(wavedims(X_init)!=1 || wavedims(y_init)!=1 || wavedims(s_init)!=1 || wavedims(X_rebin)!=1)
+//		print "All supplied waves must be 1D (Pla_intrebin)"	
+//		return 1
+//	endif
+//	
+//	if(numpnts(X_init)-1!= numpnts(y_init) || numpnts(y_init)!=numpnts(s_init))
+//		print "y_init and s_init must have one less point than x_init (Pla_intRebin)"
+//		return 1
+//	endif
+//
+//	
+//	make/o/d/n =(numpnts(x_rebin)-1) W_rebin=0,W_RebinSD=0
+//	
+//	variable ii=0, kk = 0
+//	variable lowlim,upperlim, lowcelloc, uppercelloc
+//	
+//	for(ii=0; ii< numpnts(x_rebin)-1 ; ii+=1)
+//		//this gives the approximate position of where the new bin would start in the old bin		
+//		lowlim = binarysearchinterp(x_init,x_rebin[ii])
+//		upperlim = binarysearchinterp(x_init,x_rebin[ii+1])	
+//		
+//		//if your rebin x boundaries are set outisde those of the initial data then you won't get any counts.
+//		if(numtype(lowlim) && numtype(upperlim))
+//			W_rebin[ii] = 0
+//			W_RebinSD[ii] = 0
+//			continue
+//		endif
+//		
+//		//lower limit for your rebinned data may be outside the original histogram boundary
+//		//set it to the lowest point in this case
+//		if(numtype(lowlim))
+//			lowlim = 0
+//		endif
+//
+//		//upperlimit has escaped, so set to the highest from the original data.		
+//		if(numtype(upperlim))
+//			upperlim = numpnts(x_init) - 1
+//		endif
+//		
+//		lowcelloc = trunc(lowlim)
+//		uppercelloc = trunc(upperlim)
+//		if(lowcelloc > numpnts(y_init) -1 )
+//			lowcelloc = numpnts(y_init) -1
+//		endif
+//		if(uppercelloc > numpnts(y_init) -1)
+//			uppercelloc = numpnts(y_init) -1
+//		endif
+//		
+//		//now need to add the counts together
+//		
+//		//both upperlimit and lower limit rebin boundaries aren't the same unbinned cell
+//		//need to take a proportion of a lower and upper cell 
+//		if(lowcelloc != uppercelloc)
+//			W_rebin[ii]  =  y_init[lowcelloc]*(ceil(lowlim) - lowlim)
+//			W_rebin[ii] += y_init[uppercelloc]*(upperlim - trunc(upperlim))
+//			
+//			W_RebinSD[ii]  = (s_init[lowcelloc]*(ceil(lowlim) - lowlim))^2
+//			W_RebinSD[ii] += (s_init[uppercelloc]*(upperlim - trunc(upperlim)))^2
+//		else
+//			//the upper and lower limits are in the same binned cell.  Need to work out
+//			//what proportion of the original cell is occupied by the difference between the limits
+//			W_rebin[ii] =	y_init[lowcelloc] * (upperlim - lowlim)
+//			W_RebinSD[ii] =	(s_init[lowcelloc]*(upperlim - lowlim))^2
+//		endif
+//		
+//		//if the upper and lower limits span several of the original data, then you need to add counts 
+//		//from each individual cell.
+//		if((ceil(lowlim) < trunc(upperlim)) && (trunc(upperlim) - ceil(lowlim) >= 1))
+//			for(kk = 0 ; kk < trunc(upperlim) - ceil(lowlim) ;kk += 1)
+//				W_rebin[ii] += y_init[ceil(lowlim) + kk]
+//				W_RebinSD[ii] += (s_init[ceil(lowlim) + kk])^2
+//			endfor
+//		endif
+//				
+//	endfor
+//	W_RebinSD = sqrt(W_RebinSD)
+//End
 
 
 Function Pla_histogram(W_bins, W_q, W_R, W_Rsd)
@@ -285,44 +291,43 @@ variable rebin, lowerQ, upperQ
 //it is designed to replace rebinning the wavelength spectrum which can result in twice as many points in the overlap region.
 //However, the background subtraction is currently done on rebinned data. So if you don't rebin at the start the  subtraction
 //isn't as good.
-variable stepsize, numsteps, ii, binnum, weight
+	variable stepsize, numsteps, ii
 
-rebin =  1 + (rebin/100)
-stepsize = log(rebin)
-numsteps = log(upperQ / lowerQ) / stepsize
+	rebin =  1 + (rebin/100)
+	stepsize = log(rebin)
+	numsteps = log(upperQ / lowerQ) / stepsize
 
-make/n=(numsteps + 1)/o/d W_q_rebin, W_R_rebin, W_E_rebin, W_dq_rebin
-W_q_rebin = 0
-W_R_rebin = 0
-W_E_rebin = 0
-W_dq_rebin = 0
+	make/n=(numsteps + 1)/o/d W_q_rebin, W_R_rebin, W_E_rebin, W_dq_rebin
+	W_q_rebin = 0
+	W_R_rebin = 0
+	W_E_rebin = 0
+	W_dq_rebin = 0
 
-make/n=(numsteps + 2)/free/d W_q_rebinHIST
-make/n=(numsteps + 1)/d/free Q_sw, I_sw, E_sw
+	make/n=(numsteps + 2)/free/d W_q_rebinHIST
+	make/n=(numsteps + 1)/d/free Q_sw, I_sw, E_sw
 
-W_q_rebinHIST[] = alog( log(lowerQ) + (p-0.5) * stepsize)
+	W_q_rebinHIST[] = alog( log(lowerQ) + (p-0.5) * stepsize)
 
-for(ii = 0 ; ii < numpnts(qq) ; ii += 1)
-	binnum = binarysearch(W_q_rebinHIST, qq[ii])
-	if(binnum < 0)
-		continue
-	endif
-	weight = 1 / (dR[ii]^2)
-	W_R_rebin[binnum] += RR[ii] * weight
-	W_q_rebin[binnum] += qq[ii] * weight
-	W_dq_rebin[binnum] += dq[ii] * weight
-	Q_sw[binnum] += weight
-	I_sw[binnum] += weight
-endfor
+	make/n=(dimsize(qq, 0))/d/free binnum = 0, weight = 0
+	binnum = binarysearch(W_q_rebinHIST, qq)
+	weight = 1/(dR^2)
+
+	for(ii = 0 ; ii < numpnts(qq) ; ii += 1)
+		W_R_rebin[binnum] += RR[ii] * weight[ii]
+		W_q_rebin[binnum] += qq[ii] * weight[ii]
+		W_dq_rebin[binnum] += dq[ii] * weight[ii]
+		Q_sw[binnum] += weight
+		I_sw[binnum] += weight
+	endfor
 	W_R_rebin[] /= I_sw[p]
 	W_q_rebin[] /= Q_sw[p]
 	W_E_rebin[] = sqrt(1/I_sw[p])
 	W_dq_rebin[] /= Q_sw[p]
 	
-for(ii = numpnts(W_q_rebin) - 1 ; ii >= 0 ; ii -= 1)
-	if(numtype(W_q_Rebin[ii]))
-		deletepoints ii, 1, W_q_rebin, W_R_rebin, W_E_rebin, W_dq_rebin
-	endif
-endfor
+	for(ii = numpnts(W_q_rebin) - 1 ; ii >= 0 ; ii -= 1)
+		if(numtype(W_q_Rebin[ii]))
+			deletepoints ii, 1, W_q_rebin, W_R_rebin, W_E_rebin, W_dq_rebin
+		endif
+	endfor
 
 End
