@@ -2506,28 +2506,7 @@ Function Moto_toRQ4(Q,R,dR,x)
 	endswitch			
 End
 
-Function Moto_toLogLin(Q,R,dR,x)
-	Wave/z R,Q,dR
-	Variable x
-	//if x=0 then you're sending loglin to linlin
-	//if x=1 then you're sending linlin to loglin
-	switch(x)
-		case 0:
-			R=alog(R)
-			if(waveexists(dR)==1)
-				dR=alog(dR)
-				dR*=R
-				dR-=R
-			endif
-			break
-		case 1:
-			if(waveexists(dR)==1)
-				dR=log((dR+R)/R)	
-			endif
-			R=log(R)
-			break
-	endswitch							
-End
+Function Moto_toLogLin(Q,R,dR,x)	Wave/z R,Q,dR	Variable x	//if x=0 then you're sending loglin to linlin	//if x=1 then you're sending linlin to loglin	switch(x)		case 0:			R = alog(R)			if(waveexists(dR))				dR *= R * ln(10)			endif			break		case 1:			if(waveexists(dR)==1)				dR= dR / (R * ln(10))			endif			R=log(R)			break	endswitch							End
 
 Function Moto_Plottype(PU_Struct)
 	STRUCT WMPopupAction &PU_Struct
