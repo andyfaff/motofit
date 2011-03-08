@@ -2513,16 +2513,14 @@ Function Moto_toLogLin(Q,R,dR,x)
 	//if x=1 then you're sending linlin to loglin
 	switch(x)
 		case 0:
-			R=alog(R)
-			if(waveexists(dR)==1)
-				dR=alog(dR)
-				dR*=R
-				dR-=R
+			R = alog(R)
+			if(waveexists(dR))
+				dR *= R * ln(10)
 			endif
 			break
 		case 1:
 			if(waveexists(dR)==1)
-				dR=log((dR+R)/R)	
+				dR= dR / (R * ln(10))
 			endif
 			R=log(R)
 			break
@@ -2639,7 +2637,7 @@ Function Moto_Plottype(PU_Struct)
 			ModifyGraph logTicks(left)=10
 			break
 		case 3:
-			modifygraph log(left)=1
+			modifygraph log(left)=0
 			Label left "RQ\\S4"
 			ModifyGraph logLabel(left)=0
 			ModifyGraph logTicks(left)=10
@@ -3815,7 +3813,7 @@ Function Moto_removeNAN(q,R,dR,dQ)
 	Wave/z q,R,dR,dQ
 	Variable ii=0
 	for(ii=0;ii<numpnts(q);ii+=1)
-		if(numtype(q[ii])!=0 || numtype(R[ii])!=0 || R[ii]<=0)
+		if(numtype(q[ii])!=0 || numtype(R[ii])!=0)
 			if(Waveexists(dq) && Waveexists(dR))
 				deletepoints ii,1,q,R,dR,dQ
 			elseif(Waveexists(dR))
