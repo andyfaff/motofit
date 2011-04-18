@@ -1944,7 +1944,8 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 	string user = "", samplename = "", rednnote = ""
 	
 	variable fileID,ii,fileIDcomb, err=0, jj
-	
+	variable/c compSplicefactor
+
 	try
 		newdatafolder/o root:packages
 		newdatafolder/o root:packages:platypus
@@ -1997,10 +1998,10 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 				
 				samplename = xmlstrfmXpath(fileID, "//REFsample/ID", "", "")
 				user = xmlstrfmXpath(fileID, "//REFentry[1]/User", "", "")
-				rednnote = xmlstrfmXpath(fileID,"//REFroot/REFentry[1]/REFdata[1]/Run[1]/reductionnote","","")			 
+				rednnote = xmlstrfmXpath(fileID,"//REFroot/REFentry[1]/REFdata[1]/Run[1]/reductionnote","","")
+				compsplicefactor = cmplx(1., 1.)			 
 			else
 				//splice with propagated error in the splice factor
-				variable/c compSplicefactor
 				if(paramisdefault(factors))
 					compSplicefactor = Pla_GetweightedScalingInoverlap(tempQQ, tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)		
 				else
@@ -2029,7 +2030,8 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 				sort tempQQ,tempQQ,tempRR,tempDR,tempDQ 
 			endif
 			//close the XML file
-			xmlclosefile(fileID, 0)
+			xmlsetattr(fileID, "//REFroot/REFentry[1]/REFdata/Run", "", "scale", num2str(real(compsplicefactor)))
+			xmlclosefile(fileID, 1)
 			fileID=0
 		endfor
 		
