@@ -1360,15 +1360,15 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			duplicate/o M_lambda, $(tempDF+":M_beampos")
 			Wave M_beampos = $(tempDF+":M_beampos")
 			
-			for(ii = 0 ; ii < numspectra ; ii += 1)
-				imagetransform/g=(ii) getcol M_gravCorrCoefs
-				Wave W_extractedCol
-				M_beampos[][ii] = deflec(W_extractedCol, M_lambda[p][ii])	
-			endfor
-			Killwaves/z W_extractedCol
+//			for(ii = 0 ; ii < numspectra ; ii += 1)
+//				imagetransform/g=(ii) getcol M_gravCorrCoefs
+//				Wave W_extractedCol
+//				M_beampos[][ii] = deflec(W_extractedCol, M_lambda[p][ii])	
+//			endfor
+//			Killwaves/z W_extractedCol
 
-			//the following correction assumes that the directbeam neutrons are falling from a point position W_gravCorrCoefs[1] before the detector
-			//At the sample stage (W_gravcorrcoefs[1] - detectorpos[0]) they have a certain vertical velocity, assuming that the neutrons had an initial vertical velocity of 0
+			//the following correction assumes that the directbeam neutrons are falling from a point position W_gravCorrCoefs[0] before the detector
+			//At the sample stage (W_gravcorrcoefs[0] - detectorpos[0]) they have a certain vertical velocity, assuming that the neutrons had an initial vertical velocity of 0
 			// Although the motion past the sample stage will be parabolic, assume that the neutrons travel in a straight line after that (i.e. the tangent of the parabolic motion at the sample stage)
 			// this should give an idea of the direction of the true incident beam, as experienced by the sample
 			//Factor of 2 is out the front to give an estimation of the increase in 2theta of the reflected beam.

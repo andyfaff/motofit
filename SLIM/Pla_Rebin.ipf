@@ -291,7 +291,7 @@ variable rebin, lowerQ, upperQ
 //it is designed to replace rebinning the wavelength spectrum which can result in twice as many points in the overlap region.
 //However, the background subtraction is currently done on rebinned data. So if you don't rebin at the start the  subtraction
 //isn't as good.
-	variable stepsize, numsteps, ii
+	variable stepsize, numsteps, ii, binnum, weight
 
 	rebin =  1 + (rebin/100)
 	stepsize = log(rebin)
@@ -308,14 +308,16 @@ variable rebin, lowerQ, upperQ
 
 	W_q_rebinHIST[] = alog( log(lowerQ) + (p-0.5) * stepsize)
 
-	make/n=(dimsize(qq, 0))/d/free binnum = 0, weight = 0
-	binnum = binarysearch(W_q_rebinHIST, qq)
-	weight = 1/(dR^2)
-
 	for(ii = 0 ; ii < numpnts(qq) ; ii += 1)
-		W_R_rebin[binnum] += RR[ii] * weight[ii]
-		W_q_rebin[binnum] += qq[ii] * weight[ii]
-		W_dq_rebin[binnum] += dq[ii] * weight[ii]
+		binnum = binarysearch(W_q_rebinHIST, qq[ii])
+		if(binnum < 0)
+			continue
+		endif
+		 weight = 1 / (dR[ii]^2)
+		 
+		W_R_rebin[binnum] += RR[ii] * weight
+		W_q_rebin[binnum] += qq[ii] * weight
+		W_dq_rebin[binnum] += dq[ii] * weight
 		Q_sw[binnum] += weight
 		I_sw[binnum] += weight
 	endfor
