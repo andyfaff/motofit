@@ -116,7 +116,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	//the angular part is calculated here.
 	
 	//writes out the file in Q <tab> R <tab> dR <tab> dQ format.
-	string tempStr,cDF,directDF,angle0DF, alreadyLoaded="", toSplice="", direct = "", angle0="",tempDF, reductionCmd, cmd = "", fname
+	string tempStr,cDF,directDF,angle0DF, alreadyLoaded="", toSplice="", direct = "", angle0="",tempDF, reductionCmd, cmd = "", fname,ofname
 	variable ii,D_S2, D_S3, D_SAMPLE,domega, spliceFactor,temp, isDirect, aa,bb,cc,dd,jj,kk, numspectra, fileID
 	
 	cDF = getdatafolder(1)
@@ -554,11 +554,11 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 				Multithread RR2d[][] = M_Ref[p][q][ii]
 				Multithread EE2d[][] = M_RefSD[p][q][ii]
 							
-				fname = cutfilename(angle0)
+				ofname = "off_" + cutfilename(angle0)
 				if(dontoverwrite)
-					fname = uniqueFileName(outputPathStr, "off_" + fname, ".xml")
+					fname = uniqueFileName(outputPathStr, ofname, ".xml")
 				endif
-				write2DXML(outputPathStr, fname, qz2D, qy2D, RR2d, EE2d, "", user[0], samplename[0], angle0, reductionCmd)
+				write2DXML(outputPathStr, ofname, qz2D, qy2D, RR2d, EE2d, "", user[0], samplename[0], angle0, reductionCmd)
 			endif
 		endfor
 		

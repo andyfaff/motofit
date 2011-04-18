@@ -1,4 +1,4 @@
-#pragma rtGlobals=1		// Use modern global access method.
+#pragma rtGlobals=3		// Use modern global access method.
 #include <Image Line Profile>
 
 // SVN date:    $Date$
@@ -1464,7 +1464,7 @@ Function SLIM_plot_offspec(inputPathStr, filenames)
 			EP_log(RR, EE, RR, EE)
 			sort RR, Qz, Qy,RR,EE
 			val = binarysearch(RR, -Inf)
-			deletepoints 0, val + 1, RR, Qz, Qy, EE
+			deletepoints val, numpnts(RR) - val, RR, Qz, Qy, EE
 			killwaves/z M_xmlcontent,W_xmlcontentnodes
 			Display/K=1
 			AppendXYZContour RR vs {qy, qz}
