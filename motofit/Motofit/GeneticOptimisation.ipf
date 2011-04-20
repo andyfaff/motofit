@@ -191,7 +191,7 @@ Function Gen_curvefitpanel_init() : Panel
 	SetVariable xdataWav_setvar_tab0,pos={294,164},size={180,20},title=" ",fsize=12
 	SetVariable xdataWav_setvar_tab0,bodyWidth= 180,noedit=1
 	MakeSetVarIntoWSPopupButton("gencurvefitpanel", "xdataWav_setvar_tab0", "Gen_waveselectionNotification", "root:Packages:Motofit:gencurvefit:xdataWav",content = WMWS_Waves)
-	PopupWS_MatchOptions("gencurvefitpanel", "xdataWav_setvar_tab0", matchStr="*", listoptions="DIMS:1,CMPLX:0,TEXT:0,BYTE:0,WORD:0,INTEGER:0,MINROWS:1",namefilterproc = "Gen_filter_xdataWav")
+	PopupWS_MatchOptions("gencurvefitpanel", "xdataWav_setvar_tab0", matchStr="*", listoptions="CMPLX:0,TEXT:0,BYTE:0,WORD:0,INTEGER:0,MINROWS:1",namefilterproc = "Gen_filter_xdataWav")
 	PopupWS_AddSelectableString("gencurvefitpanel", "xdataWav_setvar_tab0","_calculated_")
 	PopupWS_SetSelectionFullPath("gencurvefitpanel", "xdataWav_setvar_tab0","_calculated_")
 	
@@ -503,11 +503,14 @@ Function Gen_weightingRadioProc(CB_Struct):checkboxcontrol
 End
 
 
-Function/s GEN_Functionlists()
+Function/s GEN_Functionlists([indvars])
+	variable indvars
 	string theList="", UserFuncs, XFuncs
 	string options = "KIND:10"
 	options += ",SUBTYPE:FitFunc"
-	options += ",NINDVARS:1"
+	if(!paramisdefault(indvars))
+		options += ",NINDVARS:"+num2istr(indvars)
+	endif
 	UserFuncs = FunctionList("*", ";",options)
 	UserFuncs = RemoveFromList("GFFitFuncTemplate", UserFuncs)
 	UserFuncs = RemoveFromList("GFFitAllAtOnceTemplate", UserFuncs)
@@ -533,6 +536,18 @@ Function/s GEN_Functionlists()
 	return theList
 End
 
+Function GEN_numIndVars_func(funcStr)
+	string funcstr
+	variable ii
+	string info
+	for(ii = 0 ; ii<100; ii+=1)
+	 	info = FunctionList(funcstr, ";", "KIND:31,NINDVARS:"+num2istr(ii))
+	 	if(strlen(info))
+	 		return ii
+	 	endif
+	 endfor
+	 return NaN
+End
 
 Function GEN_cancelButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
@@ -1238,17 +1253,22 @@ End
 Function Gen_filter_xdataWav(aName,contents)	//this can be used for x,weight,mask
 	String aName
 	variable contents
-
+	
+	controlinfo/W = gencurvefitpanel FunctionStr_popup_tab0
+	string fitfuncname = S_value
+	variable nindvar =  GEN_numIndVars_func(fitfuncname)
+	
 	Wave/z aWav = $aName
-	if(cmpstr(aName,"_calculated_")==0)
+
+	if(cmpstr(aName,"_calculated_")==0 && nindvar == 1)
 		return 1
 	endif
 
 	controlinfo/w=gencurvefitpanel fromtarget_tab0
 	variable fromtarget = v_value
-
+			
 	Wave/z ywav = $PopupWS_GetSelectionFullPath("gencurvefitpanel", "ydataWav_setvar_tab0")
-	if(waveexists(ywav) && (Wavedims(aWav)!=1 || numpnts(aWav) != numpnts(ywav) || gen_isSamewave(aWav, yWAV)))
+	if(waveexists(ywav) && (Wavedims(aWav)!=nindvar || dimsize(aWav, 0) != numpnts(ywav) || gen_isSamewave(aWav, yWAV)))
 		return 0
 	else 
 		if(fromtarget)
@@ -2050,4 +2070,29 @@ Function make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 	endtry
 
 	setdatafolder $cDF
+End
+
+Function GEN_classifyN(values)
+Wave values
+//gets some stats about the convergence of an Monte Carlo run
+variable ii
+make/n=(dimsize(values, 0), 2)/o/d stats = 0
+make/n=100/free/d histo = 0
+
+for(ii = 1 ; ii < dimsize(values, 0) ; ii+=1)
+	make/d/n=(ii + 1)/free subset_values
+	subset_values[] = values[p]
+	variable V_fitoptions=4
+	histo = 0
+	Histogram/P/C/B=1 subset_values, histo
+
+	CurveFit/q/n/M=2/W=0 gauss histo
+	Wave W_coef
+	stats[ii][0] = W_coef[2]
+	stats[ii][1] = W_coef[3]
+	if(!mod(ii, 100))
+		print ii
+	endif
+endfor
+
 End

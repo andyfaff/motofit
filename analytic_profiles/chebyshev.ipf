@@ -7,13 +7,14 @@ constant lambda = 10
 Function Chebyshevapproximator(w, yy, xx): fitfunc
 	Wave w, yy, xx
 
-	Wave coef_forReflectivity = createCoefs_ForReflectivity(w)
+	createCoefs_ForReflectivity(w)
+	Wave coef_forReflectivity
 	motofit(coef_forReflectivity, yy, xx)
 //	yy = log(yy)
 	
 End
 
-Function/wave createCoefs_ForReflectivity(w)
+Function createCoefs_ForReflectivity(w)
 	wave w
 	
 	variable ii, jj, xmod, multiplier
@@ -76,7 +77,7 @@ Function/wave createCoefs_ForReflectivity(w)
 			coef_forReflectivity[4 * numlayers + 6] = MAX_LENGTH/(NUMSTEPS - 1)
 			coef_forReflectivity[4 * numlayers + 7] = (chebSLD[ii])
 			coef_forReflectivity[4 * numlayers + 8] = 0
-			coef_forReflectivity[4 * numlayers + 9] = 0
+			coef_forReflectivity[4 * numlayers + 9] = 0.0
 			
 			lastSLD = chebSLD[ii]
 			numlayers += 1
@@ -87,7 +88,6 @@ Function/wave createCoefs_ForReflectivity(w)
 		lastz = pnt2x(chebsld, ii)
 	endfor
 
-	return coef_forReflectivity
 End
 
 Threadsafe Function calcCheb(a_n, x)
@@ -106,31 +106,31 @@ endfor
 return summ
 End
 
-Function smoother(coefs, y_obs, y_calc, s_obs)
-	Wave coefs, y_obs, y_calc, s_obs
-
-	variable retval, betas = 0, ii
-	
-	make/n=(numpnts(y_obs))/free/d diff
-	multithread diff = ((y_obs-y_calc)/s_obs)^2
-	retval = sum(diff)
-	
-	Wave coef_forreflectivity = createCoefs_ForReflectivity(coefs)
-	for(ii = 0 ; ii < coef_forreflectivity[0] + 1 ; ii+=1)
-		if(ii == 0)
-			betas += (coef_forreflectivity[2] - coef_forreflectivity[7])^2
-		elseif(ii == coef_forreflectivity[0])
-			betas += (coef_forreflectivity[3] - coef_forreflectivity[(4 * (ii - 1)) + 7])^2
-			if(abs(coef_forreflectivity[3] - coef_forreflectivity[(4 * (ii - 1)) + 7]) > 0.5)
-				retval *= 10
-			endif
-		else
-			betas += (coef_forreflectivity[4 * (ii-1) + 7] - coef_forreflectivity[4 * ii  + 7])^2
-		endif
-		if(coef_forreflectivity[4 * (ii-1) + 7] < -0.1) 
-			retval*=10
-		endif
-	endfor	
-
-	return retval + lambda * betas
-end
+//Function smoother(coefs, y_obs, y_calc, s_obs)
+//	Wave coefs, y_obs, y_calc, s_obs
+//
+//	variable retval, betas = 0, ii
+//	
+//	make/n=(numpnts(y_obs))/free/d diff
+//	multithread diff = ((y_obs-y_calc)/s_obs)^2
+//	retval = sum(diff)
+//	
+//	Wave coef_forreflectivity = createCoefs_ForReflectivity(coefs)
+//	for(ii = 0 ; ii < coef_forreflectivity[0] + 1 ; ii+=1)
+//		if(ii == 0)
+//			betas += (coef_forreflectivity[2] - coef_forreflectivity[7])^2
+//		elseif(ii == coef_forreflectivity[0])
+//			betas += (coef_forreflectivity[3] - coef_forreflectivity[(4 * (ii - 1)) + 7])^2
+//			if(abs(coef_forreflectivity[3] - coef_forreflectivity[(4 * (ii - 1)) + 7]) > 0.5)
+//				retval *= 10
+//			endif
+//		else
+//			betas += (coef_forreflectivity[4 * (ii-1) + 7] - coef_forreflectivity[4 * ii  + 7])^2
+//		endif
+//		if(coef_forreflectivity[4 * (ii-1) + 7] < -0.1) 
+//			retval*=10
+//		endif
+//	endfor	
+//
+//	return retval + lambda * betas
+//end
