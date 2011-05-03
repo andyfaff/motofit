@@ -2081,12 +2081,12 @@ make/n=100/free/d histo = 0
 
 for(ii = 1 ; ii < dimsize(values, 0) ; ii+=1)
 	make/d/n=(ii + 1)/free subset_values
-	subset_values[] = values[p]
+	multithread subset_values[] = values[p]
 	variable V_fitoptions=4
 	histo = 0
-	Histogram/P/C/B=1 subset_values, histo
+	Histogram/P/C/B=3 subset_values, histo
 
-	CurveFit/q/n/M=2/W=0 gauss histo
+	CurveFit/NTHR=0/q/n/M=2/W=0 gauss histo
 	Wave W_coef
 	stats[ii][0] = W_coef[2]
 	stats[ii][1] = W_coef[3]
