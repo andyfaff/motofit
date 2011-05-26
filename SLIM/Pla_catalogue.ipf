@@ -59,6 +59,7 @@ Function catalogueHDF(pathName[, start, finish])
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o/s root:packages:platypus:catalogue
 	make/o/t/n=(1,8) runlist
+	make/o/d/n=(1,4) vgaps
 	
 	if(paramisdefault(start))
 		start = 1
@@ -101,7 +102,7 @@ Function catalogueHDF(pathName[, start, finish])
 				abort
 			endif
 		
-			appendCataloguedata(HDFref, xmlref, jj, stringfromlist(ii,nexusfiles), runlist)
+			appendCataloguedata(HDFref, xmlref, jj, stringfromlist(ii,nexusfiles), runlist, vgaps)
 		
 			if(HDFref)
 				HDF5closefile(HDFref)
@@ -133,10 +134,11 @@ Function catalogueHDF(pathName[, start, finish])
 	setdatafolder $cDF
 End
 
-Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
+Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps)
 	variable HDFref,xmlref,fileNum
 	string filename
 	Wave/t runlist
+	Wave vgaps
 	print fileNum
 	
 	string tempStr
@@ -148,6 +150,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 	
 	//add another row to the runlist
 	redimension/n=(fileNum+1,-1) runlist
+	redimension/n=(fileNum+1,-1) vgaps
 	row = dimsize(runlist,0)
 	
 	if(xmladdnode(xmlref,"//catalogue","","nexus","",1))
@@ -308,6 +311,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 	if(!V_flag)
 		Wave gap = $(stringfromlist(0, S_wavenames))
 		tempStr += num2str(gap[0])+", "
+		vgaps[row][0] = gap[0]
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
@@ -325,6 +329,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 	if(!V_flag)
 		Wave gap = $(stringfromlist(0, S_wavenames))
 		tempStr += num2str(gap[0])+", "
+		vgaps[row][1] = gap[0]
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
@@ -342,6 +347,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 	if(!V_flag)
 		Wave gap = $(stringfromlist(0, S_wavenames))
 		tempStr += num2str(gap[0])+", "
+		vgaps[row][2] = gap[0]
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
@@ -366,6 +372,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist)
 	if(!V_flag)
 		Wave gap = $(stringfromlist(0, S_wavenames))
 		tempStr += num2str(gap[0])
+		vgaps[row][3] = gap[0]
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth/vertical","","gap",num2str(gap[0]),1))
 			abort
 		endif
