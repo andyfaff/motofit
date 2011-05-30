@@ -3119,7 +3119,7 @@ Function Moto_savefitwave(ctrlName) : ButtonControl
 	
 	//why not convert them back to R vs Q? Then you can load in again
 	variable plotyp=str2num(moto_str("plotyp"))
-	Wave dummy
+	Wave/z dummy
 	switch (plotyp)
 		case 1:
 			Moto_toLogLin($fitxwave,$fitywave,dummy,0)
@@ -3143,7 +3143,7 @@ Function Moto_savefitwave(ctrlName) : ButtonControl
 	close refnum
 
 	//convert back the waves you changed
-	Wave dummy
+	Wave/z dummy
 	switch (plotyp)
 		case 1:
 			Moto_toLogLin($fitxwave,$fitywave,dummy,1)
