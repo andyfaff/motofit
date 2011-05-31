@@ -361,11 +361,11 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							print "Warning setting scale factor to 1 ", angledata_list[ii][3]
 						endif
 						
-						string template =  " reduce(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
+						string template =  " reduce(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=cmplx(%g, NaN), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
 						sprintf cmd, template, replacestring("\\", inputpathStr, "\\\\"), replacestring("\\", outputpathStr, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, dontoverwrite, normalisebymonitor, saveSpectrum, saveoffspec
 						cmdToHistory(cmd)
 						
-						if(reduce(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_centre = expected_centre, manual=manualbeamfind, dontoverwrite = dontoverwrite, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec))
+						if(reduce(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_peak = cmplx(expected_centre, NaN), manual=manualbeamfind, dontoverwrite = dontoverwrite, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec))
 							print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
 						endif
 					endfor	
@@ -430,7 +430,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					sprintf cmd, "slim_plot(\"%s\",\"%s\",\"%s\",%g,%g,%g,expected_centre=%g, rebinning=%g, manual=%g, normalise=%g, saveSpectrum = %g)",inputPathStr, outputPathStr, filenames, lowLambda,highLambda, backgroundsbn,expected_centre, rebinpercent, manualbeamfind, normalisebymonitor, saveSpectrum
 					cmdToHistory(cmd)
 						
-					if(slim_plot(thePathstring, thePathstring, fileNames,lowLambda,highLambda,backgroundsbn, expected_centre=expected_centre, rebinning = rebinpercent, manual = manualbeamfind, normalise = normalisebymonitor, saveSpectrum = saveSpectrum))
+					if(slim_plot(thePathstring, outputPathStr, fileNames,lowLambda,highLambda,backgroundsbn, expected_centre = expected_centre, rebinning = rebinpercent, manual = manualbeamfind, normalise = normalisebymonitor, saveSpectrum = saveSpectrum))
 						print "ERROR while trying to plot (SLIM_buttonproc)"
 						return 0
 					endif
@@ -532,15 +532,21 @@ Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, 
 		endif
 		tempFileNameStr = removeending(stringfromlist(ii,fileNames),".nx.hdf")
 		
+		GetFileFolderInfo/q/z outputPathStr
+		if(V_flag)//path doesn't exist
+			print "ERROR please give valid output path as well (SLIM_plot)"
+			return 1	
+		endif
+	
 		if(paramisdefault(rebinning) || rebinning <= 0)
-			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, manual=manual, normalise = normalise, savespectrum = saveSpectrum))
+			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_peak=cmplx(expected_centre, NaN), manual=manual, normalise = normalise, savespectrum = saveSpectrum))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1
 			endif
 		else
 			make/o/d/n= (round(log(highlambda/lowlambda)/log(1+rebinning/100))+1) W_rebinBoundaries
 			W_rebinboundaries = lowlambda * (1+rebinning/100)^p
-			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_centre=expected_centre, rebinning=W_rebinboundaries,manual=manual, normalise = normalise, savespectrum = saveSpectrum))
+			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_peak=cmplx(expected_centre, NaN), rebinning=W_rebinboundaries,manual=manual, normalise = normalise, savespectrum = saveSpectrum))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1
 			endif		
@@ -572,7 +578,7 @@ Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, 
 	setwindow SLIM_PLOTwin, userdata(filenames) = filenames
 	setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr
 	
-	sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\",%g, %g, %d, expected_centre = %g, rebinning=%g, manual=%d, normalise=%d, saveSpectrum=%d)", inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, expected_centre, rebinning, manual, normalise, saveSpectrum
+	sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\",%g, %g, %d, expected_peak = cmplx(%g, NaN), rebinning=%g, manual=%d, normalise=%d, saveSpectrum=%d)", inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, expected_centre, rebinning, manual, normalise, saveSpectrum
 	setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
 	
 	controlbar/W=SLIM_PLOTwin 30
@@ -1230,10 +1236,10 @@ Function userSpecifiedArea(detector, peakParams)
 		variable/g root:packages:platypus:data:reducer:expected_centre
 		NVAR/z position = root:packages:platypus:data:reducer:expected_centre
 	
-		variable/g root:packages:platypus:data:reducer:true_position
-		variable/g root:packages:platypus:data:reducer:true_width
-		NVAR/z true_position = root:packages:platypus:data:reducer:true_position
-		NVAR/z true_width = root:packages:platypus:data:reducer:true_width
+		variable/g root:packages:platypus:data:reducer:actual_position
+		variable/g root:packages:platypus:data:reducer:actual_width
+		NVAR/z actual_position = root:packages:platypus:data:reducer:actual_position
+		NVAR/z actual_width = root:packages:platypus:data:reducer:actual_width
 
 	
 		duplicate/o detector,root:packages:platypus:data:reducer:tempDetector
@@ -1251,7 +1257,7 @@ Function userSpecifiedArea(detector, peakParams)
 		createSpecBeamAdjustmentPanel(detector, ordProj)
 		pauseforuser specBeamAdjustmentPanel
 
-		peakParams = cmplx(true_position, true_width)
+		peakParams = cmplx(actual_position, actual_width)
 	catch
 
 	endtry
@@ -1276,10 +1282,10 @@ Function createSpecBeamAdjustmentPanel(detector, ordProj)
 	
 	SetVariable true_width_setvar,pos={548,368},size={170,19},proc=myAOI,title="true FWHM",win=specBeamAdjustmentPanel
 	SetVariable true_width_setvar,fSize=12,win=specBeamAdjustmentPanel
-	SetVariable true_width_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:true_width,win=specBeamAdjustmentPanel
+	SetVariable true_width_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:actual_width,win=specBeamAdjustmentPanel
 	SetVariable true_position_setvar,pos={378,368},size={170,19},proc=myAOI,title="true position",win=specBeamAdjustmentPanel
 	SetVariable true_position_setvar,fSize=12,win=specBeamAdjustmentPanel
-	SetVariable true_position_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:true_position,win=specBeamAdjustmentPanel
+	SetVariable true_position_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:actual_position,win=specBeamAdjustmentPanel
 	TitleBox Instruction,pos={429,231},size={226,20},title="Please adjust regions to find gaussian beamcentre",win=specBeamAdjustmentPanel
 	GroupBox group0,pos={440,256},size={203,88},title="auto adjust",win=specBeamAdjustmentPanel
 	GroupBox group1,pos={372,349},size={354,49},title="manual adjust",win=specBeamAdjustmentPanel
@@ -1319,8 +1325,8 @@ Function myAOI(s):setvariablecontrol
 		wave imageWave = ImageNameToWaveRef("specBeamAdjustmentPanel#detector", stringfromlist(0,imagenamelist("specBeamAdjustmentPanel#detector",";")) )
 		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
 	
-		NVAR/z true_position = root:packages:platypus:data:reducer:true_position
-		NVAR/z true_width = root:packages:platypus:data:reducer:true_width
+		NVAR/z actual_position = root:packages:platypus:data:reducer:actual_position
+		NVAR/z actual_width = root:packages:platypus:data:reducer:actual_width
 
 		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
 	
@@ -1328,8 +1334,8 @@ Function myAOI(s):setvariablecontrol
 	
 		make/n=4/d/o root:packages:platypus:data:reducer:W_coef
 		Wave W_coef =  root:packages:platypus:data:reducer:W_coef
-		W_coef[2] = true_position
-		W_coef[3] = sqrt(2) * true_width /(2*sqrt(2*ln(2)))
+		W_coef[2] = actual_position
+		W_coef[3] = sqrt(2) * actual_width /(2*sqrt(2*ln(2)))
 	
 		CurveFit/q/W=0/n/H="0011" gauss, kwCWave = W_coef, ordProj/D
 		Modifygraph/z /W=specBeamAdjustmentPanel#detectorADD rgb(fit_ordProj)=(0,0,0)
@@ -1354,8 +1360,8 @@ Function adjustAOI(s):setvariablecontrol
 		nvar width = root:packages:platypus:data:reducer:width
 		nvar expected_centre = root:packages:platypus:data:reducer:expected_centre
 	
-		NVAR/z true_position = root:packages:platypus:data:reducer:true_position
-		NVAR/z true_width = root:packages:platypus:data:reducer:true_width
+		NVAR/z actual_position = root:packages:platypus:data:reducer:actual_position
+		NVAR/z actual_width = root:packages:platypus:data:reducer:actual_width
 	
 		setdrawlayer/k/w=specBeamAdjustmentPanel#detector progfront
 		SetDrawLayer/w=specBeamAdjustmentPanel#detector ProgFront
@@ -1384,10 +1390,8 @@ Function adjustAOI(s):setvariablecontrol
 
 		setactivesubwindow specBeamAdjustmentPanel
 		Wave W_coef
-		true_position = W_coef[2]
-		true_width = 2*sqrt(2*ln(2))*W_coef[3]/sqrt(2)
-
-
+		actual_position = W_coef[2]
+		actual_width = 2*sqrt(2*ln(2))*W_coef[3]/sqrt(2)
 	endif
 End
 

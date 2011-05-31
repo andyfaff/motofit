@@ -56,13 +56,15 @@
 	//We'll have two
 	//StrConstant PATH_TO_DATA = "Macintosh HDD:Users:andrew:Documents:Andy:Platypus:TEMP:"
 
-Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilename, lowlambda, highlambda, rebin, [scanpointrange, eventStreaming, water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
+Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilename, lowlambda, highlambda, rebin, [scanpointrange, eventStreaming, water, background, expected_peak, actual_peak, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
 	string inputPathStr, outputPathStr
 	variable scalefactor
 	string runfilename
 	variable lowLambda,highLambda, rebin
 	string scanpointrange, eventStreaming, water
-	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose
+	variable background
+	variable/c expected_peak, actual_peak
+	variable manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose
 	
 	//produces a reflectivity curve for a given angle
 	//ONLY ONE ANGLE IS REDUCED
@@ -144,8 +146,8 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	if(paramisdefault(background))
 		background = 1
 	endif
-	if(paramisdefault(expected_centre))
-		expected_centre = ROUGH_BEAM_POSITION
+	if(paramisdefault(expected_peak))
+		expected_peak = cmplx(ROUGH_BEAM_POSITION, NaN)
 	endif
 	if(paramisdefault(manual))
 		manual = 0
@@ -170,8 +172,8 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	endif
 	
 	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
-	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=\"%s\",water=\"%s\", expected_centre=%g, manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
-	sprintf reductionCmd, cmd, inputPathStr, outputPathStr, scalefactor, runfilename, lowLambda, highLambda, rebin, background, scanpointrange, eventstreaming, water, expected_centre, manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
+	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=\"%s\",water=\"%s\", expected_centre=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
+	sprintf reductionCmd, cmd, inputPathStr, outputPathStr, scalefactor, runfilename, lowLambda, highLambda, rebin, background, scanpointrange, eventstreaming, water, real(expected_peak), imag(expected_peak), manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
 	if(verbose)
 		print reductionCmd
 	endif
@@ -235,11 +237,11 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		//start off by processing the direct beam run
 		isDirect = 1
 		if(rebin)
-			if(processNeXUSfile(inputPathStr, outputPathStr, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, rebinning = W_rebinboundaries, manual = manual, normalise=normalise, saveSpectrum = saveSpectrum))
+			if(processNeXUSfile(inputPathStr, outputPathStr, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_peak = expected_peak, rebinning = W_rebinboundaries, manual = manual, normalise=normalise, saveSpectrum = saveSpectrum))
 				print "ERROR while processing a direct beam run (reduceASingleFile)" ; abort
 			endif
 		else
-			if(processNeXUSfile(inputPathStr, outputPathStr, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_centre = expected_centre, manual = manual, normalise = normalise, saveSpectrum = saveSpectrum))
+			if(processNeXUSfile(inputPathStr, outputPathStr, direct, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_peak = expected_peak, manual = manual, normalise = normalise, saveSpectrum = saveSpectrum))
 				print "ERROR while processing a direct beam run (reduceASingleFile)" ; abort
 			endif				
 		endif
@@ -263,7 +265,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		//when you process the reflected nexus file you have to use the lambda spectrum from the direct beamrun
 		make/n=(dimsize(M_lambdaHISTD, 0))/free/d W_lambdaHISTD
 		W_lambdaHISTD[] = M_lambdaHISTD[p][0]
-		if(processNeXUSfile(inputPathStr, outputPathStr, angle0, background, lowLambda, highLambda, scanpointrange = scanpointrange, eventStreaming = eventStreaming, water = water, isDirect = 0, expected_centre = expected_centre, rebinning = W_lambdaHISTD, manual=manual, normalise = normalise, saveSpectrum = saveSpectrum))
+		if(processNeXUSfile(inputPathStr, outputPathStr, angle0, background, lowLambda, highLambda, scanpointrange = scanpointrange, eventStreaming = eventStreaming, water = water, isDirect = 0, expected_peak = expected_peak, rebinning = W_lambdaHISTD, manual=manual, normalise = normalise, saveSpectrum = saveSpectrum))
 			print "ERROR while processing a reflected beam run (reduce)" ; abort
 		endif
 		
@@ -574,13 +576,15 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 End
 
 
-Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
+Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda, highlambda, rebin, [water, background, expected_peak, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
 	string inputPathStr, outputPathStr
 	variable scalefactor
 	string runfilenames
 	variable lowLambda,highLambda, rebin
 	string water
-	variable background, expected_centre, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose
+	variable background
+	variable/c expected_peak
+	variable manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose
 	
 	//produces a reflectivity curve for a given set of angles
 	//if you want to do kinetic reduction (e.g.  you want to examine streamed data, or reduce the individual plots within a single file) use reduceASingleFile directly
@@ -596,7 +600,7 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 		numpairs = itemsinlist(runfilenames)
 		for(ii = 0 ; ii < numpairs ; ii += 1)
 			thePair = stringfromlist(ii, runfilenames)
-			ifname = reduceASingleFile(inputPathStr, outputPathStr, scalefactor, thePair, lowlambda, highlambda, rebin, water=water, scanpointrange = "", background=background, expected_centre=expected_centre, manual=manual, dontoverwrite=dontoverwrite, normalise=normalise, saveSpectrum=savespectrum, saveoffspec=saveoffspec,verbose=verbose)
+			ifname = reduceASingleFile(inputPathStr, outputPathStr, scalefactor, thePair, lowlambda, highlambda, rebin, water=water, scanpointrange = "", background=background, expected_peak=expected_peak, manual=manual, dontoverwrite=dontoverwrite, normalise=normalise, saveSpectrum=savespectrum, saveoffspec=saveoffspec,verbose=verbose)
 			if(strlen(ifname) == 0)
 				print "ERROR whilst calling reduceasinglefile (reduce)"
 				abort
@@ -789,11 +793,13 @@ Function doesNexusfileExist(inputPathStr, filename)
 	endif
 End
 
-Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose])
+Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, eventStreaming,isDirect, expected_peak, actual_peak, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose])
 	string inputPathStr, outputPathStr, fileName
 	variable background, loLambda, hiLambda
 	string water, scanpointrange, eventStreaming
-	variable isDirect, expected_centre, expected_width, omega, two_theta, manual, saveSpectrum, normalise,verbose
+	variable isDirect
+	variable/c expected_peak, actual_peak
+	variable omega, two_theta, manual, saveSpectrum, normalise,verbose
 	
 	Wave/z rebinning
 	//processes a loaded NeXUS file.
@@ -851,8 +857,11 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	if(paramisdefault(manual))
 		manual = 0
 	endif
-	if(paramisdefault(expected_centre))
-		expected_centre = ROUGH_BEAM_POSITION
+	if(paramisdefault(expected_peak))
+		expected_peak = cmplx(ROUGH_BEAM_POSITION, NaN)
+	endif
+	if(paramisdefault(actual_peak))
+		actual_peak = cmplx(NaN, NaN)
 	endif
 	if(paramisdefault(verbose))
 		verbose = 1
@@ -1111,25 +1120,24 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		
 		//find out where the beam hits the detector
 		//this will be done on an average of the entire detector image
-		variable/c peak_params
 		//work out what the total expected width of the beam is
 		//from De Haan1995
-		if(paramisdefault(expected_width))
+		if(paramisdefault(actual_peak) || numtype(imag(actual_peak)) || numtype(real(actual_peak)))
 			calculated_width = 2 * (ss3vg[scanpoint]/2 + ((ss2vg[scanpoint] + ss3vg[scanpoint])*(detectorpos[scanpoint]+sample_distance[0]-slit3_distance[0])/(2*(slit3_distance[0]-slit2_distance[0])))) / Y_PIXEL_SPACING
-			expected_width = 2.5* calculated_width +2
-		endif
+			expected_peak = cmplx(real(expected_peak), 2.5* calculated_width +2)
 			
-		if(manual || findspecridge(detector, 50, 0.01, expected_centre,expected_width,peak_params) || numtype(real(peak_params)) || numtype(imag(peak_params)))
-			//use the following procedure to find the specular ridge
-			userSpecifiedArea(detector, peak_Params)
+			if(manual || findspecridge(detector, 50, 0.01, expected_peak, actual_peak) || numtype(real(actual_peak)) || numtype(imag(actual_peak)))
+				//use the following procedure to find the specular ridge
+				userSpecifiedArea(detector, actual_peak)
 
-			//			imagetransform sumallcols detector
-			//			duplicate/o W_sumcols, xx
-			//			xx = p
-			//			peak_params = cmplx(Pla_peakcentroid(xx,W_sumcols),expected_width)
+				//			imagetransform sumallcols detector
+				//			duplicate/o W_sumcols, xx
+				//			xx = p
+				//			peak_params = cmplx(Pla_peakcentroid(xx,W_sumcols),expected_width)
 
-			//			peak_params = cmplx(expected_centre, calculated_width)
-			killwaves/z W_sumcols,xx
+				//			peak_params = cmplx(expected_centre, calculated_width)
+				killwaves/z W_sumcols,xx
+			endif
 		endif
 		
 		//now iterate through each entry in the detector image and produce a spectrum
@@ -1281,7 +1289,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 					
 		//if you are a direct beam do a gravity correction, but have to recalculate centre.
 		if(isDirect)
-			variable lobin = (real(peak_params)-4 - 1.3 * imag(peak_params) / 2) , hiBin = (real(peak_params) + 4 + 1.3 * imag(peak_params) / 2)
+			variable lobin = (real(actual_peak)-4 - 1.3 * imag(actual_peak) / 2) , hiBin = (real(actual_peak) + 4 + 1.3 * imag(actual_peak) / 2)
 			correct_for_gravity(detector, detectorSD, M_lambda, 0, loLambda, hiLambda, lobin, hiBin)
 			Wave M_gravitycorrected, M_gravitycorrectedSD
 
@@ -1289,9 +1297,9 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			detectorSD[][][] = M_gravityCorrectedSD[p][q][r]
 
 			killwaves/z M_gravitycorrected, M_gravitycorrectedSD
-			if(findspecridge(detector, 50, 0.01, expected_centre,expected_width, peak_params) || numtype(real(peak_params)) || numtype(imag(peak_params)))
+			if(findspecridge(detector, 50, 0.01, expected_peak, actual_peak) || numtype(real(actual_peak)) || numtype(imag(actual_peak)))
 				//use the following procedure to find the specular ridge
-				userSpecifiedArea(detector, peak_Params)
+				userSpecifiedArea(detector, actual_peak)
 			endif	
 		endif
 
@@ -1383,13 +1391,13 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		else
 			make/o/n=(dimsize(M_lambda, 0), dimsize(M_lambda, 1)) $(tempDF+":M_beampos")
 			Wave M_beampos = $(tempDF+":M_beampos")
-			M_beampos = (real(peak_params) * Y_PIXEL_SPACING)
+			M_beampos = (real(actual_peak) * Y_PIXEL_SPACING)
 		endif
 	
 		//this does the background subtraction and integration.  The beam position is ASSUMED NOT TO MOVE
 		//during each slice of the detector image.  If it does, then the beam position will have to be 
 		//checked for each slice of the detector image
-		if(topAndTail(detector, detectorSD, real(peak_params), imag(peak_params), background))
+		if(topAndTail(detector, detectorSD, real(actual_peak), imag(actual_peak), background))
 			print "ERROR while topandtailing (processNexusdata)"
 			abort
 		endif			
@@ -1444,36 +1452,37 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		M_lambdaSD = sqrt(M_LambdaSD)
 		M_lambdaSD *= M_lambda
 	
+		if(verbose)
+			if(waveexists(rebinning))
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
+			else
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d,  expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect,real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, normalise,verbose		
+			endif
+			print proccmd
+		endif
+		
 		//you may want to save the spectrum to file
 		if(!paramisdefault(saveSpectrum) && saveSpectrum)
-			if(writeSpectrum(outputPathStr, filename, filename, M_spec, M_specSD, M_lambda, M_lambdaSD))
+			if(writeSpectrum(outputPathStr, filename, filename, M_spec, M_specSD, M_lambda, M_lambdaSD, proccmd))
 				print "ERROR whilst writing spectrum to file (processNexusfile)"
 			endif
 		endif
 	
 		killwaves/z W_point, detector, detectorSD
 		setdatafolder $cDF
-	
-		if(verbose)
-			if(waveexists(rebinning))
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_centre=%g, expected_width=%g, omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
-				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
-			else
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_centre=%g, expected_width=%g, omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
-				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, normalise,verbose		
-			endif
-			print proccmd
-		endif
+		
 		return 0
 	catch
 	
 		if(verbose)
 			if(!paramisdefault(rebinning) && waveexists(rebinning))
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_centre=%g, expected_width=%g, omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
-				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
 			else
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_centre=%g, expected_width=%g, omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
-				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, expected_centre, expected_width, omega, two_theta,manual, saveSpectrum, normalise,verbose		
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d,expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, normalise,verbose		
 			endif
 			print proccmd
 		endif
@@ -1483,9 +1492,10 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	endtry
 End
 
-Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda)
+Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda, reductionnote)
 	String outputPathStr, fname, runnumber
 	Wave II, dI, lambda, dlambda
+	string reductionnote
 	//a function to save a spectrum file to disc.
 	//pathname = string containing the path to where the data needs to be saved.
 	//fname = the filename of the the file you want to write
@@ -1530,7 +1540,7 @@ Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda)
 	
 		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","dim", num2istr(dimsize(II, 0)))
 		
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]","","reductionnote","",1)
+		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]","","reductionnote",reductionnote,1)
 		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]/reductionnote[1]","","software","SLIM")
 		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]/reductionnote[1]","","version", num2istr(Pla_getVersion()))
 		

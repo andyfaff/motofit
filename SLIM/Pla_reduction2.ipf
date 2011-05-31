@@ -186,10 +186,10 @@ Function createWaterNormalisationWave(waterrun, fileName)
 	return 0		
 End
 
-Function findSpecRidge(tynWave, searchIncrement , tolerance, expected_centre, expected_width, retval)
+Function findSpecRidge(tynWave, searchIncrement , tolerance, expected_peak, retval)
 	Wave tynWave
 	variable searchIncrement, tolerance
-	variable   expected_centre, expected_width
+	variable/c   expected_peak
 	variable/c &retval 
 	retval =  cmplx(NaN,NaN)
 
@@ -213,7 +213,7 @@ Function findSpecRidge(tynWave, searchIncrement , tolerance, expected_centre, ex
 	
 	try
 		make/o/d/n=(dimsize(M_sumplanes, 1))/free subSection = 0, subSectionX=p
-		make/o/d/n=(0) peakCentre,peakFWHM
+		make/o/d/n=(0)/free peakCentre,peakFWHM
 
 		for(ii=0 ; ii< floor(dimsize(M_sumplanes, 0) / searchIncrement) ; ii+=1)
 			redimension/n=(ii+1, -1) peakCentre, peakFWHM
@@ -223,9 +223,9 @@ Function findSpecRidge(tynWave, searchIncrement , tolerance, expected_centre, ex
 			Wave W_sumcols
 			subsection = W_sumcols
 
-			Pla_findpeakdetails(subsection, subsectionX,expected_centre = expected_centre, expected_width = expected_width)
+			Pla_findpeakdetails(subsection, subsectionX,expected_centre = real(expected_peak), expected_width = imag(expected_peak))
 			Wave W_peakInfo
-			if((2.35482 * W_peakInfo[7]/sqrt(2) < expected_width && abs(W_peakInfo[6] - expected_centre) <  2*expected_width))
+			if((2.35482 * W_peakInfo[7]/sqrt(2) < imag(expected_peak) && abs(W_peakInfo[6] - real(expected_peak)) <  2 * imag(expected_peak)))
 				peakCentre[ii] = W_peakInfo[6]
 				peakFWHM[ii] = 2.35482 * W_peakInfo[7]/sqrt(2)
 			else
@@ -240,14 +240,14 @@ Function findSpecRidge(tynWave, searchIncrement , tolerance, expected_centre, ex
 		endfor
 	catch
 		print "PROBLEM whilst finding specular ridge (findSpecRidge)"
-		killwaves/z subSection, subsectionX,W_peakinfo,peakCentre,peakFWHM, M_sumplanes, W_sumcols
+		killwaves/z W_peakinfo, M_sumplanes, W_sumcols
 	
 		return 1
 	endtry
 
-	killwaves/z subSection, subsectionX,W_peakinfo,peakCentre,peakFWHM, M_sumplanes, W_sumcols
+	killwaves/z W_peakinfo, M_sumplanes, W_sumcols
 
-	if(imag(retval) >  expected_width || abs(real(retval) - expected_centre) >  2 * expected_width)
+	if(imag(retval) >  imag(expected_peak) || abs(real(retval) - real(expected_peak)) >  2 * imag(expected_peak))
 		print "PROBLEM, there was no significant specular beam detected: ", Getwavesdatafolder(tynwave,0) , "(findspecularridge)"
 		retval = cmplx(NaN,NaN)
 		return 1
