@@ -1298,6 +1298,7 @@ Function createSpecBeamAdjustmentPanel(detector, ordProj)
 	ModifyGraph mirror=2
 	SetDrawLayer UserFront
 	Display/W=(361,100,668,204)/FG=(UGV0,FT,FR,UGH0)/N=detectorADD/HOST=specBeamAdjustmentPanel  ordProj
+	ModifyGraph minor(bottom)=1
 	
 	STRUCT WMSetVariableAction s
 	s.eventcode=1
@@ -1385,6 +1386,7 @@ Function adjustAOI(s):setvariablecontrol
 		setscale/i x,  floor(expected_centre-width/2), ceil(expected_centre+width/2), ordProj 
 	
 		setactivesubwindow specBeamAdjustmentPanel#detectorADD
+		variable v_fitoptions=4
 		CurveFit/q/W=0/n gauss, ordProj/D
 		Modifygraph/z /W=specBeamAdjustmentPanel#detectorADD rgb(fit_ordProj)=(0,0,0)
 

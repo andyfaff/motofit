@@ -380,6 +380,7 @@ Function ChoDCalculator(fileName, omega, two_theta [,pairing, scanpoint])
 			break
 		
 	endswitch
+	print "CHod is:",chod
 	return chod
 End
 
