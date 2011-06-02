@@ -544,8 +544,7 @@ Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, 
 				return 1
 			endif
 		else
-			make/o/d/n= (round(log(highlambda/lowlambda)/log(1+rebinning/100))+1) W_rebinBoundaries
-			W_rebinboundaries = lowlambda * (1+rebinning/100)^p
+			Wave W_rebinboundaries = Pla_gen_binboundaries(lowlambda, highlambda, rebinning)
 			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_peak=cmplx(expected_centre, NaN), rebinning=W_rebinboundaries,manual=manual, normalise = normalise, savespectrum = saveSpectrum))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1

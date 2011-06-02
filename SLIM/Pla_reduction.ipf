@@ -222,8 +222,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		
 		//make the rebin wave, to rebin both direct and reflected data
 		if(rebin)
-			make/d/free/n= (round(log(highlambda/lowlambda)/log(1+rebin/100))+1) W_rebinBoundaries
-			W_rebinboundaries = lowlambda * (1+rebin/100)^p
+			Wave W_rebinboundaries = Pla_gen_binboundaries(lowlambda, highlambda, rebin)
 		endif
 	
 		//now reduce the data, figure out the direct and reflected run names.

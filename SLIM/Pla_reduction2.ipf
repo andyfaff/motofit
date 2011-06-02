@@ -869,3 +869,18 @@ Function Pla_beam_width(w, zz, d1, d2): fitfunc
 		zz[ii] = scalefactor * abs(2*V_levelX)
 	endfor
 End
+
+Function/wave Pla_gen_binboundaries(lowlambda, highlambda, rebinpercent)
+	//generates logarithmically spaced bin boundaries, with low and high wavelength cutoffs.
+	//the bins are centred around those cutoffs (meaning you do use data with a slightly lower/higher wavelength 
+	//than low/high lambda)
+	variable lowlambda, highlambda, rebinpercent
+	variable frac = 1. + (rebinpercent/100.)
+	
+	lowlambda = (2 * lowlambda) / ( 1. + frac)
+	highlambda =  frac * (2 * highlambda) / ( 1. + frac)              
+	variable numsteps = round(log(highlambda / lowlambda ) / log(frac))
+        
+	make/d/o/n= (numsteps + 2) W_rebinBoundaries = 0
+	W_rebinboundaries = lowlambda * (frac)^p 
+End
