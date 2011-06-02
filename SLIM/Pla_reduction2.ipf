@@ -884,4 +884,6 @@ Function/wave Pla_gen_binboundaries(lowlambda, highlambda, rebinpercent)
 	
 	make/d/o/n= (numsteps) W_rebinBoundaries = log(lowlambda) + p * stepsize
 	W_rebinboundaries = alog(W_rebinboundaries)
+	Wave W_rebinboundaries = W_rebinboundaries
+	return W_rebinboundaries
 End
