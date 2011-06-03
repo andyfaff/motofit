@@ -792,13 +792,14 @@ Function doesNexusfileExist(inputPathStr, filename)
 	endif
 End
 
-Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, eventStreaming,isDirect, expected_peak, actual_peak, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose])
+Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, eventStreaming,isDirect, expected_peak, actual_peak, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose, backgroundMask])
 	string inputPathStr, outputPathStr, fileName
 	variable background, loLambda, hiLambda
 	string water, scanpointrange, eventStreaming
 	variable isDirect
 	variable/c expected_peak, actual_peak
 	variable omega, two_theta, manual, saveSpectrum, normalise,verbose
+	Wave/z backgroundMask
 	
 	Wave/z rebinning
 	//processes a loaded NeXUS file.
@@ -821,6 +822,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	//						neutron event based data.  The string should have the form  "DAQ_2010-12-20T12-12-12:4".  This means split a single acquisition into 4 individual spectra containing
 	//						the data in the first quarter of time, 2nd quarter of time, etc.
 	//saveSpectrumLoc = if this variable !=0 then the spectrum is saved to file.
+	//backgroundMask - see topAndTail.  A way of specifying the exact points to calculate the background region.
 	
 	//first thing we will do is  average over x, possibly rebin, subtract background on timebin by time bin basis, then integrate over the foreground
 	//files will be loaded into root:packages:platypus:data:Reducer:+cleanupname(removeending(fileStr,".nx.hdf"),0)
@@ -1396,7 +1398,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		//this does the background subtraction and integration.  The beam position is ASSUMED NOT TO MOVE
 		//during each slice of the detector image.  If it does, then the beam position will have to be 
 		//checked for each slice of the detector image
-		if(topAndTail(detector, detectorSD, real(actual_peak), imag(actual_peak), background))
+		if(topAndTail(detector, detectorSD, real(actual_peak), imag(actual_peak), background, backgroundMask = backgroundMask))
 			print "ERROR while topandtailing (processNexusdata)"
 			abort
 		endif			

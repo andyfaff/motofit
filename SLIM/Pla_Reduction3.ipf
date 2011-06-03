@@ -1030,13 +1030,13 @@ Function SLIM_redisplay(mode,isLog)
 		
 		switch(mode)
 			case 0:
-				appendtograph/w=SLIM_PLOTwin M_spec vs M_lambda
-				ErrorBars/T=0 $("M_Spec#"+num2istr(ii)) Y,wave=(M_specSD, M_specSD)
+				appendtograph/w=SLIM_PLOTwin M_spec[][0] vs M_lambda[][0]
+				ErrorBars/T=0 $("M_Spec#"+num2istr(ii)) Y,wave=(M_specSD[][0], M_specSD[][0])
 				ModifyGraph log(left)=isLog
 				Label bottom "lambda"
 				break
 			case 1:
-				appendtograph/w=SLIM_PLOTwin M_Spec vs M_spectof
+				appendtograph/w=SLIM_PLOTwin M_Spec vs M_spectof[][0]
 				ErrorBars/T=0 $("M_Spec#"+num2istr(ii)) Y,wave=(M_specSD, M_specSD)
 				ModifyGraph log(left)=isLog
 				Label bottom "TOF(us)"
@@ -1294,7 +1294,8 @@ Function createSpecBeamAdjustmentPanel(detector, ordProj)
 	DefineGuide/W=specBeamAdjustmentPanel UGV0={FR,0.5,FL},UGH0={FB,0.5,FT}
 	Display/W=(104,50,313,153)/FG=(FL,FT,UGV0,FB)/N=detector/HOST=specBeamAdjustmentPanel
 	AppendImage/w=specBeamAdjustmentPanel#detector detector
-	ModifyGraph mirror=2
+ 	ModifyImage detector ctab = {*,*,YellowHot,0}
+ 	ModifyGraph mirror=2
 	SetDrawLayer UserFront
 	Display/W=(361,100,668,204)/FG=(UGV0,FT,FR,UGH0)/N=detectorADD/HOST=specBeamAdjustmentPanel  ordProj
 	ModifyGraph minor(bottom)=1
@@ -1336,7 +1337,7 @@ Function myAOI(s):setvariablecontrol
 		Wave W_coef =  root:packages:platypus:data:reducer:W_coef
 		W_coef[2] = actual_position
 		W_coef[3] = sqrt(2) * actual_width /(2*sqrt(2*ln(2)))
-	
+		variable V_fitoptions = 4
 		CurveFit/q/W=0/n/H="0011" gauss, kwCWave = W_coef, ordProj/D
 		Modifygraph/z /W=specBeamAdjustmentPanel#detectorADD rgb(fit_ordProj)=(0,0,0)
 	

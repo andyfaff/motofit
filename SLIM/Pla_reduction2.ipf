@@ -8,11 +8,12 @@
 	// SVN URL:     $HeadURL$
 	// SVN ID:      $Id$
 	
-Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background)
+Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background [, backgroundMask])
 	Wave measurement	//the data from the NeXUS file
 	Wave measurementSD
 	variable peak_Centre, peak_FWHM //expected_width is the FWHM width of the beam
 	variable background		//do you want to do a background reduction
+	Wave/z backgroundMask	//this mask is used to specify which points are used as the background region. Set to  zero, or NaN if NOT background.
 	
 	//the specular region is integrated over around the specular pixels, after
 	//subtracting a linear background.  THe linear background is determined by fitting the intensity in backgroundwidth pixels each side of the
@@ -64,8 +65,8 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 		loPx = floor(peak_centre - foregroundwidth / 2)
 		hiPx = ceil(peak_centre + foregroundwidth / 2)
 		
-		if(backgroundwidth > 0)
-			if(Pla_linbkg(M_topAndTail, M_topAndTailSD,loPx, hiPx, backgroundwidth))
+		if(backgroundwidth > 0 || waveexists(backgroundMask))
+			if(Pla_linbkg(M_topAndTail, M_topAndTailSD,loPx, hiPx, backgroundwidth, backgroundMask = backgroundMask))
 				print "ERROR: whilst reducing: (topAndTail)"
 				abort
 			endif
@@ -421,9 +422,10 @@ Function histToPoint(w)
 	W_point /=2
 End
 
-Function Pla_linbkg(image, imageSD, loPx, hiPx, backgroundwidth)
+Function Pla_linbkg(image, imageSD, loPx, hiPx, backgroundwidth, [backgroundMask])
 	Wave image,imageSD
 	variable loPx, hiPx, backgroundwidth
+	Wave/z backgroundMask
 	
 	//background offset must NEVER be negative
 	variable y0,y1,y2,y3
@@ -447,17 +449,26 @@ Function Pla_linbkg(image, imageSD, loPx, hiPx, backgroundwidth)
 	endif
 
 	duplicate/o image, M_imagebkg,M_imagebkgSD
-	make/o/d/n=(dimsize(image,1)) W_mask
+	make/d/n=(dimsize(image,1))/free W_mask = 0
 
 	variable ii,degfree=-2, jj, numplanes = 0
 	for(ii=0 ; ii<dimsize(image,1); ii+=1)
 		if((ii>=y0 && ii < y1)||(ii > y2 && ii<=y3))
 			W_mask[ii] = 1
 			degfree += 1
-		else
-			W_mask[ii] = 0
 		endif
 	endfor
+	
+	//you want to specify a background region manually
+	if(!paramisdefault(backgroundmask) && waveexists(backgroundMask))
+		W_mask = backgroundMask
+		degfree = -2
+		for(ii = 0 ; ii< dimsize(image, 1) ; ii+=1)
+			if(!numtype(backgroundMask[ii]) && backgroundMask[ii])
+				degfree += 1
+			endif
+		endfor
+	endif
 
 	//	variable/g V_FitOptions=4
 	//	make/o/d/n=2 W_coef
@@ -548,7 +559,7 @@ Threadsafe Function/DF Pla_linbkgworker(image, imageSD, W_mask, pp,  y0, y1, y2,
 	//this is entirely permissible for background subtraction within the spec beam area
 	//but will not be correct outside the background+foreground regions.
 	//In which case use funcfit and Pla_CPInterval, it'll just be slower.
-	variable v_fiterror=0
+	variable v_fiterror=0, v_fitoptions = 4
 
 	CurveFit/n/q line, kwCWave=W_coef,  W_templine /M=W_mask /I=1 /W=W_templineSD /D /F={0.683000, 2}
 		
