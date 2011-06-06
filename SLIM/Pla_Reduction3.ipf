@@ -1399,6 +1399,8 @@ String tracemoving
 			xlhs += offset
 			actual_position = 0.5*( xlhs[0] + xrhs[0])
 			actual_width = (xrhs[0] - xlhs[0])/INTEGRATEFACTOR	
+			xlhs_bkg = xlhs - actual_width*INTEGRATEFACTOR
+			xrhs_bkg = xrhs + actual_width*INTEGRATEFACTOR
 			break
 		case "rhs":
 			ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(rhs)={0,0}
@@ -1408,6 +1410,9 @@ String tracemoving
 			xrhs += offset
 			actual_position = 0.5*( xlhs[0] + xrhs[0])
 			actual_width = (xrhs[0] - xlhs[0])/INTEGRATEFACTOR	
+			xlhs_bkg = xlhs - actual_width*INTEGRATEFACTOR
+			xrhs_bkg = xrhs + actual_width*INTEGRATEFACTOR
+		
 			break
 		case "lhs_bkg":
 			ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs_bkg)={0,0}
