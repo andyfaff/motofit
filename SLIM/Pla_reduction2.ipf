@@ -1,6 +1,8 @@
 #pragma rtGlobals=3		// Use modern global access method.
 //background offset is the separation between the specridge and the region taken to be background.
 	constant BACKGROUNDOFFSET = 2
+//the value you multiply the FWHM by to get the foregroundwidth
+	constant INTEGRATEFACTOR = 1.7
 
 	// SVN date:    $Date$
 	// SVN author:  $Author$
@@ -55,13 +57,13 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 		
 		//do the background subtraction
 		if(background)
-			backgroundWidth = 1.7 * peak_FWHM
+			backgroundWidth = INTEGRATEFACTOR * peak_FWHM
 		else
 			backgroundwidth = 0
 		endif
 
 		variable loPx, hiPx
-		foregroundwidth = peak_FWHM * 1.7
+		foregroundwidth = peak_FWHM * INTEGRATEFACTOR
 		loPx = floor(peak_centre - foregroundwidth / 2)
 		hiPx = ceil(peak_centre + foregroundwidth / 2)
 		

@@ -1215,9 +1215,9 @@ End
 ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
 
-Function userSpecifiedArea(detector, peakParams)
+Function userSpecifiedArea(detector, peakParams, bkgloc)
 	Wave detector
-	variable/C &peakParams
+	variable/C &peakParams, &bkgloc
 
 	try
 		NVAR/z TOFpixels = root:packages:platypus:data:reducer:TOFpixels
@@ -1251,11 +1251,33 @@ Function userSpecifiedArea(detector, peakParams)
 		Wave W_sumcols
 		duplicate/o W_sumcols, root:packages:platypus:data:reducer:ordProj 
 		killwaves W_sumcols
-		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
+		Wave ordProj =  root:packages:platypus:data:reducer:ordProj
+		
 		setscale/i x,  floor(position-width/2), ceil(position+width/2), ordProj 
+		
+		make/n=2/o root:packages:platypus:data:reducer:lhs, root:packages:platypus:data:reducer:rhs
+		make/n=2/o root:packages:platypus:data:reducer:xrhs, root:packages:platypus:data:reducer:xlhs
+		make/n=2/o root:packages:platypus:data:reducer:xrhs_bkg, root:packages:platypus:data:reducer:xlhs_bkg 
+		make/n=2/o root:packages:platypus:data:reducer:rhs_bkg, root:packages:platypus:data:reducer:lhs_bkg 
+		wave lhs = root:packages:platypus:data:reducer:lhs
+		wave rhs = root:packages:platypus:data:reducer:rhs
+		wave lhs_bkg = root:packages:platypus:data:reducer:lhs_bkg
+		wave rhs_bkg = root:packages:platypus:data:reducer:rhs_bkg
+		wave xrhs_bkg = root:packages:platypus:data:reducer:xrhs_bkg
+		wave xlhs_bkg = root:packages:platypus:data:reducer:xlhs_bkg
+		
+		rhs[0] = inf
+		rhs[1] = 0
+		lhs[0] = inf
+		lhs[1] = 0
+		lhs_bkg[0] = inf
+		lhs_bkg[1] = 0		
+		rhs_bkg[0] = inf
+		rhs_bkg[1] = 0
+		
 		createSpecBeamAdjustmentPanel(detector, ordProj)
 		pauseforuser specBeamAdjustmentPanel
-
+		bkgloc = cmplx(xlhs_bkg[0], xrhs_bkg[0])
 		peakParams = cmplx(actual_position, actual_width)
 	catch
 
@@ -1298,10 +1320,37 @@ Function createSpecBeamAdjustmentPanel(detector, ordProj)
  	ModifyGraph mirror=2
 	SetDrawLayer UserFront
 	Display/W=(361,100,668,204)/FG=(UGV0,FT,FR,UGH0)/N=detectorADD/HOST=specBeamAdjustmentPanel  ordProj
-	ModifyGraph minor(bottom)=1
+	ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd mode(ordProj)=3,marker(ordProj)=8
+
+	wave lhs = root:packages:platypus:data:reducer:lhs
+	wave rhs = root:packages:platypus:data:reducer:rhs
+	wave xlhs = root:packages:platypus:data:reducer:xlhs
+	wave xrhs = root:packages:platypus:data:reducer:xrhs
+	wave xlhs_bkg = root:packages:platypus:data:reducer:xlhs_bkg
+	wave xrhs_bkg = root:packages:platypus:data:reducer:xrhs_bkg
+	wave lhs_bkg = root:packages:platypus:data:reducer:lhs_bkg
+	wave rhs_bkg = root:packages:platypus:data:reducer:rhs_bkg
 	
+	appendtograph/W=specBeamAdjustmentPanel#Detectoradd lhs vs xlhs
+	appendtograph/W=specBeamAdjustmentPanel#Detectoradd rhs vs xrhs
+	appendtograph/W=specBeamAdjustmentPanel#Detectoradd rhs_bkg vs xrhs_bkg
+	appendtograph/W=specBeamAdjustmentPanel#Detectoradd lhs_bkg vs xlhs_bkg
+
+	newdatafolder/o root:WinGlobals
+	newdatafolder/o root:WinGlobals:detectorAdd
+	string/g root:WinGlobals:detectorAdd:S_TraceOffsetInfo
+	Svar S_TraceOffsetInfo = root:WinGlobals:detectorAdd:S_TraceOffsetInfo
+	variable/g root:WinGlobals:detectorAdd:diditmove = 0
+	NVAR diditmove = root:WinGlobals:detectorAdd:diditmove
+	
+	SetFormula diditmove, "userselectedArea(S_TraceOffsetInfo)"
+
+	ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd rgb(rhs_bkg)=(0,0,0),rgb(lhs_bkg)=(0,0,0)
+	ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd minor(bottom)=1, log(left)=1,rgb(rhs)=(0,0,65535), rgb(lhs)=(0,0,65535)
+	ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd quickdrag(rhs)=1,live(rhs)=1, quickdrag(lhs)=1,live(lhs)=1
+	ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd quickdrag(rhs_bkg)=1,live(rhs_bkg)=1, quickdrag(lhs_bkg)=1,live(lhs_bkg)=1
 	STRUCT WMSetVariableAction s
-	s.eventcode=1
+	s.eventcode=6
 	adjustAOI(s)
 End
 
@@ -1311,18 +1360,81 @@ Function killSpecBeamAdjustmentPanel(ba) : ButtonControl
 	switch( ba.eventCode )
 		case 2: // mouse up
 			killwindow specbeamadjustmentpanel
+			NVAR diditmove = root:WinGlobals:detectorAdd:diditmove
+			Setformula diditmove,""
 			break
 	endswitch
 
 	return 0
 End
 
+Function  userselectedArea(tracemoving)
+String tracemoving
+	if(!numberbykey("XOFFSET", tracemoving))
+		return 0
+	endif
+	
+	wave lhs = root:packages:platypus:data:reducer:lhs
+	wave rhs = root:packages:platypus:data:reducer:rhs
+	wave xlhs = root:packages:platypus:data:reducer:xlhs
+	wave xrhs = root:packages:platypus:data:reducer:xrhs
+	wave xlhs_bkg = root:packages:platypus:data:reducer:xlhs_bkg
+	wave xrhs_bkg = root:packages:platypus:data:reducer:xrhs_bkg
+	wave lhs_bkg = root:packages:platypus:data:reducer:lhs_bkg
+	wave rhs_bkg = root:packages:platypus:data:reducer:rhs_bkg
+	Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
+
+	
+	NVAR/z actual_position = root:packages:platypus:data:reducer:actual_position
+	NVAR/z actual_width = root:packages:platypus:data:reducer:actual_width
+	string whichtrace = stringbykey("TNAME", tracemoving)
+	variable offset = numberbykey("XOFFSET", tracemoving)
+
+	strswitch(whichtrace)
+		case "lhs":
+			ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs)={0,0}
+			if(xlhs[0] + offset > xrhs[0])
+				return 0
+			endif
+			xlhs += offset
+			actual_position = 0.5*( xlhs[0] + xrhs[0])
+			actual_width = (xrhs[0] - xlhs[0])/INTEGRATEFACTOR	
+			break
+		case "rhs":
+			ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(rhs)={0,0}
+			if(xrhs[0] + offset < xlhs[0])
+				return 0
+			endif
+			xrhs += offset
+			actual_position = 0.5*( xlhs[0] + xrhs[0])
+			actual_width = (xrhs[0] - xlhs[0])/INTEGRATEFACTOR	
+			break
+		case "lhs_bkg":
+			ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs_bkg)={0,0}
+			if(xlhs_bkg[0] + offset > xlhs[0] - BACKGROUNDOFFSET)
+				return 0
+			endif
+			xlhs_bkg += offset
+			break
+		case "rhs_bkg":
+			ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(rhs_bkg)={0,0}
+			if(xrhs_bkg[0] + offset < xrhs[0] + BACKGROUNDOFFSET)
+				return 0
+			endif
+			xrhs_bkg += offset
+			break
+			
+	endswitch
+	Tag/W=specBeamAdjustmentPanel#Detectoradd/C/N=centre/S=1/A=MB/TL={lineRGB=(0,0,65535)}/G=(0,0,65535)/TL={len=10,frame=1}   ordProj, actual_position,"\\K(0,0,65535)Centre"
+End
+
+
 Function myAOI(s):setvariablecontrol
 	STRUCT WMSetVariableAction &s
 	//this function puts a gaussian on the specbeamadjustment plot, with a user specified centre + FWHM.
 	//Normally the user relies on a fitted gaussian produced by adjustAOI.  However, there may be some circumstances where they want to manually set the centre + FWHM.
 
-	if(s.eventcode>-1)
+	if(s.eventcode == 6)
 		wave imageWave = ImageNameToWaveRef("specBeamAdjustmentPanel#detector", stringfromlist(0,imagenamelist("specBeamAdjustmentPanel#detector",";")) )
 		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
 	
@@ -1338,9 +1450,22 @@ Function myAOI(s):setvariablecontrol
 		W_coef[2] = actual_position
 		W_coef[3] = sqrt(2) * actual_width /(2*sqrt(2*ln(2)))
 		variable V_fitoptions = 4
-		CurveFit/q/W=0/n/H="0011" gauss, kwCWave = W_coef, ordProj/D
-		Modifygraph/z /W=specBeamAdjustmentPanel#detectorADD rgb(fit_ordProj)=(0,0,0)
+		CurveFit/q/W=0/n/H="0011" gauss, kwCWave = W_coef, ordProj
+
+		wave xlhs = root:packages:platypus:data:reducer:xlhs
+		wave xrhs = root:packages:platypus:data:reducer:xrhs
+		wave xlhs_bkg = root:packages:platypus:data:reducer:xlhs_bkg
+		wave xrhs_bkg = root:packages:platypus:data:reducer:xrhs_bkg
 	
+		xlhs = floor(W_coef[2] - INTEGRATEFACTOR * actual_width/2)
+		xrhs = ceil(W_coef[2] +  INTEGRATEFACTOR * actual_width/2)
+		xlhs_bkg = xlhs - actual_width*INTEGRATEFACTOR
+		xrhs_bkg = xrhs + actual_width*INTEGRATEFACTOR
+		
+		ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs)={0,0}, offset(rhs) = {0,0}
+		ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs_bkg)={0,0}, offset(rhs_bkg) = {0,0}
+		Tag/W=specBeamAdjustmentPanel#Detectoradd/C/N=centre/S=1/A=MB/TL={lineRGB=(0,0,65535)}/G=(0,0,65535)/TL={len=10,frame=1}   ordProj, actual_position,"\\K(0,0,65535)Centre"
+
 		setactivesubwindow specBeamAdjustmentPanel
 
 	endif
@@ -1349,7 +1474,7 @@ End
 Function adjustAOI(s):setvariablecontrol
 	STRUCT WMSetVariableAction &s
 
-	if(s.eventcode>-1)
+	if(s.eventcode == 6)
 		wave imageWave = ImageNameToWaveRef("specBeamAdjustmentPanel#detector", stringfromlist(0,imagenamelist("specBeamAdjustmentPanel#detector",";")) )
 		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
 
@@ -1387,13 +1512,26 @@ Function adjustAOI(s):setvariablecontrol
 	
 		setactivesubwindow specBeamAdjustmentPanel#detectorADD
 		variable v_fitoptions=4
-		CurveFit/q/W=0/n gauss, ordProj/D
-		Modifygraph/z /W=specBeamAdjustmentPanel#detectorADD rgb(fit_ordProj)=(0,0,0)
+		CurveFit/q/W=0/n gauss, ordProj
 
 		setactivesubwindow specBeamAdjustmentPanel
 		Wave W_coef
 		actual_position = W_coef[2]
 		actual_width = 2*sqrt(2*ln(2))*W_coef[3]/sqrt(2)
+	
+		wave xlhs = root:packages:platypus:data:reducer:xlhs
+		wave xrhs = root:packages:platypus:data:reducer:xrhs
+		wave xlhs_bkg = root:packages:platypus:data:reducer:xlhs_bkg
+		wave xrhs_bkg = root:packages:platypus:data:reducer:xrhs_bkg
+	
+		xlhs = floor(W_coef[2] - INTEGRATEFACTOR * actual_width/2)
+		xrhs = ceil(W_coef[2] +  INTEGRATEFACTOR * actual_width/2)
+		xlhs_bkg = xlhs - actual_width*INTEGRATEFACTOR
+		xrhs_bkg = xrhs + actual_width*INTEGRATEFACTOR
+
+		ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs)={0,0}, offset(rhs) = {0,0}
+		ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs_bkg)={0,0}, offset(rhs_bkg) = {0,0}
+		Tag/W=specBeamAdjustmentPanel#Detectoradd/C/N=centre/S=1/A=MB/TL={lineRGB=(0,0,65535)}/G=(0,0,65535)/TL={len=10,frame=1}   ordProj, actual_position,"\\K(0,0,65535)Centre"
 	endif
 End
 

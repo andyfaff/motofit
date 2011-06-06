@@ -833,6 +833,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	variable ChoD, toffset, nrebinpnts,ii, jj, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint, MASTER_OPENING
 	variable originalScanPoint, scanpoint, numTimeSlices, numSpectra, typeOfIntegration
 	string tempDF, cDF,tempDFwater, eventStreamingFile, cmd, proccmd
+	variable/c bkgloc
 	Wave/z hmmWater
 	
 	//create the data folder structure
@@ -1129,8 +1130,13 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			
 			if(manual || findspecridge(detector, 50, 0.01, expected_peak, actual_peak) || numtype(real(actual_peak)) || numtype(imag(actual_peak)))
 				//use the following procedure to find the specular ridge
-				userSpecifiedArea(detector, actual_peak)
-
+				userSpecifiedArea(detector, actual_peak, bkgloc)
+				Waveclear backgroundMask
+				make/d/free/n=(dimsize(detector, 1)) bkgregion = NaN
+				Wave backgroundMask = bkgregion
+				backgroundMask = (p > real(bkgloc) && p < (real(actual_peak) - INTEGRATEFACTOR * imag(actual_peak) - BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
+				backgroundMask = (p < imag(bkgloc) && p > (real(actual_peak) + INTEGRATEFACTOR * imag(actual_peak) + BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
+				
 				//			imagetransform sumallcols detector
 				//			duplicate/o W_sumcols, xx
 				//			xx = p
@@ -1300,7 +1306,12 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			killwaves/z M_gravitycorrected, M_gravitycorrectedSD
 			if(findspecridge(detector, 50, 0.01, expected_peak, actual_peak) || numtype(real(actual_peak)) || numtype(imag(actual_peak)))
 				//use the following procedure to find the specular ridge
-				userSpecifiedArea(detector, actual_peak)
+				userSpecifiedArea(detector, actual_peak, bkgloc)
+				Waveclear backgroundMask
+				make/d/free/n=(dimsize(detector, 1)) bkgregion = NaN
+				Wave backgroundMask = bkgregion
+				backgroundMask = (p > real(bkgloc) && p < (real(actual_peak) - INTEGRATEFACTOR * imag(actual_peak) - BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
+				backgroundMask = (p < imag(bkgloc) && p > (real(actual_peak) + INTEGRATEFACTOR * imag(actual_peak) + BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
 			endif	
 		endif
 
@@ -1347,8 +1358,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			if(0 <= loPoint)
 				deletepoints/M=0 0, loPoint+1, M_lambdaHIST, detector, detectorSD, M_specTOFHIST
 			endif
-			Killwaves/z W_extractedCol
-			
+			Killwaves/z W_extractedCol	
 		endif
 		
 		//convert histogrammed TOF and lambda to their point counterparts
