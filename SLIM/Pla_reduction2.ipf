@@ -67,7 +67,7 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 		loPx = floor(peak_centre - foregroundwidth / 2)
 		hiPx = ceil(peak_centre + foregroundwidth / 2)
 		
-		if(backgroundwidth > 0 || waveexists(backgroundMask))
+		if(background && (backgroundwidth > 0 || waveexists(backgroundMask)))
 			if(Pla_linbkg(M_topAndTail, M_topAndTailSD,loPx, hiPx, backgroundwidth, backgroundMask = backgroundMask))
 				print "ERROR: whilst reducing: (topAndTail)"
 				abort

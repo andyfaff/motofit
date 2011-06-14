@@ -1439,7 +1439,7 @@ Function myAOI(s):setvariablecontrol
 	//this function puts a gaussian on the specbeamadjustment plot, with a user specified centre + FWHM.
 	//Normally the user relies on a fitted gaussian produced by adjustAOI.  However, there may be some circumstances where they want to manually set the centre + FWHM.
 
-	if(s.eventcode == 6)
+	if(s.eventcode > 0)
 		wave imageWave = ImageNameToWaveRef("specBeamAdjustmentPanel#detector", stringfromlist(0,imagenamelist("specBeamAdjustmentPanel#detector",";")) )
 		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
 	
@@ -1479,7 +1479,7 @@ End
 Function adjustAOI(s):setvariablecontrol
 	STRUCT WMSetVariableAction &s
 
-	if(s.eventcode == 6)
+	if(s.eventcode >0)
 		wave imageWave = ImageNameToWaveRef("specBeamAdjustmentPanel#detector", stringfromlist(0,imagenamelist("specBeamAdjustmentPanel#detector",";")) )
 		Wave ordProj =  root:packages:platypus:data:reducer:ordProj 
 

@@ -667,11 +667,16 @@ Function/t cutFileName(filename)
 	return ret
 End
 
-Function/t uniqueFileName(outputPathStr, filename, ext)
+Function/t uniqueFileName(outputPathStr, filename, ext,[unique])
 	string outputPathStr, filename, ext
+	variable unique
+	
 	string theFiles, theUniqueName = ""
 	variable ii
-		
+	
+	if(paramisdefault(unique))
+		unique =1
+	endif
 	GetFileFolderInfo/q/z outputPathStr
 	if(V_flag)//path doesn't exist
 		print "ERROR please give valid path (uniqueFileName)"
@@ -681,6 +686,11 @@ Function/t uniqueFileName(outputPathStr, filename, ext)
 	theFiles = indexedFile(pla_temppath_write, -1, ext)
 	killpath/z pla_temppath_write
 	theUniqueName = filename + "_0"
+	
+	if(!unique)
+		return theUniqueName
+	endif
+	
 	//the file already exists, increment a number
 	for(ii=1; whichListItem(theUniqueName + ext, theFiles) > -1 ; ii+=1)
 		theUniqueName = filename + "_" + num2istr(ii)
@@ -1320,14 +1330,14 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		//someone provided a wavelength spectrum BIN EDGES to rebin to.
 		variable hiPoint, loPoint
 		if(!paramisdefault(rebinning) && waveexists(rebinning))
-			loPoint = binarysearch(rebinning, loLambda)
-			hiPoint = binarySearch(rebinning, hiLambda)
-			if(0 <= hiPoint)
-				deletepoints hiPoint+1, numpnts(rebinning), rebinning		
-			endif
-			if(0 <= loPoint)
-				deletepoints 0, loPoint + 1, rebinning
-			endif
+//			loPoint = binarysearch(rebinning, loLambda)
+//			hiPoint = binarySearch(rebinning, hiLambda)
+//			if(0 <= hiPoint)
+//				deletepoints hiPoint+1, numpnts(rebinning), rebinning		
+//			endif
+//			if(0 <= loPoint)
+//				deletepoints 0, loPoint + 1, rebinning
+//			endif
 				
 			//rebin detector image, this is layer capable
 			if(Pla_PlaneIntRebin(M_lambdaHIST, detector, detectorSD, rebinning))
@@ -1503,10 +1513,11 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	endtry
 End
 
-Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda, reductionnote)
+Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda, reductionnote,[ unique])
 	String outputPathStr, fname, runnumber
 	Wave II, dI, lambda, dlambda
 	string reductionnote
+	variable unique
 	//a function to save a spectrum file to disc.
 	//pathname = string containing the path to where the data needs to be saved.
 	//fname = the filename of the the file you want to write
@@ -1518,6 +1529,10 @@ Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda,
 	variable fileID, kk
 	string data = "", uniquefName
 	
+	if(paramisdefault(unique))
+		unique = 0
+	endif
+	
 	GetFileFolderInfo/q/z outputPathStr
 	if(V_flag)//path doesn't exist
 		print "ERROR please give valid path (writeSpectrum)"
@@ -1525,7 +1540,7 @@ Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda,
 	endif
 	
 	for(kk = 0 ; kk < dimsize(II, 1) ; kk += 1)
-		uniquefName = uniqueFileName(outputPathStr, fname, ".spectrum")
+		uniquefName = uniqueFileName(outputPathStr, fname, ".spectrum", unique = unique)
 		
 		fileID = XMLcreatefile(outputPathStr + uniquefName + ".spectrum", "REFroot", "", "")
 		
