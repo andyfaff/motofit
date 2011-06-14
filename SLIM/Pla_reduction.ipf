@@ -667,15 +667,15 @@ Function/t cutFileName(filename)
 	return ret
 End
 
-Function/t uniqueFileName(outputPathStr, filename, ext,[unique])
+Function/t uniqueFileName(outputPathStr, filename, ext,[dontoverwrite])
 	string outputPathStr, filename, ext
-	variable unique
+	variable dontoverwrite
 	
 	string theFiles, theUniqueName = ""
 	variable ii
 	
-	if(paramisdefault(unique))
-		unique =1
+	if(paramisdefault(dontoverwrite))
+		dontoverwrite =1
 	endif
 	GetFileFolderInfo/q/z outputPathStr
 	if(V_flag)//path doesn't exist
@@ -687,7 +687,7 @@ Function/t uniqueFileName(outputPathStr, filename, ext,[unique])
 	killpath/z pla_temppath_write
 	theUniqueName = filename + "_0"
 	
-	if(!unique)
+	if(!dontoverwrite)
 		return theUniqueName
 	endif
 	
@@ -802,7 +802,7 @@ Function doesNexusfileExist(inputPathStr, filename)
 	endif
 End
 
-Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, eventStreaming,isDirect, expected_peak, actual_peak, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose, backgroundMask])
+Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, eventStreaming,isDirect, expected_peak, actual_peak, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose, backgroundMask, dontoverwrite])
 	string inputPathStr, outputPathStr, fileName
 	variable background, loLambda, hiLambda
 	string water, scanpointrange, eventStreaming
@@ -810,6 +810,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	variable/c expected_peak, actual_peak
 	variable omega, two_theta, manual, saveSpectrum, normalise,verbose
 	Wave/z backgroundMask
+	variable dontoverwrite
 	
 	Wave/z rebinning
 	//processes a loaded NeXUS file.
@@ -833,6 +834,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	//						the data in the first quarter of time, 2nd quarter of time, etc.
 	//saveSpectrumLoc = if this variable !=0 then the spectrum is saved to file.
 	//backgroundMask - see topAndTail.  A way of specifying the exact points to calculate the background region.
+	//dontoverwrite - if you are saving the spectrum, you possibly don't want to overwrite existing files.  Specify dontoverwrite=1 if you want a new file to be created.  Default is 0.....
 	
 	//first thing we will do is  average over x, possibly rebin, subtract background on timebin by time bin basis, then integrate over the foreground
 	//files will be loaded into root:packages:platypus:data:Reducer:+cleanupname(removeending(fileStr,".nx.hdf"),0)
@@ -880,6 +882,9 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	endif
 	if(paramisdefault(water))
 		water = ""
+	endif
+	if(paramisdefault(dontoverwrite))
+		dontoverwrite = 0
 	endif
 
 	
@@ -1486,7 +1491,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		
 		//you may want to save the spectrum to file
 		if(!paramisdefault(saveSpectrum) && saveSpectrum)
-			if(writeSpectrum(outputPathStr, filename, filename, M_spec, M_specSD, M_lambda, M_lambdaSD, proccmd))
+			if(writeSpectrum(outputPathStr, filename, filename, M_spec, M_specSD, M_lambda, M_lambdaSD, proccmd, dontoverwrite=dontoverwrite))
 				print "ERROR whilst writing spectrum to file (processNexusfile)"
 			endif
 		endif
@@ -1513,11 +1518,11 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	endtry
 End
 
-Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda, reductionnote,[ unique])
+Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda, reductionnote,[ dontoverwrite])
 	String outputPathStr, fname, runnumber
 	Wave II, dI, lambda, dlambda
 	string reductionnote
-	variable unique
+	variable dontoverwrite
 	//a function to save a spectrum file to disc.
 	//pathname = string containing the path to where the data needs to be saved.
 	//fname = the filename of the the file you want to write
@@ -1529,8 +1534,8 @@ Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda,
 	variable fileID, kk
 	string data = "", uniquefName
 	
-	if(paramisdefault(unique))
-		unique = 0
+	if(paramisdefault(dontoverwrite))
+		dontoverwrite = 0
 	endif
 	
 	GetFileFolderInfo/q/z outputPathStr
@@ -1540,7 +1545,7 @@ Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda,
 	endif
 	
 	for(kk = 0 ; kk < dimsize(II, 1) ; kk += 1)
-		uniquefName = uniqueFileName(outputPathStr, fname, ".spectrum", unique = unique)
+		uniquefName = uniqueFileName(outputPathStr, fname, ".spectrum", dontoverwrite = dontoverwrite)
 		
 		fileID = XMLcreatefile(outputPathStr + uniquefName + ".spectrum", "REFroot", "", "")
 		
