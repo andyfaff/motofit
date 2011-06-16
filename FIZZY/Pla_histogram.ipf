@@ -386,44 +386,55 @@ End
 
 Function pauseDetector(pauseORrestart)
 	variable pauseORrestart
-	//this function pauses (pauseORrestart=0) and restarts the detector after a pause(pauseORrestart=1)
-	//seize control of the server
-	string cmd
-	sprintf cmd,"http://%s:%d/admin/seizereleasecontrolconfig.egi?",DASserverIP,DASserverport
-	easyHttp/PROX=""/PASS="manager:ansto" cmd
-	if(V_Flag)
-		Print "Error while speaking to Histogram Server (pauseDetector)"
-		return 1
-	endif
 
-	//pause/restart the detector
 	switch(pauseORrestart)
-			//GET /admin/commitsoftvetostates.egi?softveto1=true&softveto2=false&softveto3=false&softveto4=false
-
 		case 1:		//pause acquisition
-			sprintf cmd,"http://%s:%d/admin/guienablesoftveto.egi?vetodata",DASserverIP,DASserverport
-			easyHttp/PROX=""/PASS="manager:ansto" cmd
-			if(V_Flag)
-				Print "Error while speaking to Histogram Server (pauseDetector)"
-				return 1
-			endif
+			sics_cmd_cmd("histmem veto on")
 			break
 		case 0:		//restart after a pause
-			sprintf cmd,"http://%s:%d/admin/guidisablesoftveto.egi?vetodata?",DASserverIP,DASserverport
-			easyHttp/PROX=""/PASS="manager:ansto" cmd
-			if(V_Flag)
-				Print "Error while speaking to Histogram Server (pauseDetector)"
-				return 1
-			endif
+			sics_cmd_cmd("histmem veto off")
 			break
 	endswitch
-	//release the control of the server
-	sprintf cmd,"http://%s:%d/admin/seizereleasecontrolconfig.egi?",DASserverIP,DASserverport
-	easyHttp/PROX=""/PASS="manager:ansto" cmd
-	if(V_Flag)
-		Print "Error while speaking to Histogram Server (pauseDetector)"
-		return 1
-	endif
+	
+	
+//	//this function pauses (pauseORrestart=0) and restarts the detector after a pause(pauseORrestart=1)
+//	//seize control of the server
+//	string cmd
+//	sprintf cmd,"http://%s:%d/admin/seizereleasecontrolconfig.egi?",DASserverIP,DASserverport
+//	easyHttp/PROX=""/PASS="manager:ansto" cmd
+//	if(V_Flag)
+//		Print "Error while speaking to Histogram Server (pauseDetector)"
+//		return 1
+//	endif
+//
+//	//pause/restart the detector
+//	switch(pauseORrestart)
+//			//GET /admin/commitsoftvetostates.egi?softveto1=true&softveto2=false&softveto3=false&softveto4=false
+//
+//		case 1:		//pause acquisition
+//			sprintf cmd,"http://%s:%d/admin/guienablesoftveto.egi?vetodata",DASserverIP,DASserverport
+//			easyHttp/PROX=""/PASS="manager:ansto" cmd
+//			if(V_Flag)
+//				Print "Error while speaking to Histogram Server (pauseDetector)"
+//				return 1
+//			endif
+//			break
+//		case 0:		//restart after a pause
+//			sprintf cmd,"http://%s:%d/admin/guidisablesoftveto.egi?vetodata?",DASserverIP,DASserverport
+//			easyHttp/PROX=""/PASS="manager:ansto" cmd
+//			if(V_Flag)
+//				Print "Error while speaking to Histogram Server (pauseDetector)"
+//				return 1
+//			endif
+//			break
+//	endswitch
+//	//release the control of the server
+//	sprintf cmd,"http://%s:%d/admin/seizereleasecontrolconfig.egi?",DASserverIP,DASserverport
+//	easyHttp/PROX=""/PASS="manager:ansto" cmd
+//	if(V_Flag)
+//		Print "Error while speaking to Histogram Server (pauseDetector)"
+//		return 1
+//	endif
 	
 	return 0
 End

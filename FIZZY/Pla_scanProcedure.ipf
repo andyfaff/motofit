@@ -135,7 +135,7 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	endif
 	
 	//if the tertiary shutter is closed, it might be a good idea to open it.
-	if(stringmatch(gethipaval("/instrument/status/tertiary"), "*Closed*"))
+	if(!stringmatch(gethipaval("/instrument/status/tertiary"), "*OPEN*"))
 		print "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons (fpx)"
 		//if auto is set, then its probably an automatic scan, so don't ask if you want to stop
 		//if auto is NOT set, then you probably want to open the shutter, so ask if you want to continue.
@@ -397,7 +397,7 @@ Function scanBkgTask(s)
 	variable status,temp, hmstatus=0
 	
 	//flush the buffered TCP/IP messages, this will update counts, etc.
-//	execute/P/Q "DOXOPIdle"
+	//execute/P/Q "DOXOPIdle"
 	
 	//in the last call to this function we may have asked the histo to start acquiring
 	//sometimes it takes a while for SICS to emit the hmcontrol message.

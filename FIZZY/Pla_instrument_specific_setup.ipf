@@ -37,7 +37,7 @@
 	//these motors are removed from the list displayed in the instrument panel.
 	Strconstant ForbiddenMotors ="bat;two_theta"
 	//where do you want temporary files saved?
-	Strconstant Home = "D:temp:"
+	Strconstant Home = "C:temp:"
 
 	//timeout for motors.
 	Constant MOTIONTIMEOUT = 600
@@ -103,7 +103,8 @@ End
 Function eHistogram()		//suitable for 25mm HG with FOC
 	oat_table("X",21,-19,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq=20)
+	oat_table("T",0,30,1000,freq=33)
+	//for 33Hz, change to 30us.  For 20Hz use 50.
 	sics_cmd_interest("chopperController status")
 End
 
@@ -148,9 +149,9 @@ Function jHistogram()		//suitable for hslits(44,35,35,43) "SB"
 End
 
 Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
-	oat_table("X",16,-11,1)
+	oat_table("X",16,-15,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq=20)
+	oat_table("T",0,30,1000,freq=33)
 	sics_cmd_interest("chopperController status")
 End
 
@@ -543,7 +544,6 @@ Function restartBMON3()
 		sockitsendmsg SOCK_bmon3,"REPORT ON\n"
 		sockitregisterprocessor(SOCK_bmon3,"Ind_process#processbmon3rate")
 	endif	
-	CustomControl cc3,pos={400,5},size={300,200},proc=MyCC_MeterFunc,value=root:packages:platypus:SICS:bmon3_rate,win=instrumentlayout
 End
 
 Function regularTasks(s)
@@ -1513,114 +1513,112 @@ Function Instrumentlayout_panel()
 	SetDrawLayer/w=instrumentlayout UserBack
 	drawpict 0,0,0.6,0.6,Procglobal#platypuspicture
 	
-	TitleBox dz,pos={3,112},size={25,21},title="dz=",labelBack=(65535,65535,65535)
-	TitleBox dz,fSize=10
-	TitleBox sth,pos={127,177},size={28,21},title="sth="
-	TitleBox sth,labelBack=(65535,65535,65535),fSize=10
-	TitleBox sz,pos={127,203},size={28,21},title="sz="
-	TitleBox sz,labelBack=(65535,65535,65535),fSize=10
-	TitleBox sx,pos={127,229},size={28,21},title="sx="
-	TitleBox sx,labelBack=(65535,65535,65535),fSize=10
-	TitleBox dy,pos={3,139},size={25,21},title="dy=",labelBack=(65535,65535,65535)
-	TitleBox dy,fSize=10
+	TitleBox dz,pos={3,112},size={25,21},title="dz=",labelBack=(65535,65535,65535), win=instrumentlayout
+	TitleBox dz,fSize=10, win=instrumentlayout
+	TitleBox sth,pos={127,177},size={28,21},title="sth=", win=instrumentlayout
+	TitleBox sth,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	TitleBox sz,pos={127,203},size={28,21},title="sz=", win=instrumentlayout
+	TitleBox sz,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	TitleBox sx,pos={127,229},size={28,21},title="sx=", win=instrumentlayout
+	TitleBox sx,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	TitleBox dy,pos={3,139},size={25,21},title="dy=",labelBack=(65535,65535,65535), win=instrumentlayout
+	TitleBox dy,fSize=10, win=instrumentlayout
 
-	SetVariable CNStemp,pos={552,35},size={130,16},title="CNS temp"
-	SetVariable CNStemp,labelBack=(65535,65535,65535),fSize=10
-	SetVariable CNStemp,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/cns_inlet_temp")][1],noedit= 1
+	SetVariable CNStemp,pos={521,105},size={130,16},title="CNS temp", win=instrumentlayout
+	SetVariable CNStemp,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable CNStemp,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/cns_inlet_temp")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable ReactorPower,pos={552,13},size={130,16},title="Reactor power"
-	SetVariable ReactorPower,labelBack=(65535,65535,65535),fSize=10
-	SetVariable ReactorPower,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/power")][1],noedit= 1
+	SetVariable ReactorPower,pos={521,83},size={130,16},title="Reactor power", win=instrumentlayout
+	SetVariable ReactorPower,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable ReactorPower,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/power")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable secondaryshutter,pos={552,57},size={130,16},title="secondary shutter"
-	SetVariable secondaryshutter,labelBack=(65535,65535,65535),fSize=10
-	SetVariable secondaryshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/status/secondary")][1],noedit= 1
+	SetVariable secondaryshutter,pos={521,127},size={130,16},title="secondary shutter", win=instrumentlayout
+	SetVariable secondaryshutter,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable secondaryshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/status/secondary")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable tertiaryshutter,pos={552,79},size={130,16},title="tertiary shutter"
-	SetVariable tertiaryshutter,labelBack=(65535,65535,65535),fSize=10
-	SetVariable tertiaryshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/status/tertiary")][1],noedit= 1
+	SetVariable tertiaryshutter,pos={521,149},size={130,16},title="tertiary shutter", win=instrumentlayout
+	SetVariable tertiaryshutter,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable tertiaryshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/status/tertiary")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable mode,pos={552,155},size={130,16},title="mode"
-	SetVariable mode,labelBack=(65535,65535,65535),fSize=10
-	SetVariable mode,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/mode")][1],noedit= 1
+	SetVariable mode,pos={521,185},size={130,16},title="mode", win=instrumentlayout
+	SetVariable mode,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable mode,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/mode")][1],noedit= 1, win=instrumentlayout
 
-	SetVariable omega,pos={552,175},size={130,16},title="omega"
-	SetVariable omega,labelBack=(65535,65535,65535),fSize=10
-	SetVariable omega,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/omega")][1],noedit= 1
+	SetVariable omega,pos={521,205},size={130,16},title="omega", win=instrumentlayout
+	SetVariable omega,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable omega,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/omega")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable twotheta,pos={552,195},size={130,16},title="two theta"
-	SetVariable twotheta,labelBack=(65535,65535,65535),fSize=10
-	SetVariable twotheta,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/twotheta")][1],noedit= 1
+	SetVariable twotheta,pos={521,225},size={130,16},title="two theta", win=instrumentlayout
+	SetVariable twotheta,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable twotheta,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/twotheta")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable sicsstatus,pos={498,216},size={200,16},title="SICS status"
-	SetVariable sicsstatus,labelBack=(65535,65535,65535),fSize=8
-	SetVariable sicsstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:sicsstatus,noedit= 1
+	SetVariable sicsstatus,pos={468,246},size={200,16},title="SICS status", win=instrumentlayout
+	SetVariable sicsstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable sicsstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:sicsstatus,noedit= 1, win=instrumentlayout
 
-	DrawRect 219,322,311,357
-	DrawRect 180,364,213,439
-	DrawRect 316,364,349,439
-	DrawRect 219,448,311,483
-	SetDrawEnv arrow= 3
-	DrawLine 248,359,248,447
-	SetDrawEnv arrow= 3
-	DrawLine 217,424,313,424
-	DrawRect 43,322,135,357
-	DrawRect 3,364,36,439
-	DrawRect 139,364,172,439
-	DrawRect 42,448,134,483
-	SetDrawEnv arrow= 3
-	DrawLine 61,359,61,447
-	SetDrawEnv arrow= 3
-	DrawLine 39,424,135,424
-	DrawRect 401,322,493,357
-	DrawRect 361,364,394,439
-	DrawRect 499,364,532,439
-	DrawRect 400,448,492,483
-	SetDrawEnv arrow= 3
-	DrawLine 420,359,420,447
-	SetDrawEnv arrow= 3
-	DrawLine 398,424,494,424
-	DrawRect 587,322,679,357
-	DrawRect 547,364,580,439
-	DrawRect 683,364,716,439
-	DrawRect 586,448,678,483
-	SetDrawEnv arrow= 3
-	DrawLine 605,359,605,447
-	SetDrawEnv arrow= 3
-	DrawLine 583,424,679,424
+	DrawRect/w=instrumentlayout 219,322,311,357
+	DrawRect/w=instrumentlayout 180,364,213,439
+	DrawRect/w=instrumentlayout 316,364,349,439
+	DrawRect/w=instrumentlayout 219,448,311,483
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 248,359,248,447
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 217,424,313,424
+	DrawRect/w=instrumentlayout 43,322,135,357
+	DrawRect/w=instrumentlayout 3,364,36,439
+	DrawRect/w=instrumentlayout 139,364,172,439
+	DrawRect/w=instrumentlayout 42,448,134,483
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 61,359,61,447
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 39,424,135,424
+	DrawRect/w=instrumentlayout 401,322,493,357
+	DrawRect/w=instrumentlayout 361,364,394,439
+	DrawRect/w=instrumentlayout 499,364,532,439
+	DrawRect/w=instrumentlayout 400,448,492,483
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 420,359,420,447
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 398,424,494,424
+	DrawRect/w=instrumentlayout 587,322,679,357
+	DrawRect/w=instrumentlayout 547,364,580,439
+	DrawRect/w=instrumentlayout 683,364,716,439
+	DrawRect/w=instrumentlayout 586,448,678,483
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 605,359,605,447
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 583,424,679,424
 	
-	TitleBox ss2vg,pos={252,376},size={34,13},title="ss2vg="
-	TitleBox ss2vg,labelBack=(65535,65535,65535),fSize=10,frame=0
-	TitleBox ss2hg,pos={261,408},size={34,13},title="ss2hg="
-	TitleBox ss2hg,labelBack=(65535,65535,65535),fSize=10,frame=0
-	TitleBox ss1vg,pos={63,376},size={34,13},title="ss1vg="
-	TitleBox ss1vg,labelBack=(65535,65535,65535),fSize=10,frame=0
-	TitleBox ss1hg,pos={72,408},size={34,13},title="ss1hg="
-	TitleBox ss1hg,labelBack=(65535,65535,65535),fSize=10,frame=0
-	TitleBox ss3vg,pos={422,376},size={34,13},title="ss3vg="
-	TitleBox ss3vg,labelBack=(65535,65535,65535),fSize=10,frame=0
-	TitleBox ss3hg,pos={431,408},size={34,13},title="ss3hg="
-	TitleBox ss3hg,labelBack=(65535,65535,65535),fSize=10,frame=0
-	TitleBox st3vt,pos={402,303},size={29,13},title="st3vt="
-	TitleBox st3vt,labelBack=(65535,65535,65535),fSize=10,frame=0
-	TitleBox ss4vg,pos={607,376},size={34,13},title="ss4vg="
-	TitleBox ss4vg,labelBack=(65535,65535,65535),fSize=10,frame=0
-	TitleBox ss4hg,pos={616,408},size={34,13},title="ss4hg="
-	TitleBox ss4hg,labelBack=(65535,65535,65535),fSize=10,frame=0
-	TitleBox st4vt,pos={586,303},size={29,13},title="st4vt="
-	TitleBox st4vt,labelBack=(65535,65535,65535),fSize=10,frame=0
+	TitleBox ss2vg,pos={252,376},size={34,13},title="ss2vg=", win=instrumentlayout
+	TitleBox ss2vg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	TitleBox ss2hg,pos={261,408},size={34,13},title="ss2hg=", win=instrumentlayout
+	TitleBox ss2hg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	TitleBox ss1vg,pos={63,376},size={34,13},title="ss1vg=", win=instrumentlayout
+	TitleBox ss1vg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	TitleBox ss1hg,pos={72,408},size={34,13},title="ss1hg=", win=instrumentlayout
+	TitleBox ss1hg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	TitleBox ss3vg,pos={422,376},size={34,13},title="ss3vg=", win=instrumentlayout
+	TitleBox ss3vg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	TitleBox ss3hg,pos={431,408},size={34,13},title="ss3hg=", win=instrumentlayout
+	TitleBox ss3hg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	TitleBox st3vt,pos={402,303},size={29,13},title="st3vt=", win=instrumentlayout
+	TitleBox st3vt,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	TitleBox ss4vg,pos={607,376},size={34,13},title="ss4vg=", win=instrumentlayout
+	TitleBox ss4vg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	TitleBox ss4hg,pos={616,408},size={34,13},title="ss4hg=", win=instrumentlayout
+	TitleBox ss4hg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	TitleBox st4vt,pos={586,303},size={29,13},title="st4vt=", win=instrumentlayout
+	TitleBox st4vt,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
 	
-	//a needle meter showing the count rate
-	SetDrawLayer UserBack
-	
-	CustomControl cc3,pos={300,5},size={200,100},proc=MyCC_MeterFunc,value=root:packages:platypus:SICS:bmon3_rate
-	CustomControl cc3,userdata= A"5VRScnm%q6!94'K"
-	CustomControl cc3,picture= {ProcGlobal#PanelMeterNoScale,1}
+	valdisplay bmon3, value = #"root:packages:platypus:SICS:bmon3_rate", limits={0, FSD,0}, title = "Detector\rRate", win=instrumentlayout
+	ValDisplay bmon3 mode=3,barmisc={14,50}, size={280,50},fsize=14, valueBackColor=(51456,44032,58880), win=instrumentlayout
+	ValDisplay bmon3 lowColor= (65280,16384,16384), pos = {425,13}, frame=2, win=instrumentlayout
+
 	
 	//print the chopper status
-	Button printchopspeed,pos={569,105},size={100,40},proc=printCHopSpeedBTN,title="Print Chopper\rStatus"
-	Button printchopspeed,fSize=10
-	doupdate
+//	Button printchopspeed,pos={569,105},size={100,40},proc=printCHopSpeedBTN,title="Print Chopper\rStatus"
+//	Button printchopspeed,fSize=10
+//	doupdate
 End
 
 Function printCHopSpeedBTN(ba) : ButtonControl
@@ -1633,159 +1631,6 @@ Function printCHopSpeedBTN(ba) : ButtonControl
 	endswitch
 
 	return 0
-End
-
-Function drawneedle(v)
-	Variable v
-	
-	if( v<0 )
-		v= 0
-	elseif( v>FSD )
-		v= FSD
-	endif
-	
-	Variable theta= Pi - Pi*v/FSD		// Note: constants are specific to panel meter image
-	Variable x0= 127, y0= 121,len= 80
-	Variable x= x0 + len*cos(theta)
-	Variable y= y0 - len*sin(theta)
-	
-	SetDrawEnv linefgc= (50000,1000,1000),linethick=3,arrow=1,arrowfat=1
-	DrawLine x0,y0,x,y
-end
-
-
-Function drawscale(vmin,vmax,n)
-	Variable vmin,vmax,n
-	
-	variable i
-	Variable theta0= Pi			// Note: constants are specific to panel meter image
-	Variable dtheta= -Pi/n
-	Variable x00= 127, y00= 121,len= 86,ticklen=15,labellen=20
-	String s
-	
-	SetDrawEnv textxjust= 1,textyjust= 1,fsize=9,linethick=2,save
-	for(i=0;i<=n;i+=1)
-		Variable theta= theta0 + i*dtheta
-		Variable x0= x00 + len*cos(theta)
-		Variable y0= y00 - len*sin(theta)
-		sprintf s,"%.2g",vmin+i*(vmax-vmin)/n
-		DrawLine x0,y0,x00 + (len+ticklen)*cos(theta),y00 - (len+ticklen)*sin(theta)
-		DrawText x00 + (len+labellen)*cos(theta),y00 - (len+labellen)*sin(theta),s
-		if( i!=n )
-			DrawLine x0,y0,x00 + len*cos(theta+dtheta),y00 - len*sin(theta+dtheta)
-		endif
-	endfor
-end
-
-Function MyCC_MeterFunc(s)
-	STRUCT WMCustomControlAction &s
-
-	NVAR bmon3_rate = root:packages:platypus:SICS:bmon3_rate
-	if( s.eventCode==17 )
-		drawscale(0,FSD,10)
-	elseif( s.eventCode==10 )
-		drawneedle(bmon3_rate)
-	endif
-	
-	return 0
-End
-
-Picture PanelMeterNoScale
-ASCII85Begin
-M,6r;%14!\!!!!.8Ou6I!!!#q!!!"Y#R18/!1qAH6i[2e!HV./63+16*9dG'!!Zn*7mm@W!<3'!TY7
-7e!!!!*E(F,Q!!!J[!!!J[!CA3(GQ7^D#BWO370hHL#R1kQ7B)UO!!!c38OPjDGhVPUq/]NeQ,c,&8
-1ggkBLQSN66Os_#)$.(!!Wj_(h4[`lr;u$a,+TSPuQ"XOJGd>b)44\-b(/.#e"`CEL^RT(bf?ZKg>c
-W#RQ/"2XP:(X-_Gon%JMtlkm&G,dljtI&\SCB_?.IhsW_cF7+J>)AGVc"#(r*6DW%H:_^kV=QEco6H
-%;_P^=MY&Waa6k].aJ+em@1U'j:%?j$mY)[&I.]-%@k@,3-'$UPOqF?pJ4+@d76/dPqB"[N^c/dR&2
-G<ld,_n$5-&-WYOEcaU/**j,/8;QJ]+GeAJ6&5Z;9@[;Z+rf2h,7%.s']T<^EcaSY7-K4FLsQ;k#U,
-m7eQi_1)l^CV651PBG<lf+/dR&2G<leWa1=o3(BfTYJfmTP(Bbm4,.\m&&WTt;5nN?7#XTe=GI'^0B
-`75h04oH]6&%Y#7s)(*oLRK9NhRqH]j?(M++D!)g+T(ZJ?#>Z)QKg3Bc7fsQqSjN-5.`4)3`019M>l
-"Z*@C^Q7m\GR7qX2_`XY$@4Gl]cc>PE0M\O0_1;W5H[?VM*5q)`ic;SK]A;)WXsj(JMd=(MDI(_1\Q
-n@0N\rO'UVVK.BZ+R>&K;C9`F9uS4s!@%*!loX9UIMbjHLA,e'gl[:*qD=$/:+>`5T]P,7''dXsf/D
-YfNpPD)=u)lh07Z3k9S0.VJ)5l0.>=E*r[Xh2\@H`5KY.@l@hWM'5&+J]*3Eio9"'==dQ*(1L`_0c>
-t<9I;T%k>Z"=?:A;]_M+@O-8\FA&.%4cq=&VkGW[%[*Y3.tqZ^]+lT0lZM57#F0ko&]8kM](/1`%m2
-3mt3G_uEn`s&a9@3G%qF`j3:H'0t+FgSQa@?-0f2^aB>N!p%?:F84f*G]+.nSrQe=tH&E>B#eJK[F2
-C?o2=H(iG/BJO"a_VC"th(Xo6U_eQU9i"e.Dqq!K$`?,BD;\Zm%K#d7j?snNQSfSdg)E@BZa#G%KZE
-gd'3GTB@c(3&;`J]S2Mj#eJKWMf\Xq7ktWiG'%]BSYKV7s[8b0!=OT/q\JCo4G@O9_[ZkF7r!0u7J6
-(7e/H%+d**BI8n3Cu4itrQC<`rYD.#o819OpZ$8*\TmWgN=??pn[$R:`Qs"QbZV8sGi:u$c(7X):(B
-1O%C=_=<rY?CGCuV<*^HUZq^?E]_nj<M(V.oJ9Pno0QS2^cA29::QcJa_e&f_V,r%,o9J*NLWpJEF#
-J8g;Q7Z<YM!1W4s*-XI\iMo5GO?HQXf]*=/gb1@0Q6AaMG$R/>ZaO#>+/RknY8[5EVBbs&>6G5NQ-\
-W)B0X[m-M[Ro9#Z;cSlqqSEuacXB'+5UYf/?r)gXF6:(`PMMdd!<.ptoFE_rXg=!j[M@**Z<03E7b-
-^/;B$Qi68P+b@r,G!'q`*VZ]4l/#k0mh\BP_M'?o4%7RE:U<9?><&-S[>qg`8g;YuiR<kNA&$T?lLC
-9B^&-VmWptlDc>VbKD?UcY)drV9GAcMr`r0Z1UDOe"mm?:AB6$)B0Xkg\^HgFT+CJ"U-G[[Z%;h/8R
-3`0ekEWAWU\r(3Hg2=nIDHVN@.:O5&cjVmi!KF`k@*@gB!4WGI%S8JWp`84#Xp%%&c@cXhARR.acbE
-Of=21c2FPk>'acgKD160aeaL,WRm\^)!SF<FtXU^%D'nZYeI*EH`%&:1;p!&,#Vg*'SHMPL7I\SpH9
-*bEak+.7oD@A&AI!`W[e`p@n;[?!U1XZ"(/K[PE@3I--c]P*DJ!W[dgH>4rIkr/fdl?FFb-HJaDTjj
-2t1]/eKq8D17X,Zq0"?bW%c(G6sp4.DV)(`?F#Vb(q$0ui8DE4iiRo($gIH@!ZSal0khq]=GDfb0_@
-PXHDu=KPWdQ^1N+FXjdV23aAkEVe06k09OEW^e-W4[!(gPiV'&(SB#D;c=A0pWn>0q9gS[$OYOj@0;
-p#=d[I-]=9S%q>%^cS=IeJbEk#+k"O(Mf5p<B;6$[t=hfDKo1M`sCah',EcbGj)ZucB%M#dgcQ;e0o
-F\XE\STp.Oj'mX//Cn"Is+gl6W38?UQMqUF<5_g&Z/?r:.7STYO0uYS.d:&p=*"T'GQ?j\sJL2`OM&
-jom3U<X(1=^DrM`XB&gmj'MY,jCi!oi9MhjnXUG^NoAG63LAYZo"9S4;GI.=EO6Gfki9=mGiR-2V8O
-uA`_1+UGN#V#SlY(3Lc^m9>3II1t%mS;/jiapckCQ_ki:m,JXf::;JHHUQPd#H)AkF+h5W7HRR3mdS
-pP@SkVW-Z.p?pUda5^UYlI?Ra(5?oP*f9,ZG?5T9%j/f/\$KP_$<F?56Y^A9g`217USkT1QbU665#n
-LV;`J=qM\[lg9e+!RFjdCpWhQr1QCOHbT)//iR6#Jj=S^]>F:n@Td*^7W9A?r)fA"KKeZ1,O/f)&9,
-&,QW.p"]Npb5'&6i?^,5@N.0g%)q;#lWWLq0^]Bf(.6^09MitcK6LHPWd\CB]XY++%JQkKVM%tnF+[
-da(+Gd&K`)Jhim-b?U&c>#7!8nIm8G_hua`G=MX40CI;Q4RrE`>C2;M7B+OT,9A-mn)gQ^Snsr@4IX
-Cp;H[0i0DJEs&=hJ8OEuoWU/=+PT*E?*RCMVtW_1O!Z-1U=4I_`=)dj1ZGcu5enX,C%cH%l735$"ai
-ajb%RA?U+mTkPF9SXg``EeGUJSJPX\Om+Z67'hjhTmr?NQS7sfgUH55H?jne-8IA5`VP:&lK*+I3-a
-p8(Yd[=d0hV3E7(Cnr@UP&?ab?aXf]8.qqkm?)Yq\-:QoIuM.4=A^Yd@grVJTZ?dJ=.r#pt6094$d9
-V,RCCJ-Ka<E8D\iucCaaPcS_S*p/`S&3eh',/:;`uZJFD!$`7ruU(E&BiY-,q_AFRVmbJ]r(*V%;4#
-Xnk1X`daH">iaUoBCCinQGFW;(Za?]go=t&(T,g%MWiAp=$_i+-Am8IYs7>g)A7fG:5&hcXAS'KiV&
-'i%66aCX*^>[-f.PW\]SJr,q;7hE*(rm2Mj>uTR[cO@X%Y)s/c=b_^LgqE#+N)<@Io[Y@^Fb?]mD\*
-6URT0#`.Ql-Ve(E_]N".fLUas;P\#CX0:^HTDk)8AS&@;CG/#8TE3Dgod[/Znd5]nnSHpl)4Sl?8kK
-HF[V`os[IWILDdp3174hr*cf_(sZd8,Yhp)n;Xe];?ZiQPgBl'rRjNoQ0am$sjW3Ge]U9#30lT-%,*
-W50pf?n`39q+*!Y\-*Z3LONPI29TTcb&Y[94)%582b&kDNEE0U&N\!>VEk9e#f`Gpr`>D!9P[:.mNo
-iID>_4NV2t,0)"KZ`XN@dn_RXP6;LAfCEIn^UnjfU?=U=pGikE,E4K6?gUE5pJH8VD\;8r+j\/ephD
-a<LM:P^*DI^r9]$=2B@HN[sr:B$:\T6q47)ud8ZL40Yn^5(!eCN-REn)YFma/0m.k?Me)`H'ne]!Xq
-7rZ"DU7s>\CT#=tE9uB%L6`Tq<V;Aq2."a6j)Qkgs*f.)qC4\$:NH)`(^-a3na>i$4LT,J78p,@Z/T
-LT)C[-c@`*p0S3;4bO$EV'g6Q9dDA#2-aX7M`fYP%cRjh=e],KI=WlgXD6+$CDk:aGk8$(@&d3A.9L
-'IX(qf^Pm?dJ?^1[aORA[C(6!tRN0eu`.:ET.,acCGV;Kda*t+l)P#bE&f2U#9]1q,b]-qtY5]5=](
-+Kd2?_7HB+Cq8G=!VlR.fSSu/,?@G(2QS#hI[8WjJaG^umGlIO%aiMO77>9_Dp3OhBF,'_[mO%fP7K
-,<2'SZRsI$k)?^.N6:9r'AQ7=Hu:iH4Y,#9TW6rB.N+h2%\2RPJF]'.6Nh<J@*e-QG?Gen_IOd*XSJ
-pKHKs;HdANLO]:ZSK/`5[+Z/G`OLHUccHhJW2lt/n`%N`Unif%+t64]rRe-MaP=1]pm)[4AJC/'<Rs
-.#`#Ltb_7b3cGW_.aLBAP;*W5kg%k&kU@9RZU4Dl'G=R5:pg9H9``^UAf_!!-U+B)->hq_#OY$KOV<
-Jf'i5+2]X]^sE1`*+]C>dR&5_aG-+7RCT0H,'.aehIg5(P:"V*Z?)3e`G!PkuYX:m<2!Ycjc*r%Q#X
-c.QCa@cFS/aYfUtJO^m!C'l-/=H,'4s$0TWqg90<?Z`:=Vi?7U5);]i./JLV[qqDmK`OO*X0(Gjk?g
-!o>5>GfkQDc$+6llVA4aWL]*BUKs3>9nX-$h]OVq9,>h7G[I=W-X-prFu*H+dPXmbLN@>TBRJ(._aQ
-.3dA#&t58VZu[UO<E3ODf5F1Ii#itcHJ%uD^XCrg,rp9";--i>RCYF[XB[3p,Xi:,JH7O_I[^Wk:LY
-:s/$8-=mcqZ6l4h:!*=M23*`56G*#RV/IJ_+/cY%9,Tr92fd,O*U()EX*F#VrI*Y5;)?foRf+*+'S.
-;[Ve,Gl:o#R!,9r&B+QIEX>r%Jd?PKmQ1p>3UCn$2QPs+u!HB\6[^^W]WC+9R:7rT,]h@-TnI!O].5
-)n*fFaGr\g#9Hd%9E"Rpk/WJV(gDF,)&oAWcqUmtP<X]Gb]Pen:c->3llQW5D='8Bds1eW@B?ukF>b
-kg_TO_]arS?r%/1lQq3fq1NlcaO_-u*Y^^d%fA3Vn0Ih_^>ehKt=:ZY.H9`_dk%Da=DpcTR&HRlbMS
-NUusJ4ZlF*Siq1SE_j@SI3bCPf/\6B&=TUSDr*U5k0\_,LjSu?g0]4>Iqn7n%5^Zs%b;$snAadtLY[
-%;@:+s4(`;2%\)6?<-_A+'LFtt(]$Z=^d3<nNo:9kOcC"_7[Q5BbI.@R[R[V+9#DI:T:=jV<:7`^B#
-Z+c2/>GGPd&^7Pf<3*la<PA<j)_6Q"K.G`6UMjM^E9Z2)a<k&=@_u^IQf>6A'pGcGL\E;Lcg&f=nHR
-fN2O0&`Z]1TC)SUKHFS:d'Wir=P,"'C%?6@Wh/8)3;/Y@K%mEPA`f1+=dEslijOij1?arAol-j(iFt
-.<^XsaW7e^\2(RNr=gU><[j/.AUecetg'j0Ia3W2e)-n)n.k-(UTt@3bEK/&phb:@j/I[(!M#Xgjac
-ES_H[KV6uXj6?F>pMl7H]/-E91L)P+F`fN!1k\4q&'n]i+:t3NYn<bI5]1K-M#4so&X]b?feP0[pb]
-ILgacH>Y,M__Q;caFN#Qq$3Hsm2ff;&<,UCG:(Tte1"86<LE%G-)F:3!s"=Ws=kU8*^1CQ1gKVd$W3
-]lTkl=*@_O[O9L#5i1L%'Elo0/GDoF,I+Vc0Zk?_?J5W4Y&O=0W:tR`aZ3o_^iUK*n=f<201,<V+]3
-gqugNBgJ+ZA:iZ8LW'A!7IQ>!:BcK-\QoT6M87MtbeknRVKu)<?n`Jp:f>?i7o:8XZI/5;*]tKT(O!
-S(;?1dg_O^Cp-,?hToY3mnk_7<qS>*-ArAh"/,/f2ROb<n=jLR$5/?)RVL:RPHiGg#--"lXOP`'ag]
-XMLNp(=_ZgGeO$EVK)7l;$,e)a"AipXsaXLQBa1Crd;!<_Uh8"f)lO;4E"QQ/+>@]G.O-2(`F;"Bq^
-;V0lEZ!T=20dg%$WJSHFh1V>hLl5Rm8sCpMYcrnnpl6#JtORV=FVMK(L22.U?4'0hLoKS8i,GlE)Fk
-KXO>IJ<OcolrH=nmn[?p(0F,35=?He+rSL'GO)Z$/t;B\B2\IW`;@R1&%?m9Dc\d3#iFMd78i,iS\H
-t3sCfqbNK]/$2=)Vf9Y-B8:"VbAqu#qSfSL?B^"^K`oD6+/n^CVpP:II"4s&'6+r$'k9I[DO%YflKr
-iY=U)8+Il;cgW&gT[XmMX8aAU)K?Zlg.Gi\ZY%SfTrIgI#tK/Neo1\up,Il;\J!<]QO5(f?mmSNIcc
-;,P]C@0$]LKn1aU68;7HO(+X2lXaaCLd[_,f$B$^iD37aG,/&u`fE^?89VO_F`lYb3[I9<$$Np$LYY
-^?C9$o\'1PA4.1&dY@F1H6)H;tY^E:A?&G?[j3"n2:pNSeG,pg[]RP6Mc)A@b4Y`M+jEmUtOU?`YCH
-5IJ9#e>BP+g2eif<O)tBUX\+C6]A]N#5oF2ZE@@TP]N[nGCVF]5]m&,4q!'I;!R2?.VZ4!ucj?jQS*
-Bpp.3PK9ZASpj=?54:F:k+kK4:/;3G535AoE:6sIa;4tnKj-qkSBE^CP0[X^VhU@*1`4!O;r&VEhWj
-k25b\"0qie5\ch."3eOb"RLY/)G-fkA=\h2TbL&#K;Pkc^`d!We%2LIk$-OT'49.#5D8s29a['=pK]
-R:%`,kj&Va6Pr1?*Bar>i-)Y!kWqh!6G1q'f]VM`l"Imo#=-nG)N?/__tZUc[+16S]&2shG^((+eLE
-m-9,jpG['[2nHEXZ[+&B_3kaI7V?pO=0EJIZ"pQ-3&)@58E]-X0V60MT[>p9)IA^JG\c%[:@5'#7"]
-&rVCG.U3,p[lF<)EsdSfH<-K';?aX0q!XIE@0OQ6ML@EmRZHd?XD2<!eC=ug#F]DM8(qOodobQP6kM
-p6S:k>H1e,)L8nsTN5g2o*/VoVDBI_oURj#SLWO3tf<gXo0GF"Df/*q*;5gFli'MMV?2]`4C1Y55"k
-[Y"&YrRGY<n<3288Ll'LfRoo?i+S!3b"4a5b"tEnrQD`l5ncjDtL9_16b#A5#b](P:0HL4>'S97PNP
-`Z&:VV>Hs9ro_U7J,ONH_En;E*?k/NHH6IW,pe7FO$609<>AT<>e-ndSsG[3;Gn,@Dps^.G2g#qBL_
-hSp\Jr@r>FndlYfp/%g2s@\$tDfG]"@_\uoO$S!c3RhG"5WNo[O+jb3ANYJ7.4Mi2*/Kbn_'Hs^\4d
-7pKf$/K:--L0o+p*^9G:7oPoE82l>cSob[%-T%e[J)En0Ug7r!eHI!Rp]&,`QP[Pk!Rb7X"'R8h=\Q
-;(^ueVk&IZpTtV#me^_Y.nF0/%n+Z].0/"\'/*j)+fg_a!gt^\ScCH'C8SG3_CFgjZci;7-\+A0TDp
-`Qk-`3?WB'.@/bF5hSaiMO/Q!nXJTI>[&LdQtJr-gj8%iuuL0998BB#tLm6gElW3q(1JgMF;p>:"$I
-;RR_'!Me$Z&]]Am(C*6^L'^LjJKTcq"[N]n$fRV&AnGYtn^C?e<8F;dT?i;?BTs:dOcNJtUD\>R.(Z
-LlC^Lu3#^>]FF[!AZ#U;[&@[nQ/M00U;6%girJd>Wn";/3f#U4@V&B4`,cq&sOSe)$5<*]9LVQ7M*K
-?u.kz8OZBBY!QNJ
-ASCII85End
 End
 
 Function wott(ref_pixel,db_pixel, dy)
@@ -2462,11 +2307,12 @@ Function ThomasMagnetStatus()
 	
 	SetVariable nominal_current,pos={1,44},size={240,16},title="nominal current"
 	hipapos = gethipapos("/sample/ma1/sensor/nominal_outp_current")
-	SetVariable nominal_current,value= root:packages:platypus:SICS:hipadaba_paths[1206][1],noedit= 1
+	
+	SetVariable nominal_current,value= root:packages:platypus:SICS:hipadaba_paths[hipapos][1],noedit= 1
 	
 	SetVariable desired_current,pos={0,22},size={240,16},proc=magnet_SetVarProc,title="desired current"
 	hipapos = gethipapos("/sample/ma1/sensor/desired_current")
-	SetVariable desired_current,limits={-30,30,1},value= root:packages:platypus:SICS:hipadaba_paths[1205][1]
+	SetVariable desired_current,limits={-30,30,1},value= root:packages:platypus:SICS:hipadaba_paths[hipapos][1]
 End
 
 //a function to make a quick check connection to the chopper system
@@ -2491,43 +2337,53 @@ ENd
 Function TestTask(s)		// This is the function that will be called periodically
 	STRUCT WMBackgroundStruct &s
 	Wave phaseoffset, timer, theticks, wasNoise
-	
+	Wave/t chopperInfo
+	NVAR chopperConn = root:chopperConn
 	string msg = grabAllHistoStatus()
 	string value = ""
 	variable entry = dimsize(phaseoffset,0)
-	redimension/n=(entry + 1, -1) phaseoffset, timer, theticks, wasNoise
+	redimension/n=(entry + 1, -1) phaseoffset, timer, theticks, wasNoise, chopperInfo
 	
 	timer[dimsize(phaseoffset, 0) -1] = datetime
 	theticks[dimsize(phaseoffset, 0) -1] = ticks
 	
-	value = stringbykey("frame_deassert_time_num",msg,":","\r")
-	phaseoffset[entry][0] = str2num(value)
-	if(str2num(value) > 1)
-		wasNoise[entry] = 1
-	else
-		wasNoise[entry] = 0
-	endif
-	
+//	value = stringbykey("frame_deassert_time_num",msg,":","\r")
+//	phaseoffset[entry][0] = str2num(value)
+//	if(str2num(value) > 1)
+//		wasNoise[entry] = 1
+//	else
+//		wasNoise[entry] = 0
+//	endif
+//	
 	value = stringbykey("frame_deassert_time_0",msg,":","\r")
-	phaseoffset[entry][1] = str2num(value)
+	phaseoffset[entry] = str2num(value)
+	
+	if(trunc(mod(datetime, 60)) == 0)
+		if(sockitisitopen(chopperConn))
+			sockitsendnrecv chopperConn, "#SOS#STATE 1:"
+			chopperInfo[entry] = S_tcp
+		endif
+	endif
 
-	value = stringbykey("frame_deassert_time_1",msg,":","\r")
-	phaseoffset[entry][2] = str2num(value)
+//	value = stringbykey("frame_deassert_time_1",msg,":","\r")
+//	phaseoffset[entry][2] = str2num(value)
 
 //	value = stringbykey("frame_deassert_time_2",msg,":","\r")
 //	phaseoffset[entry][3] = str2num(value)
 
-	value = stringbykey("frame_deassert_time",msg,":","\r")
-	phaseoffset[entry][3] = str2num(value)
+//	value = stringbykey("frame_deassert_time",msg,":","\r")
+//	phaseoffset[entry][3] = str2num(value)
 	
 	return 0	// Continue background task
 End
 
 Function StartTestTask()
-	make/n=(0,4)/o phaseoffset
+	make/n=(0)/o phaseoffset
 	make/n=(0)/o wasNoise
 	make/n=0/i/u/o timer
 	make/n=0/i/u/o theticks
+	make/n=0/t/o chopperInfo
+	variable/g chopperConn = choppertestconn()
 	Variable numTicks = 1 * 6		// Run every two seconds (120 ticks)
 	CtrlNamedBackground Test, period=numTicks, proc=TestTask
 	CtrlNamedBackground Test, start

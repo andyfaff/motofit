@@ -412,7 +412,8 @@ Function startSICS()
 	//socket for synchronous queries
 	sockitopenconnection/Q/TIME=2/TOK="\n" SOCK_sync, ICSserverIP, ICSserverPort, sync_buffer
 	sockitsendnrecv/time=3/SMAL SOCK_sync, sicsuser + " "+sicspassword+"\n"
-	sockitsendnrecv/time=1/SMAL SOCK_interest, "\n"
+	sockitsendnrecv/time=2/SMAL SOCK_interest, "\n"
+	print V_Flag, S_tcp
 	
 	if(SOCK_cmd < 0 || SOCK_interupt < 0 || SOCK_interest <0 || SOCK_sync <0)
 		sicsclose()
@@ -422,11 +423,12 @@ Function startSICS()
 	
 	Setdatafolder root:packages:platypus:SICS
 
+	sleep/t 20
 	DoXOPIDLE
 	//get the SICS hipadaba paths as a full list
 	string pathToHipaDaba = SpecialDirPath("Temporary", 0, 0, 0)
 	print "LOADING HIPADABA PATHS"
-	sockitsendnrecv/FILE=pathtoHipaDaba+"hipadaba.xml"/TIME=10 SOCK_interest, "getGumtreeXml / \n"
+	sockitsendnrecv/FILE=pathtoHipaDaba+"hipadaba.xml"/TIME=5 SOCK_interest, "getGumtreeXml / \n"
 	if(enumerateHipadabapaths(pathtoHipaDaba+"hipadaba.xml"))
 		print "Error while enumerating hipadaba paths (startSICS)"
 		return 1
@@ -1056,7 +1058,7 @@ Function createAxisListAndPopulate(sock)
 	make/o/t/n=(0,0) axeslist
 	
 	//get list of motors
-	SOCKITsendnrecv/Time=0.5 sock,"sicslist type motor\n"
+	SOCKITsendnrecv/Time=1 sock,"sicslist type motor\n"
 	output = replacestring("\n",S_tcp,"")
 	output = removeending(output," ")
 
@@ -1077,7 +1079,7 @@ Function createAxisListAndPopulate(sock)
 	endfor	
 	
 	//get list of configureable virtual motors
-	SOCKITsendnrecv/Time=0.5 sock,"sicslist type configurablevirtualmotor\n"
+	SOCKITsendnrecv/Time=1 sock,"sicslist type configurablevirtualmotor\n"
 	output = replacestring("\n",S_tcp,"")
 	output = removeending(output," ")
 	if(V_flag)
@@ -1105,7 +1107,7 @@ Function createAxisListAndPopulate(sock)
 		cmd+="sicslist "+axeslist[ii][0]+" hdb_path\n"
 	endfor
 	
-	SOCKITsendnrecv/time =0.5 sock,cmd
+	SOCKITsendnrecv/time =1 sock,cmd
 	output = S_tcp
 	if(V_flag)
 		print "err"
@@ -1121,7 +1123,7 @@ Function createAxisListAndPopulate(sock)
 	for(ii=0;ii<dimsize(axeslist,0);ii+=1)
 		cmd+=axeslist[ii][0]+"\n"
 	endfor
-	SOCKITsendnrecv/Time=0.5 sock,cmd
+	SOCKITsendnrecv/Time=1 sock,cmd
 	output=S_tcp
 	if(V_Flag)
 		return 1
@@ -1138,7 +1140,7 @@ Function createAxisListAndPopulate(sock)
 		cmd += axeslist[ii][0]+" softlowerlim\n"
 		axeslist[ii][3] = axeslist[ii][1]+"/softlowerlim"
 	endfor
-	sockitsendnrecv/time=0.5 sock,cmd
+	sockitsendnrecv/time=1 sock,cmd
 	output = S_tcp
 	if(V_Flag)
 		print "err"
@@ -1154,7 +1156,7 @@ Function createAxisListAndPopulate(sock)
 		cmd += axeslist[ii][0]+" softupperlim\n"
 		axeslist[ii][5] = axeslist[ii][1]+"/softupperlim"
 	endfor
-	sockitsendnrecv/time=0.5 sock,cmd
+	sockitsendnrecv/time=1 sock,cmd
 	output = S_tcp
 	if(V_Flag)
 		print "err"
@@ -2229,7 +2231,8 @@ Menu "GraphMarquee"
 End
 
 Function Marquee_sumImageROI()
-       GetMarquee/k left,bottom
+	string axes = axislist("")
+       GetMarquee/k $stringfromlist(0, axes), $stringfromlist(1, axes)
        if (V_flag == 0)
                return 0
        endif
@@ -2239,7 +2242,14 @@ Function Marquee_sumImageROI()
 
        for(ii=0 ; ii<itemsinlist(imageNames);ii+=1)
                Wave imageRef = imagenametowaveref(S_marqueewin,stringfromlist(ii,imagenames))
-               imagestats/M=1/GS={V_left,V_right,V_bottom,V_top} imageRef
+		  variable bottom, top
+		  bottom = V_bottom
+		  top = V_top
+              if(V_bottom > V_top)
+            		top = V_bottom
+            		bottom = V_top
+            	endif
+               imagestats/M=1/GS={V_left,V_right,bottom,top} imageRef
                printf "IMAGE:\t%s\tsum in ROI =%g\r",stringfromlist(ii,imagenames),V_avg*V_npnts
        endfor
        for(ii=0 ; ii<itemsinlist(traceNames); ii+=1)

@@ -12,7 +12,7 @@ Function batchScan(batchfile)
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
 	
 	//if the tertiary shutter is closed, it might be a good idea to open it.
-	if(stringmatch(gethipaval("/instrument/status/tertiary"), "*Closed*"))
+	if(!stringmatch(gethipaval("/instrument/status/tertiary"), "*OPEN*"))
 		doalert 1, "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons, do you want to continue?"
 		if(V_Flag==2)
 			abort
@@ -330,6 +330,7 @@ Function goto(labelsStr, loopNum)
 		variable row=V_value-col*dimsize(list_batchbuffer ,0)
 		
 		if(V_Value>-1)
+			print labelsStr, labeller
 			labeller += 1
 			currentpoint = row
 			executenextbatchpoint(list_batchbuffer, currentpoint)
