@@ -123,7 +123,8 @@ Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
 	W_rebinSD = 0
 	
 	W_rebin[] = cumsum[pos[p + 1]] - cumsum[pos[p]] 
-	W_rebinSD[] = (cumsumVar[pos[p+1]] - cumsumVar[pos[p]])
+	//TODO, get rid of abs....
+	W_rebinSD[] = abs((cumsumVar[pos[p+1]] - cumsumVar[pos[p]]))
 	
 	duplicate/free pos, celloc
 	celloc= ceil(pos[p]) - 1 < 0 ? 0 : ceil(pos[p]) - 1
