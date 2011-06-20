@@ -298,13 +298,15 @@ Function button_SICScmdpanel(ba) : ButtonControl
 				case "positions_tab3":
 					positions_panel()
 					break
+				case "anglers_tab3":
+					anglers_panel()
+					break
 			endswitch		
 			break
 	endswitch
 
 	return 0
 End
-
 
 Function RebuildBatchListBoxProc(lba) : ListBoxControl
 	STRUCT WMListboxAction &lba
@@ -318,7 +320,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 1: //mouse down
 			if(lba.eventmod & 2^4)
-				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;txtme;julabo_on;julabo_off;julabo_settemp"
+				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;angler;txtme;julabo_on;julabo_off;julabo_settemp"
 				listwave[row][col] = createFizzyCommand(S_Selection)
 			endif
 			break
@@ -396,21 +398,34 @@ Function startSICS()
 	endif
 	
 	//socket for sending vanilla sics commands from user
-	sockitopenconnection/TIME=2/Q/TOK="\n" SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
+	string LOGFILE = specialdirpath("Desktop", 1, 1, 0) + "SICSlog.txt"
+	sockitopenconnection/TIME=2/Q/TOK="\n"/LOG=LOGFILE SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
+	if(V_flag)
+		abort "Could'nt open a connection to SICS"
+	endif
 	sockitsendnrecv/TIME=3/SMAL SOCK_cmd,sicsuser + " "+sicspassword+"\n" 
 	sockitregisterprocessor(SOCK_cmd,"Ind_process#cmdProcessor")
 
 	//socket for sending interupt, i.e. stop messages from user
 	sockitopenconnection/Q/TIME=2/TOK="\n" SOCK_interupt, ICSserverIP,ICSserverPort, cmd_buffer
+	if(V_flag)
+		abort "Could'nt open a connection to SICS"
+	endif
 	sockitsendnrecv/time=3/SMAL SOCK_interupt, sicsuser + " "+sicspassword+"\n"
 	
 	//socket for receiving status messages and for sending messages you don't want to appear in the command buffer
-	sockitopenconnection/Q/TIME=2/TOK="\n" SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
+	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=LOGFILE SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
+	if(V_flag)
+		abort "Could'nt open a connection to SICS"
+	endif
 	sockitsendnrecv/time=3/SMAL SOCK_interest, sicsuser + " "+sicspassword+"\n"
 	sockitsendnrecv/time=1/SMAL SOCK_interest, "\n"
 	
 	//socket for synchronous queries
-	sockitopenconnection/Q/TIME=2/TOK="\n" SOCK_sync, ICSserverIP, ICSserverPort, sync_buffer
+	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=LOGFILE SOCK_sync, ICSserverIP, ICSserverPort, sync_buffer
+	if(V_flag)
+		abort "Could'nt open a connection to SICS"
+	endif
 	sockitsendnrecv/time=3/SMAL SOCK_sync, sicsuser + " "+sicspassword+"\n"
 	sockitsendnrecv/time=2/SMAL SOCK_interest, "\n"
 	print V_Flag, S_tcp
@@ -428,7 +443,7 @@ Function startSICS()
 	//get the SICS hipadaba paths as a full list
 	string pathToHipaDaba = SpecialDirPath("Temporary", 0, 0, 0)
 	print "LOADING HIPADABA PATHS"
-	sockitsendnrecv/FILE=pathtoHipaDaba+"hipadaba.xml"/TIME=5 SOCK_interest, "getGumtreeXml / \n"
+	sockitsendnrecv/FILE=pathtoHipaDaba+"hipadaba.xml"/TIME=2 SOCK_interest, "getGumtreeXml / \n"
 	if(enumerateHipadabapaths(pathtoHipaDaba+"hipadaba.xml"))
 		print "Error while enumerating hipadaba paths (startSICS)"
 		return 1
@@ -622,8 +637,8 @@ Function startSICS()
 		Button selectAllBatch_tab3,pos={514,495},size={100,30},title="Select all",proc=button_SICScmdpanel
 		Button deselectAllBatch_tab3,pos={514,535},size={100,30},title="Deselect all",proc=button_SICScmdpanel
 		Button positions_tab3 title="Defined positions",pos={514,577}, size={100,30},proc=button_SICScmdpanel
-
-		
+		Button anglers_tab3 title="Defined angles",pos={514,619}, size={100,30},proc=button_SICScmdpanel
+				
 		setwindow sicscmdpanel hook(winhook)=sicscmdpanelwinhook 
 		//		Modifypanel/W=SICScmdpanel noedit=1
 	endif
@@ -2661,162 +2676,6 @@ endfor
 
 End
 
-
-Function positioner(posNum)
-       //creates a drive command to send to sics for pre defined positions.
-       //intended to work with a sample changer.
-       //could be adapted to add extra stuff (e.g. temp control, omega_2theta, etc
-       Variable posnum
-       Wave/t/z position_listwave = root:packages:platypus:SICS:position_listwave
-       Wave/z position_selwave = root:packages:platypus:SICS:position_selwave
-       string cmd = "drive"
-       variable isRelative, desiredposition
-       if(!waveexists(position_listwave) || !waveexists(position_selwave))
-               return 1
-       endif
-       if(posNum < 0 || posNum > dimsize(position_listwave, 0) - 1)
-               return 1
-       endif
-       posnum = trunc(posnum)
-
-       //sx
-       isrelative = 2^4 & position_selwave[posnum][2]
-       if(isRelative)
-               desiredposition = getpos("sx") + str2num(position_listwave[posnum][1])
-       else
-               desiredposition =  str2num(position_listwave[posnum][1])
-       endif
-       if(checkDrive("sx", desiredposition))
-               return 1
-       endif
-       cmd += " sx " + num2str(desiredposition)
-
-       //sz
-       isrelative = 2^4 & position_selwave[posnum][4]
-       if(isRelative)
-               desiredposition = getpos("sz") + str2num(position_listwave[posnum][3])
-       else
-               desiredposition =  str2num(position_listwave[posnum][3])
-       endif
-       if(checkDrive("sz", desiredposition))
-               return 1
-       endif
-       cmd += " sz " + num2str(desiredposition)
-
-       //sth
-       isrelative = 2^4 & position_selwave[posnum][6]
-       if(isRelative)
-              desiredposition = getpos("sth") + str2num(position_listwave[posnum][5]) //relative move is relative to current posn.
-       else
-               desiredposition =  str2num(position_listwave[posnum][5])
-       endif
-       if(checkDrive("sth", desiredposition))
-               return 1
-       endif
-       cmd += " sth " + num2str(desiredposition)
-
-       //sphi
-       isrelative = 2^4 & position_selwave[posnum][8]
-       if(isRelative)
-               desiredposition = getpos("sphi") + str2num(position_listwave[posnum][7])
-       else
-               desiredposition =  str2num(position_listwave[posnum][7])
-       endif
-       if(checkDrive("sphi", desiredposition))
-               return 1
-       endif
-       cmd += " sphi " + num2str(desiredposition)
-
-       print cmd
-       sics_cmd_cmd(cmd)
-
-End
-
-Function positionlist(numpositions)
-       //sets up pre-defined position waves for various samples.
-       variable numpositions
-       string cDF = getdatafolder(1)
-       variable ii, oldpositions
-       newdatafolder/o root:packages
-       newdatafolder/o root:packages:platypus
-       newdatafolder/o/s root:packages:platypus:SICS
-
-       Wave/t/z position_listwave
-       Wave/z position_selwave
-
-       if(!waveexists(position_listwave))
-               make/t/o/n=(numpositions, 9) position_listwave
-               make/o/n=(numpositions, 9) position_selwave = 2
-               position_selwave[][2] =  2^5
-               position_selwave[][4] =  2^5
-               position_selwave[][6] =  2^5
-               position_selwave[][8] =  2^5
-       elseif(numpositions > 0)
-               oldpositions = dimsize(position_listwave, 0)
-               redimension/n=(numpositions, -1) position_listwave, position_selwave
-               position_selwave[][1] = 2
-               position_selwave[][3] = 2
-               position_selwave[][5] = 2
-               position_selwave[][7] = 2
-               for(ii = oldpositions ; ii < numpositions ; ii += 1)
-                       position_selwave[ii][2] =  2^5
-                       position_selwave[ii][4] =  2^5
-                       position_selwave[ii][6] =  2^5 + 2^4
-                       position_selwave[ii][8] =  2^5
-                       position_listwave[ii][1] = "0"
-                       position_listwave[ii][3] = "0"
-                       position_listwave[ii][5] = "0"
-                       position_listwave[ii][7] = "0"
-               endfor
-       endif
-
-       position_listwave[][0] = num2istr(p)
-       position_selwave[][0] = 0
-
-       setdimlabel 1, 0, position, position_listwave
-       setdimlabel 1, 1, sx, position_listwave
-       setdimlabel 1, 2, relative, position_listwave
-       setdimlabel 1, 3, sz, position_listwave
-       setdimlabel 1, 4, relative, position_listwave
-       setdimlabel 1, 5, sth, position_listwave
-       setdimlabel 1, 6, relative, position_listwave
-       setdimlabel 1, 7, sphi, position_listwave
-       setdimlabel 1, 8, relative, position_listwave
-
-       setdatafolder $cDF
-End
-
-Function numpositions_setVarProc(sva) : SetVariableControl
-       STRUCT WMSetVariableAction &sva
-       //changes the number of pre-defined positions contained in position_panel
-       switch( sva.eventCode )
-               case 1: // mouse up
-               case 2: // Enter key
-               case 3: // Live update
-                       Variable dval = sva.dval
-                       positionlist(dval)
-                       String sval = sva.sval
-                       break
-       endswitch
-
-       return 0
-End
-
-Function positions_panel() : Panel
-       Dowindow/k position_panel
-       //creates a window to setup pre-defined positions
-       PauseUpdate; Silent 1           // building window...
-       NewPanel /K=1/N=position_panel/W=(442,111,1011,410) as "Position Panel"
-       positionlist(0)
-       ListBox position_list,pos={6,34},size={552,255}, win=position_panel
-       ListBox position_list,listWave=root:packages:platypus:SICS:position_listwave, win=position_panel
-       ListBox position_list,selWave=root:packages:platypus:SICS:position_selwave, win=position_panel
-       ListBox position_list,mode= 5,editStyle= 1, win=position_panel
-       Button position_button, title="set positions", pos={221,6},size={320,22}
-       SetVariable numpositions,pos={9,8},size={200,15},proc=numpositions_setVarProc,title="Number of positions", win=position_panel
-       SetVariable numpositions,limits={1,10,1},value= _NUM:0, win=position_panel
-End
-
 Function email(to, msg)
        string to, msg
        string mailServer = "smtp.nbi.ansto.gov.au"
@@ -2838,3 +2697,15 @@ Function email(to, msg)
 
        sockitcloseconnection(sock)     //close the SOCKIT connection
 End
+
+Function pla_info()
+
+	sockitlist
+	Wave W_sockitlist
+	variable ii
+	for(ii = 0 ; ii < numpnts(W_sockitlist) ; ii+=1)
+		print sockitinfo(W_sockitlist[ii])
+	endfor
+
+End
+
