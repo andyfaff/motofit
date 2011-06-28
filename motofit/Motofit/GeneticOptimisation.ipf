@@ -1801,11 +1801,12 @@ Function GEN_extractVaryingParams(baseCoef,varyCoef, holdbits)
 End
 
 
-Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
+Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits, paramdescription])
 	Wave coefs
 	string holdstring
 	string cDF
 	wave/z limits
+	wave/t/z paramdescription
 	//sets the limits as 	root:packages:motofit:old_genoptimise:GENcurvefitlimits
 
 	newdatafolder/o root:packages
@@ -1813,7 +1814,7 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 	newdatafolder/o/s root:packages:motofit:old_genoptimise
 
 	NVAR/z iterations, popsize, recomb, k_m, fittol
-	variable ii, numbeingvaried=0
+	variable ii, numbeingvaried=0, paramdescriptionoffset
 
 
 	if(!NVAR_exists(iterations))
@@ -1831,7 +1832,10 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 	if(!NVAR_exists(fittol))
 		variable/g fittol = 0.001
 	endif
-
+	if(!paramisdefault(paramdescription) && waveexists(paramdescription) && dimsize(paramdescription, 0) == numpnts(coefs))
+		paramdescriptionoffset = 1
+	endif
+	
 	//work out number being held.
 	make/o/n = 0 thosebeingvaried
 	for(ii = 0 ; ii < strlen(holdstring) ; ii+=1)
@@ -1842,17 +1846,23 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 		endif
 	endfor
 	
-	make/o/n=(numbeingvaried, 4) limitsdialog_selwave = 0
-	make/o/t/n=(numbeingvaried, 4) limitsdialog_listwave
-	setdimlabel 1, 0, Param_number, limitsdialog_listwave
-	setdimlabel 1, 1, coef_value, limitsdialog_listwave
-	setdimlabel 1, 2, lower_lim, limitsdialog_listwave
-	setdimlabel 1, 3, upper_lim, limitsdialog_listwave
+	make/o/n=(numbeingvaried, 4 + paramdescriptionoffset) limitsdialog_selwave = 0
+	make/o/t/n=(numbeingvaried, 4+ paramdescriptionoffset) limitsdialog_listwave
+	setdimlabel 1, 0, Parameter, limitsdialog_listwave
+	if(paramdescriptionoffset)
+		setdimlabel 1, 1, description, limitsdialog_listwave	
+	endif
+	setdimlabel 1, 1+ paramdescriptionoffset, coef, limitsdialog_listwave
+	setdimlabel 1, 2+ paramdescriptionoffset, lower_lim, limitsdialog_listwave
+	setdimlabel 1, 3+ paramdescriptionoffset, upper_lim, limitsdialog_listwave
 	
 	limitsdialog_listwave[][0] = num2istr(thosebeingvaried[p])
-	limitsdialog_listwave[][1] = num2str(coefs[thosebeingvaried[p]])
-	limitsdialog_selwave[][2] = 2
-	limitsdialog_selwave[][3] = 2	
+	if(paramdescriptionoffset)
+		limitsdialog_listwave[][1] = paramdescription[thosebeingvaried[p]]	
+	endif
+	limitsdialog_listwave[][1+ paramdescriptionoffset] = num2str(coefs[thosebeingvaried[p]])
+	limitsdialog_selwave[][2+ paramdescriptionoffset] = 2
+	limitsdialog_selwave[][3+ paramdescriptionoffset] = 2	
 	
 	//limits for those being varied
 	Wave/z limitsForThoseBeingVaried = root:packages:motofit:old_genoptimise:limitsForThoseBeingVaried
@@ -1887,8 +1897,8 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 		limitsforthosebeingvaried[][1] = limits[thosebeingvaried[p]] 
 	endif
 
-	limitsdialog_listwave[][2] = num2str(limitsforthosebeingvaried[p][0])
-	limitsdialog_listwave[][3] = num2str(limitsforthosebeingvaried[p][1])
+	limitsdialog_listwave[][2+ paramdescriptionoffset] = num2str(limitsforthosebeingvaried[p][0])
+	limitsdialog_listwave[][3+ paramdescriptionoffset] = num2str(limitsforthosebeingvaried[p][1])
 	
 	do
 		variable thoseOK = 0
@@ -1897,6 +1907,9 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 		ListBox list0,pos={11,130},size={307,167}, win=GCF_dialog
 		ListBox list0,listWave=root:packages:motofit:old_genoptimise:limitsdialog_listwave, win=GCF_dialog
 		ListBox list0,selWave=root:packages:motofit:old_genoptimise:limitsdialog_selwave, win=GCF_dialog
+		if(!paramisdefault(paramdescription))
+			listbox list0, win = GCF_dialog, widths = {15, 25, 20, 20, 20}
+		endif
 		SetVariable setvar0,pos={11,8},size={216,19},title="iterations",fSize=12, win=GCF_dialog
 		SetVariable setvar0,limits={1,inf,10},value= root:packages:motofit:old_genoptimise:iterations, win=GCF_dialog
 		SetVariable setvar1,pos={12,32},size={215,19},title="population size",fSize=12, win=GCF_dialog
@@ -1918,8 +1931,8 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits])
 			setdatafolder $cDF
 			abort
 		endif
-		limitsforthosebeingvaried[][0] = str2num(limitsdialog_listwave[p][2])
-		limitsforthosebeingvaried[][1] = str2num(limitsdialog_listwave[p][3])
+		limitsforthosebeingvaried[][0] = str2num(limitsdialog_listwave[p][2+ paramdescriptionoffset])
+		limitsforthosebeingvaried[][1] = str2num(limitsdialog_listwave[p][3+ paramdescriptionoffset])
 	
 		for(ii=0 ; ii < numbeingvaried ; ii+=1)
 			limits[thosebeingvaried[ii]][0] = limitsforthosebeingvaried[ii][0] 
