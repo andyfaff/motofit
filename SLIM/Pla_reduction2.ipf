@@ -176,7 +176,8 @@ Function createWaterNormalisationWave(waterrun, fileName)
 
 		duplicate/o W_waternorm, W_waternormSD
 		W_waternormSD=sqrt(W_waternorm+1)
-		tempVar = mean(W_waternorm)
+		//disregard 10 points on each edge of the detector from the mean
+		tempVar = mean(W_waternorm, 10, 210)
 		W_waternorm /= tempVar
 		W_waternormSD /=tempVar
 		W_waternormSD = W_waternormSD
