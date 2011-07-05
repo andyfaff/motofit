@@ -574,6 +574,14 @@ Function regularTasks(s)
 		restartbmon3()
 	endif
 	
+	//get reactor info
+	string reactorInfo = Pla_getReactorInfo()
+	if(strlen(reactorinfo))
+		Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
+		hipadaba_paths[getHipapos("/instrument/source/power")][1] = stringbykey("Power", reactorInfo)
+		hipadaba_paths[getHipapos("/instrument/source/cns_inlet_temp")][1] = stringbykey("CNS in", reactorInfo)
+	endif
+	
 //	Wave/z frame_deassert = root:packages:platypus:SICS:frame_deassert
 //	if(waveexists(frame_deassert))
 //		variable theTime = str2num(grabHistoStatus("frame_deassert_time"))
@@ -1680,7 +1688,7 @@ Function createHTML()
 	SVAR/z presettype = root:packages:platypus:data:scan:presettype
 	Wave/z position = root:packages:platypus:data:scan:position
 	Wave/z counts = root:packages:platypus:data:scan:counts
-	
+	string instrumentinfo = Pla_getExperimentInfo("Platypus")
 	try
 		open/Z=1/T="TEXT" fileID as SAVELOC+"status.html"
 		if(V_Flag)
@@ -1709,17 +1717,21 @@ Function createHTML()
 		fbinwrite fileID, text
 		
 		//write the time of file creation
-		text = "<P>"+date() + " " + time() + "</P>\r"
-		text += "<P> Copyright 2008, Andrew Nelson + ANSTO</P>\r"
+		text = "<P>"+date() + " " + time() + "\tCopyright 2008, Andrew Nelson + ANSTO</P>\r"
 		text += "<P> Instrument Cabin Phone: 9717 7048</P>\r"
 		fbinwrite fileID, text
-
+		
+		text = "<P>Proposal: " + stringbykey("proposalCode", instrumentinfo) + " - " +stringbykey("principalSci",instrumentinfo)+ "</P>\r"
+		text += "<P>Local Contact: " + stringbykey("localSci", instrumentinfo) + "</P>\r"
+		text += "<P>Expt Title: " + stringbykey("exptTitle", instrumentinfo) + "</P>\r"
+		fbinwrite fileID, text
+		
 		//now write a table with interesting information
 		text ="<TABLE border=\"1\">\r"
 		if(SVAR_exists(sicsstatus))
 			text +="<TR><TD>SICS status</TD><TD>"+ sicsstatus + "</TD></TR>\r"
 		endif
-	
+		
 		text +="<TR><TD>datafilename</TD><TD>"+ gethipaval("/experiment/file_name") + "</TD></TR>\r"
 		text +="<TR><TD>Reactor Power (MW)</TD><TD>"+ gethipaval("/instrument/source/power") + "</TD></TR>\r"	
 		text +="<TR><TD>CNS temp (K)</TD><TD>"+ gethipaval("/instrument/source/cns_inlet_temp") +"</TD></TR>\r"
@@ -1820,9 +1832,9 @@ Function createHTML()
 		text += "<P><IMG id=\"Picture3\" src=\"./statusMedia/Picture3.png\" alt=\"Picture1\"></P>\r"
 		text += "</TD></TR>\r"
 
-		text += "<tr><td>\r"
-		text += "<P><IMG id=\"Picture4\" src=\"./statusMedia/Picture4.png\" alt=\"Picture4\"></P>\r"
-		text += "</TD></TR>\r"
+//		text += "<tr><td>\r"
+//		text += "<P><IMG id=\"Picture4\" src=\"./statusMedia/Picture4.png\" alt=\"Picture4\"></P>\r"
+//		text += "</TD></TR>\r"
 
 		text += "</TABLE>\r"
 		fbinwrite fileID, text
@@ -2751,3 +2763,4 @@ Function chopperRephaseArator(s)
 	print stopmstimer(timer)/1e6
 	return 0
 End
+

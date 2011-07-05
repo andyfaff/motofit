@@ -438,14 +438,15 @@ Function startSICS()
 	
 	Setdatafolder root:packages:platypus:SICS
 
-	sleep/t 20
+	sleep/t 40
 	DoXOPIDLE
 	//get the SICS hipadaba paths as a full list
 	string pathToHipaDaba = SpecialDirPath("Temporary", 0, 0, 0)
 	print "LOADING HIPADABA PATHS"
-	sockitsendnrecv/FILE=pathtoHipaDaba+"hipadaba.xml"/TIME=2 SOCK_interest, "getGumtreeXml / \n"
+	sockitsendnrecv/FILE=pathtoHipaDaba+"hipadaba.xml"/TIME=3 SOCK_interest, "getGumtreeXml / \n"
 	if(enumerateHipadabapaths(pathtoHipaDaba+"hipadaba.xml"))
 		print "Error while enumerating hipadaba paths (startSICS)"
+		sicsclose()
 		return 1
 	endif
 	Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
@@ -1122,7 +1123,7 @@ Function createAxisListAndPopulate(sock)
 		cmd+="sicslist "+axeslist[ii][0]+" hdb_path\n"
 	endfor
 	
-	SOCKITsendnrecv/time =1 sock,cmd
+	SOCKITsendnrecv/time =2 sock,cmd
 	output = S_tcp
 	if(V_flag)
 		print "err"
@@ -2698,7 +2699,7 @@ Function email(to, msg)
        sockitcloseconnection(sock)     //close the SOCKIT connection
 End
 
-Function pla_info()
+Function pla_socket_info()
 
 	sockitlist
 	Wave W_sockitlist
@@ -2709,3 +2710,111 @@ Function pla_info()
 
 End
 
+Function/t Pla_getReactorInfo()
+	variable sock
+	make/t/free buf
+	string post = "", soapxml = "", URL = "", cmd = "", result = "", infostring = "", serverService = ""
+	variable fileID
+
+	URL = "/WebServices/WebServiceAppServiceSoapHttpPort"
+	serverService = "http://au/gov/ansto/bragg/web/model/webService/server/webservice/WebServiceAppServer.wsdl"
+	soapxml="<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">"
+	soapxml += "<soap:Body xmlns:ns1=\""+ serverService + "\">"
+	soapxml += "<ns1:getReactorSimpleDisplayElement/></soap:Body></soap:Envelope>"
+
+	cmd = "POST " + URL + " HTTP/1.1\r\n"
+	cmd += "Host: neutron.ansto.gov.au:80\r\n"
+	cmd += "Content-Type: text/xml\r\n"
+	cmd += "Content-Length: " + num2istr(strlen(soapxml)) + "\r\n"
+	cmd += "SOAPAction: http://au/gov/ansto/bragg/web/model/webService/server/webservice/WebServiceAppServer.wsdl/getReactorPower\r\n\r\n"
+	cmd += soapxml + "\r\n"
+
+	sockitopenconnection/q sock, "neutron.ansto.gov.au", 80, buf
+	sockitsendnrecv/time=1/smal sock, cmd, result
+	sockitcloseconnection(sock)
+	if(V_Flag)
+		print "Couldn't connect to database (getDatabaseInfo)"
+		return ""
+	endif
+	//strip off http headers to leave the XMLfile
+	result = result[strsearch(result, "<?xml", 0), strlen(result)-1]
+
+	//write the file to disc
+	open fileID as SpecialDirpath("Temporary", 0, 1, 0) + "reactorStatus.xml"
+	if(V_flag)
+		print "Couldn't open temporary file"
+		return ""
+	endif
+	fbinwrite fileID, result
+	close fileID
+
+	//parse the file as an XML file
+	fileID = XMLopenfile(S_filename)
+	if(fileID< 2)
+		print "couldn't open XML status file", date(), time()
+		return ""
+	endif
+	infostring = xmlstrfmxpath(fileID, "//ns0:getReactorSimpleDisplayResponseElement", "ns0=" + serverService,"")
+	infoString = replacestring("; ", infostring, ";")
+
+	xmlclosefile(fileID, 0)
+	return infoString
+End
+
+Function/t Pla_getExperimentInfo(instrument)
+	string instrument
+	variable sock
+	make/t/free buf
+	string post = "", soapxml = "", URL = "", cmd = "", result = "", infostring = "", serverService = "", retStr=""
+	variable fileID
+
+	URL = "/WebServices/WebServiceAppServiceSoapHttpPort"
+	serverService = "http://au/gov/ansto/bragg/web/model/webService/server/webservice/WebServiceAppServer.wsdl"
+	soapxml="<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">"
+	soapxml += "<soap:Body xmlns:ns1=\""+ serverService + "\">"
+	soapxml += "<ns1:getInfoDisplayElement/></soap:Body></soap:Envelope>"
+
+	cmd = "POST " + URL + " HTTP/1.1\r\n"
+	cmd += "Host: neutron.ansto.gov.au:80\r\n"
+	cmd += "Content-Type: text/xml\r\n"
+	cmd += "Content-Length: " + num2istr(strlen(soapxml)) + "\r\n"
+	cmd += "SOAPAction: http://au/gov/ansto/bragg/web/model/webService/server/webservice/WebServiceAppServer.wsdl/getReactorPower\r\n\r\n"
+	cmd += soapxml + "\r\n"
+
+	sockitopenconnection/q sock, "neutron.ansto.gov.au", 80, buf
+	sockitsendnrecv/time=0.5 sock, cmd, result
+	sockitcloseconnection(sock)
+	if(V_Flag)
+		print "Couldn't connect to database (Pla_getExperimentInfo)"
+		return ""
+	endif
+	//strip off http headers to leave the XMLfile
+	result = result[strsearch(result, "<?xml", 0), strlen(result)-1]
+
+	//write the file to disc
+	open fileID as SpecialDirpath("Temporary", 0, 1, 0) + "experimentStatus.xml"
+	if(V_flag)
+		print "Couldn't open temporary file"
+		return ""
+	endif
+	fbinwrite fileID, result
+	close fileID
+
+	//parse the file as an XML file
+	fileID = XMLopenfile(S_filename)
+	if(fileID< 2)
+		print "couldn't open XML status file", date(), time()
+		return ""
+	endif
+	infostring = xmlstrfmxpath(fileID, "//ns1:expArray[ns1:instrName='"+ instrument+"']/ns1:proposalCode", "ns1=http://webservice.server.webService.model.web.bragg.ansto.gov.au/types/","")
+	retStr = replaceStringbykey("proposalCode",retStr,infostring)
+	infostring = xmlstrfmxpath(fileID, "//ns1:expArray[ns1:instrName='"+ instrument+"']/ns1:principalSci", "ns1=http://webservice.server.webService.model.web.bragg.ansto.gov.au/types/","")
+	retStr = replaceStringbykey("principalSci",retStr,infostring)
+	infostring = xmlstrfmxpath(fileID, "//ns1:expArray[ns1:instrName='"+ instrument+"']/ns1:localSci", "ns1=http://webservice.server.webService.model.web.bragg.ansto.gov.au/types/","")
+	retStr = replaceStringbykey("localSci",retStr,infostring)
+	infostring = xmlstrfmxpath(fileID, "//ns1:expArray[ns1:instrName='"+ instrument+"']/ns1:exptTitle", "ns1=http://webservice.server.webService.model.web.bragg.ansto.gov.au/types/","")
+	retStr = replaceStringbykey("exptTitle",retStr,infostring)
+
+	xmlclosefile(fileID, 0)
+	return retStr
+End
