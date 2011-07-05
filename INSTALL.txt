@@ -8,13 +8,13 @@ Installing Motofit:
 2) The easiest way to install either of these versions is to use an automated installer package.  These can be found in the installers subdirectory. 
 	 The windows installers are called motofitInstaller.exe and motofitImagInstaller.exe. Simply double click on the exe to install.
 	 The OS X installers are contained in the disk images motofitInstaller.dmg and motofitimagInstaller.dmg.  Mount the disk image by double clicking on it, then double click on the installer package.
-	 Note that both the Windows and OS X installers assume that the default IGOR Pro directories are called "C:/Program Files/Wavemetrics/Igor Pro Folder" and "/Applications/Igor Pro Folder" respectively.  They both attempt to install Motofit in "/Igor Pro Folder/User Procedures".  If IGOR Pro is not in this folder, then it is likely that the automatic installer may not work and you will have to do a manual install.
+	 Note that both the Windows and OS X installers assume that the default location directories are called "My Documents\Wavemetrics\Igor Pro 6 User Files" and "~/Documents/Wavemetrics/Igor Pro 6 User Files" respectively (lets call this the "Igor Pro 6 User Files" directories).  They both attempt to install Motofit in subdirectories within those folders.  If you do not have these folders then, then it is likely that the automatic installer may not work and you will have to do a manual install.
 	 
 
 Manual Installation:
-The way that IGOR determines what procedures or external plugins (also called XOP's, which are precompiled C DLL's) it has to load when it starts is by searching files in "/Igor Pro Folder/Igor Procedures" and "/Igor Pro Folder/Igor Extensions".  IGOR loads all the procedure files in "/Igor Pro Folder/Igor Procedures", it then follows all shortcuts placed in that directory.  If that shortcut points to an IGOR procedure file it loads that file.  If the shortcut points to a directory it loads all IGOR procedures in that directory. For XOP's IGOR loads all the XOP's that are in "/Igor Pro Folder/Igor Extensions" as well as those that have shortcuts to them placed in that directory.
+The way that IGOR determines what procedures or external plugins (also called XOP's, which are precompiled C DLL's) it has to load when it starts is by searching files in "Igor Pro 6 User Files/Igor Procedures" and "/Igor Pro 6 User Files/Igor Extensions".  IGOR loads all the procedure files in "Igor Pro 6 User Files/Igor Procedures", it then follows all shortcuts placed in that directory.  If that shortcut points to an IGOR procedure file it loads that file.  If the shortcut points to a directory it loads all IGOR procedures in that directory. For XOP's IGOR loads all the XOP's that are in "/Igor Pro 6 User Files/Igor Extensions" as well as those that have shortcuts to them placed in that directory.
 
-1)	Place the motofit directory, or the motofit_imag directory somewhere on your hard drive (I suggest "/Igor Pro Folder/User Procedures/"). Create a shortcut, or alias, to that directory and place it in the "/Igor Pro Folder/Igor Procedures" folder. 
+1)	Place the motofit directory, or the motofit_imag directory somewhere on your hard drive (I suggest "/Igor Pro 6 User Files/User Procedures/"). Create a shortcut, or alias, to that directory and place it in the "/Igor Pro 6 User Files/Igor Procedures" folder. 
 
 2) There are some extra dependencies that Motofit needs, which take the form of pre-compiled plugins for IGOR. These should be downloaded from the following addresses:
 Essential:
@@ -27,9 +27,9 @@ http://www.igorexchange.com/project/easyHttp
 http://www.igorexchange.com/project/SOCKIT
 http://www.igorexchange.com/project/ZIP
 
-Each of these packages has both OS X and Windows plugins. I suggest placing the XOP's in a motofit subdirectory e.g. "/Igor Pro Folder/User Procedures/motofit/gencurvefit".  THen create a shortcut/alias to each XOP file and place the shortcuts in "/Igor Pro Folder/Igor Extensions/". Please note that the sourcecode for each of the plugins is available in each download.
+Each of these packages has both OS X and Windows plugins. I suggest placing the XOP's in a motofit subdirectory e.g. "/Igor Pro 6 User Files/User Procedures/motofit/gencurvefit".  THen create a shortcut/alias to each XOP file and place the shortcuts in "/Igor Pro 6 User Files/Igor Extensions/". Please note that the sourcecode for each of the plugins is available in each download.
 
 ** On windows the abeles.xop and sockit.xop plugins require the pthreadVC2.dll file to be placed in "C:/Program Files/Wavemetrics/Igor Pro Folder", otherwise IGOR will not load them.
 	 
 Uninstallation:  
-1) If you use the automated installer the Motofit files will be contained in "/Igor Pro Folder/User Procedures/motofit".  If you wish to delete motofit, simply delete this directory.  If you install manually simply delete the Motofit procedure files from whereever you placed them, then delete the shortcuts you placed in "/Igor Pro Folder/Igor Procedures/" and "/Igor Pro Folder/Igor Extensions/".
+1) If you use the automated installer the Motofit files will be contained in "/Igor Pro 6 User Files/User Procedures/motofit".  If you wish to delete motofit, simply delete this directory.  If you install manually simply delete the Motofit procedure files from whereever you placed them, then delete the shortcuts you placed in "/Igor Pro 6 User Files/Igor Procedures/" and "/Igor Pro 6 User Files/Igor Extensions/".
