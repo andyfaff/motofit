@@ -58,7 +58,7 @@ Function catalogueHDF(pathName[, start, finish])
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o/s root:packages:platypus:catalogue
-	make/o/t/n=(1,8) runlist
+	make/o/t/n=(1,9) runlist
 	make/o/d/n=(1,4) vgaps
 	
 	if(paramisdefault(start))
@@ -117,6 +117,7 @@ Function catalogueHDF(pathName[, start, finish])
 		setdimlabel 1,5,run_time, runlist
 		setdimlabel 1,6,total_counts, runlist
 		setdimlabel 1,7,mon1_counts, runlist
+		setdimlabel 1,8,DAQ_FILENAME, runlist
 		dowindow/k Platypus_run_list
 		edit/k=1/N=Platypus_run_list runlist.ld as "Platypus Run List"
 	catch
@@ -391,6 +392,15 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps)
 //	tempStr += num2str(third_vertical_gap[0])+","
 //	tempStr += num2str(fourth_vertical_gap[0])+")"
 	runlist[row][3]= tempStr
+	
+	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/detector/daq_dirname"
+	if(!V_flag)
+		Wave/t name = $(stringfromlist(0, S_wavenames))
+		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument","","daq_dirname",name[0],1))
+			abort
+		endif
+		runlist[row][8] = name[0]
+	endif
 	
 	//parameters
 	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument","","parameters","",1))

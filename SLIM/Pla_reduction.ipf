@@ -1535,7 +1535,7 @@ Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda,
 	string data = "", uniquefName
 	
 	if(paramisdefault(dontoverwrite))
-		dontoverwrite = 0
+		dontoverwrite = 1
 	endif
 	
 	GetFileFolderInfo/q/z outputPathStr

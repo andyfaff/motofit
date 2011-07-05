@@ -11,6 +11,7 @@ Menu "Platypus"
 	Submenu "SLIM"
 		"Reduction", reducerpanel()
 		"Download Platypus Data", downloadPlatypusData()
+		"Download DAQ Streamed File", downloadPlatypusStreamedFile()
 		"MADD - Add files together", addFilesTogether()
 		 "Delete points from reduced files", delReducedPoints()
 	End
@@ -46,6 +47,67 @@ Function addFilesTogether()
 	madd(outputPathStr, filenames)
 End
 
+Function downloadPlatypusStreamedFile(DAQfileStr[, inputPathStr])
+string DAQfileStr, inputPathStr
+	string user="", password="", folder, data = "", datasetFolderStr = ""
+	variable ii, fileID
+	if(paramisdefault(inputPathStr))
+		newpath/o/c/q/z/M="Where would you like to store your Platypus data?" PLA_temppath_dPD
+		if(V_Flag)
+			abort
+		endif
+		pathinfo PLA_temppath_dPD
+		inputpathstr = S_path
+		killpath/z PLA_temppath_dPD
+	else
+		getfilefolderinfo/z/q inputpathStr
+		if(V_flag)
+			Doalert 0, "The path where you wanted to save is not valid (downloadPlatypusData)"
+			abort
+		endif
+	endif
+				
+	for(;;)
+		prompt user, "User name for Platypus"
+		prompt password, "Password for Platypus"
+		Doprompt "Please enter your username, password and the files you would like to download", user, password
+		if(V_Flag)
+			return 1
+		else
+			break
+		endif
+	endfor
+	//create the folder in the input directory
+	folder = S_path + DAQfileStr + ":"
+	newpath/c/o/q/z PLA_temppath_dPD, folder
+	killpath/z PLA_temppath_dPD
+
+	print "Starting to download Platypus data."
+	easyHttp/PROX=""/PASS=user+":"+password/FILE=folder + "CFG.xml" "sftp://custard.nbi.ansto.gov.au/experiments/platypus/hsdata/"+DAQfileStr + "/CFG.xml"
+	if(V_Flag)
+		print "Error while downloading Platypus data (downloadPlatypusStreamedFile)"
+		return 1
+	endif
+	//get the datasets
+	ii = 0
+	do	
+		//try getting the file
+		easyHttp/PROX=""/PASS=user+":"+password "sftp://custard.nbi.ansto.gov.au/experiments/platypus/hsdata/"+DAQfileStr + "/DATASET_" + num2istr(ii) + "/EOS.bin", data
+		if(V_flag)
+			break
+		endif
+		datasetFolderStr = folder + "DATASET_" + num2istr(ii)
+		newpath/c/o/q/z PLA_temppath_dPD, datasetFolderStr
+		open fileID as datasetfolderStr + ":EOS.bin"
+		fbinwrite fileID, data
+		close fileID
+		ii+=1
+	while(!V_Flag)
+	killpath/z PLA_temppath_dPD
+	print "Finished downloading Platypus data."
+End
+
+End
 
 Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 	string inputPathStr
