@@ -9,31 +9,48 @@
 Function Pla_GetScalingInOverlap(wave1q,wave1R,wave2q,wave2R)
 	Wave wave1q,wave1R,wave2q,wave2R		//1 = first dataset, 2= second dataset
 	
+	variable num2, ii, npnts1, npnts2
+	
 	sort wave1q,wave1q,wave1R
 	sort wave2q,wave2q,wave2R
 	
-	Variable num2		//largest point number of wave2 in overlap region
-	FindLevel/P/Q wave2q,(wave1q[numpnts(wave1q)-1])
-	num2 = trunc(V_levelx)
+	npnts1 = dimsize(wave1q, 0)
+	npnts2 = dimsize(wave2q, 0)
 	
-	if(numtype(num2) != 0)
+	if(wave2q[0] > wave1q[npnts1 - 1])
+		print  "ERROR there are no data points in the overlap region. Either reduce the number of deleted points or use manual scaling."
+		return NaN
+	endif
+	
+	make/u/I/free/n=0 overlapPoints
+	
+	for(ii = 0 ;  ii < dimsize(wave2q, 0) && wave2q[ii] < wave1q[npnts1 - 1] ; ii+=1)
+		if(wave2q[ii] > wave1q[0] && wave2q[ii] < wave1q[npnts1 - 1])
+			redimension/n=(numpnts(overlapPoints) + 1) overlapPoints
+			overlapPoints[numpnts(overlapPoints) - 1] = ii
+		endif
+	endfor
+	
+	num2 = numpnts(overlapPoints)
+	if(!num2)
 		print  "ERROR there are no data points in the overlap region. Either reduce the number of deleted points or use manual scaling."
 		return NaN
 	endif	
-	
-	Variable ii,ival1,newi,ratio,numNaN
+		
+	Variable ival1,newi,ratio,numNaN, qval2
 	ratio=0
 	ii=0
 	numNaN=0
 	
-	for(ii=0 ; ii<num2 ; ii+=1)
+	for(ii=0 ; ii < num2 ; ii+=1)
 		//get scaling factor at each point of wave 2 in the overlap region
-		newi = interp(wave2q[ii],wave1q,wave1R)		//get the intensity of wave1 at an overlap point
+		qval2 = wave2q[overlapPoints[ii]]
+		newi = interp(qval2, wave1q, wave1R)		//get the intensity of wave1 at an overlap point
 	
 		if(!numtype(wave2R[ii]) && !numtype(newi) && wave2R[ii] != 0)
-			ratio += newi/wave2R[ii]					//get the scale factor
+			ratio += newi / wave2R[ii]					//get the scale factor
 		else
-			numNaN+=1
+			numNaN += 1
 		endif
 	endfor
 	
@@ -48,26 +65,43 @@ End
 
 Function/c Pla_GetWeightedScalingInOverlap(wave1q,wave1R, wave1dR, wave2q,wave2R, wave2dR)
 	Wave wave1q,wave1R, wave1dR, wave2q,wave2R, wave2dR	//1 = first dataset, 2= second dataset
+
+	variable ii, npnts1, npnts2, num2
 	
 	sort wave1q,wave1q,wave1R,wave1dR
 	sort wave2q,wave2q,wave2R,wave2dR
 	
-	Variable num2		//largest point number of wave2 in overlap region
-	FindLevel/P/Q wave2q,(wave1q[numpnts(wave1q)-1])
-	num2 = trunc(V_levelx)
+	npnts1 = dimsize(wave1q, 0)
+	npnts2 = dimsize(wave2q, 0)
 	
-	if(numtype(num2) != 0)
+	if(wave2q[0] > wave1q[npnts1 - 1])
 		print  "ERROR there are no data points in the overlap region. Either reduce the number of deleted points or use manual scaling."
-		return NaN
+		return cmplx(NaN, NaN)
+	endif
+	
+	make/u/I/free/n=0 overlapPoints
+	
+	for(ii = 0 ;  ii < dimsize(wave2q, 0) && wave2q[ii] < wave1q[npnts1 - 1] ; ii+=1)
+		if(wave2q[ii] > wave1q[0] && wave2q[ii] < wave1q[npnts1 - 1])
+			redimension/n=(numpnts(overlapPoints) + 1) overlapPoints
+			overlapPoints[numpnts(overlapPoints) - 1] = ii
+		endif
+	endfor
+	
+	num2 = numpnts(overlapPoints)
+	if(!num2)
+		print  "ERROR there are no data points in the overlap region. Either reduce the number of deleted points or use manual scaling."
+		return cmplx(NaN, NaN)
 	endif	
 	
-	Variable ii,ival1,newi, newdi, ratio, dratio
-	make/n=(num2)/d/o W_scalefactor, W_dScalefactor
+	Variable ival1, newi, newdi, ratio, dratio, qval2
+	make/n=(num2)/d/free W_scalefactor, W_dScalefactor
 		
-	for(ii=0 ; ii<num2 ; ii+=1)
+	for(ii = 0 ; ii < num2 ; ii += 1)
 		//get scaling factor at each point of wave 2 in the overlap region
-		newi = interp(wave2q[ii],wave1q,wave1R)		//get the intensity of wave1 at an overlap point
-		newdi = interp(wave2q[ii], wave1q, wave1dR)
+		qval2 = wave2q[overlapPoints[ii]]
+		newi = interp(qval2, wave1q, wave1R)		//get the intensity of wave1 at an overlap point
+		newdi = interp(qval2, wave1q, wave1dR)
 		
 		if(!numtype(wave2R[ii]) && !numtype(newi) && !numtype(newdi) && wave2R[ii] != 0)
 			W_scalefactor[ii] = newi/wave2R[ii]
@@ -91,6 +125,5 @@ Function/c Pla_GetWeightedScalingInOverlap(wave1q,wave1R, wave1dR, wave2q,wave2R
 	if(numtype(normal))
 		print "ERROR while splicing (GetScalinginOverlap)"
 	endif
-	killwaves/z W_scalefactor, W_dscalefactor
-	Return cmplx(normal,dnormal)
+	Return cmplx(normal, dnormal)
 End
