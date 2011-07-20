@@ -1,9 +1,9 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #include <WaveSelectorWidget>
 
-Window GlobalReflectometryPanel() : Panel
+Window GlobalReflectometryPanela() : Panel
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(463,44,1021,718) as "Global Reflectometry Analysis"
+	NewPanel /W=(649,44,1205,700) as "Global Reflectometry Analysis"
 
 	TabControl globalpaneltab,pos={5,7},size={544,573},proc=globalpanel_GUI_tab
 	TabControl globalpaneltab,tabLabel(0)="Datasets",tabLabel(1)="Coefficients"
@@ -23,10 +23,10 @@ Window GlobalReflectometryPanel() : Panel
 	ListBox coefficients_tab1,pos={17,72},size={526,499},proc=globalpanel_GUI_listbox
 	ListBox coefficients_tab1,listWave=root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
 	ListBox coefficients_tab1,selWave=root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
-	ListBox coefficients_tab1,clickEventModifiers= 4, fsize = 12
-	Button do_global_fit,pos={184,616},size={80,40},proc=globalpanel_GUI_button,title="Fit"
+	ListBox coefficients_tab1,clickEventModifiers= 4, fsize = 11,mode=6
+	Button do_global_fit,pos={184,610},size={80,40},proc=globalpanel_GUI_button,title="Fit"
 	Button do_global_fit,fSize=12
-	Button simulate,pos={276,616},size={80,40},proc=globalpanel_GUI_button,title="Simulate"
+	Button simulate,pos={276,610},size={80,40},proc=globalpanel_GUI_button,title="Simulate"
 	Button simulate,fSize=12
 	Slider slider0_tab1,pos={22,589},size={517,16}, proc = globalpanel_GUI_slider
 	Slider slider0_tab1,limits={0,2,0},value= 0,vert= 0,ticks= 0
@@ -983,8 +983,7 @@ Function plotCombinedFitAndEvaluate([fitcursors])
 			ErrorBars/W=globalreflectometrygraph $tracename Y, wave=(dy[offset, pnts_each_dataset[ii] - 1 + offset], dy[offset, pnts_each_dataset[ii] - 1 + offset])
 		endif
 		modifygraph/W=globalreflectometrygraph rgb($tracename) = (M_colors[colornum][0], M_colors[colornum][1],M_colors[colornum][2])
-		modifygraph/W=globalreflectometrygraph mode = 3, log(bottom) = 1
-
+		modifygraph/W=globalreflectometrygraph mode = 3, log(bottom) = 1, marker = 8
 		offset += pnts_each_dataset[ii]
 	endfor
 
