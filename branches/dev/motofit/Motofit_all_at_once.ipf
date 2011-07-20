@@ -2,6 +2,7 @@
 #pragma ModuleName = Motofit
 #pragma Igormode=6.22
 
+
 Function plotcalcref()	
 	string cDF = getdatafolder(1)
 	String temp=Winlist("reflectivitypanel","","")
@@ -2354,7 +2355,7 @@ static Function moto_GUI_slider(s) : SliderControl
 			return 0
 		endif
 	endif
-	
+	print s.eventcode
 	if(s.eventcode & 2^1)
 		slider slider0_tab0, limits = {0.5 * str2num(listwave[row][col]), 1.5 * str2num(listwave[row][col]), str2num(listwave[row][col])/500}, value=str2num(listwave[row][col])
 	endif

@@ -1,6 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #include <WaveSelectorWidget>
-#include <PopupWaveSelector>
 
 Window GlobalReflectometryPanel() : Panel
 	PauseUpdate; Silent 1		// building window...
@@ -25,10 +24,14 @@ Window GlobalReflectometryPanel() : Panel
 	ListBox coefficients_tab1,listWave=root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
 	ListBox coefficients_tab1,selWave=root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
 	ListBox coefficients_tab1,clickEventModifiers= 4, fsize = 12
-	Button do_global_fit,pos={184,606},size={80,40},proc=globalpanel_GUI_button,title="Fit"
+	Button do_global_fit,pos={184,616},size={80,40},proc=globalpanel_GUI_button,title="Fit"
 	Button do_global_fit,fSize=12
-	Button simulate,pos={276,606},size={80,40},proc=globalpanel_GUI_button,title="Simulate"
+	Button simulate,pos={276,616},size={80,40},proc=globalpanel_GUI_button,title="Simulate"
 	Button simulate,fSize=12
+	Slider slider0_tab1,pos={22,589},size={517,16}, proc = globalpanel_GUI_slider
+	Slider slider0_tab1,limits={0,2,0},value= 0,vert= 0,ticks= 0
+	ValDisplay Chi2_tab1,pos={223,42},size={100,25},title="Chi2",fSize=12
+	ValDisplay Chi2_tab1,limits={0,0,0},barmisc={0,1000},value= _NUM:0
 EndMacro
 
 Function/t CoefficientWaveSelector(whichdataset, xx, yy, numcoefs)
@@ -134,7 +137,7 @@ Function globalpanel_GUI_listbox(lba) : ListBoxControl
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
 	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
 	string thewave = ""
-	variable ii, thedataset
+	variable ii, thedataset, chi2 = NaN
 	thedataset = 0.5*(col-1)
 	switch( lba.eventCode )
 		case -1: // control being killed
@@ -167,7 +170,9 @@ Function globalpanel_GUI_listbox(lba) : ListBoxControl
 						return 0
 					endif
 					set_param(str2num(lba.listwave[row][col]), row, thedataset, lba.listwave)
-					evaluateGlobalFunction()
+					chi2 = evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+					slider slider0_tab1, win=globalreflectometrypanel, userdata(whichparam) = "row-"+num2istr(row)+";col-"+num2istr(col)
+					valdisplay chi2_tab1, win=globalreflectometrypanel, value=_NUM:chi2
 				break
 			endswitch
 			break
@@ -212,8 +217,8 @@ Function globalpanel_GUI_button(ba) : ButtonControl
 	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
 	Wave M_colors = root:Packages:motofit:reflectivity:globalfitting:M_colors
 
-	string listofdatasets, dataset, temp = "", temp2 = ""
-	variable ii, numitems, numdatasets, numparams, maxparams=0, whichitem, numlayers, numlinkages, row, col
+	string listofdatasets, dataset, temp = "", temp2 = "", info
+	variable ii, numitems, numdatasets, numparams, maxparams=0, whichitem, numlayers, numlinkages, row, col, loQ, hiQ
 	
 	switch( ba.eventCode )
 		case 2: // mouse up
@@ -298,10 +303,9 @@ Function globalpanel_GUI_button(ba) : ButtonControl
 					regenerateLinkageListBoxes()
 					break
 				case "simulate":
-					 plotCombinedFitAndEvaluate()
+					plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
 					break
 				case "do_global_fit":
-					 plotCombinedFitAndEvaluate()
 					 Do_a_global_fit()
 					break				
 			endswitch
@@ -313,6 +317,45 @@ Function globalpanel_GUI_button(ba) : ButtonControl
 
 	return 0
 End
+
+Function globalpanel_GUI_slider(sa) : SliderControl
+	STRUCT WMSliderAction &sa
+	
+	string userdata = getuserdata("globalreflectometrypanel", "slider0_tab1", "whichparam")
+	if(!strlen(userdata))
+		return 0
+	endif
+	variable row = numberbykey("row", userdata, "-")
+	variable col = numberbykey("col", userdata, "-")
+	variable theDataset = (col - 1)/2
+	variable Chi2 = NaN
+	Wave/t listwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
+	
+	switch( sa.eventCode )
+		case -1: // control being killed
+			break
+		default:
+			if( sa.eventCode & 1 ) // value set			
+				Variable curval = sa.curval
+			endif
+			if(sa.eventcode & 2^1)
+				slider slider0_tab1, limits = {0.5 * str2num(listwave[row][col]), 1.5 * str2num(listwave[row][col]), str2num(listwave[row][col])/500}, value=str2num(listwave[row][col])
+			endif
+			if(sa.eventcode & 2^3)
+				listwave[row][col] = num2str(sa.curval)
+				set_param(sa.curval, row, thedataset, listwave)
+				chi2 = evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+				ValDisplay Chi2_tab1,value= _NUM:chi2,win=globalreflectometrypanel
+			endif
+			if(sa.eventcode & 2^2)
+				slider slider0_tab1, value = 0, limits = {-1, 1, 0.2}
+			endif
+			break
+	endswitch
+
+	return 0
+End
+
 
 Function/s which_cells_sel(selwave)
 	Wave selwave
@@ -326,6 +369,8 @@ Function/s which_cells_sel(selwave)
 	duplicate/free selwave, maskwave
 	redimension/n=(-1, -1, 0) maskwave
 	maskwave = selwave & 2^0
+	maskwave += selwave & 2^3
+	maskwave = maskwave > 0 ? 1: 0
 	
 	findvalue/I=1/S=0 maskwave
 	for(;V_Value > - 1;)
@@ -581,14 +626,17 @@ Function linkParameterList(listofParameters)
 	//how to renumber the linkage matrix?
 	for(ii = numpnts(whichdataset) - 1 ; ii > 0 ; ii -= 1)
 		Wave isunique = isuniqueparam()
+
 		if(linkages[whichparameter[ii]][whichdataset[ii]] > -1)
 			linkages[whichparameter[ii]][whichdataset[ii]] = linkages[whichparameter[0]][whichdataset[0]]
 		else
 			continue
 		endif
-		//now reset all the  numbers that follow
-		startP = whichparameter[ii] + whichdataset[ii] * dimsize(linkages, 0)
-		linkages = p + q * dimsize(linkages, 0) > startP && (isunique[p][q]==1 || linkages[p][q] > linkages[whichparameter[ii]][whichdataset[ii]]) ? linkages[p][q] - 1 : linkages[p][q]
+		//have to reset all the  numbers that follow, but only if it's unique
+		if(isunique[whichparameter[ii]][whichdataset[ii]])
+			startP = whichparameter[ii] + whichdataset[ii] * dimsize(linkages, 0)
+			linkages = p + q * dimsize(linkages, 0) > startP && (isunique[p][q]==1 || (linkages[p][q] >1000* linkages[whichparameter[ii]][whichdataset[ii]])) ? linkages[p][q] - 1 : linkages[p][q]
+		endif
 	endfor
 End
 
@@ -717,15 +765,33 @@ Function remove_dataset_from_linkage(num)
 	deletepoints/M=0 num, 1, numcoefs
 End
 
-Function build_combined_dataset()
+Function build_combined_dataset([fitcursors])
+	variable fitcursors
+	variable loQ, hiQ
+	string info
+	loQ = 0
+	hiQ = Inf
+	
+	if(fitcursors)
+		if(str2num(motofit#getmotofitoption("fitcursors")))
+			Info = csrinfo(A, "reflectivitygraph")
+			if(strlen(info))
+				loQ = csrxwaveref(A, "reflectivitygraph")[numberbykey("POINT", info)]
+			endif
+			info = csrinfo(B, "reflectivitygraph")
+			if(strlen(info))
+				hiQ = csrxwaveref(B, "reflectivitygraph")[numberbykey("POINT", info)]
+			endif
+		endif
+	endif
+	
 	DFREF savDF = getdatafolderDFR()
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
 	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
 	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
 	Wave/t listwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
 	Wave selwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
-	variable ii, jj, kk, numuniqueparams, numdatasets
-	
+	variable ii, jj, kk, numuniqueparams, numdatasets, entry
 	setdatafolder root:Packages:motofit:reflectivity:globalfitting
 	
 	numdatasets = dimsize(linkages, 1)	
@@ -742,15 +808,22 @@ Function build_combined_dataset()
 		Wave sepyy = $("root:data:" + datasets[ii] + ":" + datasets[ii] + "_R")
 		Wave/z sepee = $("root:data:" + datasets[ii] + ":" + datasets[ii] + "_E")
 		Wave/z  sepdx= $("root:data:" + datasets[ii] + ":" + datasets[ii] + "_dq")
-		concatenate/NP=0 {sepxx}, xx
-		concatenate/NP=0 {sepyy}, yy
-		if(waveexists(sepee))
-			concatenate/NP=0 {sepee}, dy
-		endif
-		if(waveexists(sepdx))
-			concatenate/NP=0 {sepdx}, dx
-		endif
-		pnts_each_dataset[ii] = dimsize(sepyy, 0)
+		for(jj = 0 ; jj < numpnts(sepxx) ; jj += 1)
+			if(sepxx[jj] > loQ && sepxx[jj] < hiQ)
+				entry = dimsize(xx, 0) 
+				redimension/n=(entry + 1) xx, yy, dy, dx
+				xx[entry] = sepxx[jj]
+				yy[entry] = sepyy[jj]
+				if(waveexists(sepee))
+					dy[entry] = sepee[jj]
+				endif
+				if(waveexists(sepdx))
+					dx[entry] = sepdx[jj]
+				endif
+				pnts_each_dataset[ii] += 1
+			endif
+		endfor
+		
 		Waveclear sepxx, sepyy, sepee, sepdx
 	endfor
 	
@@ -827,14 +900,16 @@ Function motofit_globally(w, yy, xx):fitfunc
 	endfor
 End
 
-Function evaluateGlobalFunction()
-	build_combined_dataset()
+Function evaluateGlobalFunction([fitCursors])
+	variable fitCursors	
+	
+	build_combined_dataset(fitcursors = fitcursors)
 	
 	Wave yy = root:Packages:motofit:reflectivity:globalfitting:yy
 	Wave xx = root:Packages:motofit:reflectivity:globalfitting:xx
 	Wave/z dy = root:Packages:motofit:reflectivity:globalfitting:dy
 	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
-
+	
 	//now do the function evaluation
 	duplicate/o yy, fityy, fitxx, res_fityy
 	duplicate/free yy, chi2
@@ -853,12 +928,15 @@ Function evaluateGlobalFunction()
 	if(waveexists(dy) && str2num(motofit#getmotofitoption("useerrors")))
 		chi2 /= dy
 	endif
+	
 	chi2 = chi2^2
 	res_fityy = yy - fityy
-	return sum(chi2)
+	return sum(chi2)/numpnts(chi2)
 End
 
-Function plotCombinedFitAndEvaluate()
+Function plotCombinedFitAndEvaluate([fitcursors])
+	variable fitcursors
+	
 	DFREF savDF = getdatafolderDFR()
 	variable retval = NaN
 	
@@ -871,7 +949,7 @@ Function plotCombinedFitAndEvaluate()
 	variable ii, offset = 0, colornum
 	string tracename = "", tracename2
 	
-	retval = evaluateGlobalFunction()	
+	retval = evaluateGlobalFunction(fitcursors = fitcursors)	
 	print "Chi2 value is: ", retval
 	
 	Wave yy = root:Packages:motofit:reflectivity:globalfitting:yy
@@ -891,7 +969,6 @@ Function plotCombinedFitAndEvaluate()
 		for(ii = 0 ; ii < itemsinlist(tracename2) ; ii+=1)
 			removefromgraph/z/w=globalreflectometrygraph $(stringfromlist(ii, tracename2))
 		endfor
-		doupdate
 	endif
 	for(ii = 0 ; ii < dimsize(linkages, 1) ; ii += 1)
 		if(ii == 0)
@@ -940,11 +1017,14 @@ Function plotCombinedFitAndEvaluate()
 End
 
 Function Do_a_global_fit()
-	variable retval = plotCombinedFitAndEvaluate()
+	string info
+	variable retval
 	string holdstring = "", datasetname, motofitstring, traces, tracecolour
 	string cDF = getdatafolder(1)
 	variable numdatasets, ii, offset
 	
+	retval = plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+
 	if(numtype(retval))
 		print "ERROR evaluating function, perhaps there is a NaN/Inf parameter"
 		return 1
@@ -973,7 +1053,6 @@ Function Do_a_global_fit()
 	else
 		duplicate/free dy, dytemp
 	endif
-	Doupdate
 	
 	variable/g V_fiterror = 0	
 	strswitch(S_value)
@@ -1054,6 +1133,6 @@ Function Do_a_global_fit()
 	if(V_Value)
 		motofit#moto_appendresiduals()
 	endif
-
+	ValDisplay Chi2_tab1, win=globalreflectometrypanel, value = _NUM:(V_chisq/V_npnts)
 	dowindow/k globalreflectometrygraph
 End
