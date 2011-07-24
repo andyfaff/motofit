@@ -1666,12 +1666,13 @@ Function GEN_fitfunc(coefficients,xx)
 	variable xx
 End
 
-Function GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF [, limits, paramdescription])
+Function GEN_setlimitsforGENcurvefit(coefs, holdstring [, limits, paramdescription])
 	Wave coefs
 	string holdstring
-	string cDF
 	wave/z limits
 	wave/t/z paramdescription
+
+	string cDF = getdatafolder(1)
 	//sets the limits as 	root:packages:motofit:old_genoptimise:GENcurvefitlimits
 
 	newdatafolder/o root:packages
@@ -1864,7 +1865,7 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 	
 	try
 		//get limits wave, also sets default parameters.
-		GEN_setlimitsforGENcurvefit(w,holdstring,cDF)
+		GEN_setlimitsforGENcurvefit(w,holdstring)
 		Wave limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
 
 		NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
@@ -1880,6 +1881,7 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 		Wave y_montecarlo = root:packages:motofit:old_genoptimise:y_montecarlo
 		Wave x_montecarlo = root:packages:motofit:old_genoptimise:x_montecarlo
 		Wave e_montecarlo = root:packages:motofit:old_genoptimise:e_montecarlo
+		duplicate/free y_montecarlo, tempdump
 		
 		//make a wave to put the montecarlo iterations in
 		make/o/d/n=(Iters, dimsize(w, 0)) M_montecarlo = 0
@@ -1896,13 +1898,8 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 		//now lets do the montecarlo fitting
 		variable timed = datetime
 		for(ii=0 ; ii<Iters ; ii+=1)
-			if(ii == 0)
-				y_montecarlo[] = yy[p]
-			else
-				y_montecarlo[] = yy[p] + gnoise(ee[p], 2)
-			endif	
 			//			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
-			Gencurvefit/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+			Gencurvefit/MC/D=tempdump/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			M_montecarlo[ii][] = w[q]
 			W_chisq[ii] = V_chisq
 			if(strlen(outf))

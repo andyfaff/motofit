@@ -1,40 +1,43 @@
 #pragma rtGlobals=3		// Use modern global access method.
+#pragma ModuleName = Motofit_GR
+#pragma Igormode=6.22
+
 #include <WaveSelectorWidget>
 
-Window GlobalReflectometryPanela() : Panel
+Window GlobalReflectometryPanel() : Panel
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(649,44,1205,700) as "Global Reflectometry Analysis"
+	NewPanel/K=1 /W=(649,44,1205,700) as "Global Reflectometry Analysis"
 
-	TabControl globalpaneltab,pos={5,7},size={544,573},proc=globalpanel_GUI_tab
+	TabControl globalpaneltab,pos={5,7},size={544,573},proc=Motofit_GR#globalpanel_GUI_tab
 	TabControl globalpaneltab,tabLabel(0)="Datasets",tabLabel(1)="Coefficients"
 	TabControl globalpaneltab,value= 1
-	Button adddataset_tab0,pos={32,36},size={100,30},disable=1,proc=globalpanel_GUI_button,title="Add dataset"
+	Button adddataset_tab0,pos={32,36},size={100,30},disable=1,proc=Motofit_GR#globalpanel_GUI_button,title="Add dataset"
 	Button adddataset_tab0,fSize=11
-	Button removedataset_tab0,pos={142,36},size={100,30},disable=1,proc=globalpanel_GUI_button,title="Remove dataset"
+	Button removedataset_tab0,pos={142,36},size={100,30},disable=1,proc=Motofit_GR#globalpanel_GUI_button,title="Remove dataset"
 	Button removedataset_tab0,fSize=11
-	Button linkparameter_tab0,pos={326,37},size={100,30},disable=1,proc=globalpanel_GUI_button,title="link selection"
+	Button linkparameter_tab0,pos={326,37},size={100,30},disable=1,proc=Motofit_GR#globalpanel_GUI_button,title="link selection"
 	Button linkparameter_tab0,fSize=11
-	Button unlinkparameter_tab0,pos={434,37},size={100,30},disable=1,proc=globalpanel_GUI_button,title="unlink selection"
+	Button unlinkparameter_tab0,pos={434,37},size={100,30},disable=1,proc=Motofit_GR#globalpanel_GUI_button,title="unlink selection"
 	Button unlinkparameter_tab0,fSize=11
-	ListBox datasetparams_tab0,pos={17,72},size={526,499},disable=1,proc=globalpanel_GUI_listbox
+	ListBox datasetparams_tab0,pos={17,72},size={526,499},disable=1,proc=Motofit_GR#globalpanel_GUI_listbox
 	ListBox datasetparams_tab0,listWave=root:Packages:motofit:reflectivity:globalfitting:datasets_listwave
 	ListBox datasetparams_tab0,selWave=root:Packages:motofit:reflectivity:globalfitting:datasets_selwave, fsize = 12
 	ListBox datasetparams_tab0,mode= 10,colorwave = root:Packages:motofit:reflectivity:globalfitting:M_colors
-	ListBox coefficients_tab1,pos={17,72},size={526,499},proc=globalpanel_GUI_listbox
+	ListBox coefficients_tab1,pos={17,72},size={526,499},proc=Motofit_GR#globalpanel_GUI_listbox
 	ListBox coefficients_tab1,listWave=root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
 	ListBox coefficients_tab1,selWave=root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
 	ListBox coefficients_tab1,clickEventModifiers= 4, fsize = 11,mode=6
-	Button do_global_fit,pos={184,610},size={80,40},proc=globalpanel_GUI_button,title="Fit"
+	Button do_global_fit,pos={184,610},size={80,40},proc=Motofit_GR#globalpanel_GUI_button,title="Fit"
 	Button do_global_fit,fSize=12
-	Button simulate,pos={276,610},size={80,40},proc=globalpanel_GUI_button,title="Simulate"
+	Button simulate,pos={276,610},size={80,40},proc=Motofit_GR#globalpanel_GUI_button,title="Simulate"
 	Button simulate,fSize=12
-	Slider slider0_tab1,pos={22,589},size={517,16}, proc = globalpanel_GUI_slider
+	Slider slider0_tab1,pos={22,589},size={517,16}, proc = Motofit_GR#globalpanel_GUI_slider
 	Slider slider0_tab1,limits={0,2,0},value= 0,vert= 0,ticks= 0
-	ValDisplay Chi2_tab1,pos={223,42},size={100,25},title="Chi2",fSize=12
+	ValDisplay Chi2_tab1,pos={223,42},size={100,25},title="\\F'Symbol'c\\M\\S2",fSize=12
 	ValDisplay Chi2_tab1,limits={0,0,0},barmisc={0,1000},value= _NUM:0
 EndMacro
 
-Function/t CoefficientWaveSelector(whichdataset, xx, yy, numcoefs)
+static Function/t CoefficientWaveSelector(whichdataset, xx, yy, numcoefs)
 	variable whichdataset, xx, yy, numcoefs
 	String panelName = "Selectyourwave"
 	string listoptions = ""
@@ -46,20 +49,20 @@ Function/t CoefficientWaveSelector(whichdataset, xx, yy, numcoefs)
 	
 	// doesn't exist, make it
 	NewPanel/K=1/N=$panelName/W=(xx, yy,xx + 300,yy + 290) as "Select your coefficientwave"
-	Button ok,pos={20,261},size={69,21},title="Continue", proc = Coefficientwaveselector_BUTTON
-	Button cancel,pos={98,261},size={56,22},title="Cancel", proc = Coefficientwaveselector_BUTTON
+	Button ok,pos={20,261},size={69,21},title="Continue", proc = Motofit_GR#Coefficientwaveselector_BUTTON
+	Button cancel,pos={98,261},size={56,22},title="Cancel", proc = Motofit_GR#Coefficientwaveselector_BUTTON
 
 	// list box control doesn't have any attributes set on it
 	ListBox coefficientWaveSelectorList,pos={9,13},size={273,241}
-	// This function does all the work of making the listbox control into a
+	// This static Function does all the work of making the listbox control into a
 	// Wave Selector widget. Note the optional parameter that says what type of objects to
 	// display in the list. 
 	sprintf listoptions, "DIMS:1,MAXROWS:%d,MINROWS:%d", numcoefs, numcoefs
 	MakeListIntoWaveSelector(panelName, "coefficientWaveSelectorList", content = WMWS_Waves, selectionmode = WMWS_SelectionSingle, listoptions=listoptions)
 	WS_OpenAFolderFully(panelname, "coefficientWaveSelectorList", "root:data:" + datasets[whichdataset])
-	// This is an extra bonus- you can create your own function to be notified of certain events,
+	// This is an extra bonus- you can create your own static Function to be notified of certain events,
 	// such as a change in the selection in the list.
-	WS_SetNotificationProc(panelName, "coefficientWaveSelectorList", "selectedCoefWave_notification", isExtendedProc=1)
+	WS_SetNotificationProc(panelName, "coefficientWaveSelectorList", "Motofit_GR#selectedCoefWave_notification", isExtendedProc=1)
 
 	Pauseforuser $panelname
 	retstr = tempstr
@@ -67,7 +70,7 @@ Function/t CoefficientWaveSelector(whichdataset, xx, yy, numcoefs)
 	return retstr
 End
 
-Function Coefficientwaveselector_BUTTON(ba) : ButtonControl
+static Function Coefficientwaveselector_BUTTON(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	SVAR/z tempstr = root:packages:motofit:reflectivity:globalfitting:tempstr
 
@@ -75,10 +78,10 @@ Function Coefficientwaveselector_BUTTON(ba) : ButtonControl
 		case 2: // mouse up
 			strswitch(ba.ctrlname)
 				case "OK":
-				break
+					break
 				case "Cancel":
 					tempStr = ""
-				break
+					break
 			endswitch
 			WS_FindAndKillWaveSelector(ba.win, "coefficientWaveSelectorList")
 			dowindow/k $(ba.win)
@@ -91,7 +94,7 @@ Function Coefficientwaveselector_BUTTON(ba) : ButtonControl
 	return 0
 End
 
-Function selectedCoefWave_notification(SelectedItem, EventCode, WindowName, listboxName)
+static Function selectedCoefWave_notification(SelectedItem, EventCode, WindowName, listboxName)
 	String SelectedItem
 	Variable EventCode
 	String WindowName
@@ -102,11 +105,19 @@ Function selectedCoefWave_notification(SelectedItem, EventCode, WindowName, list
 end
 
 Function init_fitting()
+	variable haveRefPanel = itemsinlist(winlist("reflectivitypanel", "", ""))
+	variable haveRefGraph = itemsinlist(winlist("reflectivitygraph", "", ""))
+	variable haveSLDgraph =  itemsinlist(winlist("SLDgraph", "", ""))
+	
+	if(haveRefPanel + haveRefGraph + haveSLDgraph !=3)
+		Doalert 0, "You need to have the reflectivity panel, reflectivity graph and SLD graph opened, try starting motofit again"
+		abort
+	endif
 	make_folders_waves()
 	execute "GlobalReflectometryPanel()"
 End
 
-Function make_folders_waves()
+static Function make_folders_waves()
 	dfref savDF = getdatafolderDFR()
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:motofit
@@ -127,7 +138,7 @@ Function make_folders_waves()
 	setdatafolder savDF
 End
 
-Function globalpanel_GUI_listbox(lba) : ListBoxControl
+static Function globalpanel_GUI_listbox(lba) : ListBoxControl
 	STRUCT WMListboxAction &lba
 
 	Variable row = lba.row
@@ -173,7 +184,7 @@ Function globalpanel_GUI_listbox(lba) : ListBoxControl
 					chi2 = evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
 					slider slider0_tab1, win=globalreflectometrypanel, userdata(whichparam) = "row-"+num2istr(row)+";col-"+num2istr(col)
 					valdisplay chi2_tab1, win=globalreflectometrypanel, value=_NUM:chi2
-				break
+					break
 			endswitch
 			break
 		case 13: // checkbox clicked (Igor 6.2 or later)
@@ -183,7 +194,7 @@ Function globalpanel_GUI_listbox(lba) : ListBoxControl
 	return 0
 End
 
-Function set_param(val,row, whichdataset, listwave)
+static Function set_param(val,row, whichdataset, listwave)
 	variable val
 	variable row, whichdataset
 	Wave/t listwave
@@ -205,7 +216,7 @@ Function set_param(val,row, whichdataset, listwave)
 	endif
 End
 
-Function globalpanel_GUI_button(ba) : ButtonControl
+static Function globalpanel_GUI_button(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	
 	Wave/t datasets_listwave = root:Packages:motofit:reflectivity:globalfitting:datasets_listwave
@@ -218,8 +229,10 @@ Function globalpanel_GUI_button(ba) : ButtonControl
 	Wave M_colors = root:Packages:motofit:reflectivity:globalfitting:M_colors
 
 	string listofdatasets, dataset, temp = "", temp2 = "", info
-	variable ii, numitems, numdatasets, numparams, maxparams=0, whichitem, numlayers, numlinkages, row, col, loQ, hiQ
+	variable ii, numitems, numdatasets, numparams, maxparams=0, whichitem, numlayers, numlinkages, row, col, loQ, hiQ, chi2
 	
+	numdatasets = dimsize(datasets, 0)
+
 	switch( ba.eventCode )
 		case 2: // mouse up
 			strswitch(ba.ctrlname)
@@ -292,6 +305,12 @@ Function globalpanel_GUI_button(ba) : ButtonControl
 					endif
 					regenerateLinkageListBoxes()
 					break
+			endswitch
+			if(!numdatasets)
+				return 0
+			endif
+
+			strswitch(ba.ctrlname)
 				case "linkparameter_tab0":
 					temp = which_cells_sel(datasets_selwave)
 					linkParameterList(temp)
@@ -303,10 +322,14 @@ Function globalpanel_GUI_button(ba) : ButtonControl
 					regenerateLinkageListBoxes()
 					break
 				case "simulate":
-					plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+					Dowindow/F SLDgraph
+					Dowindow/F reflectivitygraph
+					chi2 = plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+					ValDisplay Chi2_tab1,value= _NUM:chi2,win=globalreflectometrypanel
+
 					break
 				case "do_global_fit":
-					 Do_a_global_fit()
+					Do_a_global_fit()
 					break				
 			endswitch
 			// click code here
@@ -318,7 +341,7 @@ Function globalpanel_GUI_button(ba) : ButtonControl
 	return 0
 End
 
-Function globalpanel_GUI_slider(sa) : SliderControl
+static Function globalpanel_GUI_slider(sa) : SliderControl
 	STRUCT WMSliderAction &sa
 	
 	string userdata = getuserdata("globalreflectometrypanel", "slider0_tab1", "whichparam")
@@ -357,7 +380,7 @@ Function globalpanel_GUI_slider(sa) : SliderControl
 End
 
 
-Function/s which_cells_sel(selwave)
+static Function/s which_cells_sel(selwave)
 	Wave selwave
 	
 	string retstr = ""
@@ -384,7 +407,7 @@ Function/s which_cells_sel(selwave)
 	return retstr
 End
 
-Function globalpanel_GUI_tab(tca) : TabControl
+static Function globalpanel_GUI_tab(tca) : TabControl
 	STRUCT WMTabControlAction &tca
 
 	switch( tca.eventCode )
@@ -406,7 +429,7 @@ Function globalpanel_GUI_tab(tca) : TabControl
 	return 0
 End
 
-Function/wave isUniqueParam([following])
+static Function/wave isUniqueParam([following])
 	variable following
 	//creates a mask wave the same size as the linkage matrix to tell if a parameter is unique or not.
 	//mask = 0 if a parameter is NOT unique
@@ -451,7 +474,7 @@ Function/wave isUniqueParam([following])
 	return isUniquemask
 End
 
-Function assertLinkageCorrupted()
+static Function assertLinkageCorrupted()
 	//returns the truth that the linkage matrix is corrupted.
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
 	variable ii, jj, uniqueparam = -1
@@ -472,7 +495,7 @@ Function assertLinkageCorrupted()
 	return 0
 End
 
-Function/wave generateAUniqueParameterMask()
+static Function/wave generateAUniqueParameterMask()
 	//generates a mask containing the unique parameter numbers, if all datasets were totally unlinked
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
 	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
@@ -489,7 +512,7 @@ Function/wave generateAUniqueParameterMask()
 	return uniqueParameterMask
 End
 
-Function lastUniqueParameter(row, col)
+static Function lastUniqueParameter(row, col)
 	variable row, col
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
 	variable jj, kk, startP
@@ -511,7 +534,7 @@ Function lastUniqueParameter(row, col)
 	return 0		
 end
 
-Function unlinkParameterList(listofParameters[, removeFollowing])
+static Function unlinkParameterList(listofParameters[, removeFollowing])
 	//this unlinks nonunique (parameters linking to preceding) parameters in the linkage matrices.
 	//if removefollowing is specified != 0 then ALL following parameters that link to a specified parameter are also removed.
 	//if removefollowing == 0 then following parameters are not unlinked.
@@ -555,7 +578,7 @@ Function unlinkParameterList(listofParameters[, removeFollowing])
 			lastuniqueparam = lastUniqueParameter(whichparameter[ii], whichdataset[ii])
 			//now reset all the  numbers that follow		
 			startP = whichparameter[ii] + whichdataset[ii] * dimsize(linkages, 0)
-		      linkages = p + q * dimsize(linkages, 0) > startP && (isunique[p][q]==1 || linkages[p][q] > lastuniqueparam) ? linkages[p][q] + 1 : linkages[p][q]
+			linkages = p + q * dimsize(linkages, 0) > startP && (isunique[p][q]==1 || linkages[p][q] > lastuniqueparam) ? linkages[p][q] + 1 : linkages[p][q]
 
 			linkages[whichparameter[ii]][whichdataset[ii]] = lastuniqueparam + 1
 			lastuniqueparam += 1 				
@@ -572,7 +595,7 @@ Function unlinkParameterList(listofParameters[, removeFollowing])
 	endfor
 End
 
-Function/s uniqueList(listStr)
+static Function/s uniqueList(listStr)
 	string listStr
 	string retStr = ""
 	variable ii
@@ -584,7 +607,7 @@ Function/s uniqueList(listStr)
 	return retStr
 End
 
-Function linkParameterList(listofParameters)
+static Function linkParameterList(listofParameters)
 	//this links nonunique parameters in the linkage matrices.
 	string listofparameters  //like "0:6;0:7"   (i.e. dataset:parameter pairs)
 	
@@ -640,8 +663,8 @@ Function linkParameterList(listofParameters)
 	endfor
 End
 
-Function regenerateLinkageListBoxes()
-//puts the text into the datasets and coefficients listwave boxes.
+static Function regenerateLinkageListBoxes()
+	//puts the text into the datasets and coefficients listwave boxes.
 	Wave/t datasets_listwave = root:Packages:motofit:reflectivity:globalfitting:datasets_listwave
 	Wave datasets_selwave = root:Packages:motofit:reflectivity:globalfitting:datasets_selwave
 	Wave/t coefficients_listwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
@@ -692,7 +715,7 @@ Function regenerateLinkageListBoxes()
 	endfor
 End
 
-Function add_dataset_to_linkage(numcoefsfordataset)
+static Function add_dataset_to_linkage(numcoefsfordataset)
 	variable numcoefsfordataset
 	//add a dataset to the linkage matrix.
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
@@ -723,7 +746,7 @@ Function add_dataset_to_linkage(numcoefsfordataset)
 	endfor
 End
 
-Function remove_dataset_from_linkage(num)
+static Function remove_dataset_from_linkage(num)
 	//removes a dataset from the linkage matrix
 	variable num
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
@@ -765,7 +788,7 @@ Function remove_dataset_from_linkage(num)
 	deletepoints/M=0 num, 1, numcoefs
 End
 
-Function build_combined_dataset([fitcursors])
+static Function build_combined_dataset([fitcursors])
 	variable fitcursors
 	variable loQ, hiQ
 	string info
@@ -794,7 +817,7 @@ Function build_combined_dataset([fitcursors])
 	variable ii, jj, kk, numuniqueparams, numdatasets, entry
 	setdatafolder root:Packages:motofit:reflectivity:globalfitting
 	
-	numdatasets = dimsize(linkages, 1)	
+	numdatasets = dimsize(linkages, 1)
 	Wave uniqueparams = isuniqueparam()
 	numuniqueparams = lastUniqueParameter(numcoefs[numdatasets - 1] - 1, numdatasets - 1) + 1
 	make/n=(numuniqueparams)/o/d coefs = 0
@@ -833,6 +856,11 @@ Function build_combined_dataset([fitcursors])
 			if(uniqueparams[jj][ii] > 0)
 				coefs[kk] = str2num(listwave[jj][2 * ii + 1])
 				holdwave[kk] = (selwave[jj][2 * ii + 2] & 2^4)
+				//the number of layers is discrete.
+				if(jj == 0)
+					holdwave[kk] = 1
+					selwave[jj][2 * ii + 2] = selwave[jj][2 * ii + 2] | 2^4
+				endif
 				kk += 1
 			endif
 		endfor
@@ -841,7 +869,7 @@ Function build_combined_dataset([fitcursors])
 	setdatafolder savDF
 End
 
-Function extract_combined_into_list(coefs)
+static Function extract_combined_into_list(coefs)
 	Wave coefs
 	//takes a combined list of coefficients and expands it into the listwave of the panel
 	//using the linkages matrix
@@ -863,7 +891,7 @@ Function extract_combined_into_list(coefs)
 	endfor
 End
 
-Function/wave decompose_into_individual_coefs(coefs)
+static Function/wave decompose_into_individual_coefs(coefs)
 	Wave coefs
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
 	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
@@ -900,7 +928,7 @@ Function motofit_globally(w, yy, xx):fitfunc
 	endfor
 End
 
-Function evaluateGlobalFunction([fitCursors])
+static Function evaluateGlobalFunction([fitCursors])
 	variable fitCursors	
 	
 	build_combined_dataset(fitcursors = fitcursors)
@@ -909,9 +937,19 @@ Function evaluateGlobalFunction([fitCursors])
 	Wave xx = root:Packages:motofit:reflectivity:globalfitting:xx
 	Wave/z dy = root:Packages:motofit:reflectivity:globalfitting:dy
 	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
+	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
+	Wave pnts_each_dataset = root:Packages:motofit:reflectivity:globalfitting:pnts_each_dataset
+	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
+	Wave/wave outputcoefs = decompose_into_individual_coefs(coefs)
+	
+	string datasetname
+	variable ii, offset = 0
 	
 	//now do the function evaluation
-	duplicate/o yy, fityy, fitxx, res_fityy
+	make/o/d/n=(dimsize(yy, 0)) root:Packages:motofit:reflectivity:globalfitting:fityy /Wave=fityy
+	make/o/d/n=(dimsize(yy, 0)) root:Packages:motofit:reflectivity:globalfitting:fitxx /Wave=fitxx
+	make/o/d/n=(dimsize(yy, 0)) root:Packages:motofit:reflectivity:globalfitting:res_fityy /Wave=res_fityy
+	
 	duplicate/free yy, chi2
 	fitxx = xx
 	fityy = NaN
@@ -928,13 +966,35 @@ Function evaluateGlobalFunction([fitCursors])
 	if(waveexists(dy) && str2num(motofit#getmotofitoption("useerrors")))
 		chi2 /= dy
 	endif
-	
 	chi2 = chi2^2
 	res_fityy = yy - fityy
+	
+	//evaluate the fit waves for the model
+	for(ii = 0 ; ii < numpnts(datasets) ; ii+=1)
+		datasetname = datasets[ii]
+		//remake the fit waves and sld graphs
+		make/o/d/n=(pnts_each_dataset[ii]) $("root:data:" + datasetname + ":fit_" + datasetname + "_R")/Wave=fitR
+		fitR = fityy[offset + p]
+
+		make/o/d/n=(pnts_each_dataset[ii]) $("root:data:" + datasetname + ":fit_" + datasetname + "_q")/Wave=fitq
+		fitq = fitxx[offset + p]
+
+		//make the residuals
+		make/o/d/n=(pnts_each_dataset[ii]) $("root:data:" + datasetname + ":res_" + datasetname + "_R")/Wave=resR
+		resR = res_fityy[offset + p]
+		
+		//make SLD waves
+		make/n=(dimsize(SLD_theoretical_R, 0))/d/o $("root:data:" + datasetname + ":SLD_" + datasetname + "_R")/Wave =SLDr
+		Moto_SLDplot(outputcoefs[ii], sldr)
+
+		offset += pnts_each_dataset[ii]
+		Waveclear fitR, fitq, resR, sldr
+	endfor
+	
 	return sum(chi2)/numpnts(chi2)
 End
 
-Function plotCombinedFitAndEvaluate([fitcursors])
+static Function plotCombinedFitAndEvaluate([fitcursors])
 	variable fitcursors
 	
 	DFREF savDF = getdatafolderDFR()
@@ -943,23 +1003,84 @@ Function plotCombinedFitAndEvaluate([fitcursors])
 	setdatafolder root:Packages:motofit:reflectivity:globalfitting
 	
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
-	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
-	Wave pnts_each_dataset = root:Packages:motofit:reflectivity:globalfitting:pnts_each_dataset
-	Wave M_colors = root:Packages:motofit:reflectivity:globalfitting:M_colors
+	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
+	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
+
 	variable ii, offset = 0, colornum
-	string tracename = "", tracename2
+	string datasetname, traces, tracecolour
 	
 	retval = evaluateGlobalFunction(fitcursors = fitcursors)	
-	print "Chi2 value is: ", retval
+		
+	for(ii = 0 ; ii < dimsize(linkages, 1) ; ii += 1)
+		datasetname = datasets[ii]
+
+		//append fit wave to the reflectivitygraph as well
+		Wave fitR = $("root:data:" + datasetname + ":fit_" + datasetname + "_R")
+		Wave fitQ = $("root:data:" + datasetname + ":fit_" + datasetname + "_q")
+		Wave resR = $("root:data:" + datasetname + ":res_" + datasetname + "_R")
+		Wave SLDr = 	$("root:data:" + datasetname + ":SLD_" + datasetname + "_R")
+		traces = tracenamelist("Reflectivitygraph", ";", 1)
+		tracecolour = moto_gettracecolour("reflectivitygraph", datasetname + "_R")
+		
+		if(whichlistitem(nameofwave(fitR), traces) == -1)
+			appendtograph/W=reflectivitygraph/q fitR vs fitQ
+			execute/z "modifygraph/W=reflectivitygraph rgb(" + nameofwave(fitR) + ")="  + tracecolour 
+		endif
+		
+		traces = tracenamelist("SLDgraph", ";", 1)
+		if(whichlistitem(nameofwave(SLDr), traces) == -1)
+			appendtograph/W=SLDgraph/q SLDr
+			execute/z "modifygraph/W=SLDgraph rgb(" + nameofwave(SLDr) + ")="  + tracecolour + ",lsize("+nameofwave(SLDr) + ")=2"
+		endif
+		Waveclear fitR, fitq, SLDr, resR		
+	endfor
+
+	setdatafolder savDF
+	return retVal
+End
+
+Function Do_a_global_fit()
+	string info
+	variable retval
+	string holdstring = "", datasetname, motofitstring, traces, tracecolour, tracename = "", tracename2
+	DFREF cDF = getdatafolderDFR()
+	variable numdatasets, ii, jj, offset, colornum, iters
 	
+	retval = plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+
+	if(numtype(retval))
+		print "ERROR evaluating function, perhaps there is a NaN/Inf parameter"
+		return 1
+	endif
+	//the following waves are evaluated in the above function.
 	Wave yy = root:Packages:motofit:reflectivity:globalfitting:yy
 	Wave xx = root:Packages:motofit:reflectivity:globalfitting:xx
+	Wave holdwave = root:Packages:motofit:reflectivity:globalfitting:holdwave
+	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
 	Wave/z dy = root:Packages:motofit:reflectivity:globalfitting:dy
 	Wave fityy = root:Packages:motofit:reflectivity:globalfitting:fityy
 	Wave fitxx = root:Packages:motofit:reflectivity:globalfitting:fitxx
 	Wave res_fityy = root:Packages:motofit:reflectivity:globalfitting:res_fityy
+	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
+	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
+	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
+	Wave pnts_each_dataset = root:Packages:motofit:reflectivity:globalfitting:pnts_each_dataset
+	Wave M_colors = root:Packages:motofit:reflectivity:globalfitting:M_colors
+	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
 	
-	//create a graph
+	sockitwavetostring/TXT="" holdwave, holdstring	
+	controlinfo/W=reflectivitypanel Typeoffit_tab0
+	numdatasets = (dimsize(numcoefs, 0))
+	
+	//what weighting do you want to use?
+	if(!waveexists(dy) || !str2num(motofit#getmotofitoption("useerrors")))
+		duplicate/free yy, dytemp
+		dytemp = 1.
+	else
+		duplicate/free dy, dytemp
+	endif
+	
+	//make a graph for showing the latest data
 	if(!itemsinlist(winlist("globalreflectometrygraph", ";","")))
 		Display/K=1/N=globalreflectometrygraph/W=(0,0,600, 400)
 	else
@@ -970,7 +1091,7 @@ Function plotCombinedFitAndEvaluate([fitcursors])
 			removefromgraph/z/w=globalreflectometrygraph $(stringfromlist(ii, tracename2))
 		endfor
 	endif
-	for(ii = 0 ; ii < dimsize(linkages, 1) ; ii += 1)
+	for(ii = 0 ; ii < numdatasets ; ii += 1)
 		if(ii == 0)
 			tracename = "yy"
 		else
@@ -986,9 +1107,10 @@ Function plotCombinedFitAndEvaluate([fitcursors])
 		modifygraph/W=globalreflectometrygraph mode = 3, log(bottom) = 1, marker = 8
 		offset += pnts_each_dataset[ii]
 	endfor
-
+	
 	offset = 0
 	for(ii = 0 ; ii < dimsize(linkages, 1) ; ii += 1)
+		datasetname = datasets[ii]
 		if(ii == 0)
 			tracename = "fityy"
 			tracename2 = "res_fityy"
@@ -999,10 +1121,10 @@ Function plotCombinedFitAndEvaluate([fitcursors])
 		colornum = mod(ii * 37, dimsize(M_colors, 0))
 		appendtograph/W=globalreflectometrygraph fityy[offset, pnts_each_dataset[ii] - 1 + offset] vs fitxx[offset, pnts_each_dataset[ii] - 1 + offset]
 		appendtograph/W=globalreflectometrygraph/L=res res_fityy[offset, pnts_each_dataset[ii] - 1 + offset] vs fitxx[offset, pnts_each_dataset[ii] - 1 + offset]
-		
-		offset += pnts_each_dataset[ii]
 		modifygraph/W=globalreflectometrygraph rgb($tracename) = (M_colors[colornum][0], M_colors[colornum][1],M_colors[colornum][2])
 		modifygraph/W=globalreflectometrygraph rgb($tracename2) = (M_colors[colornum][0], M_colors[colornum][1],M_colors[colornum][2])
+		
+		offset += pnts_each_dataset[ii]
 	endfor
 	
 	ModifyGraph/Z/W=globalreflectometrygraph wbRGB=(0,0,0),gbRGB=(0,0,0)
@@ -1010,67 +1132,80 @@ Function plotCombinedFitAndEvaluate([fitcursors])
 	ModifyGraph/W=globalreflectometrygraph zero(res)=1,axisEnab(left)={0.15,1},axisEnab(res)={0,0.1}
 	ModifyGraph/W=globalreflectometrygraph freePos(res)={0,bottom},axRGB=(65535,65535,65535)
 	ModifyGraph/W=globalreflectometrygraph tlblRGB=(65535,65535,65535),alblRGB=(65535,65535,65535)
-
-	setdatafolder savDF
-	return retVal
-End
-
-Function Do_a_global_fit()
-	string info
-	variable retval
-	string holdstring = "", datasetname, motofitstring, traces, tracecolour
-	string cDF = getdatafolder(1)
-	variable numdatasets, ii, offset
-	
-	retval = plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
-
-	if(numtype(retval))
-		print "ERROR evaluating function, perhaps there is a NaN/Inf parameter"
-		return 1
-	endif
-	//the following waves are evaluated in the above function.
-	Wave yy = root:Packages:motofit:reflectivity:globalfitting:yy
-	Wave xx = root:Packages:motofit:reflectivity:globalfitting:xx
-	Wave holdwave = root:Packages:motofit:reflectivity:globalfitting:holdwave
-	Wave/z dy = root:Packages:motofit:reflectivity:globalfitting:dy
-	Wave fityy = root:Packages:motofit:reflectivity:globalfitting:fityy
-	Wave fitxx = root:Packages:motofit:reflectivity:globalfitting:fitxx
-	Wave res_fityy = root:Packages:motofit:reflectivity:globalfitting:res_fityy
-	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
-	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
-	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
-	Wave pnts_each_dataset = root:Packages:motofit:reflectivity:globalfitting:pnts_each_dataset
-	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
-	
-	sockitwavetostring/TXT="" holdwave, holdstring	
-	controlinfo/W=reflectivitypanel Typeoffit_tab0
-	numdatasets = (dimsize(numcoefs, 0))
-	
-	if(!waveexists(dy) || !str2num(motofit#getmotofitoption("useerrors")))
-		duplicate/free yy, dytemp
-		dytemp = 1.
-	else
-		duplicate/free dy, dytemp
-	endif
-	
+	//now do the fits
 	variable/g V_fiterror = 0	
-	strswitch(S_value)
-		case "Genetic":
-			GEN_setlimitsforGENcurvefit(coefs, holdstring, cDF)		
-			Wave limitswave = root:packages:motofit:old_genoptimise:GENcurvefitlimits
-			NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
-			NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
-			NVAR  k_m = root:packages:motofit:old_genoptimise:k_m
-			NVAR  recomb = root:packages:motofit:old_genoptimise:recomb
-			NVAR fittol = root:packages:motofit:old_genoptimise:fittol
-			GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=xx motofit_globally, yy, coefs, "", limitswave
-		break
-		case "Levenberg-Marquardt":
-			FuncFit/H=holdstring/M=2/Q/NTHR=0 motofit_globally coefs yy /X=fitxx /W=dytemp /I=1 /D=fityy /R /A=0
-		break
-		case "Genetic + LM":
-		break
-	endswitch
+	try
+		strswitch(S_value)
+			case "Genetic":
+				GEN_setlimitsforGENcurvefit(coefs, holdstring)		
+				Wave limitswave = root:packages:motofit:old_genoptimise:GENcurvefitlimits
+				NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
+				NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
+				NVAR  k_m = root:packages:motofit:old_genoptimise:k_m
+				NVAR  recomb = root:packages:motofit:old_genoptimise:recomb
+				NVAR fittol = root:packages:motofit:old_genoptimise:fittol
+				GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=xx motofit_globally, yy, coefs, "", limitswave
+				break
+			case "Levenberg-Marquardt":
+				FuncFit/H=holdstring/M=2/Q/NTHR=0 motofit_globally coefs yy /X=xx /W=dytemp /I=1 /D=fityy /R /A=0
+				break
+			case "Genetic + LM":
+				GEN_setlimitsforGENcurvefit(coefs, holdstring)		
+				Wave limitswave = root:packages:motofit:old_genoptimise:GENcurvefitlimits
+				NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
+				NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
+				NVAR  k_m = root:packages:motofit:old_genoptimise:k_m
+				NVAR  recomb = root:packages:motofit:old_genoptimise:recomb
+				NVAR fittol = root:packages:motofit:old_genoptimise:fittol
+				GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=xx motofit_globally, yy, coefs, "", limitswave
+				FuncFit/H=holdstring/M=2/Q/NTHR=0 motofit_globally coefs yy /X=xx /W=dytemp /I=1 /D=fityy /R /A=0
+				break
+			case "Genetic+MC_Analysis":
+				if(!str2num(motofit#getmotofitoption("useerrors")))
+					Doalert 0, "you need to select the use errors checkbox for the Monte Carlo fitting"
+					return 1
+				endif
+				iters = 200
+				prompt iters, "how many iterations?"
+				Doprompt "Enter the number of MC iterations", iters
+				if(V_Flag)
+					return 1
+				endif
+				
+				Moto_montecarlo("motofit_globally", coefs, yy, xx, dy, holdstring, Iters)
+				Wave M_montecarlo
+				
+				//now got to split M_Montecarlo into individual waves, in the root:data folder
+				make/wave/n=(numdatasets)/free montecarlowaves
+				duplicate/free coefs, tempcoefs
+				//make an individual M_montecarlo
+				for(ii = 0 ; ii < numdatasets ; ii+=1)
+					make/o/d/n=(dimsize(M_montecarlo, 0), numcoefs[ii]) $("root:data:" + datasets[ii] + ":M_montecarlo")/Wave=indy
+					montecarlowaves[ii] = indy
+					Waveclear indy
+				endfor
+				//fill in the individual M_montecarlo
+				for(ii = 0 ; ii < dimsize(M_montecarlo, 0) ; ii += 1)
+					tempcoefs = M_montecarlo[ii][p]
+					Wave/wave outputcoefs = decompose_into_individual_coefs(tempcoefs)
+					for(jj = 0 ; jj < numdatasets ; jj += 1)
+						Wave indy = outputcoefs[jj]
+						Wave indy3 = montecarlowaves[jj]
+						indy3[ii][] = indy[q]
+					endfor
+				endfor
+				//and make the SLD plots
+				for(ii = 0 ; ii < numdatasets ; ii+=1)
+					setdatafolder $("root:data:" + datasets[ii])
+					motofit#moto_montecarlo_SLDcurves(montecarlowaves[ii], 0.02, 500)
+					setdatafolder cDF
+				endfor
+				break
+		endswitch
+	catch
+		setdatafolder cDF
+	endtry
+	setdatafolder cDF
 	
 	if(!V_fiterror)
 		//put the coefficients back into the list
@@ -1091,41 +1226,12 @@ Function Do_a_global_fit()
 			note/k indy2
 			note indy2, motofitstring
 
-			//make the fit waves
-			make/o/d/n=(pnts_each_dataset[ii]) $("root:data:" + datasetname + ":fit_" + datasetname + "_R")/Wave=fitR
-			fitR = fityy[offset + p]
-
-			make/o/d/n=(pnts_each_dataset[ii]) $("root:data:" + datasetname + ":fit_" + datasetname + "_q")/Wave=fitq
-			fitq = fitxx[offset + p]
-
-			//make the residuals
-			make/o/d/n=(pnts_each_dataset[ii]) $("root:data:" + datasetname + ":res_" + datasetname + "_R")/Wave=resR
-			resR = res_fityy[offset + p]
-						
-			//append them to the reflectivity graph
-			//see if the fit has already been appended to the reflectivity graph
-			traces = tracenamelist("Reflectivitygraph", ";", 1)
-			tracecolour = moto_gettracecolour("reflectivitygraph", datasetname + "_R")
-			
-			if(whichlistitem(nameofwave(fitR), traces) == -1)
-				appendtograph/W=reflectivitygraph/q fitR vs fitQ
-				execute/z "modifygraph/W=reflectivitygraph rgb(" + nameofwave(fitR) + ")="  + tracecolour 
-			endif
-			
-			//append to SLDgraph
-			make/n=(dimsize(SLD_theoretical_R, 0))/d/o $("root:data:" + datasetname + ":SLD_" + datasetname + "_R")/Wave =SLDr
-			Moto_SLDplot(indy2, sldr)
-			
-			traces = tracenamelist("SLDgraph", ";", 1)
-			if(whichlistitem(nameofwave(SLDr), traces) == -1)
-				appendtograph/W=SLDgraph/q SLDr
-				execute/z "modifygraph/W=SLDgraph rgb(" + nameofwave(SLDr) + ")="  + tracecolour + ",lsize("+nameofwave(SLDr) + ")=2"
-			endif
-					
-			offset += pnts_each_dataset[ii]
-			Waveclear fitR, fitQ, resR, SLDr, indy, indy2
+			Waveclear indy, indy2
 		endfor
 	endif
+	
+	//get the best fit waves AFTER THE FIT
+	evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
 	
 	//do you want to append residuals
 	controlinfo/W=reflectivitygraph appendresiduals

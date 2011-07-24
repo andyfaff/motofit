@@ -406,7 +406,7 @@ static Function Moto_Reflectivitypanel() : Panel
 	
 	Slider slider0_tab0,pos={8,544},size={564,50},fSize=12,fColor=(43690,43690,43690)
 	Slider slider0_tab0,valueColor=(43690,43690,43690), help={"adjust a parameter by moving the slider"}
-	Slider slider0_tab0,limits={0,1,0},variable= V_Flag,side=1,vert= 0, proc = motofit#moto_GUI_slider
+	Slider slider0_tab0,limits={0,1,0},variable= V_Flag,side=1,vert= 0, proc = motofit#moto_GUI_slider, ticks=0
 
 	
 	//datasets
@@ -498,11 +498,11 @@ static Function moto_appendresiduals()
 		dataset = stringfromlist(ii, datasets)
 		tracecolour = moto_gettracecolour("reflectivitygraph", dataset + "_R")
 		Wave/z res = $("root:data:" + dataset + ":res_" + dataset + "_R")
-		Wave/z qq = $("root:data:" + dataset + ":" + dataset + "_q")
-		if(waveexists(res) && waveexists(qq))
+		Wave/z fitqq = $("root:data:" + dataset + ":fit_" + dataset + "_q")
+		if(waveexists(res) && waveexists(fitqq))
 			checkdisplayed/W=reflectivitygraph res
 			if(!V_flag)
-				AppendToGraph/W=reflectivitygraph/L=res res vs qq
+				AppendToGraph/W=reflectivitygraph/L=res res vs fitqq
 				execute/z "modifygraph/W=reflectivitygraph rgb(" + nameofwave(RES) + ")="  + tracecolour + ",lsize("+nameofwave(RES) + ")=2"
 				changeaxis = 1
 			endif
@@ -650,7 +650,7 @@ static Function Moto_do_a_fit()
 		mode = str2num(getmotofitoption("mode"))
 		strswitch(typeoffit)
 			case "Genetic":
-				if(GEN_setlimitsforGENcurvefit(coef, holdstring, "root:data:" + datasetname, paramdescription = moto_paramdescription(coef[0], mode)))
+				if(GEN_setlimitsforGENcurvefit(coef, holdstring, paramdescription = moto_paramdescription(coef[0], mode)))
 					abort
 				endif
 				NVAR popsize = root:packages:motofit:old_genoptimise:popsize
@@ -671,7 +671,7 @@ static Function Moto_do_a_fit()
 				FuncFit/H=holdstring/M=2/Q/NTHR=0 $fitfunc coef  RR[leftP, rightP] /X=inputQQ /W=dR /I=1 /D=outputRR /R /A=0 /C=constraints
 				break
 			case "Genetic + LM":
-				if(GEN_setlimitsforGENcurvefit(coef, holdstring, "root:data:" + datasetname, paramdescription =  moto_paramdescription(coef[0], mode)))
+				if(GEN_setlimitsforGENcurvefit(coef, holdstring, paramdescription =  moto_paramdescription(coef[0], mode)))
 					abort
 				endif
 				NVAR popsize = root:packages:motofit:old_genoptimise:popsize
@@ -1352,15 +1352,16 @@ Function Motofit(w, RR, qq) :Fitfunc
 	
 //	markperftesttime 0
 	if(strlen(motofitoptions))
-		mode = numberbykey("mode", motofitoptions)
 		resolution = numberbykey("res", motofitoptions)
 		plotyp = numberbykey("plotyp", motofitoptions)
 	else
-		mode = 0
 		resolution = 0
 		plotyp = 1
 	endif
 	
+	//are you imaginary (mode != 0) or real (mode == 0)
+	mode = mod((numpnts(w) - 6), 4)
+		
 	if(numtype(resolution) || resolution < 0.5)
 		resolution = 0
 	endif
@@ -2143,6 +2144,10 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 		case "addcursor_tab0":
 			controlinfo/W=reflectivitypanel dataset_tab0
 			datasetname = S_value
+			if(stringmatch("_none_", datasetname))
+				return 0
+			endif
+			
 			wave dataset = $("root:data:" + datasetname + ":" + datasetname + "_R" )
 			string traces = tracenamelist("reflectivitygraph",";",5)
 
@@ -2355,7 +2360,6 @@ static Function moto_GUI_slider(s) : SliderControl
 			return 0
 		endif
 	endif
-	print s.eventcode
 	if(s.eventcode & 2^1)
 		slider slider0_tab0, limits = {0.5 * str2num(listwave[row][col]), 1.5 * str2num(listwave[row][col]), str2num(listwave[row][col])/500}, value=str2num(listwave[row][col])
 	endif
@@ -2585,8 +2589,8 @@ static Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 	MCiters = dimsize(M_montecarlo, 0)
 	
 	//a wave to put a temporary SLD plot
-	make/n=(SLDpts)/d anSLDplot
-	make/n=(dimsize(M_montecarlo, 1)) tempcoefs
+	make/n=(SLDpts)/d/free anSLDplot
+	make/free/n=(dimsize(M_montecarlo, 1)) tempcoefs
 	
 	for(ii = 0 ; ii < MCiters ; ii += 1)
 		tempcoefs[] = M_montecarlo[ii][p]
@@ -2601,7 +2605,7 @@ static Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 	
 	//you have the minimum and maximum ends of all the fits, now create all the SLDprofiles.
 	setscale/I x, minz, maxz, anSLDplot
-	make/n=(MCiters, SLDpts)/d/o SLDmatrix
+	make/n=(MCiters, SLDpts)/d/free SLDmatrix = NaN
 	for(ii = 0 ; ii < MCiters ; ii += 1)
 		tempcoefs[] = M_montecarlo[ii][p]
 		Moto_SLDplot(tempcoefs, anSLDplot)
@@ -2613,8 +2617,8 @@ static Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 	SLDmax = V_max
 	SLDmin = V_min
 
-	make/n=( (SLDmax - SLDmin ) / SLDbin)/d/o SLDsliceHIST
-	make/n=(MCiters)/d SLDslices
+	make/n=( (SLDmax - SLDmin ) / SLDbin)/d/free SLDsliceHIST
+	make/n=(MCiters)/d/free SLDslices
 		
 	setscale/I x,  SLDmin, SLDmax, SLDsliceHIST
 	make/n=(SLDpts, numpnts(SLDsliceHIST))/o/d SLDimage
@@ -2647,5 +2651,4 @@ static Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 	Label left "SLD"
 	Label top "distance from interface"
 	
-	killwaves/z SLDsliceHIST, SLDmatrix, tempcoefs, anSLDplot, SLDslices
 End
