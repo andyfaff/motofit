@@ -605,7 +605,7 @@ DoUpdate
 								newGF_HoldString+="0"
 							endfor
 						endif
-						GEN_setlimitsforGENcurvefit(root:packages:MotofitGF:NewGlobalFit:MasterCoefs, newGF_HoldString, getdatafolder(1))
+						GEN_setlimitsforGENcurvefit(root:packages:MotofitGF:NewGlobalFit:MasterCoefs, newGF_HoldString)
 						Wave GENcurvefitlimits =  root:packages:motofit:old_genoptimise:GENcurvefitlimits
 						SVAR newGF_HoldString = root:packages:MotofitGF:NewGlobalFit:newGF_HoldString
 						make/o/n=(numpnts(mastercoefs)) W_Sigma = 0

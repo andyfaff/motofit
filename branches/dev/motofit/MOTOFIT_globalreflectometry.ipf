@@ -4,10 +4,10 @@
 
 #include <WaveSelectorWidget>
 
-Window GlobalReflectometryPanel() : Panel
+static Function buildpanel() : Panel
 	PauseUpdate; Silent 1		// building window...
 	NewPanel/K=1 /W=(649,44,1205,700) as "Global Reflectometry Analysis"
-
+	Dowindow/C globalreflectometrypanel
 	TabControl globalpaneltab,pos={5,7},size={544,573},proc=Motofit_GR#globalpanel_GUI_tab
 	TabControl globalpaneltab,tabLabel(0)="Datasets",tabLabel(1)="Coefficients"
 	TabControl globalpaneltab,value= 1
@@ -104,7 +104,7 @@ static Function selectedCoefWave_notification(SelectedItem, EventCode, WindowNam
 	tempstr = selectedItem
 end
 
-Function init_fitting()
+static Function init_fitting()
 	variable haveRefPanel = itemsinlist(winlist("reflectivitypanel", "", ""))
 	variable haveRefGraph = itemsinlist(winlist("reflectivitygraph", "", ""))
 	variable haveSLDgraph =  itemsinlist(winlist("SLDgraph", "", ""))
@@ -114,7 +114,7 @@ Function init_fitting()
 		abort
 	endif
 	make_folders_waves()
-	execute "GlobalReflectometryPanel()"
+	buildpanel()
 End
 
 static Function make_folders_waves()

@@ -1,7 +1,37 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma ModuleName = Motofit
 #pragma Igormode=6.22
+#pragma version = 400
 
+// SVN date:    $Date: 2011-07-18 10:33:32 +1000 (Mon, 18 Jul 2011) $
+// SVN author:  $Author: andrew_nelson $
+// SVN rev.:    $Revision: 455 $
+// SVN URL:     $HeadURL: https://motofit.svn.sourceforge.net/svnroot/motofit/trunk/motofit/Motofit/MOTOFIT_all_at_once.ipf $
+// SVN ID:      $Id: MOTOFIT_all_at_once.ipf 455 2011-07-18 00:33:32Z andrew_nelson $
+	
+#include "GeneticOptimisation"
+#include "MOTOFIT_globalreflectometry"
+#include "MOTOFIT_SLDcalc"
+#include "MOTOFIT_batch"
+#include "MOTOFIT_Global fit 2"
+
+Menu "Motofit"
+	//this function sets up the user menus at the top of the main IGOR window.
+	"Fit Reflectivity data",plotCalcref()
+	"Load experimental data",Moto_loaddata()
+	"Co-refine Reflectometry Data", Motofit_GR#init_fitting()
+	"SLD calculator", Moto_SLDdatabase()
+	"create local chi2map for requested parameter",Moto_localchi2()
+	Submenu "Fit batch data"
+		"Load batch data", LoadAndGraphAll ("")
+		"Fit batch data", FitRefToListOfWaves()
+		//	                        "Extract trends", Trends()
+	End
+	"About",Moto_AboutPanel()
+	"-"
+	"Transfer data from old version to new version", transfer_data()
+	"-"
+End
 
 Function plotcalcref()	
 	string cDF = getdatafolder(1)
@@ -1037,7 +1067,11 @@ End
 Static function/s getMotofitOption(option)
 	string option
 	SVAR/z motofitcontrolstring = root:packages:motofit:reflectivity:motofitcontrolstring
-	return stringbykey(option, motofitcontrolstring)
+	if(SVAR_Exists(motofitcontrolstring))
+		return stringbykey(option, motofitcontrolstring)
+	else
+		return ""
+	Endif
 End
 
 Static function setMotofitOption(option, val)
@@ -2651,4 +2685,110 @@ static Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 	Label left "SLD"
 	Label top "distance from interface"
 	
+End
+
+
+Function transfer_data()
+	//this function moves the data into the correct data directories from 
+	//previous versions of motofit
+	DFREF savDF = getdatafolderDFR()
+	setdatafolder root:
+	
+	newdatafolder/o root:data
+	
+	SVAR/z mcs = root:packages:motofit:reflectivity:motofitcontrolstring
+	variable ii, plotyp = 1, index = 0, red, green, blue
+	
+	if(SVAR_exists(mcs))
+		plotyp = numberbykey("plotyp", mcs)
+	endif
+	Doalert 1, "Trying to transfer data from an old motofit version to version 4.  This will involve moving a lot of data files from root: to root:data. Make sure you have a backup of the experiment.\rDo you want to continue?"
+	if(V_flag == 2)
+		return 0
+	endif
+	
+	string dataset, completedatasets, fittabledatasets
+	string allWaves_R = wavelist("*_R", ";", "DIMS:1")
+	string allWaves_q = wavelist("*_q", ";", "DIMS:1")
+	string allWaves_E = wavelist("*_E", ";", "DIMS:1")
+	string allWaves_dQ = wavelist("*_dq", ";", "DIMS:1")
+				
+	Dowindow/k reflectivitypanel
+	Dowindow/k reflectivitygraph
+	plotcalcref()
+	Wave M_colors = root:packages:motofit:reflectivity:M_colors
+	
+	for(ii = 0 ; ii < itemsinlist(allwaves_R) ; ii += 1)
+		setdatafolder root:
+		dataset = removeending(stringfromlist(ii, allwaves_R), "_R")
+		if(stringmatch("theoretical", dataset) || grepstring(dataset, "^fit_"))
+			killwaves/z theoretical_R, theoretical_q, coef_cref, parameters_cref, resolution, sld, zed
+			continue
+		endif
+		
+		Wave/z RRold = $(dataset + "_R")
+		Wave/z qqold = $(dataset + "_q")
+		Wave/z eeold = $(dataset + "_E")
+		Wave/z dqold = $(dataset + "_dq")
+		Wave/z coefold = $("coef_" + dataset + "_R")
+		
+		if(waveexists(RRold) && waveexists(qqold) && numpnts(qqold) == numpnts(rrold))
+			completedatasets += dataset + ";"
+			newdatafolder/o/s $("root:data:" + dataset)
+			make/n=(numpnts(RRold), 2)/o/d originaldata
+			make/o/d/n = (numpnts(RRold)) $(dataset + "_R")/Wave=RR
+			make/o/d/n = (numpnts(RRold)) $(dataset + "_q")/Wave=qq
+			
+			moto_plotyp_to_lindata(plotyp, qqold, RRold, dr = eeold)
+			originaldata[][0] = qqold[p]
+			originaldata[][1] = RRold[p]
+			RR = RRold
+			qq = qqold
+			
+			DFREF ndf = $("root:data:" + dataset)
+			if(waveexists(eeold))
+				make/o/d/n = (numpnts(RRold)) $(dataset + "_E")/Wave=ee
+				ee = eeold
+				redimension/n=(-1, 3) originaldata
+				originaldata[][2] = eeold[p]
+			endif 
+			if(waveexists(dqold))
+				make/o/d/n = (numpnts(RRold)) $(dataset + "_dq")/Wave=dq
+				dq = dqold
+				redimension/n=(-1, 4) originaldata
+				originaldata[][3] = dqold[p]
+			endif 
+			if(waveexists(coefold))
+				make/o/d/n=(dimsize(coefold, 0)) $("coef_" + dataset + "_R") /Wave=coef
+				coef = coefold
+				note/k coef
+				note coef, note(coefold)
+			endif 
+
+			moto_lindata_to_plotyp(plotyp, qq, RR, dr = ee)
+					
+			index += 1
+		endif
+		killwaves/z coefold, RRold, qqold, eeold, dqold
+	endfor
+
+	fittabledatasets = motofit#Moto_fittable_datasets()
+	for(ii = 0 ; ii < itemsinlist(fittabledatasets); ii+=1)
+		Waveclear qq, RR, ee
+		dataset = stringfromlist(ii, fittabledatasets)
+		if(stringmatch(dataset, "theoretical"))
+			continue
+		endif
+		Wave RR = $("root:data:" + dataset + ":" + dataset + "_R")
+		Wave qq = $("root:data:" + dataset + ":" + dataset + "_q")
+
+		appendtograph/W=reflectivitygraph RR vs qq
+		red = M_colors[mod(index * 37, dimsize(M_colors, 0))][0]
+		green =  M_colors[mod(index * 37, dimsize(M_colors, 0))][1]
+		blue = M_colors[mod(index * 37, dimsize(M_colors, 0))][2]
+
+		ModifyGraph/W=reflectivitygraph mode($(nameofwave(RR)))=3,rgb($(nameofwave(RR)))=(red,green, blue), marker=8
+	endfor
+
+	setdatafolder savDF
 End

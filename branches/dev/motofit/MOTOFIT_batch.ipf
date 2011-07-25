@@ -44,7 +44,7 @@ Function FitRefToListOfWaves()
 		typeoffit = S_value
 		//if you're doing genetic optimisation
 		if(stringmatch(S_Value, "Genetic") || stringmatch(S_Value,"Genetic + LM"))
-			GEN_setlimitsforGENcurvefit(coef_theoretical_R, holdstring, "root:packages:motofit:MOTOFIT_batchfits")
+			GEN_setlimitsforGENcurvefit(coef_theoretical_R, holdstring)
 		endif
 
 		controlinfo/w=reflectivitypanel useerrors_tab0	
