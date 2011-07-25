@@ -29,7 +29,7 @@ Menu "Motofit"
 	End
 	"About",Moto_AboutPanel()
 	"-"
-	"Transfer data from old version to new version", transfer_data()
+	"Transfer data from old version to new version", motofit#moto_transfer_data()
 	"-"
 End
 
@@ -606,7 +606,7 @@ static Function Moto_do_a_fit()
 	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
 
 	holdstring = getmotofitoption("holdstring")
-	useerrors = str2num(getmotofitoption("userrrors"))
+	useerrors = str2num(getmotofitoption("useerrors"))
 	usedqwave = str2num(getmotofitoption("usedqwave"))
 	usecursors = str2num(getmotofitoption("fitcursors"))
 	useconstraint =  str2num(getmotofitoption("useconstraint"))
@@ -620,7 +620,7 @@ static Function Moto_do_a_fit()
 		endif
 		if(!useerrors)
 			Waveclear dR
-			make/n=(dimsize(RR, 0))/d/free inputdR
+			make/n=(dimsize(RR, 0))/d/free inputdR = 1
 			Wave dR = inputdR
 		endif
 		if(usecursors)
@@ -1534,7 +1534,7 @@ Function moto_plotyp_to_lindata(plotyp, qq, RR[, dr])
 	switch(plotyp)
 		case 1:	//logR
 			if(waveexists(dr))
-				dr = abs(dR  * ln(10) * alog(R))
+				dr = abs(dR  * ln(10) * alog(RR))
 			endif
 			RR = alog(RR)
 			return 0
@@ -2688,7 +2688,7 @@ static Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 End
 
 
-Function transfer_data()
+static Function moto_transfer_data()
 	//this function moves the data into the correct data directories from 
 	//previous versions of motofit
 	DFREF savDF = getdatafolderDFR()
