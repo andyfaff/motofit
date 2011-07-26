@@ -2701,7 +2701,7 @@ static Function moto_transfer_data()
 	newdatafolder/o root:data
 	
 	SVAR/z mcs = root:packages:motofit:reflectivity:motofitcontrol
-	variable ii, plotyp = 1, index = 0, red, green, blue
+	variable ii, plotyp = 1, index = 0, red, green, blue, newplotyp
 	
 	if(SVAR_exists(mcs))
 		plotyp = numberbykey("plotyp", mcs)
@@ -2721,6 +2721,8 @@ static Function moto_transfer_data()
 	Dowindow/k reflectivitygraph
 	plotcalcref()
 	Wave M_colors = root:packages:motofit:reflectivity:M_colors
+	
+	newplotyp = str2num(getmotofitoption("plotyp"))
 	
 	for(ii = 0 ; ii < itemsinlist(allwaves_R) ; ii += 1)
 		setdatafolder root:
@@ -2769,7 +2771,7 @@ static Function moto_transfer_data()
 				note coef, note(coefold)
 			endif 
 
-			moto_lindata_to_plotyp(plotyp, qq, RR, dr = ee)
+			moto_lindata_to_plotyp(newplotyp, qq, RR, dr = ee)
 					
 			index += 1
 		endif
