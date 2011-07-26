@@ -147,7 +147,7 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 	//shortcut just means that you are changing the values in the coefficient wave, you're not changing the size.
 	variable shortcut
 	
-	variable mode, ii
+	variable mode, ii, newplotyp
 	string coefnote = "", item = "", key = "", val = "", holdstring
 
 	if(!waveexists(coefficientwave))
@@ -208,7 +208,11 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 			//the data is currently in the form of the popup value
 			//but you want it in the form of whats in the coefnote.
 			setmotofitoption("plotyp", num2istr(V_Value))
-			moto_change_plotyp( numberbykey("plotyp", coefnote))
+			newplotyp = numberbykey("plotyp", coefnote)
+			if(numtype(newplotyp))
+				newplotyp = V_Value
+			endif
+			moto_change_plotyp(newplotyp)
 		endif
 			
 		//change layer params in reflectivity panel
@@ -1035,7 +1039,7 @@ Static Function setupvariables(mode, res, plotyp, SLDpts)
 	DFREF savDF = getdatafolderDFR()
 	
 	setdatafolder root:packages:motofit:reflectivity
-	string/g  root:packages:motofit:reflectivity:motofitcontrolstring
+	string/g  root:packages:motofit:reflectivity:motofitcontrol
 	setMotofitOption("mode", num2istr(mode))
 	setMotofitOption("res", num2str(res))
 	setMotofitOption("plotyp", num2str(plotyp))
@@ -1066,9 +1070,9 @@ End
 
 Static function/s getMotofitOption(option)
 	string option
-	SVAR/z motofitcontrolstring = root:packages:motofit:reflectivity:motofitcontrolstring
-	if(SVAR_Exists(motofitcontrolstring))
-		return stringbykey(option, motofitcontrolstring)
+	SVAR/z motofitcontrol = root:packages:motofit:reflectivity:motofitcontrol
+	if(SVAR_Exists(motofitcontrol))
+		return stringbykey(option, motofitcontrol)
 	else
 		return ""
 	Endif
@@ -1076,21 +1080,21 @@ End
 
 Static function setMotofitOption(option, val)
 	string option, val
-	SVAR/z motofitcontrolstring = root:packages:motofit:reflectivity:motofitcontrolstring
-	if(!SVAR_exists(motofitcontrolstring))
+	SVAR/z motofitcontrol = root:packages:motofit:reflectivity:motofitcontrol
+	if(!SVAR_exists(motofitcontrol))
 		newdatafolder/o root:packages
 		newdatafolder/o root:packages:motofit
 		newdatafolder/o root:packages:motofit:reflectivity
-		string/g  root:packages:motofit:reflectivity:motofitcontrolstring
-		SVAR motofitcontrolstring = root:packages:motofit:reflectivity:motofitcontrolstring
+		string/g  root:packages:motofit:reflectivity:motofitcontrol
+		SVAR motofitcontrol = root:packages:motofit:reflectivity:motofitcontrol
 	endif
-	motofitcontrolstring = replacestringbykey(option, motofitcontrolstring, val)
+	motofitcontrol = replacestringbykey(option, motofitcontrol, val)
 End
 
 Static function/s getMotofitOptionString()
-	SVAR/z motofitcontrolstring = root:packages:motofit:reflectivity:motofitcontrolstring
-	if(SVAR_exists(motofitcontrolstring))
-		return motofitcontrolstring
+	SVAR/z motofitcontrol = root:packages:motofit:reflectivity:motofitcontrol
+	if(SVAR_exists(motofitcontrol))
+		return motofitcontrol
 	else
 		return ""
 	endif
@@ -1098,8 +1102,8 @@ End
 
 Static function setMotofitOptionString(valstr)
 	string valstr
-	SVAR/z motofitcontrolstring = root:packages:motofit:reflectivity:motofitcontrolstring
-	motofitcontrolstring  = valstr
+	SVAR/z motofitcontrol = root:packages:motofit:reflectivity:motofitcontrol
+	motofitcontrol  = valstr
 End
 
 Static Function moto_updateholdstring()
@@ -2696,7 +2700,7 @@ static Function moto_transfer_data()
 	
 	newdatafolder/o root:data
 	
-	SVAR/z mcs = root:packages:motofit:reflectivity:motofitcontrolstring
+	SVAR/z mcs = root:packages:motofit:reflectivity:motofitcontrol
 	variable ii, plotyp = 1, index = 0, red, green, blue
 	
 	if(SVAR_exists(mcs))
@@ -2781,13 +2785,16 @@ static Function moto_transfer_data()
 		endif
 		Wave RR = $("root:data:" + dataset + ":" + dataset + "_R")
 		Wave qq = $("root:data:" + dataset + ":" + dataset + "_q")
-
+		Wave/z ee = $("root:data:" + dataset + ":" + dataset + "_E")
 		appendtograph/W=reflectivitygraph RR vs qq
 		red = M_colors[mod(index * 37, dimsize(M_colors, 0))][0]
 		green =  M_colors[mod(index * 37, dimsize(M_colors, 0))][1]
 		blue = M_colors[mod(index * 37, dimsize(M_colors, 0))][2]
-
+		if(waveexists(ee))
+			Errorbars/W=reflectivitygraph $(nameofwave(RR)) Y, wave=(ee, ee)
+		endif
 		ModifyGraph/W=reflectivitygraph mode($(nameofwave(RR)))=3,rgb($(nameofwave(RR)))=(red,green, blue), marker=8
+		index += 1
 	endfor
 
 	setdatafolder savDF
