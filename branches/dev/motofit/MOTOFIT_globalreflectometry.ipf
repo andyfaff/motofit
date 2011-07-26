@@ -1213,6 +1213,8 @@ Function Do_a_global_fit()
 		
 		//create fitted coefficient waves
 		Wave/wave outputcoefs = decompose_into_individual_coefs(coefs)
+		Wave W_sigma
+		Wave/wave outputsigma = decompose_into_individual_coefs(W_sigma)
 		motofitstring = motofit#getmotofitoptionstring()
 		motofitstring = replacestringbykey("holdstring", motofitstring, "")
 		offset = 0
@@ -1221,12 +1223,24 @@ Function Do_a_global_fit()
 			
 			//make the coefficients
 			Wave indy = outputcoefs[ii]
+			Wave sig = outputsigma[ii]
+			
 			make/o/d/n=(numcoefs[ii]) $("root:data:" + datasetname + ":coef_" + datasetname + "_R")/Wave=indy2
+			make/o/d/n=(numcoefs[ii]) $("root:data:" + datasetname + ":W_sigma")/Wave=indy4
 			indy2 = indy
+			indy4[] = sig[p]
 			note/k indy2
 			note indy2, motofitstring
+			
+			print "_________________________________________________________________"
+			print "Global Fitting"
+			print datasetname + "_R", " vs ", datasetname + "_q"
+			for(jj = 0 ; jj < numpnts(indy2) ; jj+=1)
+				printf "\tw[%d] = %f\t+/-\t%g\r", jj, indy[jj], sig[jj]
+			endfor
+			print "_________________________________________________________________"
 
-			Waveclear indy, indy2
+			Waveclear indy, indy2, indy4, sig
 		endfor
 	endif
 	
