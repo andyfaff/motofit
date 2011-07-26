@@ -494,10 +494,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						return 0
 					endif
 					
-					sprintf cmd, "slim_plot(\"%s\",\"%s\",\"%s\",%g,%g,%g,expected_centre=%g, rebinning=%g, manual=%g, normalise=%g, saveSpectrum = %g)",inputPathStr, outputPathStr, filenames, lowLambda,highLambda, backgroundsbn,expected_centre, rebinpercent, manualbeamfind, normalisebymonitor, saveSpectrum
+					sprintf cmd, "slim_plot(\"%s\",\"%s\",\"%s\",%g,%g,%g,expected_peak=cmplx(%g, %g), rebinning=%g, manual=%g, normalise=%g, saveSpectrum = %g)",inputPathStr, outputPathStr, filenames, lowLambda,highLambda, backgroundsbn,expected_centre, NaN, rebinpercent, manualbeamfind, normalisebymonitor, saveSpectrum
 					cmdToHistory(cmd)
 						
-					if(slim_plot(thePathstring, outputPathStr, fileNames,lowLambda,highLambda,backgroundsbn, expected_centre = expected_centre, rebinning = rebinpercent, manual = manualbeamfind, normalise = normalisebymonitor, saveSpectrum = saveSpectrum))
+					if(slim_plot(thePathstring, outputPathStr, fileNames,lowLambda,highLambda,backgroundsbn, expected_peak = cmplx(expected_centre, NaN), rebinning = rebinpercent, manual = manualbeamfind, normalise = normalisebymonitor, saveSpectrum = saveSpectrum))
 						print "ERROR while trying to plot (SLIM_buttonproc)"
 						return 0
 					endif
@@ -528,13 +528,14 @@ Function SLIM_buttonproc(ba) : ButtonControl
 End
 
 
-Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, [expected_centre, rebinning, manual, normalise, saveSpectrum])
+Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, [expected_peak, rebinning, manual, normalise, saveSpectrum])
 	String inputpathStr, outputPathStr, fileNames
-	variable lowlambda, highlambda, background, expected_centre, rebinning, manual, normalise, saveSpectrum
+	variable lowlambda, highlambda, background, rebinning, manual, normalise, saveSpectrum
+	variable/c expected_peak
 	
 	string slimplotstring = ""
-	if(paramisdefault(expected_centre))
-		expected_centre = ROUGH_BEAM_POSITION
+	if(paramisdefault(expected_peak))
+		expected_peak = cmplx(ROUGH_BEAM_POSITION, NaN)
 	endif
 			
 	if(paramisdefault(manual))
@@ -606,13 +607,13 @@ Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, 
 		endif
 	
 		if(paramisdefault(rebinning) || rebinning <= 0)
-			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_peak=cmplx(expected_centre, NaN), manual=manual, normalise = normalise, savespectrum = saveSpectrum))
+			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_peak=expected_peak, manual=manual, normalise = normalise, savespectrum = saveSpectrum))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1
 			endif
 		else
 			Wave W_rebinboundaries = Pla_gen_binboundaries(lowlambda, highlambda, rebinning)
-			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_peak=cmplx(expected_centre, NaN), rebinning=W_rebinboundaries,manual=manual, normalise = normalise, savespectrum = saveSpectrum))
+			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_peak=expected_peak, rebinning=W_rebinboundaries,manual=manual, normalise = normalise, savespectrum = saveSpectrum))
 				print "ERROR: problem with one of the files you are trying to open (SLIM_plot)"
 				return 1
 			endif		
@@ -644,7 +645,7 @@ Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, 
 	setwindow SLIM_PLOTwin, userdata(filenames) = filenames
 	setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr
 	
-	sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\",%g, %g, %d, expected_peak = cmplx(%g, NaN), rebinning=%g, manual=%d, normalise=%d, saveSpectrum=%d)", inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, expected_centre, rebinning, manual, normalise, saveSpectrum
+	sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\",%g, %g, %d, expected_peak = cmplx(%g, %g), rebinning=%g, manual=%d, normalise=%d, saveSpectrum=%d)", inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, real(expected_peak), imag(expected_peak), rebinning, manual, normalise, saveSpectrum
 	setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
 	
 	controlbar/W=SLIM_PLOTwin 30
@@ -991,7 +992,7 @@ Function button_SLIM_PLOT(ba) : ButtonControl
 					filenames = GetUserData("SLIM_PLOTwin","","filenames")
 					pathStr = GetUserData("SLIM_PLOTwin","","pathStr")
 					slimplotstring = GetUserData("SLIM_PLOTwin","","slimplotstring")
-					
+					print slimplotstring
 					controlinfo/w=SLIM_PLOTwin isLog
 					isLog = V_Value
 					controlinfo graphtype
