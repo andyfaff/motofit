@@ -1236,11 +1236,20 @@ static Function moto_update_theoretical()
 	wave/z theoretical_R = root:data:theoretical:theoretical_R
 	wave/z theoretical_q = root:data:theoretical:theoretical_q
 	wave/z SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
+	Wave/z originaldata = root:data:theoretical:originaldata
+	variable plotyp
+	
 	variable chi2 = 0;
 	Motofit(coef_theoretical_R, theoretical_R, theoretical_Q)
 	Moto_SLDplot(coef_theoretical_R, sld_theoretical_R)
 	chi2 = Moto_calcchi2()
 	setmotofitoption("V_chisq", num2str(chi2))
+	
+	plotyp = str2num(getmotofitoption("plotyp"))
+	duplicate/free theoretical_R, temp_R
+	moto_plotyp_to_lindata(plotyp, theoretical_q, temp_R)
+	originaldata[][1] = temp_R[p]
+
 	note/k coef_theoretical_R
 	note coef_theoretical_R, getMotofitOptionString()
 End
