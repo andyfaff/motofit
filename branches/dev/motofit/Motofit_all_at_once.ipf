@@ -693,8 +693,7 @@ static Function Moto_do_a_fit()
 				NVAR k_m = root:packages:motofit:old_genoptimise:k_m
 				NVAR fittol = root:packages:motofit:old_genoptimise:fittol
 				Wave limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
-			
-				Gencurvefit/D=outputRR/I=1/Q/MAT=1/R/W=dR/X=inputQQ/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fitfunc, RR[leftP, rightP], coef, holdstring, limits
+				Gencurvefit/N/D=outputRR/I=1/Q/MAT=1/R/W=dR/X=inputQQ/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fitfunc, RR[leftP, rightP], coef, holdstring, limits
 				break
 			case "Levenberg-Marquardt":
 				if(useconstraint)
@@ -1341,7 +1340,8 @@ Function Motofit_smeared(w, RR, qq, dq) :Fitfunc
 	Wave w, RR, qq, dq
 	variable bkg
 	//don't want to convolve the reflectivity if the background has been added		
-	variable mode = str2num(getMotofitOption("mode"))
+	variable mode = mod(numpnts(w) - 6, 4)
+	
 	variable plotyp = str2num(getMotofitOption("plotyp"))
 		
 	make/free/d/n=(13 * dimsize(qq, 0)) ytemp, xtemp
@@ -1421,24 +1421,28 @@ Function Motofit(w, RR, qq) :Fitfunc
 		Setscale/I x, -resolution, resolution, gausswave
 		Gausswave=gauss(x, 0, resolution/(2 * sqrt(2 * ln(2))))
 		Variable middle = gausswave[x2pnt(gausswave, 0)]
-		Gausswave/=middle
-				
+		 Gausswave /= middle
 		Variable gaussgpoint = (gaussnum-1)/2
 				
 		//find out what the lowest and highest qvalue are
-		Wavestats/Q/Z/M=1 qq
-		variable lowQ = V_min , highQ = V_max
-		if(lowQ==0)
+		variable lowQ = wavemin(qq)
+		variable highQ = wavemax(qq)
+		
+		if(lowQ == 0)
 			lowQ =1e-6
 		endif
+		
 		Variable start=log(lowQ) - 6 * resolution / 2.35482
 		Variable finish=log(highQ * (1 + 6 * resolution / 2.35482))
 		Variable interpnum=round(abs(1 * (abs(start - finish)) / (resolution / 2.35482 / gaussgpoint)))
-		make/free/d/n=(interpnum) logxtemp, ytemp, xtemp
-			
-		logxtemp=(start) + p * (abs(start - finish)) / (interpnum)
-		xtemp = alog(logxtemp)
+		variable val = (abs(start - finish)) / (interpnum)
+		make/free/d/n=(interpnum) ytemp, xtemp
+		multithread xtemp=(start) + p * val
+
+		matrixop/o xtemp = powR(10, xtemp)
+
 //		markperftesttime 2
+
 		if(!mode)
 			Abelesall(w, ytemp, xtemp)
 		else
@@ -1446,7 +1450,7 @@ Function Motofit(w, RR, qq) :Fitfunc
 		endif
 //		markperftesttime 3
 		//do the resolution convolution
-		setscale/I x, start, logxtemp[numpnts(logxtemp) - 1], ytemp
+		setscale/I x, start, log(xtemp[numpnts(xtemp) - 1]), ytemp
 		convolve/A gausswave, ytemp
 
 		//delete start and finish nodes.
@@ -1457,15 +1461,13 @@ Function Motofit(w, RR, qq) :Fitfunc
 		
 		variable gaussum = 1/(sum(gausswave))
 		fastop ytemp = (gaussum) * ytemp
-		duplicate/free qq, xrtemp, ytemp2
 
 //		markperftesttime 4
-		
-		multithread xrtemp=log(xrtemp)
+		matrixop/free xrtemp = log(qq)
 		//interpolate to get the theoretical points at the same spacing of the real dataset
-		Interpolate2/T=2/E=2/I=3/Y=ytemp2/X=xrtemp ytemp
-		multithread RR = ytemp2
 //		markperftesttime 5
+		Interpolate2/T=2/E=2/I=3/Y=RR/X=xrtemp ytemp
+//		markperftesttime 6
 
 	else 
 		if(!mode)
@@ -1484,9 +1486,9 @@ Function Motofit(w, RR, qq) :Fitfunc
 	fastop RR = (bkg) + RR
 		
 	//how are you fitting the data?
-//	markperftesttime 6
-	moto_lindata_to_plotyp(plotyp, qq, RR)
 //	markperftesttime 7
+	moto_lindata_to_plotyp(plotyp, qq, RR)
+//	markperftesttime 8
 End
 
 /// offspecular/diffuse conversions
@@ -1507,9 +1509,11 @@ Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr])
 	switch(plotyp)
 		case 1:	//logR
 			if(waveexists(dr))
-				multithread dr = abs(dR / (RR * ln(10)))
+				variable ln10 = ln(10)
+				multithread dr = abs(dR / (RR * ln10))
 			endif
-			multithread RR = log(RR)
+//			multithread RR = log(RR)
+			matrixop/o RR = log(RR)
 			return 0
 			break
 		case 2: //linR, do nothing

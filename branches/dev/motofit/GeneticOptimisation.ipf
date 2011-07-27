@@ -1633,7 +1633,7 @@ Static Function GEN_searchparams(gen)
 	Variable k_m=0.7
 	Variable GEN_recombination=0.5
 	Variable GEN_generations=100
-	Variable GEN_V_fittol=0.0005
+	Variable GEN_V_fittol=0.05
 	prompt k_m,"mutation constant, e.g.0.7"
 	prompt GEN_recombination,"enter the recombination constant"
 	prompt GEN_generations,"how many generations do you want to use?"
@@ -1696,7 +1696,7 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring [, limits, paramdescripti
 		variable/g k_m = 0.7
 	endif
 	if(!NVAR_exists(fittol))
-		variable/g fittol = 0.001
+		variable/g fittol = 0.05
 	endif
 	if(!paramisdefault(paramdescription) && waveexists(paramdescription) && dimsize(paramdescription, 0) == numpnts(coefs))
 		paramdescriptionoffset = 1
@@ -1786,7 +1786,7 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring [, limits, paramdescripti
 		SetVariable setvar3,fSize=12, win=GCF_dialog
 		SetVariable setvar3,limits={0,1,0.05},value= root:packages:motofit:old_genoptimise:recomb, win=GCF_dialog
 		SetVariable setvar4,pos={12,104},size={215,19},title="fit tolerance",fSize=12, win=GCF_dialog
-		SetVariable setvar4,limits={1e-7,1e-1,0.001},value= root:packages:motofit:old_genoptimise:fittol, win=GCF_dialog
+		SetVariable setvar4,limits={1e-7,0.1,0.001},value= root:packages:motofit:old_genoptimise:fittol, win=GCF_dialog
 		Button button0,pos={30,310},size={266,25},proc=GCF_dialogProc,title="Continue", win=GCF_dialog
 		Button button1,pos={251, 103},size={45, 20},proc=GCF_dialogProc,title="default", fsize=9, win=GCF_dialog
 		Button button2,pos={30,337},size={266,25},proc=GCF_dialogProc,title="Cancel", win=GCF_dialog
