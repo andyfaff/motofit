@@ -1473,9 +1473,11 @@ Function Motofit(w, RR, qq) :Fitfunc
 
 //		markperftesttime 4
 		matrixop/free xrtemp = log(qq)
+		duplicate/free rr, ytemp2
 		//interpolate to get the theoretical points at the same spacing of the real dataset
 //		markperftesttime 5
-		Interpolate2/T=2/E=2/I=3/Y=RR/X=xrtemp ytemp
+		Interpolate2/T=2/E=2/I=3/Y=ytemp2/X=xrtemp ytemp
+		multithread RR = ytemp2
 //		markperftesttime 6
 
 	else 

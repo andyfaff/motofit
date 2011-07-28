@@ -60,6 +60,7 @@ Function catalogueHDF(pathName[, start, finish])
 	newdatafolder/o/s root:packages:platypus:catalogue
 	make/o/t/n=(1,9) runlist
 	make/o/d/n=(1,4) vgaps
+	string/g DAQfiles = ""
 	
 	if(paramisdefault(start))
 		start = 1
@@ -140,6 +141,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps)
 	string filename
 	Wave/t runlist
 	Wave vgaps
+	SVAR DAQfiles
 	print fileNum
 	
 	string tempStr
@@ -400,6 +402,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps)
 			abort
 		endif
 		runlist[row][8] = name[0]
+		daqfiles += name[0] + ";"
 	endif
 	
 	//parameters

@@ -1255,3 +1255,98 @@ Function Do_a_global_fit()
 	ValDisplay Chi2_tab1, win=globalreflectometrypanel, value = _NUM:(V_chisq/V_npnts)
 	dowindow/k globalreflectometrygraph
 End
+
+Function setup_motoMPI()
+	//sets up input for motoMPI program, for parallelized monte carlo fitting.
+		
+	string holdstring = "", datasetname, txt = "", pilots = "", datas = ""
+	variable numdatasets, ii, fileID, pilotID, jj
+		
+	build_combined_dataset()
+	Wave holdwave = root:Packages:motofit:reflectivity:globalfitting:holdwave
+	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
+	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
+	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
+	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
+	Wave/t listwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
+	Wave selwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
+	
+	sockitwavetostring/TXT="" holdwave, holdstring	
+	controlinfo/W=reflectivitypanel Typeoffit_tab0
+	numdatasets = (dimsize(numcoefs, 0))
+
+	newpath/o/q/z/c motoMPI
+	pathinfo motoMPI
+	if(!V_Flag)
+		return 1
+	endif
+
+	//setup limits
+	GEN_setlimitsforGENcurvefit(coefs, holdstring)		
+	Wave limitswave = root:packages:motofit:old_genoptimise:GENcurvefitlimits
+			
+	//make the datasets
+	make/n=10/d/free tempRR, tempqq, tempEE
+	for(ii = 0 ; ii < numdatasets ; ii += 1)
+		datasetname = datasets[ii]
+		open/P=motoMPI fileID as datasetname + ".txt"
+		datas += datasetname + ".txt" + ";"
+		open/P=motoMPI pilotID as datasetname + "_pilot.txt"
+		pilots += datasetname + "_pilot.txt" + ";"
+		
+		//write a datafile
+		Wave originaldata = $("root:data:" + datasetname + ":originaldata")
+		redimension/n=(dimsize(originaldata, 0)) tempRR, tempqq, tempEE
+		tempQQ = originaldata[p][0]
+		tempRR = originaldata[p][1]
+		tempEE = originaldata[p][2]
+		
+		wfprintf fileID, "%g\t%g\t%g\n", tempqq, tempRR, tempEE
+		
+		//now write a pilot file
+		txt = "stuff\nvalue hold lowlim hilim\n"
+		fbinwrite pilotID, txt
+		
+		for(jj = 0 ; jj < numcoefs[ii] ; jj += 1)
+			txt = ""
+			txt += listwave[jj][2 * ii + 1] + " "
+			txt += selectstring(selwave[jj][2 * ii + 2] & 2^4, "0","1") + " "
+			
+			txt += num2str(limitswave[linkages[jj][ii]][0]) + " "
+			txt += num2str(limitswave[linkages[jj][ii]][1])
+			
+			if(jj < numcoefs[ii] - 1)
+				txt += "\n"
+			endif
+
+			fbinwrite pilotID, txt
+		endfor
+		
+		close fileID
+		close pilotID
+	endfor
+	
+	open/P=motoMPI pilotID as "global_pilot"
+	datas = replacestring(";", datas, " ")
+	datas = removeending(datas, " ") + "\n"
+	fbinwrite pilotID, datas
+	
+	pilots = replacestring(";", pilots, " ")
+	pilots = removeending(pilots, " ") + "\n"
+	fbinwrite pilotID, pilots
+	
+	for(ii = 0 ; ii < dimsize(linkages, 0) ; ii += 1)
+		txt = ""
+		for(jj = 0 ; jj < numdatasets ; jj += 1)
+			txt += num2istr(linkages[ii][jj]) + " "
+		endfor
+		txt = removeending(txt, " ")
+		if(ii < dimsize(linkages, 0) - 1)
+			txt += "\n"
+		endif
+		fbinwrite pilotID, txt
+	endfor
+	close pilotID
+	
+	//TODO Write a PBS script.
+End
