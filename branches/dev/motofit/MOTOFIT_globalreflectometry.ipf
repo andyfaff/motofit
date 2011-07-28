@@ -1174,32 +1174,8 @@ Function Do_a_global_fit()
 				
 				Moto_montecarlo("motofit_globally", coefs, yy, xx, dy, holdstring, Iters)
 				Wave M_montecarlo
+				processGlobalMonteCarlo(M_montecarlo)
 				
-				//now got to split M_Montecarlo into individual waves, in the root:data folder
-				make/wave/n=(numdatasets)/free montecarlowaves
-				duplicate/free coefs, tempcoefs
-				//make an individual M_montecarlo
-				for(ii = 0 ; ii < numdatasets ; ii+=1)
-					make/o/d/n=(dimsize(M_montecarlo, 0), numcoefs[ii]) $("root:data:" + datasets[ii] + ":M_montecarlo")/Wave=indy
-					montecarlowaves[ii] = indy
-					Waveclear indy
-				endfor
-				//fill in the individual M_montecarlo
-				for(ii = 0 ; ii < dimsize(M_montecarlo, 0) ; ii += 1)
-					tempcoefs = M_montecarlo[ii][p]
-					Wave/wave outputcoefs = decompose_into_individual_coefs(tempcoefs)
-					for(jj = 0 ; jj < numdatasets ; jj += 1)
-						Wave indy = outputcoefs[jj]
-						Wave indy3 = montecarlowaves[jj]
-						indy3[ii][] = indy[q]
-					endfor
-				endfor
-				//and make the SLD plots
-				for(ii = 0 ; ii < numdatasets ; ii+=1)
-					setdatafolder $("root:data:" + datasets[ii])
-					motofit#moto_montecarlo_SLDcurves(montecarlowaves[ii], 0.02, 500)
-					setdatafolder cDF
-				endfor
 				break
 		endswitch
 	catch
@@ -1256,11 +1232,65 @@ Function Do_a_global_fit()
 	dowindow/k globalreflectometrygraph
 End
 
+Function processGlobalMonteCarlo(M_montecarlo)
+	//processes monte carlo results for the global fitting
+	Wave M_montecarlo
+
+	DFREF cDF = getdatafolderDFR()
+	variable numdatasets, ii, jj
+	Wave holdwave = root:Packages:motofit:reflectivity:globalfitting:holdwave
+	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
+	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
+	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
+	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
+	Wave pnts_each_dataset = root:Packages:motofit:reflectivity:globalfitting:pnts_each_dataset
+	
+	numdatasets = dimsize(datasets, 0)
+	
+	//now got to split M_Montecarlo into individual waves, in the root:data folder
+	make/wave/n=(numdatasets)/free montecarlowaves
+	duplicate/free coefs, tempcoefs
+	//make an individual M_montecarlo
+	for(ii = 0 ; ii < numdatasets ; ii+=1)
+		make/o/d/n=(dimsize(M_montecarlo, 0), numcoefs[ii]) $("root:data:" + datasets[ii] + ":M_montecarlo")/Wave=indy
+		montecarlowaves[ii] = indy
+		Waveclear indy
+	endfor
+	//fill in the individual M_montecarlo
+	for(ii = 0 ; ii < dimsize(M_montecarlo, 0) ; ii += 1)
+		tempcoefs = M_montecarlo[ii][p]
+		Wave/wave outputcoefs = decompose_into_individual_coefs(tempcoefs)
+		for(jj = 0 ; jj < numdatasets ; jj += 1)
+			Wave indy = outputcoefs[jj]
+			Wave indy3 = montecarlowaves[jj]
+			indy3[ii][] = indy[q]
+		endfor
+	endfor
+
+	//make an individual output coefficient
+	tempcoefs = M_montecarlo[0][p]
+	Wave/wave outputcoefs = decompose_into_individual_coefs(tempcoefs)
+	for(ii = 0 ; ii < numdatasets ; ii += 1)
+		Wave indy = outputcoefs[ii]
+		make/o/d/n=(numpnts(indy)) $("root:data:" + datasets[ii] + ":coef_" + datasets[ii] + "_R")/Wave=indy2
+		indy2 = indy
+	endfor
+
+	plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+	
+	//and make the SLD plots
+	for(ii = 0 ; ii < numdatasets ; ii+=1)
+		setdatafolder $("root:data:" + datasets[ii])
+		motofit#moto_montecarlo_SLDcurves(montecarlowaves[ii], 0.02, 500)
+		setdatafolder cDF
+	endfor	
+End
+
 Function setup_motoMPI()
 	//sets up input for motoMPI program, for parallelized monte carlo fitting.
 		
-	string holdstring = "", datasetname, txt = "", pilots = "", datas = ""
-	variable numdatasets, ii, fileID, pilotID, jj
+	string holdstring = "", datasetname, txt = "", pilots = "", datas = "", info = ""
+	variable numdatasets, ii, fileID, pilotID, jj, loQ, hiQ, pnt
 		
 	build_combined_dataset()
 	Wave holdwave = root:Packages:motofit:reflectivity:globalfitting:holdwave
@@ -1270,6 +1300,19 @@ Function setup_motoMPI()
 	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
 	Wave/t listwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
 	Wave selwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
+	
+	loQ = 0
+	hiQ = Inf
+	if(str2num(motofit#getmotofitoption("fitcursors")))
+		Info = csrinfo(A, "reflectivitygraph")
+		if(strlen(info))
+			loQ = csrxwaveref(A, "reflectivitygraph")[numberbykey("POINT", info)]
+		endif
+		info = csrinfo(B, "reflectivitygraph")
+		if(strlen(info))
+			hiQ = csrxwaveref(B, "reflectivitygraph")[numberbykey("POINT", info)]
+		endif
+	endif
 	
 	sockitwavetostring/TXT="" holdwave, holdstring	
 	controlinfo/W=reflectivitypanel Typeoffit_tab0
@@ -1286,7 +1329,6 @@ Function setup_motoMPI()
 	Wave limitswave = root:packages:motofit:old_genoptimise:GENcurvefitlimits
 			
 	//make the datasets
-	make/n=10/d/free tempRR, tempqq, tempEE
 	for(ii = 0 ; ii < numdatasets ; ii += 1)
 		datasetname = datasets[ii]
 		open/P=motoMPI fileID as datasetname + ".txt"
@@ -1296,12 +1338,30 @@ Function setup_motoMPI()
 		
 		//write a datafile
 		Wave originaldata = $("root:data:" + datasetname + ":originaldata")
-		redimension/n=(dimsize(originaldata, 0)) tempRR, tempqq, tempEE
-		tempQQ = originaldata[p][0]
-		tempRR = originaldata[p][1]
-		tempEE = originaldata[p][2]
+		txt = ""
+		make/n=(dimsize(originaldata, 0), dimsize(originaldata, 1))/t/free datatext
+		datatext = num2str(originaldata)
 		
-		wfprintf fileID, "%g\t%g\t%g\n", tempqq, tempRR, tempEE
+		//but only for a restricted Q range dictated by the cursors.
+		findlevel/P/Q originaldata, hiQ
+		deletepoints/M=0 V_levelX, dimsize(datatext, 0) , datatext
+		findlevel/P/Q originaldata, loQ
+		deletepoints/M=0 0, V_levelX , datatext
+
+		insertpoints/M=1 4, 1, datatext
+		insertpoints/M=1 3, 1, datatext
+		insertpoints/M=1 2, 1, datatext
+		insertpoints/M=1 1, 1, datatext
+		datatext[p][1] = " "
+		datatext[p][3] = " "
+		datatext[p][5] = " "
+		datatext[p][7] = "\n"
+		datatext[dimsize(datatext, 0) - 1][7] = ""
+		matrixtranspose datatext
+		sockitwavetostring datatext, txt
+		
+		fbinwrite fileID, txt
+		close fileID
 		
 		//now write a pilot file
 		txt = "stuff\nvalue hold lowlim hilim\n"
@@ -1320,9 +1380,7 @@ Function setup_motoMPI()
 			endif
 
 			fbinwrite pilotID, txt
-		endfor
-		
-		close fileID
+		endfor		
 		close pilotID
 	endfor
 	
