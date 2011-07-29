@@ -1341,6 +1341,7 @@ Function setup_motoMPI()
 		txt = ""
 		make/n=(dimsize(originaldata, 0), dimsize(originaldata, 1))/t/free datatext
 		datatext = num2str(originaldata)
+		redimension/n=(-1, 4) datatext
 		
 		//but only for a restricted Q range dictated by the cursors.
 		findlevel/P/Q originaldata, hiQ
@@ -1352,10 +1353,10 @@ Function setup_motoMPI()
 		insertpoints/M=1 3, 1, datatext
 		insertpoints/M=1 2, 1, datatext
 		insertpoints/M=1 1, 1, datatext
-		datatext[p][1] = " "
-		datatext[p][3] = " "
-		datatext[p][5] = " "
-		datatext[p][7] = "\n"
+		datatext[][1] = "\t"
+		datatext[][3] = "\t"
+		datatext[][5] = "\t"
+		datatext[][7] = "\n"
 		datatext[dimsize(datatext, 0) - 1][7] = ""
 		matrixtranspose datatext
 		sockitwavetostring datatext, txt
