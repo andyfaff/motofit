@@ -1067,7 +1067,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 					BM1counts = bm1_counts[scanpoint]
 				else
 					BM1counts = bm1_counts[scanpoint] / fractionalTimeSlices
-					BM1counts[numtimeslices - 1] = bm1_counts[scanpoint] * (fractionalTimeSlices - numtimeslices) / fractionalTimeSlices 
+					BM1counts[numtimeslices - 1] = bm1_counts[scanpoint] * (fractionalTimeSlices - floor(fractionalTimeSlices)) / fractionalTimeSlices 
 				endif
 				make/o/d/n=(numTimeSlices) dBM1counts = sqrt(BM1counts)
 			
