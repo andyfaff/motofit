@@ -844,7 +844,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	//M_Spec,M_specSD,M_lambda,M_lambdaSD,M_lambdaHIST,M_specTOF,M_specTOFHIST, W_waternorm, M_beampos
 	
 	variable ChoD, toffset, nrebinpnts,ii, jj, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint, MASTER_OPENING
-	variable originalScanPoint, scanpoint, numTimeSlices, numSpectra, typeOfIntegration
+	variable originalScanPoint, scanpoint, numTimeSlices, numSpectra, typeOfIntegration, timeSliceDuration, fractionalTimeSlices
 	string tempDF, cDF,tempDFwater, eventStreamingFile, cmd, proccmd
 	variable/c bkgloc
 	Wave/z hmmWater
@@ -976,6 +976,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		Wave slit3_distance = $(tempDF+":instrument:parameters:slit3_distance")
 		Wave slit2_distance = $(tempDF+":instrument:parameters:slit2_distance")
 		Wave DetectorPos = $(tempDF+":instrument:detector:longitudinal_translation")
+		Wave time0 = $(tempDF+":instrument:detector:time0")
 		Wave chopper1_distance = $(tempDF+":instrument:parameters:chopper1_distance")
 		Wave chopper2_distance = $(tempDF+":instrument:parameters:chopper2_distance")
 		Wave chopper3_distance = $(tempDF+":instrument:parameters:chopper3_distance")
@@ -1046,22 +1047,29 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				break
 			case 1:
 				eventStreamingFile = stringfromlist(0, eventStreaming, ":")
-				numTimeSlices = numberbykey(eventStreamingFile, eventStreaming)
-				if(numTimeSlices < 0 || numtype(numTimeSlices))
-					numTimeSlices = 1
+				timeSliceDuration = numberbykey(eventStreamingFile, eventStreaming)
+				if(timeSliceDuration < 0 || numtype(timeSliceDuration))
+					timeSliceDuration = 60
 				endif
 				if(Pla_openStreamer(inputPathStr + eventStreamingFile, dataset = scanpoint))
 					print "ERROR opening streaming dataset (processNexusfile)"
 					abort
 				endif
-				make/o/d/n=(numTimeSlices) BM1counts = bm1_counts[scanpoint]/numTimeSlices
-				make/o/d/n=(numTimeSlices) dBM1counts = sqrt(BM1counts)
-			
 				//now histogram the events.
 				Wave xbins = $(tempDF+":data:x_bin")
 				Wave ybins = $(tempDF+":data:y_bin")
 				Wave tbins = $(tempDF+":data:time_of_flight")
-				Wave streamedDetector = Pla_streamedDetectorImage(xbins, ybins, tbins, frequency[scanpoint] / 60, numTimeSlices)
+				Wave streamedDetector = Pla_streamedDetectorImage(xbins, ybins, tbins, frequency[scanpoint] / 60, timeSliceDuration)
+				numtimeslices = dimsize(streamedDetector, 0)	
+				fractionalTimeSLices = time0[scanpoint] / timeSliceDuration
+				make/o/d/n=(numTimeSlices) BM1counts
+				if(numtimeslices == 1)
+					BM1counts = bm1_counts[scanpoint]
+				else
+					BM1counts = bm1_counts[scanpoint] / fractionalTimeSlices
+					BM1counts[numtimeslices - 1] = bm1_counts[scanpoint] * (fractionalTimeSlices - numtimeslices) / fractionalTimeSlices 
+				endif
+				make/o/d/n=(numTimeSlices) dBM1counts = sqrt(BM1counts)
 			
 				make/o/d/n=(dimsize(tbins, 0) - 1, dimsize(ybins, 0) - 1, numTimeSlices) detector = 0
 				for(ii = 0 ; ii < dimsize(streamedDetector, 3) ; ii += 1)
