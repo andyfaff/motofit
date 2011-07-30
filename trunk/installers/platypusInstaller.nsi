@@ -77,6 +77,8 @@ ${EndIf}
 	File "../../../XOP Toolkit 5/IgorXOPs5/XMLutils/trunk/win/XMLutils.xop"
 	File "../../../XOP Toolkit 5/IgorXOPs5/XMLutils/trunk/win/XMLutils Help.ihf"
 	
+	File "../../../XOP Toolkit 5/IgorXOPs5/neutronunpacker/trunk/win/neutronunpacker.xop"
+	
 	File "../../../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP.xop"
 	File "../../../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP Help.ihf"
 	
