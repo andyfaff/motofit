@@ -40,18 +40,11 @@ Function Pla_openStreamer(folderStr, [dataset])
 	
 	//try opening it first with the neutron unpacker
 	neutronunpacker binaryFileStr
-	if(!V_flag)
-		return 1
+	if(V_flag == 4)	// it was PACKEDBIN
+		return 0
 	endif
 	
-	Wave W_unpackedNeutronsX, W_unpackedNeutronsY, W_unpackedNeutronsT, W_unpackedNeutronsF
-	//test if the neutron unpacker worked.  If not, it may be a zippedunpackedbin format.
-	if(numpnts(W_unpackedNeutronsF) && W_unpackedNeutronsF[dimsize(W_unpackedNeutronsF, 0) - 1] != -1)
-		//IT WAS PACKED BIN FORMAT, SO RETURN.
-		return 0		
-	endif
-	killwaves/z W_unpackedNeutronsX, W_unpackedNeutronsY, W_unpackedNeutronsT, W_unpackedNeutronsF
-	//we are going to continue on and see if it's zippedunpackedbin
+	//if it's not PACKEDBIN, it may be ZIPUNPACKEDBIN, which is the format we first used
 	open/r/z fileID as binaryFileStr
 	if(fileID < 1)
 		print "ERROR, couldn't open file (Pla_openstreamer)"
@@ -78,16 +71,14 @@ Function Pla_openStreamer(folderStr, [dataset])
 	
 	//now distribute into event histograms
 	numevents = numpnts(W_stringtowave) / 4
-	make/o/n=(numevents)/Y=(64+32) $("W_unpackedneutronst")/wave=tt 
-	make/o/n=(numevents)/Y=(64+32) $("W_unpackedneutronsf")/wave=ff
-	multithread tt = W_stringtowave[4*p + 1] / 1000
-	multithread ff = W_stringtowave[4*p + 2]
+	make/o/n=(numevents)/Y=(64+32) W_unpackedneutronst, W_unpackedneutronsf
+	multithread W_unpackedneutronst = W_stringtowave[4*p + 1] / 1000
+	multithread W_unpackedneutronsf = W_stringtowave[4*p + 2]
 		
-       redimension/E=1/W/N=(numevents * 4 * 2) W_stringtowave;
-       make/O/W/N=(numevents) $("W_unpackedneutronsx")/wave=xx
-	make/O/W/N=(numevents) $("W_unpackedneutronsyy")/wave=yy
-       multithread xx = W_stringtowave[8 * p + 0];
-       multithread yy = W_stringtowave[8 * p + 1];
+    redimension/E=1/W/N=(numevents * 4 * 2) W_stringtowave;
+    make/O/W/N=(numevents) W_unpackedneutronsx, W_unpackedneutronsyy
+    multithread W_unpackedneutronsx = W_stringtowave[8 * p + 0];
+    multithread W_unpackedneutronsy = W_stringtowave[8 * p + 1];
        
        killwaves W_stringtowave
 	catch
