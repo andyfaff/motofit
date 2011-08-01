@@ -59,7 +59,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	
 	//now unzip it and put into a 32 bit unsigned integer wave
 	theData = zipDecode(theData)
-	if(strlen(theData) == 0)
+	if(strlen(theData) == 0 || numtype(strlen(thedata)))
 		print "ERROR whilst opening stream file (Pla_openstreamer)"
 		setdatafolder cDF
 		return 1	
