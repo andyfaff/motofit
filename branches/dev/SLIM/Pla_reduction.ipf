@@ -814,7 +814,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	variable dontoverwrite
 	
 	Wave/z rebinning
-	//processes a loaded NeXUS file.
+	//processes a  NeXUS file.
 	//returns 0 if successful, non zero otherwise
 	//pathname = string containing the path to the data
 	//filename = filename for the spectrum, e.g. PLP0001000.  This is used to try and find a datafolder containing the loaded NeXUS data.

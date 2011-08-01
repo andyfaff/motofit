@@ -999,9 +999,9 @@ Function button_SLIM_PLOT(ba) : ButtonControl
 					type = V_Value-1			
 					rebinning = rebinpercent
 
-					execute/q/z slimplotstring
-				//	SLIM_plot(pathStr, pathStr, fileNames,lowLambda,highLambda, backgroundsbn, rebinning = rebinning, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, manual = manualbeamfind)
-					if(!stringmatch(stringfromlist(0,filenames),"*.xml") && !stringmatch(stringfromlist(0,filenames),"*.xrdml"))
+				//	execute/q slimplotstring
+					SLIM_plot(pathStr, pathStr, fileNames,lowLambda,highLambda, backgroundsbn, rebinning = rebinning, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, manual = manualbeamfind)
+					if(!stringmatch(stringfromlist(0,filenames),"*.xml") && !stringmatch(stringfromlist(0,filenames),"*.xrdml") && !stringmatch(stringfromlist(0,filenames),"*.spectrum"))
 						SLIM_redisplay(type,isLog)
 					endif
 					break
