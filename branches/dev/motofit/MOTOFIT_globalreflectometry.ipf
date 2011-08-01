@@ -1409,3 +1409,23 @@ Function setup_motoMPI()
 	
 	//TODO Write a PBS script.
 End
+
+Function parse_motoMPI([fileStr])
+	string fileStr
+	
+	if(!paramisdefault(fileStr))
+		LoadWave/J/M/D/A=wave/K=0/V={"\t, "," $",0,0} fileStr
+	else
+		Loadwave/J/M/D/A=wave/K=0/V={"\t, "," $",0,0}
+	endif
+	if(!V_flag)
+		return 1
+	endif
+	Wave M_Montecarlo = $(stringfromlist(0, S_wavenames))
+	deletepoints/M=1 0, 1, M_montecarlo
+	
+	//process the output
+	processGlobalMonteCarlo(M_montecarlo)
+	
+	killwaves M_montecarlo
+End
