@@ -575,12 +575,12 @@ Function regularTasks(s)
 	endif
 	
 	//get reactor info
-	string reactorInfo = Pla_getReactorInfo()
-	if(strlen(reactorinfo))
-		Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
-		hipadaba_paths[getHipapos("/instrument/source/power")][1] = stringbykey("Power", reactorInfo)
-		hipadaba_paths[getHipapos("/instrument/source/cns_inlet_temp")][1] = stringbykey("CNS in", reactorInfo)
-	endif
+//	string reactorInfo = Pla_getReactorInfo()
+//	if(strlen(reactorinfo))
+//		Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
+//		hipadaba_paths[getHipapos("/instrument/source/power")][1] = stringbykey("Power", reactorInfo)
+//		hipadaba_paths[getHipapos("/instrument/source/cns_inlet_temp")][1] = stringbykey("CNS in", reactorInfo)
+//	endif
 	
 //	Wave/z frame_deassert = root:packages:platypus:SICS:frame_deassert
 //	if(waveexists(frame_deassert))
@@ -1688,7 +1688,7 @@ Function createHTML()
 	SVAR/z presettype = root:packages:platypus:data:scan:presettype
 	Wave/z position = root:packages:platypus:data:scan:position
 	Wave/z counts = root:packages:platypus:data:scan:counts
-	string instrumentinfo = Pla_getExperimentInfo("Platypus")
+	string instrumentinfo = ""//Pla_getExperimentInfo("Platypus")
 	try
 		open/Z=1/T="TEXT" fileID as SAVELOC+"status.html"
 		if(V_Flag)

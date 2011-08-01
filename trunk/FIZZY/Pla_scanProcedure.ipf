@@ -38,8 +38,8 @@ Function fpxStop()
 	//stop the fpx scan running
 	CtrlNamedBackground  scanTask status
 	if(numberbykey("RUN",S_info))	//if the scan is running, stop it, and finish
-		CtrlNamedBackground  scanTask kill=1
 		finishscan(1)
+		CtrlNamedBackground  scanTask kill=1
 	endif
 End
 
@@ -607,7 +607,10 @@ Function finishScan(status)
 	
 	//tell the histogram server to stop acquiring if it's an abnormal stop
 	if(status)
-		sics_cmd_interest("histmem stop")
+		do
+			string reply = sics_cmd_sync("histmem stop", timer = 10)
+		while(grepstring(reply, "ERROR: Busy"))
+		
 		print "Stopped scan for some reason (finishScan)"
 		fillScanStats(counts, currentpoint, 1)
 	endif
@@ -621,11 +624,11 @@ Function finishScan(status)
 			print "problem while autosaving (fpx)"
 		endif
 	else
-		if(sics_cmd_interest("save " + num2str(currentpoint)))
-			print "ERROR while saving data (finishScan)"
-		endif
+		do
+			 reply = sics_cmd_sync("save " + num2str(currentpoint), timer = 10)
+		while(grepstring(reply, "ERROR: Busy"))
 	endif
-
+	
 	//save the scan itself, not the overall data, just counts vs position
 	Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
 	string fname =  "FIZscan" + num2str(getFIZscanNumberAndIncrement()) + ".itx"
@@ -634,15 +637,6 @@ Function finishScan(status)
 	print "file saved as: ", gethipaval("/experiment/file_name")
 	
 	//display the scan in an easy to killgraph
-	Dowindow/k fpxScan
-	Display/k=1/N=fpxScan
-	appendtograph/w=fpxScan counts[][0] vs position
-	ModifyGraph/z/w=fpxScan mode(counts)=4
-	ModifyGraph/z/w=fpxScan standoff(left)=0,standoff(bottom)=0
-	ErrorBars/w=fpxScan counts Y,wave=(counts[*][1],counts[*][1])
-	cursor/H=1/s=0/F/P A  counts 0.5,0.5
-	showinfo
-		
 	//here we are going to do the peak on counts, but we could do it on monitor, or any other statistic, by choosing a different column
 	make/o/d/n=(numpnts(position)) tempY, tempE
 	Wave tempY, tempE
@@ -655,11 +649,22 @@ Function finishScan(status)
 	Wave taggauss = root:packages:platypus:data:scan:taggauss
 	Wave tagyy = root:packages:platypus:data:scan:tagyy				
 	tagyy={-inf,inf}
-	appendtograph/w=fpxscan tagyy vs taggauss
-	appendtograph/w=fpxscan tagyy vs tagcentroid
-	ModifyGraph/w=fpxscan rgb(tagyy)=(0,0,0)
-	ModifyGraph/w=fpxscan rgb(tagyy#1)=(0,0,52224)
+	if(auto != 2)
+		Dowindow/k fpxScan
+		Display/k=1/N=fpxScan
+		appendtograph/w=fpxScan counts[][0] vs position
+		ModifyGraph/z/w=fpxScan mode(counts)=4
+		ModifyGraph/z/w=fpxScan standoff(left)=0,standoff(bottom)=0
+		ErrorBars/w=fpxScan counts Y,wave=(counts[*][1],counts[*][1])
+		cursor/H=1/s=0/F/P A  counts 0.5,0.5
+		showinfo
 
+		appendtograph/w=fpxscan tagyy vs taggauss
+		appendtograph/w=fpxscan tagyy vs tagcentroid
+		ModifyGraph/w=fpxscan rgb(tagyy)=(0,0,0)
+		ModifyGraph/w=fpxscan rgb(tagyy#1)=(0,0,52224)
+	endif
+	
 	if(stringmatch(scanmotor,"_none_"))
 		print "finished scan"
 		return 0
@@ -671,8 +676,10 @@ Function finishScan(status)
 
 	tagcentroid = {imag(centre),imag(centre)}
 	taggauss = {real(centre),real(centre)}
-	Tag/C/N=text0/TL=0 bottom, real(centre),"gauss"
-	Tag/C/N=text1/TL={lineRGB=(0,0,65280)} bottom, imag(centre),"\\K(0,0,65280)centroid"
+	if(auto!=2)
+		Tag/C/N=text0/TL=0 bottom, real(centre),"gauss"
+		Tag/C/N=text1/TL={lineRGB=(0,0,65280)} bottom, imag(centre),"\\K(0,0,65280)centroid"
+	endif
 	doupdate
 		
 	if(auto)	//if you are auto aligning

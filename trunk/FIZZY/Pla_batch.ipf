@@ -121,7 +121,10 @@ Function batchScanReadyForNextPoint()
 	try
 		if(userPaused)
 			return 2
-		elseif(fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus() || dimsize(statemon,0)>0 || !stringmatch(sicsstatus, "Eager to execute commands") || SICSstatus(msg))
+		elseif(fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus() || dimsize(statemon,0)>0)
+			return 1
+		elseif(!stringmatch(sicsstatus, "Eager to execute commands") || SICSstatus(msg))
+			sics_cmd_interest("status")
 	//		print time(), "DEBUG BATCH FPX:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
 			return 1
 		else

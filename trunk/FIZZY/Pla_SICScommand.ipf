@@ -399,7 +399,9 @@ Function startSICS()
 	
 	//socket for sending vanilla sics commands from user
 	string LOGFILE = specialdirpath("Desktop", 1, 1, 0) + "SICSlog.txt"
-	sockitopenconnection/TIME=2/Q/TOK="\n"/LOG=LOGFILE SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
+	sockitopenconnection/TIME=2/Q/TOK="\n" SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
+//	sockitopenconnection/TIME=2/Q/TOK="\n"/LOG=LOGFILE SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
+
 	if(V_flag)
 		abort "Could'nt open a connection to SICS"
 	endif
@@ -414,7 +416,8 @@ Function startSICS()
 	sockitsendnrecv/time=3/SMAL SOCK_interupt, sicsuser + " "+sicspassword+"\n"
 	
 	//socket for receiving status messages and for sending messages you don't want to appear in the command buffer
-	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=LOGFILE SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
+	sockitopenconnection/Q/TIME=2/TOK="\n" SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
+//	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=LOGFILE SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
 	if(V_flag)
 		abort "Could'nt open a connection to SICS"
 	endif
@@ -422,7 +425,8 @@ Function startSICS()
 	sockitsendnrecv/time=1/SMAL SOCK_interest, "\n"
 	
 	//socket for synchronous queries
-	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=LOGFILE SOCK_sync, ICSserverIP, ICSserverPort, sync_buffer
+	sockitopenconnection/Q/TIME=2/TOK="\n" SOCK_sync, ICSserverIP, ICSserverPort, sync_buffer
+//	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=LOGFILE SOCK_sync, ICSserverIP, ICSserverPort, sync_buffer
 	if(V_flag)
 		abort "Could'nt open a connection to SICS"
 	endif
@@ -2325,12 +2329,16 @@ Function sics_cmd_cmd(cmd)
 	return 0
 End
 
-Function/t sics_cmd_sync(cmd)
+Function/t sics_cmd_sync(cmd,[timer])
 	string cmd
+	variable timer
 	//send a sics command to sics
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
 	cmd += "\n"
-	SOCKITsendnrecv/SMAL/time=2.0 SOCK_sync, cmd
+	if(paramisdefault(timer))
+		timer = 2.0
+	endif
+	SOCKITsendnrecv/SMAL/time=(timer) SOCK_sync, cmd
 	if(V_flag)
 		print "Error while sending SICScmd (sics)"
 		return ""
@@ -2588,7 +2596,7 @@ Function acquire(presettype,preset, samplename, [points])
 	if(paramisDefault(points))
 		points = 1
 	endif
-	if(fpx("_none_",0,points,presettype=presettype,preset=preset,samplename=samplename))
+	if(fpx("_none_",0,points,presettype=presettype,preset=preset,samplename=samplename, auto = 2))
 		print "error while acquiring data (acquire)2"
 		return 1
 	endif
