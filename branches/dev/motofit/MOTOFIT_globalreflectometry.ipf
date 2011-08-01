@@ -649,7 +649,8 @@ static Function linkParameterList(listofParameters)
 	//how to renumber the linkage matrix?
 	for(ii = numpnts(whichdataset) - 1 ; ii > 0 ; ii -= 1)
 		Wave isunique = isuniqueparam()
-
+		variable origvalue = linkages[whichparameter[ii]][whichdataset[ii]]
+		
 		if(linkages[whichparameter[ii]][whichdataset[ii]] > -1)
 			linkages[whichparameter[ii]][whichdataset[ii]] = linkages[whichparameter[0]][whichdataset[0]]
 		else
@@ -658,7 +659,9 @@ static Function linkParameterList(listofParameters)
 		//have to reset all the  numbers that follow, but only if it's unique
 		if(isunique[whichparameter[ii]][whichdataset[ii]])
 			startP = whichparameter[ii] + whichdataset[ii] * dimsize(linkages, 0)
-			linkages = p + q * dimsize(linkages, 0) > startP && (isunique[p][q]==1 || (linkages[p][q] >1000* linkages[whichparameter[ii]][whichdataset[ii]])) ? linkages[p][q] - 1 : linkages[p][q]
+			linkages = p + q * dimsize(linkages, 0) > startP && (isunique[p][q]==1 || linkages[p][q] > origvalue) ? linkages[p][q] - 1 : linkages[p][q]
+			
+	//		linkages = p + q * dimsize(linkages, 0) > startP && (isunique[p][q]==1 || (linkages[p][q] > linkages[whichparameter[ii]][whichdataset[ii]])) ? linkages[p][q] - 1 : linkages[p][q]
 		endif
 	endfor
 End
@@ -1137,7 +1140,7 @@ Function Do_a_global_fit()
 	try
 		strswitch(S_value)
 			case "Genetic":
-				GEN_setlimitsforGENcurvefit(coefs, holdstring)		
+				GEN_setlimitsforGENcurvefit(coefs, holdstring)
 				Wave limitswave = root:packages:motofit:old_genoptimise:GENcurvefitlimits
 				NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
 				NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
@@ -1150,7 +1153,7 @@ Function Do_a_global_fit()
 				FuncFit/H=holdstring/M=2/Q/NTHR=0 motofit_globally coefs yy /X=xx /W=dytemp /I=1 /D=fityy /R /A=0
 				break
 			case "Genetic + LM":
-				GEN_setlimitsforGENcurvefit(coefs, holdstring)		
+				GEN_setlimitsforGENcurvefit(coefs, holdstring)
 				Wave limitswave = root:packages:motofit:old_genoptimise:GENcurvefitlimits
 				NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
 				NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
@@ -1179,6 +1182,7 @@ Function Do_a_global_fit()
 				break
 		endswitch
 	catch
+		V_fiterror = 1
 		setdatafolder cDF
 	endtry
 	setdatafolder cDF
