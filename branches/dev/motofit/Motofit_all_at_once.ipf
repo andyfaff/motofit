@@ -2790,6 +2790,7 @@ static Function moto_transfer_data()
 					
 			index += 1
 		endif
+		waveclear ee, dq, rr, qq
 		killwaves/z coefold, RRold, qqold, eeold, dqold
 	endfor
 
