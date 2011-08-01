@@ -3,11 +3,10 @@
 Function Pla_openStreamer(folderStr, [dataset])
 	string folderStr
 	variable dataset
-	
+	DFREF cDF = getdatafolderDFR()
 	variable numdatasets = 0, fileID, numevents
-	string cDF, datasetsStr="", theData = "", binaryFileStr = ""
+	string datasetsStr="", theData = "", binaryFileStr = ""
 	
-	cDF = getdatafolder(1)
 	//setup the datafolders
 	Newdatafolder/o root:packages
 	Newdatafolder /o root:packages:platypus
@@ -23,6 +22,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	getfilefolderinfo/q/z folderStr
 	if(v_flag)
 		print "ERROR streaming datafolder doesn't exist (Pla_openStreamer)"
+		setdatafolder cDF
 		abort 
 	endif
 	Newpath/o/q/z Pla_openstreamer, folderStr
@@ -32,6 +32,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	
 	if(dataset < 0 || dataset > numdatasets - 1)
 		print "ERROR dataset number must be 0 < n < ", numdatasets - 1
+		setdatafolder cDF
 		return 1
 	endif	
 	
@@ -41,6 +42,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	//try opening it first with the neutron unpacker
 	neutronunpacker binaryFileStr
 	if(V_flag == 4)	// it was PACKEDBIN
+		setdatafolder cDF
 		return 0
 	endif
 	
@@ -48,6 +50,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	open/r/z fileID as binaryFileStr
 	if(fileID < 1)
 		print "ERROR, couldn't open file (Pla_openstreamer)"
+		setdatafolder CDF
 		return 1
 	endif
 	fstatus fileID
@@ -58,6 +61,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	theData = zipDecode(theData)
 	if(strlen(theData) == 0)
 		print "ERROR whilst opening stream file (Pla_openstreamer)"
+		setdatafolder cDF
 		return 1	
 	endif
 	Sockitstringtowave 64+32, theData
@@ -76,7 +80,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	multithread W_unpackedneutronsf = W_stringtowave[4*p + 2]
 		
     redimension/E=1/W/N=(numevents * 4 * 2) W_stringtowave;
-    make/O/W/N=(numevents) W_unpackedneutronsx, W_unpackedneutronsyy
+    make/O/W/N=(numevents) W_unpackedneutronsx, W_unpackedneutronsy
     multithread W_unpackedneutronsx = W_stringtowave[8 * p + 0];
     multithread W_unpackedneutronsy = W_stringtowave[8 * p + 1];
        
@@ -86,7 +90,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	endtry
 	
 	close fileID
-	setdatafolder $cDF
+	setdatafolder cDF
 	return 0
 End
 
