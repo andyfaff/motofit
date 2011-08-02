@@ -312,8 +312,8 @@ static Function UserCursorAdjust(grfName)
 	DrawText 21,20,"Adjust the cursors to set"
 	DrawText 21,40,"crit edge level."
 	Button button0,pos={5,64},size={92,20},title="Continue"
-	Button button0,proc=UserCursorAdjust_ContButtonProc
-	Button button1,pos={110,64},size={92,20},title="cancel",proc=UserCursorAdjust_cancButtonProc
+	Button button0,proc=Pla_Xrayreduction#UserCursorAdjust_ContButtonProc
+	Button button1,pos={110,64},size={92,20},title="cancel",proc=Pla_Xrayreduction#UserCursorAdjust_cancButtonProc
 	
 	//this line allows the user to adjust the cursors until they are happy with the right level.
 	//you then press continue to allow the rest of the reduction to occur.
