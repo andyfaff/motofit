@@ -1292,6 +1292,7 @@ static Function Moto_changelayerwave(layers)
 	
 	setdimlabel 1, 0, layer, layerparams
 	setdimlabel 1, 1, thickness, layerparams
+	setdimlabel 1, 2, $(""), layerparams
 	setdimlabel 1, 3, SLD, layerparams
 	if(!mode)
 		setdimlabel 1, 5, solvent, layerparams	
@@ -1299,6 +1300,7 @@ static Function Moto_changelayerwave(layers)
 		setdimlabel 1, 5, iSLD, layerparams	
 	endif
 	setdimlabel 1, 7, roughness, layerparams	
+	setdimlabel 1, 8, $(""), layerparams
 	
 	variable ii, jj
 	//setup selection waves and parameter numbers	
