@@ -1425,11 +1425,12 @@ Function parse_motoMPI([fileStr])
 	if(!V_flag)
 		return 1
 	endif
-	Wave M_Montecarlo = $(stringfromlist(0, S_wavenames))
-	deletepoints/M=1 0, 1, M_montecarlo
+	Wave theMonteCarlo = $(stringfromlist(0, S_wavenames))
+	deletepoints/M=1 0, 1, theMontecarlo
 	
 	//process the output
-	processGlobalMonteCarlo(M_montecarlo)
+	processGlobalMonteCarlo(themontecarlo)
 	
-	killwaves M_montecarlo
+	duplicate/o theMontecarlo, M_montecarlo
+	killwaves/z theMonteCarlo
 End
