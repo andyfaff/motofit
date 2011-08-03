@@ -353,7 +353,7 @@ static Function Moto_reflectivitygraphs()
 	variable plotyp = str2num(motofit#getmotofitoption("plotyp"))
 	
 	dowindow/k reflectivitygraph
-	Display/K=1/N=reflectivitygraph/w=(10,44,466,342) theoretical_R vs theoretical_q as "Reflectivity"
+	Display/K=1/N=reflectivitygraph/w=(10,44,560,342) theoretical_R vs theoretical_q as "Reflectivity"
 	modifygraph/W=reflectivitygraph lsize(theoretical_R)=2, rgb(theoretical_R) = (0,0,0), axthick=1, fsize=12, standoff(left) = 0
 	controlbar/T/W=reflectivitygraph 50
 	PopupMenu plotype_tab0,pos={90,7},size={220,24}, proc=motofit#moto_GUI_PopMenu, title="Plot type"
@@ -377,7 +377,7 @@ static Function Moto_reflectivitygraphs()
 	endif
 	
 	dowindow/k sldgraph
-	Display/K=1/N=SLDgraph/w=(10,364,469,574), SLD_theoretical_R
+	Display/K=1/N=SLDgraph/w=(10,364,560,590), SLD_theoretical_R
 	Modifygraph/w = SLDgraph lsize(SLD_theoretical_R) = 2, axthick=1, fsize=12, rgb(SLD_theoretical_R) = (0,0,0)
 	DoWindow/T SLDgraph,"Scattering length density"
 	Label bottom "distance from interface ()"
