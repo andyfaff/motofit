@@ -2057,20 +2057,20 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 					Wave/z M_colors = 	root:packages:motofit:reflectivity:M_colors	
 					variable rr, gg, bb, index
 					if(Waveexists(M_colors))
-						variable numfiles = itemsinlist(getuserdata("reflectivitygraph", "", "refFiles"), "\r")
+						variable numfiles = itemsinlist(moto_fittable_datasets())
 						index = mod(37 * numfiles, dimsize(M_colors, 0))
 						rr = M_colors[index][0]
 						gg = M_colors[index][1]
 						bb = M_colors[index][2]
 					endif
 					appendtograph/w=reflectivitygraph ysnap vs xsnap
-					modifygraph/W=reflectivitygraph rgb($ywave)=(rr,gg,bb)
+					modifygraph/W=reflectivitygraph rgb($ywave)=(rr,gg,bb),lsize($ywave)=2
 					Legend/C/N=text0/A=MC
 				endif
 				if(Findlistitem(sldwave,tracenamelist("sldgraph", ";", 1)) == -1)
 					Wave sldsnap = $(df + sldwave)
 					appendtograph/w=SLDgraph sldsnap
-					modifygraph/W=SLDgraph rgb($SLDwave)=(rr,gg,bb)
+					modifygraph/W=SLDgraph rgb($SLDwave)=(rr,gg,bb),lsize($ywave)=2
 					Legend/C/N=text0/A=MC
 				endif
 			endif
