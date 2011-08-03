@@ -2070,7 +2070,7 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 				if(Findlistitem(sldwave,tracenamelist("sldgraph", ";", 1)) == -1)
 					Wave sldsnap = $(df + sldwave)
 					appendtograph/w=SLDgraph sldsnap
-					modifygraph/W=SLDgraph rgb($SLDwave)=(rr,gg,bb),lsize($ywave)=2
+					modifygraph/W=SLDgraph rgb($SLDwave)=(rr,gg,bb),lsize($SLDwave)=2
 					Legend/C/N=text0/A=MC
 				endif
 			endif
