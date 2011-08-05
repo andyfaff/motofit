@@ -113,6 +113,10 @@ static Function init_fitting()
 		Doalert 0, "You need to have the reflectivity panel, reflectivity graph and SLD graph opened, try starting motofit again"
 		abort
 	endif
+	if(itemsinlist(winlist("globalreflectometrypanel", ";", "")))
+		Doalert 0, "global reflectivity panel already exists"
+		return 0
+	endif
 	make_folders_waves()
 	buildpanel()
 End
@@ -123,6 +127,17 @@ static Function make_folders_waves()
 	newdatafolder/o root:packages:motofit
 	newdatafolder/o root:packages:motofit:reflectivity
 	newdatafolder/o/s root:packages:motofit:reflectivity:globalfitting	
+	
+	//this variable is 0 if solvent penetration or 1 if imaginary (can't have mixed).
+	variable/g isImag = 0
+	variable temp
+	prompt temp, "Did you want to have model with solvent penetrations or complex SLDS?", popup, "solventpenetration;imaginarySLD"
+	Doprompt/Help="You can either model with solvent penetrations, or complex SLD's for a given layer" "", temp
+	if(V_Flag)
+		abort
+	endif
+	isImag = temp - 1
+	
 	make/n=0/I/u/o numcoefs
 	make/n=(0,0)/I/o linkages
 	make/n=(0,1)/I/u/o coefficients_selwave
@@ -227,6 +242,7 @@ static Function globalpanel_GUI_button(ba) : ButtonControl
 	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
 	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
 	Wave M_colors = root:Packages:motofit:reflectivity:globalfitting:M_colors
+	NVAR isImag = root:Packages:motofit:reflectivity:globalfitting:isImag
 
 	string listofdatasets, dataset, temp = "", temp2 = "", info
 	variable ii, numitems, numdatasets, numparams, maxparams=0, whichitem, numlayers, numlinkages, row, col, loQ, hiQ, chi2
@@ -259,7 +275,11 @@ static Function globalpanel_GUI_button(ba) : ButtonControl
 						return 0
 					endif
 					//add in the new dataset
-					numparams = 4 * numlayers + 6
+					if(!isImag)
+						numparams = 4 * numlayers + 6
+					else
+						numparams = 4 * numlayers + 8
+					endif				
 					numdatasets = dimsize(datasets, 0)
 					maxparams = wavemax(numcoefs)
 					if(numtype(maxparams) || maxparams < numparams)
@@ -283,7 +303,7 @@ static Function globalpanel_GUI_button(ba) : ButtonControl
 						setdimlabel 1, 2 * ii+1, $(datasets[ii]), coefficients_listwave
 					endfor
 					regenerateLinkageListBoxes()
-					Wave/t pardes =  moto_paramdescription((maxparams - 6)/4, 0)
+					Wave/t pardes =  moto_paramdescription(numlayers, isImag)
 					datasets_listwave[][0] = pardes[p]
 					coefficients_listwave[][0] = pardes[p]
 					break

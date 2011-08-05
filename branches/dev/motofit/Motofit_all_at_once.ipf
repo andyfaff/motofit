@@ -6,7 +6,7 @@
 // SVN date:    $Date: 2011-07-18 10:33:32 +1000 (Mon, 18 Jul 2011) $
 // SVN author:  $Author: andrew_nelson $
 // SVN rev.:    $Revision: 455 $
-// SVN URL:     $HeadURL: https://motofit.svn.sourceforge.net/svnroot/motofit/trunk/motofit/Motofit/MOTOFIT_all_at_once.ipf $
+// SVN URL:     $HeadURL: https://motofit.svn.sourceforge.net/svnroot/motofit/branches/dev/motofit/Motofit/MOTOFIT_all_at_once.ipf $
 // SVN ID:      $Id: MOTOFIT_all_at_once.ipf 455 2011-07-18 00:33:32Z andrew_nelson $
 	
 #include "GeneticOptimisation"
@@ -27,7 +27,7 @@ Menu "Motofit"
 		"Fit batch data", FitRefToListOfWaves()
 		//	                        "Extract trends", Trends()
 	End
-	"About",Moto_AboutPanel()
+	"About", Motofit#Moto_AboutPanel()
 	"-"
 	"Transfer data from old version to new version", motofit#moto_transfer_data()
 	"-"
@@ -879,11 +879,11 @@ Function/wave moto_paramdescription(nlayers, mode, [Vmullayers])
 		paramdescription[4] = "backing-SLD"
 		paramdescription[5] = "backing-iSLD"
 		paramdescription[6] = "bkg"
-		paramdescription[6] = "backing-rough"
+		paramdescription[7] = "backing-rough"
 		for(ii = 0 ; ii < nlayers ; ii+=1)
 			paramdescription[4 * ii + 8] =  num2istr(ii + 1) + "-thick" 
 			paramdescription[4 * ii + 9] =  num2istr(ii + 1) + "-SLD"
-			paramdescription[4 * ii + 10] =  num2istr(ii + 1) + "-solv"
+			paramdescription[4 * ii + 10] =  num2istr(ii + 1) + "-iSLD"
 			paramdescription[4 * ii + 11] =  num2istr(ii + 1) + "-rough"
 		endfor
 	endif
@@ -1849,7 +1849,7 @@ Function Moto_SLDplot(w, sld)
 	//This function calculates the SLD profile.
 	//	
 	variable nlayers,zstart,zend,ii,temp,zinc	 
-	variable mode = str2num(getMotofitoption("mode"))
+	variable mode = mod(numpnts(w) - 6, 4)
 	if(numtype(mode))
 		mode = 0
 		if(dimsize(w, 0) == 4*w[0] + 8)
@@ -1909,7 +1909,7 @@ Function Moto_SLD_at_depth(w, zed)
 	variable zed
 	variable nlayers,SLD1,SLD2,ii,summ
 	Variable deltarho,sigma,thick,dist,rhosolv
-	variable mode = str2num(getMotofitoption("mode"))
+	variable mode = mod(numpnts(w) - 6, 4)
 	if(numtype(mode))
 		mode = 0
 		if(dimsize(w, 0) == 4*w[0] + 8)
