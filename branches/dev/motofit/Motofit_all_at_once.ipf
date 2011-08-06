@@ -47,7 +47,7 @@ Function plotcalcref()
 	Prompt res, "Enter %resolution (dq/q): "
 	Prompt SLDplotnum, "How many points do you want in the SLD plot"
 	Prompt plotyp,"Which plot mode?",popup,"logR vs Q;R vs Q;RQ4 vs Q"
-	Prompt mode, "Which mode?", popup, "solventpenetration;imaginarySLD"
+	Prompt mode, "Which mode?", popup, "solventpenetration;complex SLD"
 	Doprompt "enter plot parameters",num,qmin,qmax,res,SLDplotnum,plotyp, mode
 
 	//if the user doesn't want to continue with the plotting then abort

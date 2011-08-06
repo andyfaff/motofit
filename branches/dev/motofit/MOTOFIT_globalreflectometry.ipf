@@ -344,7 +344,7 @@ static Function globalpanel_GUI_button(ba) : ButtonControl
 				case "simulate":
 					Dowindow/F SLDgraph
 					Dowindow/F reflectivitygraph
-					chi2 = plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+					chi2 = plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")), usedqwave = str2num(motofit#getmotofitoption("usedqwave")))
 					ValDisplay Chi2_tab1,value= _NUM:chi2,win=globalreflectometrypanel
 
 					break
@@ -865,6 +865,8 @@ static Function build_combined_dataset([fitcursors])
 				endif
 				if(waveexists(sepdx))
 					dx[entry] = sepdx[jj]
+				else
+					dx[entry] = NaN
 				endif
 				pnts_each_dataset[ii] += 1
 			endif
@@ -931,8 +933,8 @@ static Function/wave decompose_into_individual_coefs(coefs)
 	return individualcoefs
 End
 
-Function motofit_globally(w, yy, xx):fitfunc
-	Wave w, yy, xx
+Function motofit_globally(w, RR, qq):fitfunc
+	Wave w, RR, qq
 	
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
 	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
@@ -943,22 +945,45 @@ Function motofit_globally(w, yy, xx):fitfunc
 	Wave/wave individual_coefs = decompose_into_individual_coefs(w)
 	for(ii = 0 ; ii < numpnts(numcoefs) ; ii+=1)
 		redimension/n=(pnts_each_dataset[ii]) xtemp, ytemp
-		xtemp = xx[offset + p]
+		xtemp = qq[offset + p]
 		Wave indy = individual_coefs[ii]
 		motofit(individual_coefs[ii], ytemp, xtemp)
-		yy[offset, offset + pnts_each_dataset[ii] - 1] = ytemp[p - offset]
+		RR[offset, offset + pnts_each_dataset[ii] - 1] = ytemp[p - offset]
 		offset += pnts_each_dataset[ii]
 	endfor
 End
 
-static Function evaluateGlobalFunction([fitCursors])
-	variable fitCursors	
+Function motofit_smeared_globally(w, RR, qq, dq):fitfunc
+	Wave w, RR, qq, dq
+	
+	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
+	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
+	Wave pnts_each_dataset = root:Packages:motofit:reflectivity:globalfitting:pnts_each_dataset
+	variable ii, offset = 0
+	make/n=(pnts_each_dataset[0])/d/free ytemp, xtemp, dxtemp
+	
+	Wave/wave individual_coefs = decompose_into_individual_coefs(w)
+	for(ii = 0 ; ii < numpnts(numcoefs) ; ii+=1)
+		redimension/n=(pnts_each_dataset[ii]) xtemp, ytemp, dxtemp
+		xtemp = qq[offset + p]
+		dxtemp = dq[offset + p]
+		Wave indy = individual_coefs[ii]
+		motofit_smeared(individual_coefs[ii], ytemp, xtemp, dxtemp)
+		RR[offset, offset + pnts_each_dataset[ii] - 1] = ytemp[p - offset]
+		offset += pnts_each_dataset[ii]
+	endfor
+End
+
+
+static Function evaluateGlobalFunction([fitCursors, usedqwave])
+	variable fitCursors, usedqwave
 	
 	build_combined_dataset(fitcursors = fitcursors)
 	
 	Wave yy = root:Packages:motofit:reflectivity:globalfitting:yy
 	Wave xx = root:Packages:motofit:reflectivity:globalfitting:xx
 	Wave/z dy = root:Packages:motofit:reflectivity:globalfitting:dy
+	Wave/z dx = root:Packages:motofit:reflectivity:globalfitting:dx
 	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
 	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
 	Wave pnts_each_dataset = root:Packages:motofit:reflectivity:globalfitting:pnts_each_dataset
@@ -983,7 +1008,15 @@ static Function evaluateGlobalFunction([fitCursors])
 		return NaN
 	endif
 	
-	motofit_globally(coefs, fityy, fitxx)
+	if(!usedqwave)
+		motofit_globally(coefs, fityy, fitxx)
+	else
+		wavestats/q/z dx
+		if(V_numnans)
+			abort "You selected to use point by point resolution smearing, but not all the datasets possessed dq information"
+		endif
+		motofit_smeared_globally(coefs, fityy, fitxx, dx)
+	endif
 	
 	chi2 = yy - fityy
 	if(waveexists(dy) && str2num(motofit#getmotofitoption("useerrors")))
@@ -1017,8 +1050,8 @@ static Function evaluateGlobalFunction([fitCursors])
 	return sum(chi2)/numpnts(chi2)
 End
 
-static Function plotCombinedFitAndEvaluate([fitcursors])
-	variable fitcursors
+static Function plotCombinedFitAndEvaluate([fitcursors, usedqwave])
+	variable fitcursors, usedqwave
 	
 	DFREF savDF = getdatafolderDFR()
 	variable retval = NaN
@@ -1032,7 +1065,7 @@ static Function plotCombinedFitAndEvaluate([fitcursors])
 	variable ii, offset = 0, colornum
 	string datasetname, traces, tracecolour
 	
-	retval = evaluateGlobalFunction(fitcursors = fitcursors)	
+	retval = evaluateGlobalFunction(fitcursors = fitcursors, usedqwave = usedqwave)	
 		
 	for(ii = 0 ; ii < dimsize(linkages, 1) ; ii += 1)
 		datasetname = datasets[ii]
@@ -1065,22 +1098,24 @@ End
 Function Do_a_global_fit()
 	string info
 	variable retval
-	string holdstring = "", datasetname, motofitstring, traces, tracecolour, tracename = "", tracename2
+	string holdstring = "", datasetname, motofitstring, traces, tracecolour, tracename = "", tracename2, fitfunction = ""
 	DFREF cDF = getdatafolderDFR()
 	variable numdatasets, ii, jj, offset, colornum, iters
 	
-	retval = plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+	retval = plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")), usedqwave = str2num(motofit#getmotofitoption("usedqwave")))
 
 	if(numtype(retval))
 		print "ERROR evaluating function, perhaps there is a NaN/Inf parameter"
 		return 1
 	endif
+	
 	//the following waves are evaluated in the above function.
 	Wave yy = root:Packages:motofit:reflectivity:globalfitting:yy
 	Wave xx = root:Packages:motofit:reflectivity:globalfitting:xx
+	Wave/z dy = root:Packages:motofit:reflectivity:globalfitting:dy
+	Wave/z dx = root:Packages:motofit:reflectivity:globalfitting:dx
 	Wave holdwave = root:Packages:motofit:reflectivity:globalfitting:holdwave
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
-	Wave/z dy = root:Packages:motofit:reflectivity:globalfitting:dy
 	Wave fityy = root:Packages:motofit:reflectivity:globalfitting:fityy
 	Wave fitxx = root:Packages:motofit:reflectivity:globalfitting:fitxx
 	Wave res_fityy = root:Packages:motofit:reflectivity:globalfitting:res_fityy
@@ -1103,6 +1138,16 @@ Function Do_a_global_fit()
 		duplicate/free dy, dytemp
 	endif
 	
+	//do you want to do point by point resolution smearing?
+	if(str2num(motofit#getmotofitoption("usedqwave")))
+		Wavestats/q/z dx
+		if(V_numnans)
+			abort "you selected point by point resolution smearing, but one of your datasets did not possess dq information"
+		endif
+		fitfunction = "motofit_smeared_globally"
+	else
+		fitfunction = "motofit_globally"
+	endif
 	//make a graph for showing the latest data
 	if(!itemsinlist(winlist("globalreflectometrygraph", ";","")))
 		Display/K=1/N=globalreflectometrygraph/W=(0,0,600, 400)
@@ -1167,10 +1212,10 @@ Function Do_a_global_fit()
 				NVAR  k_m = root:packages:motofit:old_genoptimise:k_m
 				NVAR  recomb = root:packages:motofit:old_genoptimise:recomb
 				NVAR fittol = root:packages:motofit:old_genoptimise:fittol
-				GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=xx motofit_globally, yy, coefs, "", limitswave
+				GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=xx $fitfunction, yy, coefs, "", limitswave
 				break
 			case "Levenberg-Marquardt":
-				FuncFit/H=holdstring/M=2/Q/NTHR=0 motofit_globally coefs yy /X=xx /W=dytemp /I=1 /D=fityy /R /A=0
+				FuncFit/H=holdstring/M=2/Q/NTHR=0 $fitfunction coefs yy /X=xx /W=dytemp /I=1 /D=fityy /R /A=0
 				break
 			case "Genetic + LM":
 				GEN_setlimitsforGENcurvefit(coefs, holdstring)
@@ -1180,8 +1225,8 @@ Function Do_a_global_fit()
 				NVAR  k_m = root:packages:motofit:old_genoptimise:k_m
 				NVAR  recomb = root:packages:motofit:old_genoptimise:recomb
 				NVAR fittol = root:packages:motofit:old_genoptimise:fittol
-				GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=xx motofit_globally, yy, coefs, "", limitswave
-				FuncFit/H=holdstring/M=2/Q/NTHR=0 motofit_globally coefs yy /X=xx /W=dytemp /I=1 /D=fityy /R /A=0
+				GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=xx $fitfunction, yy, coefs, "", limitswave
+				FuncFit/H=holdstring/M=2/Q/NTHR=0 $fitfunction coefs yy /X=xx /W=dytemp /I=1 /D=fityy /R /A=0
 				break
 			case "Genetic+MC_Analysis":
 				if(!str2num(motofit#getmotofitoption("useerrors")))
@@ -1195,7 +1240,7 @@ Function Do_a_global_fit()
 					return 1
 				endif
 				
-				Moto_montecarlo("motofit_globally", coefs, yy, xx, dy, holdstring, Iters)
+				Moto_montecarlo(fitfunction, coefs, yy, xx, dy, holdstring, Iters)
 				Wave M_montecarlo
 				processGlobalMonteCarlo(M_montecarlo)
 				
@@ -1245,7 +1290,7 @@ Function Do_a_global_fit()
 	endif
 	
 	//get the best fit waves AFTER THE FIT
-	evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+	evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")), usedqwave = str2num(motofit#getmotofitoption("usedqwave")))
 	
 	//do you want to append residuals
 	controlinfo/W=reflectivitygraph appendresiduals
