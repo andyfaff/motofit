@@ -990,8 +990,8 @@ static Function evaluateGlobalFunction([fitCursors, usedqwave])
 	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
 	Wave/wave outputcoefs = decompose_into_individual_coefs(coefs)
 	
-	string datasetname
-	variable ii, offset = 0
+	string datasetname, alert
+	variable ii, offset = 0, resolution
 	
 	//now do the function evaluation
 	make/o/d/n=(dimsize(yy, 0)) root:Packages:motofit:reflectivity:globalfitting:fityy /Wave=fityy
@@ -1013,7 +1013,14 @@ static Function evaluateGlobalFunction([fitCursors, usedqwave])
 	else
 		wavestats/q/z dx
 		if(V_numnans)
-			abort "You selected to use point by point resolution smearing, but not all the datasets possessed dq information"
+			alert = "You selected to use point by point resolution smearing (\"use dq wave\"), but not all the datasets possessed dq information."
+			alert += "Do you want to assume that the missing resolution information is constant dq/q?"
+			Doalert 1, alert
+			if(V_Flag == 2)
+				abort
+			endif
+			resolution = str2num(motofit#getmotofitoption("res")) / 100
+			dx = numtype(dx[p]) ? xx[p] * resolution : dx[p]
 		endif
 		motofit_smeared_globally(coefs, fityy, fitxx, dx)
 	endif
@@ -1098,9 +1105,9 @@ End
 Function Do_a_global_fit()
 	string info
 	variable retval
-	string holdstring = "", datasetname, motofitstring, traces, tracecolour, tracename = "", tracename2, fitfunction = ""
+	string holdstring = "", datasetname, motofitstring, traces, tracecolour, tracename = "", tracename2, fitfunction = "", alert
 	DFREF cDF = getdatafolderDFR()
-	variable numdatasets, ii, jj, offset, colornum, iters
+	variable numdatasets, ii, jj, offset, colornum, iters, resolution
 	
 	retval = plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")), usedqwave = str2num(motofit#getmotofitoption("usedqwave")))
 
@@ -1142,8 +1149,15 @@ Function Do_a_global_fit()
 	if(str2num(motofit#getmotofitoption("usedqwave")))
 		Wavestats/q/z dx
 		if(V_numnans)
-			abort "you selected point by point resolution smearing, but one of your datasets did not possess dq information"
-		endif
+			alert = "You selected to use point by point resolution smearing (\"use dq wave\"), but not all the datasets possessed dq information."
+			alert += "Do you want to assume that the missing resolution information is constant dq/q?"
+			Doalert 1, alert
+			if(V_Flag == 2)
+				abort
+			endif
+			resolution = str2num(motofit#getmotofitoption("res")) / 100
+			dx = numtype(dx[p]) ? xx[p] * resolution : dx[p]
+		endif		
 		fitfunction = "motofit_smeared_globally"
 	else
 		fitfunction = "motofit_globally"
