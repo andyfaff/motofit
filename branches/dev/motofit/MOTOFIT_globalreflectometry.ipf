@@ -1022,6 +1022,8 @@ static Function evaluateGlobalFunction([fitCursors, usedqwave])
 			resolution = str2num(motofit#getmotofitoption("res")) / 100
 			dx = numtype(dx[p]) ? xx[p] * resolution : dx[p]
 		endif
+		redimension/n=(-1, 2) fitxx
+		fitxx[][1] = dx[p]
 		motofit_smeared_globally(coefs, fityy, fitxx, dx)
 	endif
 	
@@ -1226,10 +1228,10 @@ Function Do_a_global_fit()
 				NVAR  k_m = root:packages:motofit:old_genoptimise:k_m
 				NVAR  recomb = root:packages:motofit:old_genoptimise:recomb
 				NVAR fittol = root:packages:motofit:old_genoptimise:fittol
-				GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=xx $fitfunction, yy, coefs, "", limitswave
+				GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=fitxx $fitfunction, yy, coefs, "", limitswave
 				break
 			case "Levenberg-Marquardt":
-				FuncFit/H=holdstring/M=2/Q/NTHR=0 $fitfunction coefs yy /X=xx /W=dytemp /I=1 /D=fityy /R /A=0
+				FuncFit/H=holdstring/M=2/Q/NTHR=0 $fitfunction coefs yy /X=fitxx /W=dytemp /I=1 /D=fityy /R /A=0
 				break
 			case "Genetic + LM":
 				GEN_setlimitsforGENcurvefit(coefs, holdstring)
@@ -1239,8 +1241,8 @@ Function Do_a_global_fit()
 				NVAR  k_m = root:packages:motofit:old_genoptimise:k_m
 				NVAR  recomb = root:packages:motofit:old_genoptimise:recomb
 				NVAR fittol = root:packages:motofit:old_genoptimise:fittol
-				GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=xx $fitfunction, yy, coefs, "", limitswave
-				FuncFit/H=holdstring/M=2/Q/NTHR=0 $fitfunction coefs yy /X=xx /W=dytemp /I=1 /D=fityy /R /A=0
+				GenCurvefit/q/TOL=(fittol)/K={iterations, popsize, k_m, recomb}/D=fityy/HOLD=holdwave/I=1/W=dytemp/MAT/R=res_fityy/X=fitxx $fitfunction, yy, coefs, "", limitswave
+				FuncFit/H=holdstring/M=2/Q/NTHR=0 $fitfunction coefs yy /X=fitxx /W=dytemp /I=1 /D=fityy /R /A=0
 				break
 			case "Genetic+MC_Analysis":
 				if(!str2num(motofit#getmotofitoption("useerrors")))
@@ -1254,7 +1256,7 @@ Function Do_a_global_fit()
 					return 1
 				endif
 				
-				Moto_montecarlo(fitfunction, coefs, yy, xx, dy, holdstring, Iters)
+				Moto_montecarlo(fitfunction, coefs, yy, fitxx, dy, holdstring, Iters)
 				Wave M_montecarlo
 				processGlobalMonteCarlo(M_montecarlo)
 				
