@@ -11,9 +11,9 @@ Menu "Platypus"
 	Submenu "SLIM"
 		"Reduction", reducerpanel()
 		"Download Platypus Data", downloadPlatypusData()
-		"Download DAQ Streamed File", downloadPlatypusStreamedFile()
+		"Download DAQ Streamed File", grabStreamFromCatalogue()
 		"MADD - Add files together", addFilesTogether()
-		 "Delete points from reduced files", delReducedPoints()
+		"Delete points from reduced files", delReducedPoints()
 	End
 	"Reduce X'Pert Pro data files", reduceManyXrayFiles()
 End
@@ -47,8 +47,21 @@ Function addFilesTogether()
 	madd(outputPathStr, filenames)
 End
 
+Function grabStreamFromCatalogue()
+	Wave/t/z runlist = root:packages:platypus:catalogue:runlist
+	if(!waveexists(runlist))
+		Doalert 0, "Please catalogue the HDF files first"
+		return 1
+	endif
+	make/n=(dimsize(runlist, 0))/free/t DAQ
+	DAQ[] = runlist[p][%DAQ_FILENAME]
+	string dirnames = ""
+	Sockitwavetostring/TXT=";" DAQ, dirnames
+	downloadPlatypusStreamedFile(dirnames)
+End
+
 Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
-string DAQfileListStr, inputPathStr
+	string DAQfileListStr, inputPathStr
 	string user="", password="", folder, data = "", datasetFolderStr = "", DAQfileStr = ""
 	variable ii, fileID, jj
 	
@@ -686,7 +699,7 @@ Function SLIM_plot_scans(inputpathStr,filenames)
 		display/K=1 as "SLIM plot (C) Andrew Nelson + ANSTO 2008"
 		dowindow/c SLIM_PLOTwin
 		//		controlbar/W=SLIM_PLOTwin 30
-	//		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Refresh",size={100,20}, fColor=(0,52224,26368)
+		//		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Refresh",size={100,20}, fColor=(0,52224,26368)
 		
 		sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\", 0, 0, 0)", inputpathStr, inputpathStr, fileNames
 		setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
@@ -922,7 +935,7 @@ Function SLIM_plot_spectrum(inputPathStr, filenames)
 			fileID = xmlopenfile(thefile)
 			if(fileID < 1)
 				print "ERROR couldn't open spectrum file (SLIM_plot_spectrum)"
-				 abort
+				abort
 			endif			
 			xmlwavefmxpath(fileID, "//R[1]", "","")
 			Wave/t M_xmlcontent
@@ -999,7 +1012,7 @@ Function button_SLIM_PLOT(ba) : ButtonControl
 					type = V_Value-1			
 					rebinning = rebinpercent
 
-				//	execute/q slimplotstring
+					//	execute/q slimplotstring
 					SLIM_plot(pathStr, pathStr, fileNames,lowLambda,highLambda, backgroundsbn, rebinning = rebinning, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, manual = manualbeamfind)
 					if(!stringmatch(stringfromlist(0,filenames),"*.xml") && !stringmatch(stringfromlist(0,filenames),"*.xrdml") && !stringmatch(stringfromlist(0,filenames),"*.spectrum"))
 						SLIM_redisplay(type,isLog)
@@ -1384,8 +1397,8 @@ Function createSpecBeamAdjustmentPanel(detector, ordProj)
 	DefineGuide/W=specBeamAdjustmentPanel UGV0={FR,0.5,FL},UGH0={FB,0.5,FT}
 	Display/W=(104,50,313,153)/FG=(FL,FT,UGV0,FB)/N=detector/HOST=specBeamAdjustmentPanel
 	AppendImage/w=specBeamAdjustmentPanel#detector detector
- 	ModifyImage detector ctab = {*,*,YellowHot,0}
- 	ModifyGraph mirror=2
+	ModifyImage detector ctab = {*,*,YellowHot,0}
+	ModifyGraph mirror=2
 	SetDrawLayer UserFront
 	Display/W=(361,100,668,204)/FG=(UGV0,FT,FR,UGH0)/N=detectorADD/HOST=specBeamAdjustmentPanel  ordProj
 	ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd mode(ordProj)=3,marker(ordProj)=8
@@ -1437,7 +1450,7 @@ Function killSpecBeamAdjustmentPanel(ba) : ButtonControl
 End
 
 Function  userselectedArea(tracemoving)
-String tracemoving
+	String tracemoving
 	if(!numberbykey("XOFFSET", tracemoving))
 		return 0
 	endif
@@ -1609,7 +1622,7 @@ Function adjustAOI(s):setvariablecontrol
 End
 
 Function SLIM_plot_offspec(inputPathStr, filenames)
-//plots a map of a 2D offspecular dataset
+	//plots a map of a 2D offspecular dataset
 	string inputPathStr, filenames
 
 	variable ii,numwaves,jj, val
