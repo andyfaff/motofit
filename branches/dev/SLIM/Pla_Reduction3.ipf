@@ -95,7 +95,9 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 	for(jj = 0 ; jj < itemsinlist(DAQfileListStr) ; jj += 1)
 		//create the folder in the input directory
 		DAQfilestr = stringfromlist(jj, DAQfileListStr)
-		
+		if(!strlen(DAQfileStr)
+			continue
+		endif
 		folder = S_path + DAQfileStr + ":"
 		newpath/c/o/q/z PLA_temppath_dPD, folder
 		killpath/z PLA_temppath_dPD
