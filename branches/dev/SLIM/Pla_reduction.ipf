@@ -62,7 +62,9 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	variable scalefactor
 	string runfilename
 	variable lowLambda,highLambda, rebin
-	string scanpointrange, eventStreaming, water
+	string scanpointrange
+	variable eventStreaming
+	string water
 	variable background
 	variable/c expected_peak, actual_peak
 	variable manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose
@@ -88,9 +90,10 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 //	scanpointrange -  if a datafile contains several images this string controls which are processed. e.g. "1>20"
 //	would integrate points 1 to 20 from the reflected beam run. (counting starts from 0).  If you set the range to -1,
 //   then individual scans in a single file are reduced separately. If the range isn't specified then individual scans in a single file are integrated. 
-//	 If there is only one scan point (specified, or not specified) AND the eventStreaming string is set, then the neutron events are split into different images.  This is useful for kinetic data.
+//	 If there is only one scan point (specified, or not specified) AND the eventStreaming variable > 0, then the neutron events are split into different images.  This is useful for kinetic data.
 //	
-//	eventStreaming - name of folder containing the streamed events.  This string should also contain the number of splits, e.g. "DAQ_2010-12-20T12-12-12:4" would split the events in that file into 4 sub files which you could then analyse.
+//	eventStreaming - IFF you wish to do event streaming you should set this value > 0.  The value is taken to be the number of seconds that the event file, EOS.bin, is binned to.  The DAQ_ directory
+//                          should be present in the input directory.
 //	
 //	water - string containing the water runfile for detector normalisation
 //	
@@ -142,7 +145,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		scanpointrange = replacestring(" ", scanpointrange, "")
 	endif
 	if(paramisdefault(eventStreaming))
-		eventStreaming = ""
+		eventStreaming = -1
 	endif
 	if(paramisdefault(background))
 		background = 1
@@ -173,7 +176,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	endif
 	
 	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
-	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=\"%s\",water=\"%s\", expected_centre=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
+	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=\"%d\",water=\"%s\", expected_centre=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
 	sprintf reductionCmd, cmd, inputPathStr, outputPathStr, scalefactor, runfilename, lowLambda, highLambda, rebin, background, scanpointrange, eventstreaming, water, real(expected_peak), imag(expected_peak), manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
 	if(verbose)
 		print reductionCmd
@@ -806,8 +809,8 @@ End
 Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, eventStreaming,isDirect, expected_peak, actual_peak, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose, backgroundMask, dontoverwrite])
 	string inputPathStr, outputPathStr, fileName
 	variable background, loLambda, hiLambda
-	string water, scanpointrange, eventStreaming
-	variable isDirect
+	string water, scanpointrange
+	variable eventstreaming, isDirect
 	variable/c expected_peak, actual_peak
 	variable omega, two_theta, manual, saveSpectrum, normalise,verbose
 	Wave/z backgroundMask
@@ -830,9 +833,8 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	//scanpointrange = if a datafile contains several images this variable controls which are processed.  If you omit this parameter SLIM will ask you which points you want to accumulate over
 	// 					if you use a parameter with a null string, i.e. scanpointrange = "", then all scans are aggregated.  If you want to select a range specify it like   scanpointrange = "1>20".
 	//					If you specify the scanpoint range "-1", then each spectrum is output individually.
-	//eventStreaming = if there is only one spectrum to be processed (as would be the case if there is only one point in the file, or if the scanpoint range is e.g. 1>1) then this string is used to load
-	//						neutron event based data.  The string should have the form  "DAQ_2010-12-20T12-12-12:4".  This means split a single acquisition into 4 individual spectra containing
-	//						the data in the first quarter of time, 2nd quarter of time, etc.
+	//eventStreaming = if there is only one spectrum to be processed (as would be the case if there is only one point in the file, or if the scanpoint range is e.g. 1>1) then this variable will cause the load
+	//						of neutron event based data, but only if the variable is > 0.  Each subimage is split into eventStreaming seconds.
 	//saveSpectrumLoc = if this variable !=0 then the spectrum is saved to file.
 	//backgroundMask - see topAndTail.  A way of specifying the exact points to calculate the background region.
 	//dontoverwrite - if you are saving the spectrum, you possibly don't want to overwrite existing files.  Specify dontoverwrite=1 if you want a new file to be created.  Default is 0.....
@@ -867,7 +869,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		scanpointrange = ""
 	endif
 	if(paramisdefault(eventStreaming))
-		eventStreaming = ""
+		eventStreaming = -1
 	endif	
 	if(paramisdefault(manual))
 		manual = 0
@@ -925,7 +927,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		//scanpoint = 0, finishingpoint = 2 means sum 0, 1 & 2.:
 		//		typeOfIntegration = 0
 		
-		//if(scanpoint - finishingpoint) == 0, and if the eventstreaming string is specified, then we want to parse the event data.
+		//if(scanpoint - finishingpoint) == 0, and if the eventstreaming variable is > 0, then we want to parse the event data.
 		//		typeOfIntegration = 1
 
 
@@ -963,7 +965,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			scanpoint = round(scanpoint)
 			finishingpoint = round(finishingpoint)
 			if(numtype(scanpoint) || numtype(finishingpoint) || scanpoint < -1 || scanpoint > dimsize(hmm, 0) -1)
-				abort "Incorrect range for scanpoints, specify as 1-100 (processNexusfile)"
+				abort "Incorrect range for scanpoints, specify as 1>100 (processNexusfile)"
 			endif
 		endif
 		
@@ -1001,7 +1003,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		//scanpoint = 0, finishingpoint = 2 means sum 0, 1 & 2.:
 		//		typeOfIntegration = 0
 		
-		//if(scanpoint - finishingpoint) == 0, and if the eventstreaming string is specified, then we want to parse the event data.
+		//if(scanpoint - finishingpoint) == 0, and if the eventstreaming variable is > 0, then we want to parse the event data.
 		//		typeOfIntegration = 1
 		
 		//scanpoint == -1 means output spectra individually (UNLESS EVENTSTREAMING is specified && scanpoint -finishingpoint == 0)
@@ -1010,10 +1012,10 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		if(scanpoint == -1)
 			typeOfIntegration = 2
 		endif
-		if(scanpoint ==  finishingpoint && strlen(eventStreaming))
+		if(scanpoint ==  finishingpoint && eventStreaming > 0)
 			typeOfIntegration = 1
 		endif
-		if(scanpoint == -1 && strlen(eventStreaming) && dimsize(hmm, 0) == 1)
+		if(scanpoint == -1 && eventStreaming > 0 && dimsize(hmm, 0) == 1)
 			typeOfIntegration = 1
 			scanpoint = 0
 			finishingpoint = 0
@@ -1034,7 +1036,8 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 					BM1counts[0] += BM1_counts[ii]
 				endfor
 				make/o/d/n=(1) dBM1counts = sqrt(BM1counts)
-	
+
+				//Take ntyx and convert to tyn, averaging over x	
 				imagetransform sumplanes, detector
 				Wave M_sumplanes
 				duplicate/o M_sumplanes, detector
@@ -1046,15 +1049,26 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			
 				break
 			case 1:
-				eventStreamingFile = stringfromlist(0, eventStreaming, ":")
-				timeSliceDuration = numberbykey(eventStreamingFile, eventStreaming)
-				if(timeSliceDuration < 0 || numtype(timeSliceDuration))
+				Wave/z/t daq_dirname = $(tempDF + ":instrument:detector:daq_dirname")
+				if(waveexists(daq_dirname))
+					eventStreamingFile = daq_dirname[0]
+				else
+					prompt eventStreamingFile, "Please enter the directory name of the eventstreaming file"
+					eventstreamingfile = "DAQ_" + Secs2Date(DateTime, -2) + "T00-00-00"
+					Doprompt "", eventStreamingFile
+					if(V_Flag)
+						abort
+					endif
+				endif
+				timeSliceDuration = eventstreaming
+				if(numtype(timeSliceDuration))
 					timeSliceDuration = 60
 				endif
 				if(Pla_openStreamer(inputPathStr + eventStreamingFile, dataset = scanpoint))
 					print "ERROR opening streaming dataset (processNexusfile)"
 					abort
 				endif
+				
 				//now histogram the events.
 				Wave xbins = $(tempDF+":data:x_bin")
 				Wave ybins = $(tempDF+":data:y_bin")
@@ -1073,6 +1087,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			
 				make/o/d/n=(dimsize(tbins, 0) - 1, dimsize(ybins, 0) - 1, numTimeSlices) detector = 0
 				for(ii = 0 ; ii < dimsize(streamedDetector, 3) ; ii += 1)
+					//convert to tyn, averaging over x
 					multithread detector[][][] += streamedDetector[r][p][q][ii]
 				endfor
 				duplicate/o detector, detectorSD
@@ -1085,7 +1100,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				make/o/d/n=(dimsize(hmm, 1),dimsize(hmm, 2), dimsize(hmm, 0)) detector = 0
 				make/o/d/n=(dimsize(hmm, 0)) BM1counts = BM1_counts
 				make/o/d/n=(dimsize(hmm, 0)) dBM1counts = sqrt(BM1counts)
-			
+				//Take ntyx and convert to tyn, averaging over x			
 				for(ii = 0 ; ii < dimsize(hmm, 3) ; ii += 1)
 					multithread detector[][][] += hmm[r][p][q][ii]
 				endfor
@@ -1100,7 +1115,6 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		Wave BM1counts, dBM1counts
 		originalScanPoint = scanpoint
 
-		
 		//check the waterrun is loaded
 		if(!paramisdefault(water) && strlen(water) > 0)
 			tempDFwater = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(water,".nx.hdf"),0)
