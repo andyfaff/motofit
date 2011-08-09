@@ -176,7 +176,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	endif
 	
 	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
-	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=\"%d\",water=\"%s\", expected_centre=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
+	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=%d,water=\"%s\", expected_centre=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
 	sprintf reductionCmd, cmd, inputPathStr, outputPathStr, scalefactor, runfilename, lowLambda, highLambda, rebin, background, scanpointrange, eventstreaming, water, real(expected_peak), imag(expected_peak), manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
 	if(verbose)
 		print reductionCmd
@@ -1503,10 +1503,10 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	
 		if(verbose)
 			if(waveexists(rebinning))
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=%d,isdirect=%d, expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
 				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
 			else
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d,  expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=%d,isdirect=%d,  expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
 				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect,real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, normalise,verbose		
 			endif
 			print proccmd
@@ -1527,10 +1527,10 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	
 		if(verbose)
 			if(!paramisdefault(rebinning) && waveexists(rebinning))
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d, expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=%d,isdirect=%d, expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
 				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
 			else
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=\"%s\",isdirect=%d,expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=%d,isdirect=%d,expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
 				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, normalise,verbose		
 			endif
 			print proccmd
