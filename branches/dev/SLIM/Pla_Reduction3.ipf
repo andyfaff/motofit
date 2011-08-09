@@ -137,8 +137,11 @@ Function builddirectorylist(user, password)
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o root:packages:platypus:catalogue
 
-	make/o/t/n=(0, 3) directories = ""
+	make/o/t/n=(0, 2) directories = ""
 	easyHttp/PASS=USER + ":"+PASSWORD "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/cycle/", data
+	if(V_Flag)
+		return 1
+	endif
 	data = replacestring("\n", data, "\r")
 
 	for(ii = 2 ; ii < itemsinlist(data, "\r") ; ii += 1)
@@ -154,21 +157,16 @@ Function builddirectorylist(user, password)
 	for(ii = 0 ; ii < dimsize(directories, 0) ; ii += 1)
 		direct = directories[ii][0]
 		easyHttp/PASS=USER + ":"+PASSWORD "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/" + direct, files
+		if(V_Flag)
+			return 1
+		endif
 		files = replacestring("\n", files, "\r")
 		lowf = inf
 		hif = -inf
 		for(jj = 2 ; jj < itemsinlist(files, "\r") ; jj += 1)
 			file = parseDirectoryListLine(stringfromlist(jj, files, "\r"), isdirectory)
 			if(grepstring(file, "PLP[[:digit:]]{7}.nx.hdf"))
-				splitstring/E="(PLP)([[:digit:]]{7})(.nx.hdf)" file, a,b,c
-				if(str2num(b) < lowf)
-					directories[ii][1] = b
-					lowf = str2num(b)
-				endif
-				if(str2num(b) > hif)
-					directories[ii][2] = b
-					hif = str2num(b)
-				endif
+				directories[ii][1] += file + ";"
 			endif
 		endfor
 	endfor
@@ -225,8 +223,8 @@ End
 Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 	string inputPathStr
 	variable lowFi, hiFi
-	string user="user", password=""
-	
+	string user= "", password=""
+	variable ii
 	if(paramisdefault(inputPathStr))
 		newpath/o/c/q/z/M="Where would you like to store your Platypus data?" PLA_temppath_dPD
 		if(V_Flag)
@@ -242,7 +240,7 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 			abort
 		endif
 	endif
-				
+					
 	for(;;)
 		prompt lowFi, "start file"
 		prompt hiFI, "end file"
@@ -258,16 +256,18 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 			break
 		endif
 	endfor
-	print "Starting to download Platypus data."
-	string cmd= "easyHttp/PASS=\""+user+":"+password+"\"/FILE="+inputPathStr+"data.zip \"http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi?lowFi="+num2istr(lowFi)+"&hiFi="+num2istr(hiFi)+"\""
-	//	print cmd
-	easyHttp/PASS=user+":"+password/FILE=inputPathStr+"data.zip" "http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi?lowFi="+num2istr(lowFi)+"&hiFi="+num2istr(hiFi)
-	if(V_Flag)
-		print "Error while downloading Platypus data (downloadPlatypusData)"
-		return 1
+
+	Wave/z/t directory = root:packages:platypus:catalogue:directories
+	if(!waveexists(directory))
+		if(builddirectorylist(user, password))
+			abort "problem building remote directory list"
+		endif
 	endif
-	zipfile/o/e inputPathStr, inputPathStr + "data.zip"
-	print "Finished downloading Platypus data."
+	Wave/t directory = root:packages:platypus:catalogue:directories
+	//see if the file exists in the directory list.  If it does, download it.
+	for(ii = lowFi ; ii <= hiFi ; ii += 1)
+		//search to see if it's in the cycles, if it is then great.  If not, then skip"
+	endfor
 End
 
 Function  reducerpanel() : Panel
