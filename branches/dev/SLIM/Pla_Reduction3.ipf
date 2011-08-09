@@ -82,8 +82,8 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 	endif
 				
 	for(;;)
-		prompt user, "User name for Platypus"
-		prompt password, "Password for Platypus"
+		prompt user, "User name"
+		prompt password, "Password"
 		Doprompt "Please enter your username, password and the files you would like to download", user, password
 		if(V_Flag)
 			return 1
@@ -103,7 +103,7 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 		killpath/z PLA_temppath_dPD
 	
 		print "Starting to download Platypus data."
-		easyHttp/PROX=""/PASS=user+":"+password/FILE=folder + "CFG.xml" "sftp://custard.nbi.ansto.gov.au/experiments/platypus/hsdata/"+DAQfileStr + "/CFG.xml"
+		easyHttp/PROX=""/PASS=user+":"+password/FILE=folder + "CFG.xml" "sftp://scp.nbi.ansto.gov.au/experiments/platypus/hsdata/"+DAQfileStr + "/CFG.xml"
 		if(V_Flag)
 			print "Error while downloading Platypus data (downloadPlatypusStreamedFile)"
 			return 1
@@ -112,7 +112,7 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 		ii = 0
 		do	
 			//try getting the file
-			easyHttp/PROX=""/PASS=user+":"+password "sftp://custard.nbi.ansto.gov.au/experiments/platypus/hsdata/"+DAQfileStr + "/DATASET_" + num2istr(ii) + "/EOS.bin", data
+			easyHttp/PROX=""/PASS=user+":"+password "sftp://scp.nbi.ansto.gov.au/experiments/platypus/hsdata/"+DAQfileStr + "/DATASET_" + num2istr(ii) + "/EOS.bin", data
 			if(V_flag)
 				break
 			endif
@@ -128,6 +128,99 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 	print "Finished downloading Platypus data."
 End
 
+Function builddirectorylist(user, password)
+	string user, password
+	
+	string data = "", direct, files, file, a, b, c
+	variable ii, isdirectory, jj, lowf = inf, hif = -inf
+	newdatafolder/o root:packages
+	newdatafolder/o root:packages:platypus
+	newdatafolder/o root:packages:platypus:catalogue
+
+	make/o/t/n=(0, 3) directories = ""
+	easyHttp/PASS=USER + ":"+PASSWORD "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/cycle/", data
+	data = replacestring("\n", data, "\r")
+
+	for(ii = 2 ; ii < itemsinlist(data, "\r") ; ii += 1)
+		direct = parseDirectorylistline(stringfromlist(ii, data, "\r"), isdirectory)
+		if(isdirectory)
+			redimension/n=(dimsize(directories, 0) + 1, -1) directories
+			directories[dimsize(directories, 0) - 1][0] = "cycle/" + direct + "/"
+		endif
+	endfor
+	redimension/n=(dimsize(directories, 0) + 1, -1) directories
+	directories[dimsize(directories, 0) - 1][0] = "current/"
+
+	for(ii = 0 ; ii < dimsize(directories, 0) ; ii += 1)
+		direct = directories[ii][0]
+		easyHttp/PASS=USER + ":"+PASSWORD "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/" + direct, files
+		files = replacestring("\n", files, "\r")
+		lowf = inf
+		hif = -inf
+		for(jj = 2 ; jj < itemsinlist(files, "\r") ; jj += 1)
+			file = parseDirectoryListLine(stringfromlist(jj, files, "\r"), isdirectory)
+			if(grepstring(file, "PLP[[:digit:]]{7}.nx.hdf"))
+				splitstring/E="(PLP)([[:digit:]]{7})(.nx.hdf)" file, a,b,c
+				if(str2num(b) < lowf)
+					directories[ii][1] = b
+					lowf = str2num(b)
+				endif
+				if(str2num(b) > hif)
+					directories[ii][2] = b
+					hif = str2num(b)
+				endif
+			endif
+		endfor
+	endfor
+End
+
+Function/s parseDirectoryListLine(directoryline, isdirectory)
+	string directoryline
+	variable &isdirectory
+ 
+	//directoryline = " dr-xr-xr-x 2 1 1  45056 Jan 6 20:11 q02ee8dddds"
+	string a, b, c,d,e,f,g,h,i, j,k,l,m,n,o,p,q
+	//perm
+	string regex="([dwrx-]+)"
+	//u
+	regex+="(\\s)+"
+	regex+="([[:alnum:][:punct:]]+)"
+	//g
+	regex+="(\\s)+"
+	regex+="([[:alnum:][:punct:]]+)"
+	//o
+	regex+="(\\s)+"
+	regex+="([[:alnum:][:punct:]]+)"
+ 
+	//size
+	regex+="(\\s)+"
+	regex+="([[:digit:]]+)"
+ 
+	//month
+	regex+="(\\s)+"
+	regex+="([[:alpha:]]{3})"
+ 
+	//day
+	regex+="(\\s)+"
+	regex+="([[:digit:]]{1,2})"
+ 
+	//time or year 00:00 or 2010
+	regex+="(\\s)+"
+	regex+="([[:digit:]:]{4,5})"
+ 
+	//filename/directory
+	regex+="(\\s)+"
+	regex+="(.+)$"
+	splitstring/E=regex directoryline, a, b, c,d,e,f,g,h,i,j,k,l,m,n,o,p,q
+ 
+	a = replacestring(" ", a, "")
+	if(stringmatch(a[0], "d"))
+		isdirectory = 1
+	else
+		isdirectory = 0
+	endif
+	return q
+End
 
 Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 	string inputPathStr
@@ -153,8 +246,8 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 	for(;;)
 		prompt lowFi, "start file"
 		prompt hiFI, "end file"
-		prompt user, "User name for Platypus"
-		prompt password, "Password for Platypus"
+		prompt user, "User name"
+		prompt password, "Password"
 		Doprompt "Please enter your username, password and the files you would like to download", user, password, lowFi, hiFi
 		if(V_Flag)
 			return 1
