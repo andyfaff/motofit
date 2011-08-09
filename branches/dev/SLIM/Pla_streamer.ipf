@@ -94,14 +94,14 @@ Function Pla_openStreamer(folderStr, [dataset])
 	return 0
 End
 
-Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, timeSliceDuration)
+Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, timeSliceDuration, totaltime)
 	//they should be monotonically sorted histogram edges for x, y and t.
 	//produces a wave root:packages:platypus:data:Reducer:streamer:Detector[slice][t][y][x]
 	Wave xbins, ybins, tbins
 	//how many frames per sec
-	variable framefrequency, timeSliceDuration
+	variable framefrequency, timeSliceDuration, totalTime
 
-	variable numevents, period, ii, xpos, ypos, tpos, slicepos, totalEvents, totalTime, numTimeSlices
+	variable numevents, period, ii, xpos, ypos, tpos, slicepos, totalEvents, numTimeSlices
 	variable numxbins, numtbins, numybins
 	string cDF
 	cDF = getdatafolder(1)
@@ -113,7 +113,6 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, tim
 
 	Wave W_unpackedNeutronsF, W_unpackedNeutronsx, W_unpackedNeutronsy, W_unpackedNeutronst
 
-	totalTime = (W_unpackedNeutronsf[dimsize(W_unpackedNeutronsF, 0) - 1] + 1) * period
 	numTimeSlices = ceil(totalTime / timeSliceDuration)
 	
 	numxbins = dimsize(xbins, 0) - 1
@@ -152,8 +151,7 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, tim
 			endif
 		endif
 	endfor
-	Note/k detector, "Events:"+num2istr(totalEvents)
-	
+	Note/k detector, "Events:"+num2istr(totalEvents)+";TIME:"+num2str(totaltime)
 	killwaves/z W_unpackedNeutronsF, W_unpackedNeutronsx, W_unpackedNeutronsy, W_unpackedNeutronst
 	setdatafolder $cDF
 	return detector
@@ -163,6 +161,6 @@ Function streamer_test()
 	Wave xbins, ybins, tbins
 	variable timer = startmstimer
 	Pla_openStreamer("faffmatic:Users:andrew:Documents:Andy:Motofit:motofit:tests:SLIM:DAQ_2010-12-17T13-13-30")	
-	Pla_streamedDetectorImage(xbins, ybins, tbins, 20, 10)
+//	Pla_streamedDetectorImage(xbins, ybins, tbins, 20, 10)
 	print stopmstimer(timer) /1e6
 End

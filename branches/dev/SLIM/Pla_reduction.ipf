@@ -1073,15 +1073,16 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				Wave xbins = $(tempDF+":data:x_bin")
 				Wave ybins = $(tempDF+":data:y_bin")
 				Wave tbins = $(tempDF+":data:time_of_flight")
-				Wave streamedDetector = Pla_streamedDetectorImage(xbins, ybins, tbins, frequency[scanpoint] / 60, timeSliceDuration)
+				Wave streamedDetector = Pla_streamedDetectorImage(xbins, ybins, tbins, frequency[scanpoint] / 60, timeSliceDuration, round(time0[scanpoint]))
 				numtimeslices = dimsize(streamedDetector, 0)	
-				fractionalTimeSLices = time0[scanpoint] / timeSliceDuration
+				fractionalTimeSlices = round(time0[scanpoint]) / timesliceduration
+				
 				make/o/d/n=(numTimeSlices) BM1counts
 				if(numtimeslices == 1)
 					BM1counts = bm1_counts[scanpoint]
 				else
 					BM1counts = bm1_counts[scanpoint] / fractionalTimeSlices
-					BM1counts[numtimeslices - 1] = bm1_counts[scanpoint] * (fractionalTimeSlices - floor(fractionalTimeSlices)) / fractionalTimeSlices 
+					BM1counts[numtimeslices - 1] = bm1_counts[scanpoint] * (fractionalTimeSlices - (ceil(fractionalTimeSlices) - 1)) / fractionalTimeSlices 
 				endif
 				make/o/d/n=(numTimeSlices) dBM1counts = sqrt(BM1counts)
 			
