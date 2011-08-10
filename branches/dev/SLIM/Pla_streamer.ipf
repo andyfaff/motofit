@@ -41,7 +41,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	
 	//try opening it first with the neutron unpacker
 	neutronunpacker binaryFileStr
-	if(V_flag == 4)	// it was PACKEDBIN
+	if(V_flag)	// it was PACKEDBIN
 		setdatafolder cDF
 		return 0
 	endif
