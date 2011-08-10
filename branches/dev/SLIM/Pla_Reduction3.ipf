@@ -130,15 +130,14 @@ End
 
 Function builddirectorylist(user, password)
 	string user, password
-	
 	string data = "", direct, files, file, a, b, c
-	variable ii, isdirectory, jj, lowf = inf, hif = -inf
+	variable ii, isdirectory, jj, lowf = inf, hif = -inf, startDir
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o root:packages:platypus:catalogue
 
-	make/o/t/n=(0, 2) directories = ""
-	easyHttp/PASS=USER + ":"+PASSWORD "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/cycle/", data
+	make/o/t/n=(0, 2) root:packages:platypus:catalogue:directories/Wave=directories
+	easyHttp/PROX=""/PASS=USER + ":"+PASSWORD "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/cycle/", data
 	if(V_Flag)
 		return 1
 	endif
@@ -154,9 +153,10 @@ Function builddirectorylist(user, password)
 	redimension/n=(dimsize(directories, 0) + 1, -1) directories
 	directories[dimsize(directories, 0) - 1][0] = "current/"
 
-	for(ii = 0 ; ii < dimsize(directories, 0) ; ii += 1)
+	startDir = 0
+	for(ii = startDir ; ii < dimsize(directories, 0) ; ii += 1)
 		direct = directories[ii][0]
-		easyHttp/PASS=USER + ":"+PASSWORD "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/" + direct, files
+		easyHttp/PROX=""/PASS=USER + ":"+PASSWORD "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/" + direct, files
 		if(V_Flag)
 			return 1
 		endif
@@ -223,8 +223,8 @@ End
 Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 	string inputPathStr
 	variable lowFi, hiFi
-	string user= "", password=""
-	variable ii
+	string user= "", password="", fname, direct, url
+	variable ii, col, row, rowsinwave
 	if(paramisdefault(inputPathStr))
 		newpath/o/c/q/z/M="Where would you like to store your Platypus data?" PLA_temppath_dPD
 		if(V_Flag)
@@ -257,16 +257,27 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 		endif
 	endfor
 
-	Wave/z/t directory = root:packages:platypus:catalogue:directories
-	if(!waveexists(directory))
-		if(builddirectorylist(user, password))
-			abort "problem building remote directory list"
-		endif
+	if(builddirectorylist(user, password))
+		abort "problem building remote directory list"
 	endif
 	Wave/t directory = root:packages:platypus:catalogue:directories
 	//see if the file exists in the directory list.  If it does, download it.
+	rowsinWave = dimsize(directory, 0)
 	for(ii = lowFi ; ii <= hiFi ; ii += 1)
 		//search to see if it's in the cycles, if it is then great.  If not, then skip"
+		sprintf fname, "PLP%07d.nx.hdf", ii
+		findvalue/TEXT=fname directory
+		if(V_Value == -1)
+			continue
+		endif
+		col=floor(V_value/rowsInWave)
+		row=V_value-col*rowsInWave
+		direct = directory[row][0]
+		url = "sftp://scp.nbi.ansto.gov.au/experiments/data/" + direct + fname
+		easyHttp/PROX=""/PASS=user + ":" + password/File=inputpathStr + fname "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/" + direct + fname
+		if(V_flag)
+			print "couldn't get", url
+		endif
 	endfor
 End
 
