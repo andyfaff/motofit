@@ -609,6 +609,7 @@ static Function Moto_do_a_fit()
 	Wave coef_theoretical_R = root:data:theoretical:coef_theoretical_R
 	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
 
+	moto_updateholdstring()
 	holdstring = getmotofitoption("holdstring")
 	useerrors = str2num(getmotofitoption("useerrors"))
 	usedqwave = str2num(getmotofitoption("usedqwave"))
