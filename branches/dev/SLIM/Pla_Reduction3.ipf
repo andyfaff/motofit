@@ -84,7 +84,7 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 	for(;;)
 		prompt user, "User name"
 		prompt password, "Password"
-		Doprompt "Please enter your username, password and the files you would like to download", user, password
+		Doprompt "Enter your credentials for scp.nbi.ansto.gov.au", user, password
 		if(V_Flag)
 			return 1
 		else
@@ -246,7 +246,7 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 		prompt hiFI, "end file"
 		prompt user, "User name"
 		prompt password, "Password"
-		Doprompt "Please enter your username, password and the files you would like to download", user, password, lowFi, hiFi
+		Doprompt "Enter your credentials for scp.nbi.ansto.gov.au", user, password, lowFi, hiFi
 		if(V_Flag)
 			return 1
 		endif
