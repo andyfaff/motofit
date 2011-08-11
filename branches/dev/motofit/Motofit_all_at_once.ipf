@@ -340,7 +340,9 @@ static Function Moto_calcchi2()
 	if(useerrors && waveexists(dR))
 		diff /= dR^2
 	endif
-	chi2 = sum(diff, leftval, rightval) / numpnts(diff)
+	Wavestats/q/z/m=1/R=[leftval, rightval] diff
+	chi2 = V_avg
+//	chi2 = sum(diff, leftval, rightval)/ numpnts(diff)
 	valdisplay Chisquare_tab0, win=reflectivitypanel, value = _NUM:chi2
 	
 	return chi2

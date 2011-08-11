@@ -1055,8 +1055,9 @@ static Function evaluateGlobalFunction([fitCursors, usedqwave])
 		offset += pnts_each_dataset[ii]
 		Waveclear fitR, fitq, resR, sldr
 	endfor
-	
-	return sum(chi2)/numpnts(chi2)
+	Wavestats/q/z/M=1 chi2
+	return V_avg
+//	return sum(chi2)/numpnts(chi2)
 End
 
 static Function plotCombinedFitAndEvaluate([fitcursors, usedqwave])
