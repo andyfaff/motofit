@@ -1376,7 +1376,7 @@ Function setup_motoMPI()
 	//sets up input for motoMPI program, for parallelized monte carlo fitting.
 		
 	string holdstring = "", datasetname, txt = "", pilots = "", datas = "", info = ""
-	variable numdatasets, ii, fileID, pilotID, jj, loQ, hiQ, pnt
+	variable numdatasets, ii, fileID, pilotID, jj, loQ, hiQ, pnt, reso
 		
 	build_combined_dataset()
 	Wave holdwave = root:Packages:motofit:reflectivity:globalfitting:holdwave
@@ -1389,6 +1389,8 @@ Function setup_motoMPI()
 	
 	loQ = 0
 	hiQ = Inf
+	reso = str2num(motofit#getmotofitoption("res"))
+	
 	if(str2num(motofit#getmotofitoption("fitcursors")))
 		Info = csrinfo(A, "reflectivitygraph")
 		if(strlen(info))
@@ -1425,10 +1427,14 @@ Function setup_motoMPI()
 		//write a datafile
 		Wave originaldata = $("root:data:" + datasetname + ":originaldata")
 		txt = ""
-		make/n=(dimsize(originaldata, 0), dimsize(originaldata, 1))/t/free datatext
+		make/n=(dimsize(originaldata, 0), dimsize(originaldata, 1))/t/free datatext		
 		datatext = num2str(originaldata)
 		redimension/n=(-1, 4) datatext
-		
+		if(dimsize(originaldata, 1) < 4)
+			Doalert 0, "no resolution data for dataset " + datasetname + " assuming constant dq/q"
+			datatext[][3] = num2str(originaldata[p][0] * reso / 100)
+		endif
+
 		//but only for a restricted Q range dictated by the cursors.
 		findlevel/P/Q originaldata, hiQ
 		deletepoints/M=0 V_levelX, dimsize(datatext, 0) , datatext
