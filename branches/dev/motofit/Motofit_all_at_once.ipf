@@ -1009,14 +1009,14 @@ static Function moto_change_plotyp(plotyp)
 			else
 				Waveclear dq
 			endif
-			moto_lindata_to_plotyp(plotyp, qq, RR, dr = dR)
+			moto_lindata_to_plotyp(plotyp, qq, RR, dr = dR, removeNonFinite = 1)
 		endif
 		//now do the fits, if they exist.
 		Wave/z fitRR =  $("root:data:" + dataset + ":fit_" + dataset + "_R")
 		Wave /z fitQQ = $("root:data:" + dataset + ":fit_" + dataset + "_q")
 		if(waveexists(fitQQ) && waveexists(fitRR))
 			moto_plotyp_to_lindata(oldplotyp, fitQQ, fitRR)
-			moto_lindata_to_plotyp(plotyp, fitQQ, fitRR)
+			moto_lindata_to_plotyp(plotyp, fitQQ, fitRR, removeNonFinite = 1)
 		endif
 	endfor
 	
@@ -1219,7 +1219,7 @@ static Function Moto_FTreflectivity()
 		return 0
 	endif
 
-	moto_lindata_to_plotyp(3, tempx, tempy)	
+	moto_lindata_to_plotyp(3, tempx, tempy, removeNonFinite = 1)	
 	
 	Interpolate2/T=2/N=(FFTlength)/E=2/Y=FFTWave tempx,tempy 
 		
@@ -1519,9 +1519,13 @@ Function/C Moto_angletoQ(omega,twotheta,lambda)
 	return Q
 End
 
-Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr])
+Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr, removeNonFinite])
 	variable plotyp
 	Wave/z qq, RR, dr
+	variable removeNonFinite
+	
+	variable ii
+	
 	switch(plotyp)
 		case 1:	//logR
 			if(waveexists(dr))
@@ -1530,10 +1534,8 @@ Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr])
 			endif
 //			multithread RR = log(RR)
 			matrixop/o RR = log(RR)
-			return 0
 			break
 		case 2: //linR, do nothing
-			return 0
 			break
 		case 3: //RQ4
 			if(waveexists(dR))
@@ -1550,6 +1552,16 @@ Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr])
 		default:
 			break
 	endswitch
+	if(removeNonFinite)
+		if(!waveexists(dR))
+			duplicate/free RR, dR
+		endif
+		for(ii = numpnts(RR) - 1 ; ii >= 0 ; ii -= 1)
+			if(numtype(RR[ii]) || numtype(dR[ii]))
+				deletepoints/M=0 ii, 1, qq, RR, dR
+			endif
+		endfor
+	endif
 End
 
 Function moto_plotyp_to_lindata(plotyp, qq, RR[, dr])
@@ -1670,7 +1682,7 @@ static Function/s Moto_loadReffile(filename)
 		
 		motofit#moto_removeNaN(qq, RR, dE, dQ)
 		//how are you fitting the data?
-		moto_lindata_to_plotyp(plotyp, qq, RR, dR = dE)
+		moto_lindata_to_plotyp(plotyp, qq, RR, dR = dE, removeNonFinite = 1)
 	
 		setdatafolder saveDFR
 		return dataName	
@@ -2141,8 +2153,7 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 				close refnum
 			endif
 		
-			//open the file for writing
-			moto_lindata_to_plotyp(str2num(getmotofitoption("plotyp")), fitqq, fitRR)	
+			moto_lindata_to_plotyp(str2num(getmotofitoption("plotyp")), fitqq, fitRR, removeNonFinite = 1)	
 			break
 		case "savecoefwave_tab0":
 			string coefwaves, coefwave
@@ -2791,7 +2802,7 @@ static Function moto_transfer_data()
 				note coef, note(coefold)
 			endif 
 
-			moto_lindata_to_plotyp(newplotyp, qq, RR, dr = ee)
+			moto_lindata_to_plotyp(newplotyp, qq, RR, dr = ee, removeNonFinite = 1)
 					
 			index += 1
 		endif
