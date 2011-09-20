@@ -2339,12 +2339,12 @@ Function angler_listboxproc(s) : ListboxControl
 	STRUCT WMListboxAction &s
 	switch(s.eventcode)
 		case 7:
-			if(str2num(s.listwave[s.row][1]) < 0.3)
+			if(abs(str2num(s.listwave[s.row][1])) < 0.3)
 				s.listwave[s.row][2] = "0"
 				s.listwave[s.row][3] = "0"
 				s.listwave[s.row][4] = "0"
 				s.listwave[s.row][5] = "0"
-				Doalert 0, "for safety reasons slits are set to zero if omega < 0.3"
+				Doalert 0, "for safety reasons slits are set to zero if abs(omega) < 0.3"
 			endif
 		break	
 	endswitch
@@ -2764,3 +2764,34 @@ Function chopperRephaseArator(s)
 	return 0
 End
 
+Function pumpset(v0, r0, v1, r1, [mvp, inject])
+    variable v0, r0, v1, r1, mvp, inject
+    string cmd = "", template
+    if(v0 < 0 || r0 < 0 || v1 < 0 || r1 < 0)
+        print "PUMPSET ERROR - all rates/volumes have to be > 0"
+        return 1
+    endif 
+    if(numtype(v0) || numtype(r0) || numtype(v1) || numtype (r1))
+        print "PUMPSET ERROR - all rates/volumes have to be > 0"
+        return 1
+    endif 
+    if(!paramisdefault(mvp))
+    	if(!numtype(mvp) && mvp > 0 && mvp < 7)
+    	    mvp = round(mvp)
+    	    template = "drive mvp_driveable %d\n"	
+    	    sprintf cmd, template, mvp
+    	    sics_cmd_cmd(cmd)
+    	endif
+    endif
+    
+    template = "hset /sample/syr/pump0/Vol %3.3f\n"
+    template += "hset /sample/syr/pump0/rat %3.3fMM\n"
+    template += "hset /sample/syr/pump1/Vol %3.3f\n"
+    template += "hset /sample/syr/pump1/rat %3.3fMM"
+    sprintf cmd, template, v0, r0, v1, r1
+    sics_cmd_cmd(cmd)
+    
+    if(!paramisdefault(inject) && inject)
+        sics_cmd_cmd("drive syr_driveable 1")
+    endif
+End

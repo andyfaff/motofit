@@ -497,7 +497,8 @@ Function startSICS()
 	//create a layout graph of all the motors
 	Instrumentlayout_panel()
 	
-		//get all the values in the hipadaba tree
+	//get all the values in the hipadaba tree
+	getCurrentHipaVals()
 	getCurrentHipaVals()
 	
 	//Waves for the current axes positions
