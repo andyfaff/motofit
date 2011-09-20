@@ -1953,6 +1953,21 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 	return err
 End
 
+Function M_montecarloStatistics(M_monteCarlo)
+	Wave M_montecarlo
+	variable ii
+	make/o/d/n=(dimsize(M_Montecarlo, 1), 2) M_montecarlostats
+	make/d/free/n=(dimsize(M_montecarlo, 0)) vals
+
+	for(ii = 0 ; ii < dimsize(M_Montecarlo, 1) ; ii += 1)
+		vals[] = M_Montecarlo[p][ii]
+		wavestats/q vals
+		M_Montecarlostats[ii][0] = V_avg
+		M_Montecarlostats[ii][1] = V_sdev	
+	endfor
+
+End
+
 Function make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 	Wave M_montecarlo
 	string holdstring

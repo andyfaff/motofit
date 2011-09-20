@@ -1437,10 +1437,14 @@ Function setup_motoMPI()
 
 		//but only for a restricted Q range dictated by the cursors.
 		findlevel/P/Q originaldata, hiQ
-		deletepoints/M=0 V_levelX, dimsize(datatext, 0) , datatext
+		if(!numtype(V_levelX))
+			deletepoints/M=0 V_levelX, dimsize(datatext, 0) , datatext
+		endif
 		findlevel/P/Q originaldata, loQ
-		deletepoints/M=0 0, V_levelX , datatext
-
+		if(!numtype(V_levelX))
+			deletepoints/M=0 0, V_levelX , datatext
+		endif
+		
 		insertpoints/M=1 4, 1, datatext
 		insertpoints/M=1 3, 1, datatext
 		insertpoints/M=1 2, 1, datatext

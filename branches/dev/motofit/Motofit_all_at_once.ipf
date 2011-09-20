@@ -342,7 +342,7 @@ static Function Moto_calcchi2()
 	endif
 	Wavestats/q/z/m=1/R=[leftval, rightval] diff
 	chi2 = V_avg
-//	chi2 = sum(diff, leftval, rightval)/ numpnts(diff)
+//   chi2 = sum(diff, leftval, rightval)/ numpnts(diff)
 	valdisplay Chisquare_tab0, win=reflectivitypanel, value = _NUM:chi2
 	
 	return chi2
@@ -696,7 +696,7 @@ static Function Moto_do_a_fit()
 				NVAR k_m = root:packages:motofit:old_genoptimise:k_m
 				NVAR fittol = root:packages:motofit:old_genoptimise:fittol
 				Wave limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
-				Gencurvefit/N/D=outputRR/I=1/Q/MAT=1/R/W=dR/X=inputQQ/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fitfunc, RR[leftP, rightP], coef, holdstring, limits
+				Gencurvefit/D=outputRR/I=1/Q/MAT=1/R/W=dR/X=inputQQ/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fitfunc, RR[leftP, rightP], coef, holdstring, limits
 				break
 			case "Levenberg-Marquardt":
 				if(useconstraint)
