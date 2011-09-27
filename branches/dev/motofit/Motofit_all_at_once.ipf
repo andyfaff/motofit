@@ -897,9 +897,14 @@ Function/wave moto_paramdescription(nlayers, mode, [Vmullayers])
 	return paramdescription
 End
 
-static Function moto_loadcoefs()
+static Function moto_loadcoefs([filestr])
+	string fileStr
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
-	Loadwave/O/T
+	if(!paramisdefault(fileStr) && strlen(fileStr))
+		Loadwave/q/O/T fileStr
+	else
+		Loadwave/q/O/T	
+	endif
 	if(V_flag==0)
 		abort
 	endif

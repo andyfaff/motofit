@@ -10,7 +10,7 @@ static Function buildpanel() : Panel
 	Dowindow/C globalreflectometrypanel
 	TabControl globalpaneltab,pos={5,7},size={544,573},proc=Motofit_GR#globalpanel_GUI_tab
 	TabControl globalpaneltab,tabLabel(0)="Datasets",tabLabel(1)="Coefficients"
-	TabControl globalpaneltab,value= 1
+	TabControl globalpaneltab,value= 0
 	Button adddataset_tab0,pos={20,35},size={72,31},proc=Motofit_GR#globalpanel_GUI_button,title="Add\rdataset"
 	Button adddataset_tab0,fSize=11
 	Button removedataset_tab0,pos={97,35},size={72,31},proc=Motofit_GR#globalpanel_GUI_button,title="Remove\rdataset"
@@ -38,6 +38,14 @@ static Function buildpanel() : Panel
 	Slider slider0_tab1,limits={0,2,0},value= 0,vert= 0,ticks= 0
 	ValDisplay Chi2_tab1,pos={223,42},size={100,25},title="\\F'Symbol'c\\M\\S2",fSize=12
 	ValDisplay Chi2_tab1,limits={0,0,0},barmisc={0,1000},value= _NUM:0
+	
+	String controlsInATab= ControlNameList("globalreflectometrypanel", ";", "*_tab*")
+	String curTabMatch= "*_tab"+num2istr(0)
+	String controlsInCurTab= ListMatch(controlsInATab, curTabMatch)
+	String controlsInOtherTabs= ListMatch(controlsInATab, "!"+curTabMatch)
+
+	ModifyControlList controlsInOtherTabs disable=1	// hide
+	ModifyControlList controlsInCurTab disable=0		// show
 EndMacro
 
 static Function/t CoefficientWaveSelector(whichdataset, xx, yy, numcoefs)
@@ -383,7 +391,11 @@ static function add_a_dataset(datasetname, numlayers)
 	endif				
 	numdatasets = dimsize(datasets, 0)
 	maxparams = wavemax(numcoefs)
-	maxparams = SelectNumber(wavemax(numcoefs) < numparams , 0, wavemax(numcoefs), numparams)
+	if(numparams > maxparams || numtype(maxparams))
+		maxparams = numparams
+	else
+		numparams = maxparams
+	endif
 	
 	redimension/n=(maxparams, 2 * (numdatasets + 1) + 1) coefficients_selwave, coefficients_listwave
 	coefficients_selwave[][dimsize(coefficients_selwave, 1) - 1] = 32
