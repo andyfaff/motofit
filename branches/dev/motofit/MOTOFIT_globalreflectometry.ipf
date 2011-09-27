@@ -11,10 +11,13 @@ static Function buildpanel() : Panel
 	TabControl globalpaneltab,pos={5,7},size={544,573},proc=Motofit_GR#globalpanel_GUI_tab
 	TabControl globalpaneltab,tabLabel(0)="Datasets",tabLabel(1)="Coefficients"
 	TabControl globalpaneltab,value= 1
-	Button adddataset_tab0,pos={32,36},size={100,30},disable=1,proc=Motofit_GR#globalpanel_GUI_button,title="Add dataset"
+	Button adddataset_tab0,pos={20,35},size={72,31},proc=Motofit_GR#globalpanel_GUI_button,title="Add\rdataset"
 	Button adddataset_tab0,fSize=11
-	Button removedataset_tab0,pos={142,36},size={100,30},disable=1,proc=Motofit_GR#globalpanel_GUI_button,title="Remove dataset"
+	Button removedataset_tab0,pos={97,35},size={72,31},proc=Motofit_GR#globalpanel_GUI_button,title="Remove\rdataset"
 	Button removedataset_tab0,fSize=11
+	Button changelayers_tab0,pos={174,35},size={72,31},proc=Motofit_GR#globalpanel_GUI_button,title="change\rlayers"
+	Button changelayers_tab0,fSize=11
+	
 	Button linkparameter_tab0,pos={326,37},size={100,30},disable=1,proc=Motofit_GR#globalpanel_GUI_button,title="link selection"
 	Button linkparameter_tab0,fSize=11
 	Button unlinkparameter_tab0,pos={434,37},size={100,30},disable=1,proc=Motofit_GR#globalpanel_GUI_button,title="unlink selection"
@@ -244,7 +247,7 @@ static Function globalpanel_GUI_button(ba) : ButtonControl
 	Wave M_colors = root:Packages:motofit:reflectivity:globalfitting:M_colors
 	NVAR isImag = root:Packages:motofit:reflectivity:globalfitting:isImag
 
-	string listofdatasets, dataset, temp = "", temp2 = "", info
+	string listofdatasets = "", dataset, temp = "", temp2 = "", info
 	variable ii, numitems, numdatasets, numparams, maxparams=0, whichitem, numlayers, numlinkages, row, col, loQ, hiQ, chi2
 	
 	numdatasets = dimsize(datasets, 0)
@@ -266,46 +269,23 @@ static Function globalpanel_GUI_button(ba) : ButtonControl
 					prompt dataset, "which dataset", popup, listofdatasets
 					prompt numlayers, "how many layers?"
 					Doprompt "Dataset selection", dataset, numlayers
-					if(V_flag || stringmatch(dataset, "_none_") || numlayers < 0)
+					if(V_flag || add_a_dataset(dataset, numlayers))
 						return 0
 					endif
-					findvalue/TEXT=dataset/TXOP=6 datasets
-					if(V_Value > -1)
-						Doalert 0, "dataset already in use"
-						return 0
-					endif
-					//add in the new dataset
-					if(!isImag)
-						numparams = 4 * numlayers + 6
-					else
-						numparams = 4 * numlayers + 8
-					endif				
-					numdatasets = dimsize(datasets, 0)
-					maxparams = wavemax(numcoefs)
-					if(numtype(maxparams) || maxparams < numparams)
-						maxparams = numparams
-					endif
-					
-					redimension/n=(maxparams, 2 * (numdatasets + 1) + 1) coefficients_selwave, coefficients_listwave
-					coefficients_selwave[][dimsize(coefficients_selwave, 1) - 1] = 32
-					coefficients_selwave[][dimsize(coefficients_selwave, 1) - 2] = 2
-					redimension/n=(maxparams, numdatasets + 2, 3) datasets_listwave, datasets_selwave
-					redimension/n=(numdatasets + 1) datasets
-					setdimlabel 1, 0, param_description, datasets_listwave
-					setdimlabel 1, numpnts(datasets), $dataset, datasets_listwave
-					SetDimLabel 2,1,backColors,datasets_selwave				// define plane 1 as background colors
-					SetDimLabel 2,2,foreColors,datasets_selwave
-
-					datasets[numpnts(datasets) - 1] = dataset
-					add_dataset_to_linkage(numparams)
-					
-					for(ii = 0 ; ii < numpnts(datasets) ; ii+=1)
-						setdimlabel 1, 2 * ii+1, $(datasets[ii]), coefficients_listwave
+					break
+				case "changelayers_tab0":
+					numitems = dimsize(datasets, 0)
+					for(ii = 0 ; ii <  numitems ; ii+=1)
+						listofdatasets += datasets[ii] + ";"
 					endfor
-					regenerateLinkageListBoxes()
-					Wave/t pardes =  moto_paramdescription(numlayers, isImag)
-					datasets_listwave[][0] = pardes[p]
-					coefficients_listwave[][0] = pardes[p]
+					numlayers = 1
+					prompt dataset, "dataset", popup, listofdatasets
+					prompt numlayers, "how many layers?"
+					Doprompt "Which dataset did you want to change the number of layers?", dataset, numlayers
+					if(V_flag || numlayers < 0)
+						return 0
+					endif
+					change_layers_for_dataset(dataset, numlayers)
 					break
 				case "removedataset_tab0":
 					sockitwavetostring/TXT=";" datasets, listofdatasets
@@ -359,6 +339,126 @@ static Function globalpanel_GUI_button(ba) : ButtonControl
 	endswitch
 
 	return 0
+End
+
+static function add_a_dataset(datasetname, numlayers)
+	//adds a dataset globalfit setup.
+	string datasetname
+	variable numlayers
+
+	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
+	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
+	Wave/t coefficients_listwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
+	Wave coefficients_selwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
+	Wave/t datasets_listwave = root:Packages:motofit:reflectivity:globalfitting:datasets_listwave
+	Wave datasets_selwave = root:Packages:motofit:reflectivity:globalfitting:datasets_selwave
+
+	NVAR isImag = root:Packages:motofit:reflectivity:globalfitting:isImag
+
+	string listofdatasets = ""
+	variable numparams = 0, maxparams, numdatasets, ii
+	
+	listofdatasets = motofit#Moto_fittable_datasets()
+	
+	if(whichlistitem(datasetname, listofdatasets) == -1)
+		Doalert 0, Datasetname + " is not one of the loaded datasets"
+		return 1
+	endif
+	
+	if(stringmatch(datasetname, "_none_") || numlayers < 0)
+		return 1
+	endif
+		
+	findvalue/TEXT=datasetname/TXOP=6 datasets
+	if(V_Value > -1)
+		Doalert 0, "dataset already in use"
+		return 1
+	endif		
+
+	//add in the new dataset
+	if(!isImag)
+		numparams = 4 * numlayers + 6
+	else
+		numparams = 4 * numlayers + 8
+	endif				
+	numdatasets = dimsize(datasets, 0)
+	maxparams = wavemax(numcoefs)
+	maxparams = SelectNumber(wavemax(numcoefs) < numparams , 0, wavemax(numcoefs), numparams)
+	
+	redimension/n=(maxparams, 2 * (numdatasets + 1) + 1) coefficients_selwave, coefficients_listwave
+	coefficients_selwave[][dimsize(coefficients_selwave, 1) - 1] = 32
+	coefficients_selwave[][dimsize(coefficients_selwave, 1) - 2] = 2
+	redimension/n=(maxparams, numdatasets + 2, 3) datasets_listwave, datasets_selwave
+	redimension/n=(numdatasets + 1) datasets
+	setdimlabel 1, 0, param_description, datasets_listwave
+	setdimlabel 1, numpnts(datasets), $datasetname, datasets_listwave
+	SetDimLabel 2,1,backColors,datasets_selwave				// define plane 1 as background colors
+	SetDimLabel 2,2,foreColors,datasets_selwave
+	
+	datasets[numpnts(datasets) - 1] = datasetname
+	add_dataset_to_linkage(numparams)
+	
+	for(ii = 0 ; ii < numpnts(datasets) ; ii+=1)
+		setdimlabel 1, 2 * ii+1, $(datasets[ii]), coefficients_listwave
+	endfor
+	regenerateLinkageListBoxes()
+	Wave/t pardes =  moto_paramdescription(numlayers, isImag)
+	datasets_listwave[][0] = pardes[p]
+	coefficients_listwave[][0] = pardes[p]
+End
+
+Function change_layers_for_dataset(datasetname, numlayers)
+	//changes the number of layers for a particular dataset.
+	string datasetname
+	variable numlayers
+	
+	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
+	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
+	Wave/t coefficients_listwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
+	Wave coefficients_selwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
+	Wave/t datasets_listwave = root:Packages:motofit:reflectivity:globalfitting:datasets_listwave
+	Wave datasets_selwave = root:Packages:motofit:reflectivity:globalfitting:datasets_selwave
+	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
+
+	NVAR isImag = root:Packages:motofit:reflectivity:globalfitting:isImag
+
+	string listofdatasets = "", unlinklist = ""
+	variable numparams = 0, maxparams, numdatasets, ii, datasetnumber, maxlayers
+	
+	findvalue/TEXT=datasetname/TXOP=6 datasets
+	if(V_Value == -1)
+		//dataset is not part of setup.
+		return 0
+	endif	
+	datasetnumber = V_Value
+	
+	//calculate the number of params required.
+	if(!isImag)
+		numparams = 4 * numlayers + 6
+	else
+		numparams = 4 * numlayers + 8
+	endif
+	
+	//change the linkage matrix
+	change_numparameters_in_linkage(datasetnumber, numparams)
+	
+	//may need to reduce the number of parameters.
+	redimension/n=(dimsize(linkages, 0), -1) coefficients_listwave, coefficients_selwave
+	redimension/n=(dimsize(linkages, 0), -1, -1) datasets_selwave, datasets_listwave
+	
+	regenerateLinkageListBoxes()
+	
+	//setup the parameter descriptions.
+	maxparams = wavemax(numcoefs)
+	if((maxparams - 6) / 4)
+		maxlayers = (maxparams - 6) / 4
+	else
+		maxlayers = (maxparams - 8) / 4
+	endif
+	
+	Wave/t pardes =  moto_paramdescription(maxlayers, isImag)
+	datasets_listwave[][0] = pardes[p]
+	coefficients_listwave[][0] = pardes[p]
 End
 
 static Function globalpanel_GUI_slider(sa) : SliderControl
@@ -732,6 +832,7 @@ static Function regenerateLinkageListBoxes()
 			else
 				datasets_listwave[jj][ii + 1] = ""
 				coefficients_selwave[jj][2 * ii + 1] = 0
+				coefficients_listwave[jj][2 * ii + 1] = ""
 				coefficients_selwave[jj][2 * ii + 2] = 0
 			endif
 		endfor
@@ -810,6 +911,58 @@ static Function remove_dataset_from_linkage(num)
 	deletepoints/M=1 num,  1, linkages
 	deletepoints/M=0 num, 1, numcoefs
 End
+
+static Function change_numparameters_in_linkage(datasetnum, params)
+	//changes the number of parameters for a given dataset in the linkage matrix
+	variable datasetnum, params
+	
+	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
+	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
+
+	string unlinklist = ""
+	variable ii, jj, row, col, diff_params
+	
+	if(params < 1 || numtype(datasetnum) || numtype(params) || datasetnum < 0 || datasetnum > numpnts(numcoefs) - 1)
+		return 1
+	endif
+
+	for(ii = 0 ; ii < numcoefs[datasetnum] ; ii+=1)
+		unlinklist += num2istr(datasetnum) + ":" + num2istr(ii) +";"
+	endfor
+	unlinkParameterList(unlinklist, removeFollowing = 1)
+	
+	//all the unique parameters following this dataset have to be incremented/decremented by the difference in param number
+	diff_params = params - numcoefs[datasetnum] 
+	
+	Wave uniqueparametermask = isuniqueparam()
+	
+	//now all unique parameters following the dataset have to be incremented/decremented by diff_params	
+	for(ii = datasetnum + 1 ; ii < dimsize(linkages, 1) ; ii+=1)
+		for(jj = 0 ; jj < dimsize(uniqueparametermask, 0) ; jj += 1)
+			if(uniqueparametermask[jj][ii] > 0)
+				linkages[jj][ii] += diff_params
+			elseif(uniqueparametermask[jj][ii] == 0)
+				findvalue/S=0/i=(linkages[jj][ii]) linkages
+				col = floor(V_value/dimsize(linkages, 0))
+				if(col > datasetnum)
+					linkages[jj][ii] += numcoefs[datasetnum]
+				endif 
+			endif
+		endfor
+	endfor
+	
+	for(ii = numcoefs[datasetnum] ; ii < numcoefs[datasetnum] + diff_params ; ii  += 1)
+		linkages[ii][datasetnum] = lastUniqueParameter(ii, datasetnum) + 1
+	endfor
+
+	numcoefs[datasetnum] = params
+
+	for(ii = params ; ii < dimsize(linkages, 0) ; ii += 1)
+		linkages[ii][datasetnum] = -1
+	endfor
+	redimension/n=(wavemax(numcoefs), -1) linkages	
+End
+
 
 static Function build_combined_dataset([fitcursors])
 	variable fitcursors
@@ -1320,6 +1473,8 @@ End
 
 Function processGlobalMonteCarlo(M_montecarlo)
 	//processes monte carlo results for the global fitting
+	//should take the form of a 2D wave.  rows=iterations
+	//columns = parameters.
 	Wave M_montecarlo
 
 	DFREF cDF = getdatafolderDFR()
@@ -1373,7 +1528,7 @@ Function processGlobalMonteCarlo(M_montecarlo)
 End
 
 Function setup_motoMPI()
-	//sets up input for motoMPI program, for parallelized monte carlo fitting.
+	//sets up input for the motoMPI program, for parallelized monte carlo fitting on a cluster.
 		
 	string holdstring = "", datasetname, txt = "", pilots = "", datas = "", info = ""
 	variable numdatasets, ii, fileID, pilotID, jj, loQ, hiQ, pnt, reso
@@ -1508,6 +1663,9 @@ End
 
 Function parse_motoMPI([fileStr])
 	string fileStr
+	//parses output from the motoMPI program.
+	//each line is the fit result from a single fit.
+	//the first value on each line is a chi2 value.
 	
 	if(!paramisdefault(fileStr))
 		LoadWave/J/M/D/A=wave/K=0/V={"\t, "," $",0,0} fileStr
@@ -1525,4 +1683,12 @@ Function parse_motoMPI([fileStr])
 	
 	duplicate/o theMontecarlo, M_montecarlo
 	killwaves/z theMonteCarlo
+End
+
+Function parse_motoMPI_inputfile([fileStr])
+	string fileStr
+	//parses the input to a motoMPI program.
+	//i.e. the inputs are the files created by parse_motoMPI()	
+	
+	
 End
