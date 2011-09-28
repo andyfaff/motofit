@@ -46,7 +46,7 @@ static Function buildpanel() : Panel
 
 	ModifyControlList controlsInOtherTabs disable=1	// hide
 	ModifyControlList controlsInCurTab disable=0		// show
-EndMacro
+End
 
 static Function/t CoefficientWaveSelector(whichdataset, xx, yy, numcoefs)
 	variable whichdataset, xx, yy, numcoefs
@@ -115,7 +115,8 @@ static Function selectedCoefWave_notification(SelectedItem, EventCode, WindowNam
 	tempstr = selectedItem
 end
 
-static Function init_fitting()
+static Function init_fitting([restart, isImagOrSolvent])
+	variable restart, isImagOrSolvent
 	variable haveRefPanel = itemsinlist(winlist("reflectivitypanel", "", ""))
 	variable haveRefGraph = itemsinlist(winlist("reflectivitygraph", "", ""))
 	variable haveSLDgraph =  itemsinlist(winlist("SLDgraph", "", ""))
@@ -124,15 +125,24 @@ static Function init_fitting()
 		Doalert 0, "You need to have the reflectivity panel, reflectivity graph and SLD graph opened, try starting motofit again"
 		abort
 	endif
+	if(restart)
+		Dowindow/k globalreflectometrypanel
+	endif
 	if(itemsinlist(winlist("globalreflectometrypanel", ";", "")))
 		Doalert 0, "global reflectivity panel already exists"
 		return 0
 	endif
-	make_folders_waves()
+	if(!paramisdefault(isImagOrSolvent))
+		make_folders_waves(isImagOrSolvent = isImagOrSolvent)
+	else
+		make_folders_waves()
+	endif
+	
 	buildpanel()
 End
 
-static Function make_folders_waves()
+static Function make_folders_waves([isImagOrSolvent])
+	variable isImagOrSolvent
 	dfref savDF = getdatafolderDFR()
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:motofit
@@ -141,14 +151,17 @@ static Function make_folders_waves()
 	
 	//this variable is 0 if solvent penetration or 1 if imaginary (can't have mixed).
 	variable/g isImag = 0
-	variable temp
-	prompt temp, "Did you want to have model with solvent penetrations or complex SLDS?", popup, "solventpenetration;imaginarySLD"
-	Doprompt/Help="You can either model with solvent penetrations, or complex SLD's for a given layer" "", temp
-	if(V_Flag)
-		abort
+	if(!paramisdefault(isImagOrSolvent))
+		isimag = isImagOrSolvent
+	else
+		variable temp
+		prompt temp, "Did you want to have model with solvent penetrations or complex SLDS?", popup, "solventpenetration;imaginarySLD"
+		Doprompt/Help="You can either model with solvent penetrations, or complex SLD's for a given layer" "", temp
+		if(V_Flag)
+			abort
+		endif
+		isImag = temp - 1
 	endif
-	isImag = temp - 1
-	
 	make/n=0/I/u/o numcoefs
 	make/n=(0,0)/I/o linkages
 	make/n=(0,1)/I/u/o coefficients_selwave
@@ -462,10 +475,10 @@ Function change_layers_for_dataset(datasetname, numlayers)
 	
 	//setup the parameter descriptions.
 	maxparams = wavemax(numcoefs)
-	if((maxparams - 6) / 4)
-		maxlayers = (maxparams - 6) / 4
-	else
+	if(mod(maxparams - 6, 4))
 		maxlayers = (maxparams - 8) / 4
+	else
+		maxlayers = (maxparams - 6) / 4
 	endif
 	
 	Wave/t pardes =  moto_paramdescription(maxlayers, isImag)
@@ -561,8 +574,9 @@ static Function globalpanel_GUI_tab(tca) : TabControl
 	return 0
 End
 
-static Function/wave isUniqueParam([following])
+static Function/wave isUniqueParam([following, linkagematrix])
 	variable following
+	Wave/z linkagematrix
 	//creates a mask wave the same size as the linkage matrix to tell if a parameter is unique or not.
 	//mask = 0 if a parameter is NOT unique
 	//mask = -1 if no parameter exists for that dataset/coef combo
@@ -570,7 +584,11 @@ static Function/wave isUniqueParam([following])
 	//IFF following = 1
 	//then mask = 2 if a FOLLOWING parameter links to it
 	
-	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
+	if(paramisdefault(linkagematrix))
+		Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
+	else
+		Wave linkages = linkagematrix	
+	endif
 	variable ii, jj
 	
 	if(paramisdefault(following))
@@ -1573,7 +1591,7 @@ Function setup_motoMPI()
 	controlinfo/W=reflectivitypanel Typeoffit_tab0
 	numdatasets = (dimsize(numcoefs, 0))
 
-	newpath/o/q/z/c motoMPI
+	newpath/M="Select/create a folder to put the motoMPI input"/o/q/z/c motoMPI
 	pathinfo motoMPI
 	if(!V_Flag)
 		return 1
@@ -1697,10 +1715,118 @@ Function parse_motoMPI([fileStr])
 	killwaves/z theMonteCarlo
 End
 
-Function parse_motoMPI_inputfile([fileStr])
-	string fileStr
-	//parses the input to a motoMPI program.
-	//i.e. the inputs are the files created by parse_motoMPI()	
+Function ingest_motoMPI_input([folderStr])
+	string folderStr
+	//ingests the input to a motoMPI program.
+	//i.e. the inputs are the files created by setup_motoMPI()
 	
+	variable global_pilotID, ii, jj, pilotID, numdatasets,  isImagOrSolvent, hold, row, col
+	string input, datafiles, pilotfiles, pathStr, holdstr, linkparams = ""
+
+	try
+		if(paramisdefault(folderStr))
+			newpath/M="Select the folder containing the motoMPI input"/o/q/z motoMPI
+		else
+			newpath/o/q/z motoMPI, folderStr
+		endif
+		if(V_Flag)
+			abort
+		endif
+		open/R/P=motoMPI/z global_pilotID as "global_pilot"
+		if(V_flag)
+			abort
+		endif
+		pathInfo motoMPI
+		pathStr = S_path
 	
+		freadline global_pilotID, datafiles
+		numdatasets = itemsinlist(datafiles, " ")
+		make/free/t/n=(numdatasets, 2) datanames
+		make/free/n=(numdatasets)/wave coefs
+		
+		datafiles = removeending(datafiles, "\r")
+		for(ii = 0 ; ii < numdatasets ; ii += 1)
+			datanames[ii][0] = Motofit#Moto_loadReffile(pathStr + stringfromlist(ii, datafiles, " "))
+		endfor
+
+		freadline global_pilotID, pilotfiles
+		pilotfiles = removeending(pilotfiles, "\r")
+		//read the individual pilot files.
+		for(ii = 0 ; ii < numdatasets ; ii += 1)
+			open/r/z/P=motoMPI pilotID as stringfromlist(ii, pilotfiles, " ")
+			if(V_flag)
+				abort
+			endif
+			//two redundant lines at top
+			freadline pilotID, input
+			freadline pilotID, input
+			//now we get to the interesting part
+			make/free/n=(0)/d/o params
+			do
+				freadline pilotID, input
+				if(!strlen(input))
+					break
+				endif
+				redimension/n=(numpnts(params) + 1) params
+				params[numpnts(params) - 1] = str2num(stringfromlist(0, input, " "))
+				datanames[ii][1] += stringfromlist(1, input, " ")
+			while(1)
+			duplicate/o params, $("root:data:" + datanames[ii][0] + ":coef_" + datanames[ii][0] + "_R")
+			Wave indy = $("root:data:" + datanames[ii][0] + ":coef_" + datanames[ii][0] + "_R")
+			coefs[ii] = indy
+			close pilotID
+		endfor
+		//now we've loaded the pilot files and data, try and set the global fitting up.
+		isImagOrSolvent = mod((dimsize(params, 0) - 6), 4)
+		if(isImagOrSolvent)
+			isImagOrSolvent = 1
+		endif
+		init_fitting(restart = 1, isImagOrSolvent = isImagOrSolvent)
+		Wave/t coefficients_listwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
+		Wave coefficients_selwave = root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
+		
+		for(ii = 0 ; ii < numdatasets ; ii += 1)
+			Wave indy = coefs[ii]
+			add_a_dataset(datanames[ii][0], indy[0])
+			holdstr = datanames[ii][1]
+			for(jj = 0 ; jj < numpnts(indy) ; jj+=1)
+				set_param(indy[jj], jj, ii, coefficients_listwave)
+				coefficients_selwave[jj][2*ii+2] = str2num(holdstr[jj]) ? coefficients_selwave[jj][2 * ii + 2] | 2^4 :coefficients_selwave[jj][2 * ii + 2] &~( 2^4)	
+			endfor
+		endfor
+		
+		//now we have to link parameters, read in linkage matrix
+		make/n=(0, numdatasets)/i/free templinkage
+		do
+			freadline global_pilotID, input
+			if(!strlen(input))
+				break
+			endif
+			input = removeending(input, "\r")
+			redimension/n=(dimsize(templinkage, 0) + 1, -1) templinkage
+			templinkage[dimsize(templinkage, 0) - 1][] = str2num(stringfromlist(q, input, " "))
+		while(1)
+		
+		//linkage matrix read in, link all the parameters
+		Wave uniquemask = isuniqueparam(linkagematrix = templinkage)
+		for(ii = 0 ; ii < numdatasets ; ii += 1)
+			for(jj = 0 ; jj < dimsize(templinkage, 0) ; jj += 1)
+				if(uniquemask[jj][ii] == 0)	//parameter is not unique, have to link to one preceeding.
+					findvalue/i=(templinkage[jj][ii])/z templinkage
+					col=floor(V_value / dimsize(templinkage, 0))
+					row=V_value - col * dimsize(templinkage, 0)
+					linkparameterlist(num2istr(col) + ":" + num2istr(row) + ";" + num2istr(ii) + ":" + num2istr(jj))
+				endif
+			endfor
+		endfor
+		regenerateLinkageListBoxes()
+	catch
+	
+	endtry
+	if(global_pilotID)
+		close global_pilotID
+	endif
+	if(pilotID)
+		close pilotID
+	endif
 End
