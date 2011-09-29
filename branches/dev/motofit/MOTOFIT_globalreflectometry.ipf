@@ -30,10 +30,12 @@ static Function buildpanel() : Panel
 	ListBox coefficients_tab1,listWave=root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
 	ListBox coefficients_tab1,selWave=root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
 	ListBox coefficients_tab1,clickEventModifiers= 4, fsize = 11,mode=6
-	Button do_global_fit,pos={184,610},size={80,40},proc=Motofit_GR#globalpanel_GUI_button,title="Fit"
+	Button do_global_fit,pos={184,600},size={80,40},proc=Motofit_GR#globalpanel_GUI_button,title="Fit"
 	Button do_global_fit,fSize=12
-	Button simulate,pos={276,610},size={80,40},proc=Motofit_GR#globalpanel_GUI_button,title="Simulate"
+	Button simulate,pos={276,600},size={80,40},proc=Motofit_GR#globalpanel_GUI_button,title="Simulate"
 	Button simulate,fSize=12
+	Button savesetup_tab0,pos={451,600},size={70,20},title="Save setup",fSize=10, proc = Motofit_GR#globalpanel_GUI_button
+	Button loadsetup_tab0,pos={451,622},size={70,20},title="Load setup",fSize=10, proc= Motofit_GR#globalpanel_GUI_button
 	Slider slider0_tab1,pos={22,589},size={517,16}, proc = Motofit_GR#globalpanel_GUI_slider
 	Slider slider0_tab1,limits={0,2,0},value= 0,vert= 0,ticks= 0
 	ValDisplay Chi2_tab1,pos={223,42},size={100,25},title="\\F'Symbol'c\\M\\S2",fSize=12
@@ -351,7 +353,13 @@ static Function globalpanel_GUI_button(ba) : ButtonControl
 					break
 				case "do_global_fit":
 					Do_a_global_fit()
-					break				
+					break	
+				case "savesetup_tab0":
+					setup_motoMPI()
+					break			
+				case "loadsetup_tab0":
+					ingest_motoMPI_input()
+					break			
 			endswitch
 			// click code here
 			break
@@ -1725,7 +1733,7 @@ Function ingest_motoMPI_input([folderStr])
 
 	try
 		if(paramisdefault(folderStr))
-			newpath/M="Select the folder containing the motoMPI input"/o/q/z motoMPI
+			newpath/M="Select the folder containing the setup"/o/q/z motoMPI
 		else
 			newpath/o/q/z motoMPI, folderStr
 		endif
