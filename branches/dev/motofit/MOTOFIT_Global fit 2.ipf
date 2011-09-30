@@ -566,9 +566,9 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	SVAR newGF_HoldString = root:Packages:MotofitGF:NewGlobalFit:newGF_HoldString
 	newGF_HoldString = MakeHoldString(CoefWave, quiet, 1)		// MakeHoldString() returns "" if there are no holds
 	String xwave = ""
-	if (isAllAtOnce)
-		xwave = "XCumData"
-	endif
+//	if (isAllAtOnce)
+	xwave = "XCumData"
+//	endif
 	
 	String cwavename = ""
 	if (WaveExists(ConstraintWave))
@@ -1840,7 +1840,7 @@ Function MOTO_RestoreSetup(savedSetupName)
 	String savedSetupName
 	
 	DFREF saveDF = GetDataFolderDFR()
-	DFREF savedSetupDF = root:Packages:motofitgf:NewGlobalFit:NewGlobalFit_StoredSetups:$(savedSetupName)
+	DFREF savedSetupDF = root:Packages:motofitgf:NewGlobalFit_StoredSetups:$(savedSetupName)
 	if (DataFolderRefStatus(savedSetupDF) == 0)
 		return -1
 	endif
@@ -1853,7 +1853,7 @@ Function MOTO_RestoreSetup(savedSetupName)
 			break
 		endif
 		
-		Duplicate/O w, root:Packages:motofitgf:$(NameOfWave(w))
+		Duplicate/O w, root:Packages:motofitgf:NewGlobalFit:$(NameOfWave(w))
 		i += 1
 	while (1)
 	
@@ -1862,7 +1862,7 @@ Function MOTO_RestoreSetup(savedSetupName)
 	for (i = 0; i < nv; i += 1)
 		String varname = StringFromList(i, vars)
 		NVAR vv = $varname
-		Variable/G root:Packages:motofitgf:$varname = vv
+		Variable/G root:Packages:motofitgf:NewGlobalFit:$varname = vv
 	endfor
 	
 	String strs = StringList("*", ";")
@@ -1870,10 +1870,10 @@ Function MOTO_RestoreSetup(savedSetupName)
 	for (i = 0; i < nstr; i += 1)
 		String strname = StringFromList(i, strs)
 		SVAR ss = $strname
-		String/G root:Packages:motofitgf:$strname = ss
+		String/G root:Packages:motofitgf:NewGlobalFit:$strname = ss
 	endfor
 	
-	SetDataFolder root:Packages:motofitgf
+	SetDataFolder root:Packages:motofitgf:NewGlobalFit:
 	NVAR DoConstraints
 	CheckBox NewGF_ConstraintsCheckBox,win=MotoGlobalFitPanel#NewGF_GlobalControlArea,value=DoConstraints
 	NVAR DoWeighting
@@ -4949,8 +4949,8 @@ Function MOTO_DataSetsMvSelWavesUpOrDown(s) : ButtonControl
 			return 0		// a cell in the top row is selected; can't move up
 		endif
 	else
-		if ( (SelectedWavesSelWave[rowsInSelectedList][0] & 0x01) || (SelectedWavesSelWave[rowsInSelectedList][1] & 0x01) )
-			return 0		// a cell in the top row is selected; can't move up
+		if ( (SelectedWavesSelWave[lastRow][0] & 0x01) || (SelectedWavesSelWave[lastRow][1] & 0x01) )
+			return 0		// a cell in the bottom row is selected; can't move down
 		endif
 	endif
 	

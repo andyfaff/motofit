@@ -243,65 +243,65 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	Wave/T FitFuncNames		// a text wave containing a list of the fit functions to be used in this fit.
 
 	Wave/T DataSets			// Wave containing a list of data sets.
-								// Column 0 contains Y data sets.
-								// Column 1 contains X data sets. Enter _calculated_ in a row if appropriate.
-								// A column with label "Weights", if it exists, contains names of weighting waves for each dataset.
-								// A column with label "Masks", if it exists, contains names of mask waves for each data set.
+	// Column 0 contains Y data sets.
+	// Column 1 contains X data sets. Enter _calculated_ in a row if appropriate.
+	// A column with label "Weights", if it exists, contains names of weighting waves for each dataset.
+	// A column with label "Masks", if it exists, contains names of mask waves for each data set.
 
 	Wave CoefDataSetLinkage	// a matrix wave with a row for each data set and N+2 columns, where N is the maximum number of coefficients
-								// used by any of the fit functions. It looks like this for a hypothetical case of two functions and four
-								// data sets:
+	// used by any of the fit functions. It looks like this for a hypothetical case of two functions and four
+	// data sets:
 								
-								//		|	f()	first	last	N	c0	c1	c2	c3	c4	c5
-								//	---|-----------------------------
-								//	ds1	|	0	0		100		5	0	1	2	3	4	-1
-								//	ds2	|	0	101		150		5	5	6	2	7	4	-1
-								//	ds3	|	1	151		220		6	8	9	2	10	11	12
-								//	ds4	|	1	221		300		6	13	14	2	15	16	12
+	//		|	f()	first	last	N	c0	c1	c2	c3	c4	c5
+	//	---|-----------------------------
+	//	ds1	|	0	0		100		5	0	1	2	3	4	-1
+	//	ds2	|	0	101		150		5	5	6	2	7	4	-1
+	//	ds3	|	1	151		220		6	8	9	2	10	11	12
+	//	ds4	|	1	221		300		6	13	14	2	15	16	12
 
-								// In this matrix, I imagine fitting to two functions, one of which takes 5 coefficients, the other 6. 
-								// Coefficients 0, 1, and 3 for function f1 are local- they have distinct coefficient array indices 
-								// everywhere. Coefficient 2 is global- the same coefficient array index is used for every data set. 
-								// Coefficient 4 is "shared local" (group global?)- it is global for ds1 and ds2. The corresponding 
-								// coefficient for ds3 and ds4 is local- it probably refers to something entirely different. Function 
-								// f1 has no coefficient 5- hence the -1. For f2, coefficient 5 is shared between the data sets (ds3 
-								// and ds4) which use f2. The column labelled N is the number of coefficients needed by the fit function.
-								// The column labelled f() has an index into the FitFuncNames wave.
-								// These columns are set up by the function in its private copy. You can set them to zero:
-								// The column labelled first contains the point number where that data set starts in the cumulative waves.
-								// The column labelled last contains the point number where the last point of that data set resides in the cumulative waves
+	// In this matrix, I imagine fitting to two functions, one of which takes 5 coefficients, the other 6. 
+	// Coefficients 0, 1, and 3 for function f1 are local- they have distinct coefficient array indices 
+	// everywhere. Coefficient 2 is global- the same coefficient array index is used for every data set. 
+	// Coefficient 4 is "shared local" (group global?)- it is global for ds1 and ds2. The corresponding 
+	// coefficient for ds3 and ds4 is local- it probably refers to something entirely different. Function 
+	// f1 has no coefficient 5- hence the -1. For f2, coefficient 5 is shared between the data sets (ds3 
+	// and ds4) which use f2. The column labelled N is the number of coefficients needed by the fit function.
+	// The column labelled f() has an index into the FitFuncNames wave.
+	// These columns are set up by the function in its private copy. You can set them to zero:
+	// The column labelled first contains the point number where that data set starts in the cumulative waves.
+	// The column labelled last contains the point number where the last point of that data set resides in the cumulative waves
 								
 	Wave CoefWave				// Wave containing initial guesses. The entries in the second and greater columns of the CoefDataSetLinkage
-								// wave are indices into this wave.
+	// wave are indices into this wave.
 								
-								// There is no particular order- make sure the order here and the indices in CoefDataSetLinkage are consistent.
+	// There is no particular order- make sure the order here and the indices in CoefDataSetLinkage are consistent.
 								
-								// Column 0 contains initial guesses
-								// A column with label "Hold", if it exists, specifies held coefficients
-								// A column with label "Epsilon", if it exists, holds epsilon values for the coefficients
+	// Column 0 contains initial guesses
+	// A column with label "Hold", if it exists, specifies held coefficients
+	// A column with label "Epsilon", if it exists, holds epsilon values for the coefficients
 								
 	Wave/T/Z CoefNames		// optional text wave with same number of rows as CoefWave. Gives a name for referring to a particular
-								// coefficient in coefWave. This is used only in reports to make them more readable. If you don't want to
-								// use this wave, use $"" instead of wave name.
+	// coefficient in coefWave. This is used only in reports to make them more readable. If you don't want to
+	// use this wave, use $"" instead of wave name.
 
 	Wave/T/Z ConstraintWave	// This constraint wave will be used straight as it comes, so K0, K1, etc. refer to the order of 
-								// coefficients as laid out in CoefWave.
-								// If no constraints, use $"".
+	// coefficients as laid out in CoefWave.
+	// If no constraints, use $"".
 
 	Variable Options			// 1: Append Results to Top Graph (implies option 64).
-								// 2: Calculate Residuals
-								// 4: Covariance Matrix
-								// 8: Do Fit Graph (a graph showing the actual fit in progress)
-								// 16: Quiet- No printing in History
-								// 32: Weight waves contain Standard Deviation (0 means 1/SD)
-								// 64: Make fit curve waves (even if option 1 is not turned on)
-								// 128: Correlation matrix (implies option 4)
-								// 256: Result waves should have log spacing. Generates an GFitX_ wave to go with the GFit_ destination waves.
+	// 2: Calculate Residuals
+	// 4: Covariance Matrix
+	// 8: Do Fit Graph (a graph showing the actual fit in progress)
+	// 16: Quiet- No printing in History
+	// 32: Weight waves contain Standard Deviation (0 means 1/SD)
+	// 64: Make fit curve waves (even if option 1 is not turned on)
+	// 128: Correlation matrix (implies option 4)
+	// 256: Result waves should have log spacing. Generates an GFitX_ wave to go with the GFit_ destination waves.
 
 	Variable FitCurvePoints		// number of points for auto-destination waves
 
 	Variable DoAlertsOnError	// if 1, this function puts up alert boxes with messages about errors. These alert boxes
-								// may give more information than the error code returned from the function.
+	// may give more information than the error code returned from the function.
 
 	String &errorName			// Wave name that was found to be in error. Only applies to certain errors.
 	
@@ -310,10 +310,10 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	Variable maxIters			// optional parameter to set the maximum number of iterations to something other than 40
 	
 	String resultWavePrefix	// optional parameter to enter a string to use as a prefix when naming result waves, like the per-dataset coefficient waves, model traces, residual waves, etc.
-								// Be careful- if it's too long you can get a combined name over 31 characters quite easily. If the result name has more than 31 characters, it will be truncated *from the back end*.
+	// Be careful- if it's too long you can get a combined name over 31 characters quite easily. If the result name has more than 31 characters, it will be truncated *from the back end*.
 
 	String resultDF				// optional parameter to specify a data folder to hold all result waves. This overrides the default which is to put a
-								// given result wave in the same data folder as the Y data wave it goes with.
+	// given result wave in the same data folder as the Y data wave it goes with.
 	
 	Variable PisLevORgen		//whether you want to do LM (0) or DE (1)
 
@@ -399,9 +399,9 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	Variable doWeighting=0
 	Variable doMasking=0
 	
-DoUpdate
+	DoUpdate
 	err = NewGF_CheckDSets_BuildCumWaves(DataSets, privateLinkage, doWeighting, doMasking, errorWaveName, errorWaveRow, errorWaveColumn)
-DoUpdate
+	DoUpdate
 	if (err < 0)
 		//ARJN
 		if (err == MOTO_NewGlobalFitNO_DATASETS)
@@ -456,82 +456,82 @@ DoUpdate
 	endif
 	
 	//arjn
-if(isLevORGen==0 ||itemsinlist(Operationlist("GENcurvefit",";","external")))			//added by ARJN
-	if (options & MOTO_NewGFOptionFIT_GRAPH)	
-		if (WinType("GlobalFitGraph") != 0)
-			DoWindow/K GlobalFitGraph
-		endif
-		String SavedWindowCoords = WC_WindowCoordinatesGetStr("GlobalFitGraph", 0)
-		if (strlen(SavedWindowCoords) > 0)
-			Execute "Display/W=("+SavedWindowCoords+") as \"Global Analysis Progress\""
-		else
-			Display as "Global Analysis Progress"
-		endif
-		DoWindow/C GlobalFitGraph
-		ColorTab2Wave Rainbow
-		Wave M_colors
-		Duplicate/O M_colors, root:Packages:MotofitGF:NewGlobalFit:NewGF_TraceColors
-		Wave colors = root:Packages:MotofitGF:NewGlobalFit:NewGF_TraceColors
-		Variable index = 0, size = DimSize(M_colors, 0)
-		for (i = 0; i < size; i += 1)
-			colors[i][] = M_colors[index][q]
-			index += 37
-			if (index >= size)
-				index -= size
+	if(isLevORGen==0 ||itemsinlist(Operationlist("GENcurvefit",";","external")))			//added by ARJN
+		if (options & MOTO_NewGFOptionFIT_GRAPH)	
+			if (WinType("GlobalFitGraph") != 0)
+				DoWindow/K GlobalFitGraph
 			endif
-		endfor
-		KillWaves/Z M_colors
-		Variable nTraces = DimSize(privateLinkage, 0)
-		for (i = 0; i < nTraces; i += 1)
-			Variable start = privateLinkage[i][FirstPointCol]
-			Variable theEnd = privateLinkage[i][LastPointCol]
-			AppendToGraph Yw[start, theEnd] vs Xw[start, theEnd]
-			AppendToGraph FitY[start, theEnd] vs Xw[start, theEnd]
-		endfor
-		DoUpdate
-		for (i = 0; i < nTraces; i += 1)
-			ModifyGraph mode[2*i]=2
-			ModifyGraph marker[2*i]=8
-			ModifyGraph lSize[2*i]=2
-			ModifyGraph rgb[2*i]=(colors[i][0],colors[i][1],colors[i][2])
-			ModifyGraph rgb[2*i+1]=(colors[i][0],colors[i][1],colors[i][2])
-		endfor		
-		ModifyGraph gbRGB=(17476,17476,17476)
-		if (options & MOTO_NewGFOptionLOG_DEST_WAVE)
-			WaveStats/Q/M=1 xW
-			if ( (V_min <= 0) || (V_max <= 0) )
-				// bad x range for log- cancel the option
-				options = options & ~MOTO_NewGFOptionLOG_DEST_WAVE
+			String SavedWindowCoords = WC_WindowCoordinatesGetStr("GlobalFitGraph", 0)
+			if (strlen(SavedWindowCoords) > 0)
+				Execute "Display/W=("+SavedWindowCoords+") as \"Global Analysis Progress\""
 			else
-				// the progress graph should have log X axis
-				ModifyGraph/W=GlobalFitGraph log(bottom)=1
+				Display as "Global Analysis Progress"
 			endif
-		endif
-		SetWindow GlobalFitGraph, hook = WC_WindowCoordinatesHook
-		
-		if (DoResid)
-			Duplicate/O Yw, root:Packages:MotofitGF:NewGlobalFit:NewGF_ResidY
-			Wave rw = root:Packages:MotofitGF:NewGlobalFit:NewGF_ResidY
-			residWave = "root:Packages:MotofitGF:NewGlobalFit:NewGF_ResidY"
+			DoWindow/C GlobalFitGraph
+			ColorTab2Wave Rainbow
+			Wave M_colors
+			Duplicate/O M_colors, root:Packages:MotofitGF:NewGlobalFit:NewGF_TraceColors
+			Wave colors = root:Packages:MotofitGF:NewGlobalFit:NewGF_TraceColors
+			Variable index = 0, size = DimSize(M_colors, 0)
+			for (i = 0; i < size; i += 1)
+				colors[i][] = M_colors[index][q]
+				index += 37
+				if (index >= size)
+					index -= size
+				endif
+			endfor
+			KillWaves/Z M_colors
+			Variable nTraces = DimSize(privateLinkage, 0)
 			for (i = 0; i < nTraces; i += 1)
-				start = privateLinkage[i][FirstPointCol]
-				theEnd = privateLinkage[i][LastPointCol]
-				AppendToGraph/L=ResidLeftAxis rw[start, theEnd] vs Xw[start, theEnd]
+				Variable start = privateLinkage[i][FirstPointCol]
+				Variable theEnd = privateLinkage[i][LastPointCol]
+				AppendToGraph Yw[start, theEnd] vs Xw[start, theEnd]
+				AppendToGraph FitY[start, theEnd] vs Xw[start, theEnd]
 			endfor
 			DoUpdate
 			for (i = 0; i < nTraces; i += 1)
-				ModifyGraph mode[2*nTraces+i]=2
-				ModifyGraph rgb[2*nTraces+i]=(colors[i][0],colors[i][1],colors[i][2])
-				ModifyGraph lSize[2*nTraces+i]=2
-			endfor
-			ModifyGraph lblPos(ResidLeftAxis)=51
-			ModifyGraph zero(ResidLeftAxis)=1
-			ModifyGraph freePos(ResidLeftAxis)={0,kwFraction}
-			ModifyGraph axisEnab(left)={0,0.78}
-			ModifyGraph axisEnab(ResidLeftAxis)={0.82,1}
+				ModifyGraph mode[2*i]=2
+				ModifyGraph marker[2*i]=8
+				ModifyGraph lSize[2*i]=2
+				ModifyGraph rgb[2*i]=(colors[i][0],colors[i][1],colors[i][2])
+				ModifyGraph rgb[2*i+1]=(colors[i][0],colors[i][1],colors[i][2])
+			endfor		
+			ModifyGraph gbRGB=(17476,17476,17476)
+			if (options & MOTO_NewGFOptionLOG_DEST_WAVE)
+				WaveStats/Q/M=1 xW
+				if ( (V_min <= 0) || (V_max <= 0) )
+					// bad x range for log- cancel the option
+					options = options & ~MOTO_NewGFOptionLOG_DEST_WAVE
+				else
+					// the progress graph should have log X axis
+					ModifyGraph/W=GlobalFitGraph log(bottom)=1
+				endif
+			endif
+			SetWindow GlobalFitGraph, hook = WC_WindowCoordinatesHook
+		
+			if (DoResid)
+				Duplicate/O Yw, root:Packages:MotofitGF:NewGlobalFit:NewGF_ResidY
+				Wave rw = root:Packages:MotofitGF:NewGlobalFit:NewGF_ResidY
+				residWave = "root:Packages:MotofitGF:NewGlobalFit:NewGF_ResidY"
+				for (i = 0; i < nTraces; i += 1)
+					start = privateLinkage[i][FirstPointCol]
+					theEnd = privateLinkage[i][LastPointCol]
+					AppendToGraph/L=ResidLeftAxis rw[start, theEnd] vs Xw[start, theEnd]
+				endfor
+				DoUpdate
+				for (i = 0; i < nTraces; i += 1)
+					ModifyGraph mode[2*nTraces+i]=2
+					ModifyGraph rgb[2*nTraces+i]=(colors[i][0],colors[i][1],colors[i][2])
+					ModifyGraph lSize[2*nTraces+i]=2
+				endfor
+				ModifyGraph lblPos(ResidLeftAxis)=51
+				ModifyGraph zero(ResidLeftAxis)=1
+				ModifyGraph freePos(ResidLeftAxis)={0,kwFraction}
+				ModifyGraph axisEnab(left)={0,0.78}
+				ModifyGraph axisEnab(ResidLeftAxis)={0.82,1}
+			endif
 		endif
-	endif
-endif	
+	endif	
 	Duplicate/D/O MasterCoefs, root:Packages:MotofitGF:NewGlobalFit:EpsilonWave
 	Wave EP = root:Packages:MotofitGF:NewGlobalFit:EpsilonWave
 	if (FindDimLabel(CoefWave, 1, "Epsilon") == -2)
@@ -554,7 +554,7 @@ endif
 		covarianceArg = 2
 	endif
 	
-DoUpdate
+	DoUpdate
 	string funcName=""
 	if (isAllAtOnce)
 		funcName = "MOTO_NewGlblFitFuncAllAtOnce"
@@ -566,9 +566,9 @@ DoUpdate
 	SVAR newGF_HoldString = root:Packages:MotofitGF:NewGlobalFit:newGF_HoldString
 	newGF_HoldString = MakeHoldString(CoefWave, quiet, 1)		// MakeHoldString() returns "" if there are no holds
 	String xwave = ""
-	if (isAllAtOnce)
-		xwave = "XCumData"
-	endif
+//	if (isAllAtOnce)
+	xwave = "XCumData"
+//	endif
 	
 	String cwavename = ""
 	if (WaveExists(ConstraintWave))
@@ -584,50 +584,52 @@ DoUpdate
 		endif
 	endif
 	SaveDF = GetDataFolder(1)
-DoUpdate
+	DoUpdate
 	SetDataFolder root:Packages:MotofitGF:NewGlobalFit
-		Variable/G V_FitQuitReason
-		Variable/G V_FitNumIters
-DoUpdate
-		DebuggerOptions
-		Variable savedDebugOnError = V_debugOnError
-		DebuggerOptions debugOnError=0
-		Variable V_FItMaxIters = maxIters
-		try
-			switch (isLevORgen)
-				case 0:
-					FuncFit/Q=(quiet)/H=(newGF_HoldString)/M=(covarianceArg) $funcname, MasterCoefs, Yw /X=$xwave/D=FitY/E=EP/R=$residWave/C=$cwavename/W=$weightName/I=(weightType)/NWOK
-					break
-				case 1:
-						if(strlen(newGF_HoldString)==0)
-							variable ii
-							for(ii=0;ii<numpnts(root:packages:MotofitGF:NewGlobalFit:MasterCoefs);ii+=1)
-								newGF_HoldString+="0"
-							endfor
-						endif
-						GEN_setlimitsforGENcurvefit(root:packages:MotofitGF:NewGlobalFit:MasterCoefs, newGF_HoldString, getdatafolder(1))
-						Wave GENcurvefitlimits =  root:packages:motofit:old_genoptimise:GENcurvefitlimits
-						SVAR newGF_HoldString = root:packages:MotofitGF:NewGlobalFit:newGF_HoldString
-						make/o/n=(numpnts(mastercoefs)) W_Sigma = 0
-						Gencurvefit/K={200,10,0.7,0.5}/Q=(quiet)/MAT=(covarianceArg)/R=$residWave/X=$xwave/I=(weightType)/W=$weightName/D=fity $funcname, Yw, MasterCoefs, newGF_HoldString, GENcurvefitlimits
-						break
-			endswitch
-		catch
-			String fitErrorMessage = GetRTErrMessage()
-			Variable errorCode = GetRTError(1)
-			Variable semiPos = strsearch(fitErrorMessage, ";", 0)
-			if (semiPos >= 0)
-				fitErrorMessage = fitErrorMessage[semiPos+1, inf]
+	Variable/G V_FitQuitReason
+	Variable/G V_FitNumIters
+	DoUpdate
+	DebuggerOptions
+	Variable savedDebugOnError = V_debugOnError
+	DebuggerOptions debugOnError=0
+	Variable V_FItMaxIters = maxIters
+	switch (isLevORgen)
+		case 0:
+			try
+				FuncFit/Q=(quiet)/H=(newGF_HoldString)/M=(covarianceArg) $funcname, MasterCoefs, Yw /X=$xwave/D=FitY/E=EP/R=$residWave/C=$cwavename/W=$weightName/I=(weightType)/NWOK
+			catch
+				String fitErrorMessage = GetRTErrMessage()
+				Variable errorCode = GetRTError(1)
+				Variable semiPos = strsearch(fitErrorMessage, ";", 0)
+				if (semiPos >= 0)
+					fitErrorMessage = fitErrorMessage[semiPos+1, inf]
+				endif
+				if (!quiet)
+					DoAlert 0, fitErrorMessage
+				endif
+			endtry
+					
+			break
+		case 1:
+			if(strlen(newGF_HoldString)==0)
+				variable ii
+				for(ii=0;ii<numpnts(root:packages:MotofitGF:NewGlobalFit:MasterCoefs);ii+=1)
+					newGF_HoldString+="0"
+				endfor
 			endif
-			if (!quiet)
-				DoAlert 0, fitErrorMessage
-			endif
-		endtry
-		DebuggerOptions debugOnError=savedDebugOnError
+			GEN_setlimitsforGENcurvefit(root:packages:MotofitGF:NewGlobalFit:MasterCoefs, newGF_HoldString)
+			Wave GENcurvefitlimits =  root:packages:motofit:old_genoptimise:GENcurvefitlimits
+			SVAR newGF_HoldString = root:packages:MotofitGF:NewGlobalFit:newGF_HoldString
+			make/o/n=(numpnts(mastercoefs)) W_Sigma = 0
+			Gencurvefit/K={200,10,0.7,0.5}/Q=(quiet)/MAT=(covarianceArg)/R=$residWave/X=$xwave/I=(weightType)/W=$weightName/D=fity $funcname, Yw, MasterCoefs, newGF_HoldString, GENcurvefitlimits
+			break
+	endswitch
+
+	DebuggerOptions debugOnError=savedDebugOnError
 		
-		Variable fit_npnts = V_npnts
-		Variable fit_numNaNs = V_numNaNs
-		Variable fit_numINFs = V_numINFs
+	Variable fit_npnts = V_npnts
+	Variable fit_numNaNs = V_numNaNs
+	Variable fit_numINFs = V_numINFs
 	SetDataFolder $SaveDF
 	
 	if (!quiet)
@@ -647,13 +649,13 @@ DoUpdate
 	endif
 	
 	if (isLevORgen==0)		////extra bit added ARJN
-	if (Options & MOTO_NewGFOptionCOV_MATRIX)
-		Wave M_Covar = root:Packages:MotofitGF:NewGlobalFit:M_covar
-		if (Options & MOTO_NewGFOptionCOR_MATRIX)
-			Duplicate/O M_Covar, M_Correlation
-			M_Correlation = M_Covar[p][q]/sqrt(M_Covar[p][p]*M_Covar[q][q])
+		if (Options & MOTO_NewGFOptionCOV_MATRIX)
+			Wave M_Covar = root:Packages:MotofitGF:NewGlobalFit:M_covar
+			if (Options & MOTO_NewGFOptionCOR_MATRIX)
+				Duplicate/O M_Covar, M_Correlation
+				M_Correlation = M_Covar[p][q]/sqrt(M_Covar[p][p]*M_Covar[q][q])
+			endif
 		endif
-	endif
 	endif
 	
 	CoefWave[][0] = MasterCoefs[p]
@@ -728,7 +730,7 @@ DoUpdate
 		endif
 		Rename xW, fitXCumData
 		Wave/Z fitxW = root:Packages:MotofitGF:NewGlobalFit:fitXCumData
-Duplicate/O Yw, fitYCumData	
+		Duplicate/O Yw, fitYCumData	
 		String ListOfFitCurveWaves = ""
 		Wave W_sigma = root:Packages:MotofitGF:NewGlobalFit:W_sigma
 	
@@ -855,20 +857,20 @@ Duplicate/O Yw, fitYCumData
 				dspw = 0
 				
 				//if (IsAllAtOnce)
-					Duplicate/O privateLinkage, copyOfLinkage
-					Make/O/D/N=(1,DimSize(copyOfLinkage, 1)) root:Packages:MotofitGF:NewGlobalFit:CoefDataSetLinkage
-					Wave tempLinkage = root:Packages:MotofitGF:NewGlobalFit:CoefDataSetLinkage
-					tempLinkage = copyOfLinkage[i][q]
-					tempLinkage[0][FirstPointCol] = 0
-					tempLinkage[0][LastPointCol] = numpnts(resCurveW)-1
-					if (IsAllAtOnce)
-						MOTO_NewGlblFitFuncAllAtOnce(MasterCoefs, resCurveW, xw)
-					else
-						MOTO_NewGlblFitFunc(MasterCoefs, resCurveW, xw)
-					endif
-					resCurveW = YFit[p] - resCurveW[p]
-					Duplicate/O copyOfLinkage, root:Packages:MotofitGF:NewGlobalFit:CoefDataSetLinkage
-					KillWaves/Z copyOfLinkage
+				Duplicate/O privateLinkage, copyOfLinkage
+				Make/O/D/N=(1,DimSize(copyOfLinkage, 1)) root:Packages:MotofitGF:NewGlobalFit:CoefDataSetLinkage
+				Wave tempLinkage = root:Packages:MotofitGF:NewGlobalFit:CoefDataSetLinkage
+				tempLinkage = copyOfLinkage[i][q]
+				tempLinkage[0][FirstPointCol] = 0
+				tempLinkage[0][LastPointCol] = numpnts(resCurveW)-1
+				if (IsAllAtOnce)
+					MOTO_NewGlblFitFuncAllAtOnce(MasterCoefs, resCurveW, xw)
+				else
+					MOTO_NewGlblFitFunc(MasterCoefs, resCurveW, xw)
+				endif
+				resCurveW = YFit[p] - resCurveW[p]
+				Duplicate/O copyOfLinkage, root:Packages:MotofitGF:NewGlobalFit:CoefDataSetLinkage
+				KillWaves/Z copyOfLinkage
 				//else
 				//	resCurveW = YFit[p] - NewGlblFitFunc(MasterCoefs, p)
 				//endif
@@ -962,14 +964,14 @@ static Function NewGF_CheckDSets_BuildCumWaves(DataSets, linkageMatrix, doWeight
 	Variable MaskCol = FindDimLabel(DataSets, 1, "Masks")
 	doMasking = 0
 	if (MaskCol >= 0)
-//		Make/D/N=(totalPoints)/O root:Packages:MotofitGF:NewGlobalFit:GFMaskWave
+		//		Make/D/N=(totalPoints)/O root:Packages:MotofitGF:NewGlobalFit:GFMaskWave
 		doMasking = 1
 	endif
 
 	doWeighting = 0
 	Variable WeightCol = FindDimLabel(DataSets, 1, "Weights")
 	if (WeightCol >= 0)
-//		Make/D/N=(totalPoints)/O root:Packages:MotofitGF:NewGlobalFit:GFWeightWave
+		//		Make/D/N=(totalPoints)/O root:Packages:MotofitGF:NewGlobalFit:GFWeightWave
 		doWeighting = 1
 	endif
 	
@@ -1058,7 +1060,7 @@ static Function NewGF_CheckDSets_BuildCumWaves(DataSets, linkageMatrix, doWeight
 	Wave Yw = root:Packages:MotofitGF:NewGlobalFit:YCumData
 	Wave DataSetPointer = root:Packages:MotofitGF:NewGlobalFit:DataSetPointer
 	Wave/Z Weightw = root:Packages:MotofitGF:NewGlobalFit:GFWeightWave
-//	Wave/Z Maskw = root:Packages:MotofitGF:NewGlobalFit:GFMaskWave
+	//	Wave/Z Maskw = root:Packages:MotofitGF:NewGlobalFit:GFMaskWave
 	
 	Variable realTotalPoints = 0
 	Variable wavePoint = 0
@@ -1071,11 +1073,11 @@ static Function NewGF_CheckDSets_BuildCumWaves(DataSets, linkageMatrix, doWeight
 		Wave/Z Ysetw = $YSet
 		Wave/Z Xsetw = $XSet
 		if(doMasking)
-    		Wave/Z mw = $(DataSets[i][MaskCol])
+			Wave/Z mw = $(DataSets[i][MaskCol])
 		endif
 		if (doWeighting)
-    		Wave/Z ww = $(DataSets[i][WeightCol])
-        endif
+			Wave/Z ww = $(DataSets[i][WeightCol])
+		endif
 		wavePoints = numpnts(Ysetw)
 		for (j = 0; j < wavePoints; j += 1)
 			if (numtype(Ysetw[j]) != 0)
@@ -1245,7 +1247,7 @@ static Function fMotoGlobalFitPanel()
 	String cmd = WC_WindowCoordinatesSprintf("MotoGlobalFitPanel", fmt, defLeft, defTop, defRight, defBottom, 1)
 	Execute cmd
 
-//	NewPanel/K=1/W=(156,70,829,443) as "Motofit Global Analysis"
+	//	NewPanel/K=1/W=(156,70,829,443) as "Motofit Global Analysis"
 	DoWindow/C MotoGlobalFitPanel
 
 	DefineGuide TabAreaLeft={FL,13}			// this is changed to FR, 25 when tab 0 is hidden
@@ -1262,164 +1264,164 @@ static Function fMotoGlobalFitPanel()
 	Button NewGF_HelpButton,pos={657,3},size={50,20},proc=MOTO_NewGF_HelpButtonProc,title="Help"
 
 	NewPanel/FG=(TabAreaLeft, TabAreaTop, TabAreaRight, TabAreaBottom) /HOST=#
-		RenameWindow #,Tab0ContentPanel
-		ModifyPanel frameStyle=0, frameInset=0
+	RenameWindow #,Tab0ContentPanel
+	ModifyPanel frameStyle=0, frameInset=0
 	
-		GroupBox NewGF_DataSetsGroup,pos={12,5},size={315,113},title="Data Sets"
-		GroupBox NewGF_DataSetsGroup,fSize=12,fStyle=1
+	GroupBox NewGF_DataSetsGroup,pos={12,5},size={315,113},title="Data Sets"
+	GroupBox NewGF_DataSetsGroup,fSize=12,fStyle=1
 	
-			PopupMenu NewGF_AddDataSetMenu,pos={23,29},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#MOTO_NewGF_AddYWaveMenuProc,title="Add Data Sets"
-			PopupMenu NewGF_AddDataSetMenu,mode=0,value= #"MOTO_NewGF_YWaveList(1)"
+	PopupMenu NewGF_AddDataSetMenu,pos={23,29},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#MOTO_NewGF_AddYWaveMenuProc,title="Add Data Sets"
+	PopupMenu NewGF_AddDataSetMenu,mode=0,value= #"MOTO_NewGF_YWaveList(1)"
 
-			Button NewGF_AddRemoveWavesButton,pos={23,61},size={220,20},proc=MOTO_AddRemoveWavesButtonProc,title="Add/Remove Waves..."
+	Button NewGF_AddRemoveWavesButton,pos={23,61},size={220,20},proc=MOTO_AddRemoveWavesButtonProc,title="Add/Remove Waves..."
 
-//			PopupMenu NewGF_SetDataSetMenu,pos={23,59},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_SetDataSetMenuProc,title="Choose Y Wave"
-//			PopupMenu NewGF_SetDataSetMenu,mode=0,value= #"MOTO_NewGF_YWaveList(0)"
-//
-//			PopupMenu NewGF_SetXDataSetMenu,pos={175,59},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_SetXWaveMenuProc,title="Choose X Wave"
-//			PopupMenu NewGF_SetXDataSetMenu,mode=0,value= #"Moto_NewGF_XWaveList()"
+	//			PopupMenu NewGF_SetDataSetMenu,pos={23,59},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_SetDataSetMenuProc,title="Choose Y Wave"
+	//			PopupMenu NewGF_SetDataSetMenu,mode=0,value= #"MOTO_NewGF_YWaveList(0)"
+	//
+	//			PopupMenu NewGF_SetXDataSetMenu,pos={175,59},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_SetXWaveMenuProc,title="Choose X Wave"
+	//			PopupMenu NewGF_SetXDataSetMenu,mode=0,value= #"Moto_NewGF_XWaveList()"
 
-			PopupMenu NewGF_RemoveDataSetMenu1,pos={175,29},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_RemoveDataSetsProc,title="Remove"
-			PopupMenu NewGF_RemoveDataSetMenu1,mode=0,value= #"MOTO_NewGF_RemoveMenuList()"
+	PopupMenu NewGF_RemoveDataSetMenu1,pos={175,29},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_RemoveDataSetsProc,title="Remove"
+	PopupMenu NewGF_RemoveDataSetMenu1,mode=0,value= #"MOTO_NewGF_RemoveMenuList()"
 
-			PopupMenu NewGF_SetFunctionMenu,pos={23,90},size={160,20},bodyWidth=160,proc=Moto_SetFuncMenuProc,title="Choose Fit Function"
-			PopupMenu NewGF_SetFunctionMenu,mode=0,value= #"MOTO_NewGF_FitFuncList()"
+	PopupMenu NewGF_SetFunctionMenu,pos={23,90},size={160,20},bodyWidth=160,proc=Moto_SetFuncMenuProc,title="Choose Fit Function"
+	PopupMenu NewGF_SetFunctionMenu,mode=0,value= #"MOTO_NewGF_FitFuncList()"
 
-		GroupBox NewGF_CoefficientsGroup,pos={358,5},size={331,113},title="Coefficients"
-		GroupBox NewGF_CoefficientsGroup,fSize=12,fStyle=1
+	GroupBox NewGF_CoefficientsGroup,pos={358,5},size={331,113},title="Coefficients"
+	GroupBox NewGF_CoefficientsGroup,fSize=12,fStyle=1
 
-			Button NewGF_LinkCoefsButton,pos={373,81},size={140,20},proc=Moto_NewGF_LinkCoefsButtonProc,title="Link Selection"
+	Button NewGF_LinkCoefsButton,pos={373,81},size={140,20},proc=Moto_NewGF_LinkCoefsButtonProc,title="Link Selection"
 
-			Button NewGF_UnLinkCoefsButton,pos={531,81},size={140,20},proc=Moto_UnLinkCoefsButtonProc,title="Unlink Selection"
+	Button NewGF_UnLinkCoefsButton,pos={531,81},size={140,20},proc=Moto_UnLinkCoefsButtonProc,title="Unlink Selection"
 
-			PopupMenu NewGF_SelectAllCoefMenu,pos={373,39},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_SelectAllCoefMenuProc,title="Select Coef Column"
-			PopupMenu NewGF_SelectAllCoefMenu,mode=0,value= #"MOTO_WM_NewGlobalFit1#NewGF_ListFunctionsAndCoefs()"
+	PopupMenu NewGF_SelectAllCoefMenu,pos={373,39},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_SelectAllCoefMenuProc,title="Select Coef Column"
+	PopupMenu NewGF_SelectAllCoefMenu,mode=0,value= #"MOTO_WM_NewGlobalFit1#NewGF_ListFunctionsAndCoefs()"
 
-			PopupMenu NewGF_SelectAlsoCoefMenu,pos={532,38},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_SelectAllCoefMenuProc,title="Add To Selection"
-			PopupMenu NewGF_SelectAlsoCoefMenu,mode=0,value= #"MOTO_WM_NewGlobalFit1#NewGF_ListFunctionsAndCoefs()"
+	PopupMenu NewGF_SelectAlsoCoefMenu,pos={532,38},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_SelectAllCoefMenuProc,title="Add To Selection"
+	PopupMenu NewGF_SelectAlsoCoefMenu,mode=0,value= #"MOTO_WM_NewGlobalFit1#NewGF_ListFunctionsAndCoefs()"
 
-//		GroupBox NewGF_Tab0ListGroup,pos={2,86},size={641,143},disable=1
+	//		GroupBox NewGF_Tab0ListGroup,pos={2,86},size={641,143},disable=1
 
-		ListBox NewGF_DataSetsList,pos={10,130},size={339,160},proc=MOTO_WM_NewGlobalFit1#NewGF_DataSetListBoxProc,frame=2
-		ListBox NewGF_DataSetsList,listWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_DataSetListWave
-		ListBox NewGF_DataSetsList,selWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_DataSetListSelWave
-		ListBox NewGF_DataSetsList,mode= 10,editStyle= 1,widths={10,10,10,6},userColumnResize= 1, clickEventModifiers=5
+	ListBox NewGF_DataSetsList,pos={10,130},size={339,160},proc=MOTO_WM_NewGlobalFit1#NewGF_DataSetListBoxProc,frame=2
+	ListBox NewGF_DataSetsList,listWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_DataSetListWave
+	ListBox NewGF_DataSetsList,selWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_DataSetListSelWave
+	ListBox NewGF_DataSetsList,mode= 10,editStyle= 1,widths={10,10,10,6},userColumnResize= 1, clickEventModifiers=5
 
-		ListBox NewGF_Tab0CoefList,pos={358,130},size={364,160},proc=MOTO_WM_NewGlobalFit1#NewGF_DataSetListBoxProc,frame=2
-		ListBox NewGF_Tab0CoefList,listWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_MainCoefListWave
-		ListBox NewGF_Tab0CoefList,selWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_MainCoefListSelWave
-		ListBox NewGF_Tab0CoefList,colorWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_LinkColors
-		ListBox NewGF_Tab0CoefList,mode= 10,editStyle= 1,widths={100},userColumnResize= 1, clickEventModifiers=5
+	ListBox NewGF_Tab0CoefList,pos={358,130},size={364,160},proc=MOTO_WM_NewGlobalFit1#NewGF_DataSetListBoxProc,frame=2
+	ListBox NewGF_Tab0CoefList,listWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_MainCoefListWave
+	ListBox NewGF_Tab0CoefList,selWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_MainCoefListSelWave
+	ListBox NewGF_Tab0CoefList,colorWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_LinkColors
+	ListBox NewGF_Tab0CoefList,mode= 10,editStyle= 1,widths={100},userColumnResize= 1, clickEventModifiers=5
 		
-		GroupBox NewGF_Tab0ListDragLine,pos={353,130},size={4,160},frame=0
+	GroupBox NewGF_Tab0ListDragLine,pos={353,130},size={4,160},frame=0
 
 	SetActiveSubwindow ##
 	
 	NewPanel/W=(119,117,359,351)/FG=(TabAreaLeft,TabAreaTop,TabAreaRight,TabAreaBottom)/HOST=# 
-		RenameWindow #, Tab1ContentPanel
-		ModifyPanel frameStyle=0, frameInset=0
+	RenameWindow #, Tab1ContentPanel
+	ModifyPanel frameStyle=0, frameInset=0
 		
-		ListBox NewGF_CoefControlList,pos={4,34},size={440,291},proc = MOTO_WM_NewGlobalFit1#NewGF_CoefListBoxProc,frame=2
-		ListBox NewGF_CoefControlList,listWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_CoefControlListWave
-		ListBox NewGF_CoefControlList,selWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_CoefControlListSelWave
-		ListBox NewGF_CoefControlList,mode= 10,editStyle= 1,widths= {15,15,7,4,5},userColumnResize=1
+	ListBox NewGF_CoefControlList,pos={4,34},size={440,291},proc = MOTO_WM_NewGlobalFit1#NewGF_CoefListBoxProc,frame=2
+	ListBox NewGF_CoefControlList,listWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_CoefControlListWave
+	ListBox NewGF_CoefControlList,selWave=root:Packages:MotofitGF:NewGlobalFit:NewGF_CoefControlListSelWave
+	ListBox NewGF_CoefControlList,mode= 10,editStyle= 1,widths= {15,15,7,4,5},userColumnResize=1
 		
-		TitleBox NewGF_CoefControlIGTitle,pos={135,9},size={75,15},title="Initial guess:"
-		TitleBox NewGF_CoefControlIGTitle,fSize=12,frame=0,anchor= RC
+	TitleBox NewGF_CoefControlIGTitle,pos={135,9},size={75,15},title="Initial guess:"
+	TitleBox NewGF_CoefControlIGTitle,fSize=12,frame=0,anchor= RC
 
-		PopupMenu NewGF_SetCoefsFromWaveMenu,pos={219,7},size={100,20},title="Set from Wave",mode=0,value=MOTO_ListInitGuessWaves(0, 0)
-		PopupMenu NewGF_SetCoefsFromWaveMenu,proc=Moto_SetCoefsFromWaveProc
+	PopupMenu NewGF_SetCoefsFromWaveMenu,pos={219,7},size={100,20},title="Set from Wave",mode=0,value=MOTO_ListInitGuessWaves(0, 0)
+	PopupMenu NewGF_SetCoefsFromWaveMenu,proc=Moto_SetCoefsFromWaveProc
 
-		PopupMenu NewGF_SaveCoefstoWaveMenu,pos={343,7},size={100,20},title="Save to Wave",mode=0,value="New Wave...;-;"+MOTO_ListInitGuessWaves(0, 0)
-		PopupMenu NewGF_SaveCoefstoWaveMenu,proc=Moto_SaveCoefsToWaveProc
+	PopupMenu NewGF_SaveCoefstoWaveMenu,pos={343,7},size={100,20},title="Save to Wave",mode=0,value="New Wave...;-;"+MOTO_ListInitGuessWaves(0, 0)
+	PopupMenu NewGF_SaveCoefstoWaveMenu,proc=Moto_SaveCoefsToWaveProc
 
 	SetActiveSubwindow ##
 	
 	NewPanel/W=(495,313,643,351)/FG=(FL,GlobalControlAreaTop,FR,FB)/HOST=# 
-		ModifyPanel frameStyle=0, frameInset=0
-		RenameWindow #,NewGF_GlobalControlArea
+	ModifyPanel frameStyle=0, frameInset=0
+	RenameWindow #,NewGF_GlobalControlArea
 	
-		TitleBox NewGF_ResultWavesTitle,pos={23,6},size={77,16},title="Result Waves"
-		TitleBox NewGF_ResultWavesTitle,fSize=12,frame=0,fStyle=1
+	TitleBox NewGF_ResultWavesTitle,pos={23,6},size={77,16},title="Result Waves"
+	TitleBox NewGF_ResultWavesTitle,fSize=12,frame=0,fStyle=1
 		
-			CheckBox NewGF_MakeFitCurvesCheck,pos={28,34},size={145,16},proc=MOTO_WM_NewGlobalFit1#NewGF_FitCurvesCheckProc,title="Make Fit Curve Waves"
-			CheckBox NewGF_MakeFitCurvesCheck,fSize=12,value= 1
+	CheckBox NewGF_MakeFitCurvesCheck,pos={28,34},size={145,16},proc=MOTO_WM_NewGlobalFit1#NewGF_FitCurvesCheckProc,title="Make Fit Curve Waves"
+	CheckBox NewGF_MakeFitCurvesCheck,fSize=12,value= 1
 		
-			CheckBox NewGF_AppendResultsCheckbox,pos={50,56},size={186,16},proc=MOTO_WM_NewGlobalFit1#NewGF_AppendResultsCheckProc,title="And Append Them to Graphs"
-			CheckBox NewGF_AppendResultsCheckbox,fSize=12,value= 1
+	CheckBox NewGF_AppendResultsCheckbox,pos={50,56},size={186,16},proc=MOTO_WM_NewGlobalFit1#NewGF_AppendResultsCheckProc,title="And Append Them to Graphs"
+	CheckBox NewGF_AppendResultsCheckbox,fSize=12,value= 1
 		
-			CheckBox NewGF_DoResidualCheck,pos={51,79},size={127,16},proc=MOTO_WM_NewGlobalFit1#NewGF_CalcResidualsCheckProc,title="Calculate Residuals"
-			CheckBox NewGF_DoResidualCheck,fSize=12,value= 1
+	CheckBox NewGF_DoResidualCheck,pos={51,79},size={127,16},proc=MOTO_WM_NewGlobalFit1#NewGF_CalcResidualsCheckProc,title="Calculate Residuals"
+	CheckBox NewGF_DoResidualCheck,fSize=12,value= 1
 		
-			SetVariable NewGF_SetFitCurveLength,pos={27,114},size={149,19},bodyWidth=50,title="Fit Curve Points:"
-			SetVariable NewGF_SetFitCurveLength,fSize=12
-			SetVariable NewGF_SetFitCurveLength,limits={2,inf,1},value= root:Packages:MotofitGF:NewGlobalFit:FitCurvePoints
+	SetVariable NewGF_SetFitCurveLength,pos={27,114},size={149,19},bodyWidth=50,title="Fit Curve Points:"
+	SetVariable NewGF_SetFitCurveLength,fSize=12
+	SetVariable NewGF_SetFitCurveLength,limits={2,inf,1},value= root:Packages:MotofitGF:NewGlobalFit:FitCurvePoints
 		
-			CheckBox NewGF_DoDestLogSpacingCheck,pos={51,140},size={135,16},title="Logarithmic Spacing"
-			CheckBox NewGF_DoDestLogSpacingCheck,fSize=12,value= 0
+	CheckBox NewGF_DoDestLogSpacingCheck,pos={51,140},size={135,16},title="Logarithmic Spacing"
+	CheckBox NewGF_DoDestLogSpacingCheck,fSize=12,value= 0
 		
-			SetVariable NewGF_ResultNamePrefix,pos={27,177},size={202,19},bodyWidth=50,title="Result Wave Name Prefix:"
-			SetVariable NewGF_ResultNamePrefix,fSize=12,value= _STR:""
+	SetVariable NewGF_ResultNamePrefix,pos={27,177},size={202,19},bodyWidth=50,title="Result Wave Name Prefix:"
+	SetVariable NewGF_ResultNamePrefix,fSize=12,value= _STR:""
 		
-			TitleBox NewGF_ResultWavesDFTitle,pos={27,212},size={199,16},title="Make Result Waves in Data Folder:"
-			TitleBox NewGF_ResultWavesDFTitle,fSize=12,frame=0
+	TitleBox NewGF_ResultWavesDFTitle,pos={27,212},size={199,16},title="Make Result Waves in Data Folder:"
+	TitleBox NewGF_ResultWavesDFTitle,fSize=12,frame=0
 
-			Button NewGF_ResultsDFSelector,pos={50,231},size={206,20},fSize=12
-			Button NewGF_ResultsDFSelector, UserData(NewGF_SavedSelection)="Same as Y Wave"
-			MakeButtonIntoWSPopupButton("MotoGlobalFitPanel#NewGF_GlobalControlArea", "NewGF_ResultsDFSelector", "MOTO_ResultsDFSelectorNotify", content = WMWS_DataFolders)
-			PopupWS_AddSelectableString("MotoGlobalFitPanel#NewGF_GlobalControlArea", "NewGF_ResultsDFSelector", "Same as Y Wave")
-			PopupWS_AddSelectableString("MotoGlobalFitPanel#NewGF_GlobalControlArea", "NewGF_ResultsDFSelector", NewGF_NewDFMenuString)
-			PopupWS_SetSelectionFullPath("MotoGlobalFitPanel#NewGF_GlobalControlArea", "NewGF_ResultsDFSelector", "Same as Y Wave")
+	Button NewGF_ResultsDFSelector,pos={50,231},size={206,20},fSize=12
+	Button NewGF_ResultsDFSelector, UserData(NewGF_SavedSelection)="Same as Y Wave"
+	MakeButtonIntoWSPopupButton("MotoGlobalFitPanel#NewGF_GlobalControlArea", "NewGF_ResultsDFSelector", "MOTO_ResultsDFSelectorNotify", content = WMWS_DataFolders)
+	PopupWS_AddSelectableString("MotoGlobalFitPanel#NewGF_GlobalControlArea", "NewGF_ResultsDFSelector", "Same as Y Wave")
+	PopupWS_AddSelectableString("MotoGlobalFitPanel#NewGF_GlobalControlArea", "NewGF_ResultsDFSelector", NewGF_NewDFMenuString)
+	PopupWS_SetSelectionFullPath("MotoGlobalFitPanel#NewGF_GlobalControlArea", "NewGF_ResultsDFSelector", "Same as Y Wave")
 
-		GroupBox NewGF_GlobalDivider1,pos={284,7},size={4,242}
+	GroupBox NewGF_GlobalDivider1,pos={284,7},size={4,242}
 
-		TitleBox NewGF_OptionsTitle,pos={304,5},size={45,16},title="Options",fSize=12
-		TitleBox NewGF_OptionsTitle,frame=0,fStyle=1
+	TitleBox NewGF_OptionsTitle,pos={304,5},size={45,16},title="Options",fSize=12
+	TitleBox NewGF_OptionsTitle,frame=0,fStyle=1
 
-			CheckBox NewGF_FitProgressGraphCheckBox,pos={318,34},size={124,16},title="Fit Progress Graph"
-			CheckBox NewGF_FitProgressGraphCheckBox,fSize=12,value= 1
+	CheckBox NewGF_FitProgressGraphCheckBox,pos={318,34},size={124,16},title="Fit Progress Graph"
+	CheckBox NewGF_FitProgressGraphCheckBox,fSize=12,value= 1
 
-			CheckBox NewGF_Quiet,pos={318,58},size={318,16},title="No History Output"
-			CheckBox NewGF_Quiet,fSize=12,value= 0
+	CheckBox NewGF_Quiet,pos={318,58},size={318,16},title="No History Output"
+	CheckBox NewGF_Quiet,fSize=12,value= 0
 
-			CheckBox NewGF_DoCovarMatrix,pos={318,83},size={120,16},proc=MOTO_WM_NewGlobalFit1#NewGF_CovMatrixCheckProc,title="Covariance Matrix"
-			CheckBox NewGF_DoCovarMatrix,fSize=12,value= 1
+	CheckBox NewGF_DoCovarMatrix,pos={318,83},size={120,16},proc=MOTO_WM_NewGlobalFit1#NewGF_CovMatrixCheckProc,title="Covariance Matrix"
+	CheckBox NewGF_DoCovarMatrix,fSize=12,value= 1
 
-			CheckBox NewGF_CorrelationMatrixCheckBox,pos={339,102},size={120,16},proc=MOTO_WM_NewGlobalFit1#NewGF_CorMatrixCheckProc,title="Correlation Matrix"
-			CheckBox NewGF_CorrelationMatrixCheckBox,fSize=12,value= 1
+	CheckBox NewGF_CorrelationMatrixCheckBox,pos={339,102},size={120,16},proc=MOTO_WM_NewGlobalFit1#NewGF_CorMatrixCheckProc,title="Correlation Matrix"
+	CheckBox NewGF_CorrelationMatrixCheckBox,fSize=12,value= 1
 
-			SetVariable NewGF_SetMaxIters,pos={318,129},size={135,19},bodyWidth=50,title="Max Iterations",fSize=12
-			SetVariable NewGF_SetMaxIters,limits={5,500,1},value= root:Packages:MotofitGF:NewGlobalFit:NewGF_MaxIters
+	SetVariable NewGF_SetMaxIters,pos={318,129},size={135,19},bodyWidth=50,title="Max Iterations",fSize=12
+	SetVariable NewGF_SetMaxIters,limits={5,500,1},value= root:Packages:MotofitGF:NewGlobalFit:NewGF_MaxIters
 	
-			CheckBox NewGF_ConstraintsCheckBox,pos={318,206},size={95,16},proc=MOTO_WM_NewGlobalFit1#ConstraintsCheckProc,title="Constraints..."
-			CheckBox NewGF_ConstraintsCheckBox,fSize=12,value= 0
+	CheckBox NewGF_ConstraintsCheckBox,pos={318,206},size={95,16},proc=MOTO_WM_NewGlobalFit1#ConstraintsCheckProc,title="Constraints..."
+	CheckBox NewGF_ConstraintsCheckBox,fSize=12,value= 0
 
-			CheckBox NewGF_WeightingCheckBox,pos={318,156},size={87,16},proc=MOTO_WM_NewGlobalFit1#NewGF_WeightingCheckProc,title="Weighting..."
-			CheckBox NewGF_WeightingCheckBox,fSize=12,value= 0
+	CheckBox NewGF_WeightingCheckBox,pos={318,156},size={87,16},proc=MOTO_WM_NewGlobalFit1#NewGF_WeightingCheckProc,title="Weighting..."
+	CheckBox NewGF_WeightingCheckBox,fSize=12,value= 0
 
-			CheckBox NewGF_MaskingCheckBox,pos={318,181},size={75,16},proc=MOTO_WM_NewGlobalFit1#NewGF_MaskingCheckProc,title="Masking..."
-			CheckBox NewGF_MaskingCheckBox,fSize=12,value= 0
+	CheckBox NewGF_MaskingCheckBox,pos={318,181},size={75,16},proc=MOTO_WM_NewGlobalFit1#NewGF_MaskingCheckProc,title="Masking..."
+	CheckBox NewGF_MaskingCheckBox,fSize=12,value= 0
 
-		GroupBox NewGF_SaveSetupGroup,pos={489,7},size={4,258}
+	GroupBox NewGF_SaveSetupGroup,pos={489,7},size={4,258}
 
-		TitleBox NewGF_SaveSetupTitle,pos={513,5},size={65,16},title="Save Setup"
-		TitleBox NewGF_SaveSetupTitle,fSize=12,frame=0,fStyle=1
+	TitleBox NewGF_SaveSetupTitle,pos={513,5},size={65,16},title="Save Setup"
+	TitleBox NewGF_SaveSetupTitle,fSize=12,frame=0,fStyle=1
 
-			SetVariable NewGF_SaveSetSetName,pos={523,39},size={170,19},bodyWidth=130,title="Name:",fSize=12
-			SetVariable NewGF_SaveSetSetName,value= root:Packages:MotofitGF:NewGlobalFit:NewGF_NewSetupName
+	SetVariable NewGF_SaveSetSetName,pos={523,39},size={170,19},bodyWidth=130,title="Name:",fSize=12
+	SetVariable NewGF_SaveSetSetName,value= root:Packages:MotofitGF:NewGlobalFit:NewGF_NewSetupName
 		
-			CheckBox NewGF_StoredSetupOverwriteOKChk,pos={572,70},size={95,16},title="Overwrite OK"
-			CheckBox NewGF_StoredSetupOverwriteOKChk,fSize=12,value= 0
+	CheckBox NewGF_StoredSetupOverwriteOKChk,pos={572,70},size={95,16},title="Overwrite OK"
+	CheckBox NewGF_StoredSetupOverwriteOKChk,fSize=12,value= 0
 		
-			Button NewGF_SaveSetupButton,pos={585,101},size={50,20},proc=MOTO_WM_NewGlobalFit1#NewGF_SaveSetupButtonProc,title="Save",fSize=12
+	Button NewGF_SaveSetupButton,pos={585,101},size={50,20},proc=MOTO_WM_NewGlobalFit1#NewGF_SaveSetupButtonProc,title="Save",fSize=12
 		
-			PopupMenu NewGF_RestoreSetupMenu,pos={536,177},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_RestoreSetupMenuProc,title="Restore Setup"
-			PopupMenu NewGF_RestoreSetupMenu,fSize=12,mode=0,value= #"MOTO_WM_NewGlobalFit1#NewGF_ListStoredSetups()"
+	PopupMenu NewGF_RestoreSetupMenu,pos={536,177},size={140,20},bodyWidth=140,proc=MOTO_WM_NewGlobalFit1#NewGF_RestoreSetupMenuProc,title="Restore Setup"
+	PopupMenu NewGF_RestoreSetupMenu,fSize=12,mode=0,value= #"MOTO_WM_NewGlobalFit1#NewGF_ListStoredSetups()"
 
-		Button DoSimButton,pos={378,266},size={167,20},proc=MOTO_WM_NewGlobalFit1#NewGF_DoTheFitButtonProc,title="Simulate"
-		Button DoSimButton,fSize=12,fColor=(16385,49025,65535)
-		Button DoFitButton,pos={202,266},size={167,20},proc=MOTO_WM_NewGlobalFit1#NewGF_DoTheFitButtonProc,title="Fit!"
-		Button DoFitButton,fSize=12,fColor=(16385,49025,65535)
+	Button DoSimButton,pos={378,266},size={167,20},proc=MOTO_WM_NewGlobalFit1#NewGF_DoTheFitButtonProc,title="Simulate"
+	Button DoSimButton,fSize=12,fColor=(16385,49025,65535)
+	Button DoFitButton,pos={202,266},size={167,20},proc=MOTO_WM_NewGlobalFit1#NewGF_DoTheFitButtonProc,title="Fit!"
+	Button DoFitButton,fSize=12,fColor=(16385,49025,65535)
 
 	SetActiveSubwindow ##
 	
@@ -1493,10 +1495,10 @@ static constant charOne=49
 static constant charZero=48
 
 static structure ListSizeInfo
-	Variable DataSetsListWidth
-	Variable CoefListLeft
-	Variable CoefListWidth
-	STRUCT Point mouseDownLoc
+Variable DataSetsListWidth
+Variable CoefListLeft
+Variable CoefListWidth
+STRUCT Point mouseDownLoc
 endstructure
 
 StrConstant MOTO_saveSetupName = "LastSetupSaved"
@@ -1518,7 +1520,7 @@ Function MOTO_NewGF_PanelHook(s)
 			endif
 			break;
 		case "kill":
-    		MOTO_SaveSetup(MOTO_saveSetupName)
+			MOTO_SaveSetup(MOTO_saveSetupName)
 			if (WinType("NewGF_GlobalFitConstraintPanel"))
 				DoWindow/K NewGF_GlobalFitConstraintPanel
 			endif
@@ -1685,28 +1687,28 @@ static Function NewGF_MoveControls()
 	Variable tabLeft = V_left
 	TabControl NewGF_TabControl, win=MotoGlobalFitPanel,size={tabRight-tabLeft+3, tabBottom-tabTop+3}
 
-//	GetWindow MotoGlobalFitPanel wsizeDC
-//	Variable Width = (V_right - V_left)
-//	Variable Height = (V_bottom - V_top)
-//	TabControl NewGF_TabControl, win=MotoGlobalFitPanel,size={width-NewGF_TabWidthMargin, height-NewGF_TabHeightMargin}
+	//	GetWindow MotoGlobalFitPanel wsizeDC
+	//	Variable Width = (V_right - V_left)
+	//	Variable Height = (V_bottom - V_top)
+	//	TabControl NewGF_TabControl, win=MotoGlobalFitPanel,size={width-NewGF_TabWidthMargin, height-NewGF_TabHeightMargin}
 
-//	ControlInfo/W=MotoGlobalFitPanel NewGF_TabControl
-//	switch(V_value)
-//		case 0:
-			Variable listTop, listHeight, dataSetsListWidth, dataSetsListRight, coefsListleft, coefsListWidth
+	//	ControlInfo/W=MotoGlobalFitPanel NewGF_TabControl
+	//	switch(V_value)
+	//		case 0:
+	Variable listTop, listHeight, dataSetsListWidth, dataSetsListRight, coefsListleft, coefsListWidth
 
-			CalcListSizes(listTop, listHeight, dataSetsListWidth, dataSetsListRight, coefsListleft, coefsListWidth)
-			ListBox NewGF_DataSetsList, win=MotoGlobalFitPanel#Tab0ContentPanel, pos={dataSetsListRight-dataSetsListWidth, listTop}, size={dataSetsListWidth, listHeight}
-			ListBox NewGF_Tab0CoefList, win=MotoGlobalFitPanel#Tab0ContentPanel, pos={coefsListleft, listTop}, size={coefsListWidth, listHeight}			
-			Groupbox NewGF_Tab0ListDragLine,win=MotoGlobalFitPanel#Tab0ContentPanel, pos={dataSetsListRight+NewGF_Tab0ListGrout/2, listTop},size={1, listHeight}
-//			break;
-//		case 1:
-			GetWindow MotoGlobalFitPanel#Tab1ContentPanel wsizeDC
-			Variable Width = (V_right - V_left)
-			Variable Height = (V_bottom - V_top)
-			ListBox NewGF_CoefControlList, win=MotoGlobalFitPanel#Tab1ContentPanel,size={width-NewGF_CoefListWidthMargin, height-NewGF_CoefListHeightMargin}
-//			break;
-//	endswitch
+	CalcListSizes(listTop, listHeight, dataSetsListWidth, dataSetsListRight, coefsListleft, coefsListWidth)
+	ListBox NewGF_DataSetsList, win=MotoGlobalFitPanel#Tab0ContentPanel, pos={dataSetsListRight-dataSetsListWidth, listTop}, size={dataSetsListWidth, listHeight}
+	ListBox NewGF_Tab0CoefList, win=MotoGlobalFitPanel#Tab0ContentPanel, pos={coefsListleft, listTop}, size={coefsListWidth, listHeight}			
+	Groupbox NewGF_Tab0ListDragLine,win=MotoGlobalFitPanel#Tab0ContentPanel, pos={dataSetsListRight+NewGF_Tab0ListGrout/2, listTop},size={1, listHeight}
+	//			break;
+	//		case 1:
+	GetWindow MotoGlobalFitPanel#Tab1ContentPanel wsizeDC
+	Variable Width = (V_right - V_left)
+	Variable Height = (V_bottom - V_top)
+	ListBox NewGF_CoefControlList, win=MotoGlobalFitPanel#Tab1ContentPanel,size={width-NewGF_CoefListWidthMargin, height-NewGF_CoefListHeightMargin}
+	//			break;
+	//	endswitch
 end
 
 static Function/S NewGF_ListStoredSetups()
@@ -1838,7 +1840,7 @@ Function MOTO_RestoreSetup(savedSetupName)
 	String savedSetupName
 	
 	DFREF saveDF = GetDataFolderDFR()
-	DFREF savedSetupDF = root:Packages:motofitgf:NewGlobalFit:NewGlobalFit_StoredSetups:$(savedSetupName)
+	DFREF savedSetupDF = root:Packages:motofitgf:NewGlobalFit_StoredSetups:$(savedSetupName)
 	if (DataFolderRefStatus(savedSetupDF) == 0)
 		return -1
 	endif
@@ -1851,7 +1853,7 @@ Function MOTO_RestoreSetup(savedSetupName)
 			break
 		endif
 		
-		Duplicate/O w, root:Packages:motofitgf:$(NameOfWave(w))
+		Duplicate/O w, root:Packages:motofitgf:NewGlobalFit:$(NameOfWave(w))
 		i += 1
 	while (1)
 	
@@ -1860,7 +1862,7 @@ Function MOTO_RestoreSetup(savedSetupName)
 	for (i = 0; i < nv; i += 1)
 		String varname = StringFromList(i, vars)
 		NVAR vv = $varname
-		Variable/G root:Packages:motofitgf:$varname = vv
+		Variable/G root:Packages:motofitgf:NewGlobalFit:$varname = vv
 	endfor
 	
 	String strs = StringList("*", ";")
@@ -1868,10 +1870,10 @@ Function MOTO_RestoreSetup(savedSetupName)
 	for (i = 0; i < nstr; i += 1)
 		String strname = StringFromList(i, strs)
 		SVAR ss = $strname
-		String/G root:Packages:motofitgf:$strname = ss
+		String/G root:Packages:motofitgf:NewGlobalFit:$strname = ss
 	endfor
 	
-	SetDataFolder root:Packages:motofitgf
+	SetDataFolder root:Packages:motofitgf:NewGlobalFit:
 	NVAR DoConstraints
 	CheckBox NewGF_ConstraintsCheckBox,win=MotoGlobalFitPanel#NewGF_GlobalControlArea,value=DoConstraints
 	NVAR DoWeighting
@@ -1927,7 +1929,7 @@ Function MOTO_NewGF_SetTabControlContent(whichTab)
 			SetWindow MotoGlobalFitPanel#Tab1ContentPanel hide=0
 			break;
 	endswitch
-//	NewGF_MoveControls()
+	//	NewGF_MoveControls()
 end
 
 static Function NewGF_TabControlProc(TC_Struct)
@@ -2149,7 +2151,7 @@ static Function NewGF_DataSetListBoxProc(s)
 				otherCtrl = "NewGF_DataSetsList"
 			endif
 			ControlInfo/W=MotoGlobalFitPanel#Tab0ContentPanel $otherCtrl
-	//print s.ctrlName, otherCtrl, "event = ", s.eventCode, "row = ", s.row, "V_startRow = ", V_startRow
+			//print s.ctrlName, otherCtrl, "event = ", s.eventCode, "row = ", s.row, "V_startRow = ", V_startRow
 			if (V_startRow != s.row)
 				ListBox $otherCtrl win=MotoGlobalFitPanel#Tab0ContentPanel,row=s.row
 				DoUpdate
@@ -2277,15 +2279,15 @@ static Function NewGF_AddYWaveToList(w, xw)
 	
 	NewGF_SetYWaveForRowInList(w, xw, nextRow)
 	
-//	ListWave[nextRow][NewGF_DSList_YWaveCol][0] = NameOfWave(w)
-//	ListWave[nextRow][NewGF_DSList_YWaveCol][1] = GetWavesDataFolder(w, 2)
-//	if (WaveExists(xw))
-//		ListWave[nextRow][NewGF_DSList_XWaveCol][0] = NameOfWave(xw)
-//		ListWave[nextRow][NewGF_DSList_XWaveCol][1] = GetWavesDataFolder(xw, 2)
-//	else
-//		ListWave[nextRow][NewGF_DSList_XWaveCol][0] = "_calculated_"
-//		ListWave[nextRow][NewGF_DSList_XWaveCol][1] = "_calculated_"
-//	endif
+	//	ListWave[nextRow][NewGF_DSList_YWaveCol][0] = NameOfWave(w)
+	//	ListWave[nextRow][NewGF_DSList_YWaveCol][1] = GetWavesDataFolder(w, 2)
+	//	if (WaveExists(xw))
+	//		ListWave[nextRow][NewGF_DSList_XWaveCol][0] = NameOfWave(xw)
+	//		ListWave[nextRow][NewGF_DSList_XWaveCol][1] = GetWavesDataFolder(xw, 2)
+	//	else
+	//		ListWave[nextRow][NewGF_DSList_XWaveCol][0] = "_calculated_"
+	//		ListWave[nextRow][NewGF_DSList_XWaveCol][1] = "_calculated_"
+	//	endif
 	
 	Variable/G root:Packages:MotofitGF:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
 end
@@ -2466,18 +2468,18 @@ end
 static Function NewGF_SetXWaveMenuProc(PU_Struct)
 	STRUCT WMPopupAction &PU_Struct
 
-//For a PopupMenu control, the WMPopupAction structure has members as described in the following table:
-//WMPopupAction Structure Members	
-//Member	Description
-//char ctrlName[MAX_OBJ_NAME+1]	Control name.
-//char win[MAX_WIN_PATH+1]	Host (sub)window.
-//STRUCT Rect winRect	Local coordinates of host window.
-//STRUCT Rect ctrlRect	Enclosing rectangle of the control.
-//STRUCT Point mouseLoc	Mouse location.
-//Int32 eventCode	Event that caused the procedure to execute. Main event is mouse up=2.
-//String userdata	Primary (unnamed) user data. If this changes, it is written back automatically.
-//Int32 popNum	Item number currently selected (1-based).
-//char popStr[MAXCMDLEN]	Contents of current popup item.
+	//For a PopupMenu control, the WMPopupAction structure has members as described in the following table:
+	//WMPopupAction Structure Members	
+	//Member	Description
+	//char ctrlName[MAX_OBJ_NAME+1]	Control name.
+	//char win[MAX_WIN_PATH+1]	Host (sub)window.
+	//STRUCT Rect winRect	Local coordinates of host window.
+	//STRUCT Rect ctrlRect	Enclosing rectangle of the control.
+	//STRUCT Point mouseLoc	Mouse location.
+	//Int32 eventCode	Event that caused the procedure to execute. Main event is mouse up=2.
+	//String userdata	Primary (unnamed) user data. If this changes, it is written back automatically.
+	//Int32 popNum	Item number currently selected (1-based).
+	//char popStr[MAXCMDLEN]	Contents of current popup item.
 
 	Variable i, nInList, waveindex
 
@@ -2648,8 +2650,8 @@ Function MOTO_SetFuncMenuProc(PU_Struct)
 		Variable NumCoefs = GetNumCoefsAndNamesFromFunction(PU_Struct.popStr, coefList)
 		Variable i, j
 		
-//		ControlInfo NewGF_FitFuncSetSelectionRadio
-//		Variable SetSelection = V_value
+		//		ControlInfo NewGF_FitFuncSetSelectionRadio
+		//		Variable SetSelection = V_value
 		
 		if (numType(NumCoefs) == 0)
 			if (NumCoefs > DimSize(CoefListWave, 1)-NewGF_DSList_FirstCoefCol)
@@ -2782,18 +2784,18 @@ Function MOTO_NewGF_LinkCoefsButtonProc(ctrlName) : ButtonControl
 				CoefSelWave[i][j][0] = 0
 				linkGuessListIndex = CoefIndexFromTab0CoefRowAndCol(i, j)
 				if (linkGuessListIndex < DimSize(Tab1CoefListWave, 0))
-    				initGuess = str2num(Tab1CoefListWave[linkGuessListIndex][2])
-    				if (numtype(initGuess) == 0)
-	   		      		accumulatedGuess += initGuess
-		      			numAccumulatedGuesses += 1
-				    endif
-	   		      	Tab1CoefListWave[linkGuessListIndex][1] = "LINK:"+tab1LinkCellText
-	       			Tab1CoefSelWave[linkGuessListIndex][1] = 0
-			     	Tab1CoefSelWave[linkGuessListIndex][2] = 0
-	       			Tab1CoefSelWave[linkGuessListIndex][3] = 0			// no more checkbox for holding
+					initGuess = str2num(Tab1CoefListWave[linkGuessListIndex][2])
+					if (numtype(initGuess) == 0)
+						accumulatedGuess += initGuess
+						numAccumulatedGuesses += 1
+					endif
+					Tab1CoefListWave[linkGuessListIndex][1] = "LINK:"+tab1LinkCellText
+					Tab1CoefSelWave[linkGuessListIndex][1] = 0
+					Tab1CoefSelWave[linkGuessListIndex][2] = 0
+					Tab1CoefSelWave[linkGuessListIndex][3] = 0			// no more checkbox for holding
 				endif
 				listOfLinkedRows += num2str(linkGuessListIndex)+";"
-//				Variable/G root:Packages:MotofitGF:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
+				//				Variable/G root:Packages:MotofitGF:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
 			endif
 						
 			j += 1
@@ -2834,7 +2836,7 @@ Function MOTO_UnLinkCoefsButtonProc(ctrlName) : ButtonControl
 
 
 	Wave/T DataSetListWave = root:Packages:MotofitGF:NewGlobalFit:NewGF_DataSetListWave
-//	Wave SelWave = root:Packages:MotofitGF:NewGlobalFit:NewGF_DataSetListSelWave
+	//	Wave SelWave = root:Packages:MotofitGF:NewGlobalFit:NewGF_DataSetListSelWave
 	Wave/T CoefListWave = root:Packages:MotofitGF:NewGlobalFit:NewGF_MainCoefListWave
 	Wave CoefSelWave = root:Packages:MotofitGF:NewGlobalFit:NewGF_MainCoefListSelWave
 
@@ -2857,13 +2859,13 @@ Function MOTO_UnLinkCoefsButtonProc(ctrlName) : ButtonControl
 				CoefSelWave[i][j][] = 0		// sets color to white AND un-selects
 				Variable linkGuessListIndex = CoefIndexFromTab0CoefRowAndCol(i, j)
 				if (linkGuessListIndex < DimSize(Tab1CoefSelWave, 0))
-    				Tab1CoefSelWave[linkGuessListIndex][1] = 2
-	       			Tab1CoefSelWave[linkGuessListIndex][2] = 2
-	   		       	Tab1CoefSelWave[linkGuessListIndex][3] = 0x20		// checkbox
-			     	String coefName = CoefNameFromListText(CoefListWave[i][NewGF_DSList_FirstCoefCol + j][1])
-		      		Tab1CoefListWave[linkGuessListIndex][1] = coefName+"["+DataSetListWave[i][NewGF_DSList_FuncCol][0]+"]["+DataSetListWave[i][NewGF_DSList_YWaveCol][1]+"]"	// last part is full path to Y wave
-                endif
-//				Variable/G root:Packages:MotofitGF:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
+					Tab1CoefSelWave[linkGuessListIndex][1] = 2
+					Tab1CoefSelWave[linkGuessListIndex][2] = 2
+					Tab1CoefSelWave[linkGuessListIndex][3] = 0x20		// checkbox
+					String coefName = CoefNameFromListText(CoefListWave[i][NewGF_DSList_FirstCoefCol + j][1])
+					Tab1CoefListWave[linkGuessListIndex][1] = coefName+"["+DataSetListWave[i][NewGF_DSList_FuncCol][0]+"]["+DataSetListWave[i][NewGF_DSList_YWaveCol][1]+"]"	// last part is full path to Y wave
+				endif
+				//				Variable/G root:Packages:MotofitGF:NewGlobalFit:NewGF_RebuildCoefListNow = 1			// this change invalidates the coefficient list on the Coefficient Control tab
 			endif
 		endfor
 	endfor
@@ -2874,7 +2876,7 @@ static Function NewGF_SelectAllCoefMenuProc(PU_Struct) : PopupMenuControl
 
 	if (PU_Struct.eventCode == 2)			// mouse up
 		Wave/T ListWave = root:Packages:MotofitGF:NewGlobalFit:NewGF_DataSetListWave
-//		Wave SelWave = root:Packages:MotofitGF:NewGlobalFit:NewGF_DataSetListSelWave
+		//		Wave SelWave = root:Packages:MotofitGF:NewGlobalFit:NewGF_DataSetListSelWave
 		Wave/T CoefListWave = root:Packages:MotofitGF:NewGlobalFit:NewGF_MainCoefListWave
 		Wave CoefSelWave = root:Packages:MotofitGF:NewGlobalFit:NewGF_MainCoefListSelWave
 		Variable i,j
@@ -3075,10 +3077,10 @@ Function/S MOTO_NewGF_FitFuncList()
 	string theList="", UserFuncs, XFuncs
 	
 	string options = "KIND:10"
-//	ControlInfo/W=GlobalFitPanel RequireFitFuncCheckbox
-//	if (V_value)
-		options += ",SUBTYPE:FitFunc"
-//	endif
+	//	ControlInfo/W=GlobalFitPanel RequireFitFuncCheckbox
+	//	if (V_value)
+	options += ",SUBTYPE:FitFunc"
+	//	endif
 	options += ",NINDVARS:1"
 	
 	UserFuncs = FunctionList("*", ";",options)
@@ -3154,7 +3156,7 @@ static Function NewGF_RebuildCoefListWave()
 				CoefSelWave[coefIndex][1,] = 0		// not editable- this is a coefficient linked to another
 			else
 				CoefListWave[coefIndex][1] = coefName+"["+DataSetListWave[i][NewGF_DSList_FuncCol][0]+"]["+DataSetListWave[i][NewGF_DSList_YWaveCol][1]+"]"	// last part is full path to Y wave
-//				CoefListWave[coefIndex][1] = DataSetListWave[i][NewGF_DSList_FuncCol][0]+":"+coefText
+				//				CoefListWave[coefIndex][1] = DataSetListWave[i][NewGF_DSList_FuncCol][0]+":"+coefText
 			endif
 			coefIndex += 1
 		endfor
@@ -3411,7 +3413,7 @@ static Function NewGF_DoTheFitButtonProc(ctrlName) : ButtonControl
 				LinkageMatrix[i][linkMatrixCol] = -1
 			endif
 		endfor
-DoUpdate
+		DoUpdate
 	endfor
 	
 	// Build the data sets list wave
@@ -3574,23 +3576,23 @@ static Function/S MakeHoldString(CoefWave, quiet, justTheString)
 		endfor
 		// work from the end of the string removing extraneous zeroes
 		if(isLevORgen == 0)
-		if (strlen(HS) > 1)
-			for (i = strlen(HS)-1; i >= 0; i -= 1)
-				if (CmpStr(HS[i], "1") == 0)
-					break
+			if (strlen(HS) > 1)
+				for (i = strlen(HS)-1; i >= 0; i -= 1)
+					if (CmpStr(HS[i], "1") == 0)
+						break
+					endif
+				endfor
+				if (i > 0)
+					HS = HS[0,i]
 				endif
-			endfor
-			if (i > 0)
-				HS = HS[0,i]
 			endif
-		endif
 		endif
 		if (!justTheString)
 			HS += "\""
 		endif
-//		if (!quiet)
-//			print "Hold String=", HS
-//		endif
+		//		if (!quiet)
+		//			print "Hold String=", HS
+		//		endif
 		return HS				// ******** EXIT ***********
 	else
 		return ""				// ******** EXIT ***********
@@ -3852,8 +3854,8 @@ static Function fNewGF_WeightingPanel() : Panel
 	PopupMenu GlobalFitWeightWaveMenu,pos={9,5},size={152,20},title="Select Weight Wave"
 	PopupMenu GlobalFitWeightWaveMenu,mode=0,value= #"MOTO_WM_NewGlobalFit1#ListPossibleWeightWaves()", proc=MOTO_WM_NewGlobalFit1#WeightWaveSelectionMenu
 
-//	Button WeightClearSelectionButton,pos={276,5},size={120,20},proc=MOTO_WM_NewGlobalFit1#WeightClearSelectionButtonProc,title="Clear Selection"
-//	Button WeightClearAllButton,pos={276,32},size={120,20},proc=MOTO_WM_NewGlobalFit1#WeightClearSelectionButtonProc,title="Clear All"
+	//	Button WeightClearSelectionButton,pos={276,5},size={120,20},proc=MOTO_WM_NewGlobalFit1#WeightClearSelectionButtonProc,title="Clear Selection"
+	//	Button WeightClearAllButton,pos={276,32},size={120,20},proc=MOTO_WM_NewGlobalFit1#WeightClearSelectionButtonProc,title="Clear All"
 
 	GroupBox WeightStdDevRadioGroup,pos={174,4},size={95,54},title="Weights  are"
 
@@ -4344,7 +4346,7 @@ Function/S Moto_ListInitGuessWaves(SelectedOnly, LinkRowsOK)
 	Variable LinkRowsOK
 
 	Variable numrows
-//	ControlInfo/W=MotoGlobalFitPanel#Tab1ContentPanel NewGF_InitGuessCopySelCheck
+	//	ControlInfo/W=MotoGlobalFitPanel#Tab1ContentPanel NewGF_InitGuessCopySelCheck
 	if (SelectedOnly)
 		numrows = totalSelRealCoefsFromCoefList(LinkRowsOK)
 	else
@@ -4580,12 +4582,12 @@ Function MOTO_BuildDataSetSelector()
 
 	GroupBox SelectData_MoverBox,pos={164,435},size={222,33}
 
-		Button SelectData_MoveUpButton,pos={300,440},size={30,22},proc=MOTO_DataSetsMvSelWavesUpOrDown,title="\\F'Symbol'­"
+	Button SelectData_MoveUpButton,pos={300,440},size={30,22},proc=MOTO_DataSetsMvSelWavesUpOrDown,title="\\F'Symbol'­"
 
-		Button SelectData_MoveDnButton,pos={340,440},size={30,22},proc=MOTO_DataSetsMvSelWavesUpOrDown,title="\\F'Symbol'¯"
+	Button SelectData_MoveDnButton,pos={340,440},size={30,22},proc=MOTO_DataSetsMvSelWavesUpOrDown,title="\\F'Symbol'¯"
 
-		TitleBox SelectData_MoverTitle,pos={184,443},size={87,16},title="Move Selection"
-		TitleBox SelectData_MoverTitle,fSize=12,frame=0
+	TitleBox SelectData_MoverTitle,pos={184,443},size={87,16},title="Move Selection"
+	TitleBox SelectData_MoverTitle,fSize=12,frame=0
 
 	Button DataSets_SelectAll,pos={393,443},size={75,20},proc=MOTO_DataSets_SelAllBtnProc,title="Select All"
 
@@ -4899,7 +4901,7 @@ Function MOTO_SelectedDataListBoxProc(s) : ListBoxControl
 			elseif ( ((s.row == char2num("a")) || (s.row == char2num("A"))) && (s.eventMod & 8) )
 				selwave = selwave[p][q] | 1
 			else
-//print "Listbox char code = ", s.row
+				//print "Listbox char code = ", s.row
 			endif
 			break;
 	endswitch
@@ -4947,8 +4949,8 @@ Function MOTO_DataSetsMvSelWavesUpOrDown(s) : ButtonControl
 			return 0		// a cell in the top row is selected; can't move up
 		endif
 	else
-		if ( (SelectedWavesSelWave[rowsInSelectedList][0] & 0x01) || (SelectedWavesSelWave[rowsInSelectedList][1] & 0x01) )
-			return 0		// a cell in the top row is selected; can't move up
+		if ( (SelectedWavesSelWave[lastRow][0] & 0x01) || (SelectedWavesSelWave[lastRow][1] & 0x01) )
+			return 0		// a cell in the bottom row is selected; can't move down
 		endif
 	endif
 	
@@ -5035,9 +5037,9 @@ Function MOTO_DataSets_OKButtonProc(ba) : ButtonControl
 				Wave w = $(SelectedWavesListWave[i][0])
 				Wave/Z xw = $(SelectedWavesListWave[i][1])
 				
-			//	if (WaveExists(w) && !NewGF_WaveInListAlready(w))
-					NewGF_AddYWaveToList(w, xw)
-			//	endif
+				//	if (WaveExists(w) && !NewGF_WaveInListAlready(w))
+				NewGF_AddYWaveToList(w, xw)
+				//	endif
 			endfor
 			DoWindow/K $(ba.win)
 			break
@@ -5049,67 +5051,67 @@ End
 \$PICT$name=ProcGlobal#MOTO_YellowRightArrow$/PICT$
 // PNG: width= 13, height= 15
 Picture MOTO_YellowRightArrow
-	ASCII85Begin
-	M,6r;%14!\!!!!.8Ou6I!!!!.!!!!0#Qau+!3ec;+92BF&SXU":e=#A+Ad)sAnc'm!!%6Ejct6f;ca
-	gUhg8S]67j<&+"Mut!MU:-TX#%.9DK:A.Ni)mf_4m`8_ZnK<"MHfLbcI'KGd$c5r4H.-E%cPS*3]36
-	l.19*'-oQ)of[FC`9%U41F%cZ=pQD4ZBq7GMi:fF7+BmT(<#&`YBb%J-1<k9BhXL+p@-JR0*(6huXQ
-	Ohu[d'<=p[Fb7fuu(%'+;_!"i%rq'IcR1A52Ngm9pL<_P\F56ar%/N'0e"['I0EDM?j]QgWbt8Aad_
-	(D\.AY([=d?05&<ho=qNN6Ci[2Uio?<0Fe#YA^UQ/r=.M%MMmR8\X&o'#Xo)K2',,[s8_!X__o.!Y!
-	1`T]ZYL2R\r#DL5?[=A%O.$i$d0^Ihlg\db\I>,_&qL#@Cs;&u!4O`ah4N$5VZ"a9K7saMjTYmWVo'
-	K8cl,n2e&2LlQNpo'DDKK7BJMa>"L(c**4`!tef2h:J.g?fcl[625ELF/WhC*o@]if_FoWK%=5XP_$
-	Ut/,N(G]NXgYQhX?Q>Y:7*oZqMrhPgt"IjG`B.em7u=F3nQKrGIlkJd\Y9Li3V4n4li1Jo5!1in@If
-	3jJuAs+L:P[$b3jF1[*c&O+Sr/q@I5:4Bs)l7i3I@UG'P,?<*Q#0laU+P2r1nPfc`WA\?)nY'8O&8=
-	;_Zc98"YNEM_=aa!bdEG`h/ZD`ZUD2,(F]?3?1fpc9V^]*t[e04_?ShJ5J_bM,rFIeVFHi#nL2,8YA
-	@)amEUj$Y@Gk_D"ebc0-RET4<:[U3H@4leT(nr,l.\HsJ_@5Rfj^W/[1bQ\8E$HTg1!E=$N`bOJ>h3
-	mQ_%C]/=ngQ*F*Gm.i,,a$[VN,Ib(8MR3"MP6>k?hYj;[!hi2N3l'K15.]S@;>>Nih86r^Wt/p:>P*
-	-?:*7IXJPG_f_*+P]o\,83S$`?`GPj#=`bs1Qm^7oOZ3&a:$u(Y:ZZCD6k=FRBld`l;ZFcGEI/D,]H
-	Voil/\#HAD\)L()l1LA,*-_'P5'XY1#g5i)#QoVkK)j^pS>ai=*qI+JR_pC&\1jAtE;"i6q=o*C&C$
-	N#<0?r;ogd)&n+WZI!;`G-qY^+kNC^5,$\&G]Cis\!R`OL]/^M1+$C6DT7p1N:Fe68d(#]6/RLZ\6u
-	\np-g^9m?s467=@eEn7@1?;K]pMoZn:jS/INtlh`n\'/A9_i9Rm.Z^#c7XQ-i9ZWj^n6o2Q?rfH8fC
-	&(6e@'*9!ts1;+G,6XMPY-8M$'49Qj]O8/ofYP;SSqX(2j`o>pZ-C4rBuOd@6&['G(P11L.-cGnZtH
-	Wk/Sl_R=h/]q+CgV[N&:3N7D4*RX4q9"ic4Z=G=>4?V/rC>n;-ABp`c&A&a(9^m]@Q@A#rq5\1:Ybu
-	*d@"M71Tb)i!*Wh31)^-*XoWq@#f+%g^mPKO8,c,C!+(iiGd0'_f1V3p8cUmJol:eipU,%i?hqDomK
-	'QA1mBqL:l9"-NZa`>-Ib(BUq2@5:m;;tM?:1`YFonAJY`q*8rs+2XocZF!@.c$:)O,_TL2M;W%Tp@
-	;a;dXQ@T,%e>NT9&Q*3EJYM;+rr7T4msF;YasfW!(dOrC9D.S_HqIeg6Di4n`Dhk(,`'pL(5i<H@W;
-	s]Zd``Y=S;al>]?I;qD=d?8Ord9rWFIFh=tSEmh>a%!AI)55u]6I9oqY9_a"W!4\7+lh$k)3;Kh::Z
-	=_d-H4[6p<Tk#S94l-YU>u<N66V5l8U):DkYu]>rP-,7]!cJ)1gQDYT'%@j7)V(j2F-(`L<+ImGXbM
-	\#$XO4B!\2"AJkKGU*rP5-uOS_PTYo878B`cg8GrZ,gB#&4RSX\A]6L*lfudO^L&U$>FN)?#uX0`92
-	ql'/:4i6f.35&VUhG)dXNE2W'4sq]XO/J!CY:@]n5MTJV9Z\2+k7n?1eoo6:_@bCVZ,ErH<_J!M^I0
-	74%+.m5.$iql]6mH,$qf@Da4#23$L4G`qd$<Co;P^>m,PHS;58j[Grpqn>#IL1+IHs,\i%\D;m;L,U
-	]Q),](,*7l/_ch#o6g@(nQqG3h?l.QHJBg7;+Q/_!np<Wd>!!#SZ:.26O@"J
-	ASCII85End
+ASCII85Begin
+M,6r;%14!\!!!!.8Ou6I!!!!.!!!!0#Qau+!3ec;+92BF&SXU":e=#A+Ad)sAnc'm!!%6Ejct6f;ca
+gUhg8S]67j<&+"Mut!MU:-TX#%.9DK:A.Ni)mf_4m`8_ZnK<"MHfLbcI'KGd$c5r4H.-E%cPS*3]36
+l.19*'-oQ)of[FC`9%U41F%cZ=pQD4ZBq7GMi:fF7+BmT(<#&`YBb%J-1<k9BhXL+p@-JR0*(6huXQ
+Ohu[d'<=p[Fb7fuu(%'+;_!"i%rq'IcR1A52Ngm9pL<_P\F56ar%/N'0e"['I0EDM?j]QgWbt8Aad_
+(D\.AY([=d?05&<ho=qNN6Ci[2Uio?<0Fe#YA^UQ/r=.M%MMmR8\X&o'#Xo)K2',,[s8_!X__o.!Y!
+1`T]ZYL2R\r#DL5?[=A%O.$i$d0^Ihlg\db\I>,_&qL#@Cs;&u!4O`ah4N$5VZ"a9K7saMjTYmWVo'
+K8cl,n2e&2LlQNpo'DDKK7BJMa>"L(c**4`!tef2h:J.g?fcl[625ELF/WhC*o@]if_FoWK%=5XP_$
+Ut/,N(G]NXgYQhX?Q>Y:7*oZqMrhPgt"IjG`B.em7u=F3nQKrGIlkJd\Y9Li3V4n4li1Jo5!1in@If
+3jJuAs+L:P[$b3jF1[*c&O+Sr/q@I5:4Bs)l7i3I@UG'P,?<*Q#0laU+P2r1nPfc`WA\?)nY'8O&8=
+;_Zc98"YNEM_=aa!bdEG`h/ZD`ZUD2,(F]?3?1fpc9V^]*t[e04_?ShJ5J_bM,rFIeVFHi#nL2,8YA
+@)amEUj$Y@Gk_D"ebc0-RET4<:[U3H@4leT(nr,l.\HsJ_@5Rfj^W/[1bQ\8E$HTg1!E=$N`bOJ>h3
+mQ_%C]/=ngQ*F*Gm.i,,a$[VN,Ib(8MR3"MP6>k?hYj;[!hi2N3l'K15.]S@;>>Nih86r^Wt/p:>P*
+-?:*7IXJPG_f_*+P]o\,83S$`?`GPj#=`bs1Qm^7oOZ3&a:$u(Y:ZZCD6k=FRBld`l;ZFcGEI/D,]H
+Voil/\#HAD\)L()l1LA,*-_'P5'XY1#g5i)#QoVkK)j^pS>ai=*qI+JR_pC&\1jAtE;"i6q=o*C&C$
+N#<0?r;ogd)&n+WZI!;`G-qY^+kNC^5,$\&G]Cis\!R`OL]/^M1+$C6DT7p1N:Fe68d(#]6/RLZ\6u
+\np-g^9m?s467=@eEn7@1?;K]pMoZn:jS/INtlh`n\'/A9_i9Rm.Z^#c7XQ-i9ZWj^n6o2Q?rfH8fC
+&(6e@'*9!ts1;+G,6XMPY-8M$'49Qj]O8/ofYP;SSqX(2j`o>pZ-C4rBuOd@6&['G(P11L.-cGnZtH
+Wk/Sl_R=h/]q+CgV[N&:3N7D4*RX4q9"ic4Z=G=>4?V/rC>n;-ABp`c&A&a(9^m]@Q@A#rq5\1:Ybu
+*d@"M71Tb)i!*Wh31)^-*XoWq@#f+%g^mPKO8,c,C!+(iiGd0'_f1V3p8cUmJol:eipU,%i?hqDomK
+'QA1mBqL:l9"-NZa`>-Ib(BUq2@5:m;;tM?:1`YFonAJY`q*8rs+2XocZF!@.c$:)O,_TL2M;W%Tp@
+;a;dXQ@T,%e>NT9&Q*3EJYM;+rr7T4msF;YasfW!(dOrC9D.S_HqIeg6Di4n`Dhk(,`'pL(5i<H@W;
+s]Zd``Y=S;al>]?I;qD=d?8Ord9rWFIFh=tSEmh>a%!AI)55u]6I9oqY9_a"W!4\7+lh$k)3;Kh::Z
+=_d-H4[6p<Tk#S94l-YU>u<N66V5l8U):DkYu]>rP-,7]!cJ)1gQDYT'%@j7)V(j2F-(`L<+ImGXbM
+\#$XO4B!\2"AJkKGU*rP5-uOS_PTYo878B`cg8GrZ,gB#&4RSX\A]6L*lfudO^L&U$>FN)?#uX0`92
+ql'/:4i6f.35&VUhG)dXNE2W'4sq]XO/J!CY:@]n5MTJV9Z\2+k7n?1eoo6:_@bCVZ,ErH<_J!M^I0
+74%+.m5.$iql]6mH,$qf@Da4#23$L4G`qd$<Co;P^>m,PHS;58j[Grpqn>#IL1+IHs,\i%\D;m;L,U
+]Q),](,*7l/_ch#o6g@(nQqG3h?l.QHJBg7;+Q/_!np<Wd>!!#SZ:.26O@"J
+ASCII85End
 End
 // PNG: width= 16, height= 12
 Picture MOTO_YellowDownArrow
-	ASCII85Begin
-	M,6r;%14!\!!!!.8Ou6I!!!!1!!!!-#Qau+!9Aj6ec5[R&SXU":e=#A+Ad)sAnc'm!!%6Ejct6f;ca
-	gUhg8S]67j<&+"Mut!MU:-TX#%.9DK:A.Ni)mf_4m`8_ZnK<"MHfLbcI'KGd$c5r4H.-E%cPS*3]36
-	l.19*'-oQ)of[FC`9%U41F%cZ=pQD4ZBq7GMi:fF7+BmT(<#&`YBb%J-1<k9BhXL+p@-JR0*(6huXQ
-	Ohu[d'<=p[Fb7fuu(%'+;_!"i%rq'IcR1A52Ngm9pL<_P\F56ar%/N'0e"['I0EDM?j]QgWbt8Aad_
-	(D\.AY([=d?05&<ho=qNN6Ci[2Uio?<0Fe#YA^UQ/r=.M%MMmR8\X&o'#Xo)K2',,[s8_!X__o.!Y!
-	1`T]ZYL2R\r#DL5?[=A%O.$i$d0^Ihlg\db\I>,_&qL#@Cs;&u!4O`ah4N$5VZ"a9K7saMjTYmWVo'
-	K8cl,n2e&2LlQNpo'DDKK7BJMa>"L(c**4`!tef2h:J.g?fcl[625ELF/WhC*o@]if_FoWK%=5XP_$
-	Ut/,N(G]NXgYQhX?Q>Y:7*oZqMrhPgt"IjG`B.em7u=F3nQKrGIlkJd\Y9Li3V4n4li1Jo5!1in@If
-	3jJuAs+L:P[$b3jF1[*c&O+Sr/q@I5:4Bs)l7i3I@UG'P,?<*Q#0laU+P2r1nPfc`WA\?)nY'8O&8=
-	;_Zc98"YNEM_=aa!bdEG`h/ZD`ZUD2,(F]?3?1fpc9V^]*t[e04_?ShJ5J_bM,rFIeVFHi#nL2,8YA
-	@)amEUj$Y@Gk_D"ebc0-RET4<:[U3H@4leT(nr,l.\HsJ_@5Rfj^W/[1bQ\8E$HTg1!E=$N`bOJ>h3
-	mQ_%C]/=ngQ*F*Gm.i,,a$[VN,Ib(8MR3"MP6>k?hYj;[!hi2N3l'K15.]S@;>>Nih86r^Wt/p:>P*
-	-?:*7IXJPG_f_*+P]o\,83S$`?`GPj#=`bs1Qm^7oOZ3&a:$u(Y:ZZCD6k=FRBld`l;ZFcGEI/D,]H
-	Voil/\#HAD\)L()l1LA,*-_'P5'XY1#g5i)#QoVkK)j^pS>ai=*qI+JR_pC&\1jAtE;"i6q=o*C&C$
-	N#<0?r;ogd)&n+WZI!;`G-qY^+kNC^5,$\&G]Cis\!R`OL]/^M1+$C6DT7p1N:Fe68d(#]6/RLZ\6u
-	\np-g^9m?s467=@eEn7@1?;K]pMoZn:jS/INtlh`n\'/A9_i9Rm.Z^#c7XQ-i9ZWj^n6o2Q?rfH8fC
-	&(6e@'*9!ts1;+G,6XMPY-8M$'49Qj]O8/ofYP;SSqX(2j`o>pZ-C4rBuOd@6&['G(P11L.-cGnZtH
-	Wk/Sl_R=h/]q+CgV[N&:3N7D4*RX4q9"ic4Z=G=>4?V/rC>n;-ABp`c&A&a(9^m]@Q@A#rq5\1:Ybu
-	*d@"M71Tb)i!*Wh31)^-*XoWq@#f+%g^mPKO8,c,C!+(iiGd0'_f1V3p8cUmJol:eipU,%i?hqDomK
-	'QA1mBqL:l9"-NZa`>-Ib(BUq2@5:m;;tM?:1`YFonAJY`q*8rs+2XocZF!@.c$:)O,_TL2M;W%Tp@
-	;a;dXQ@T,%e>NT9&Q*3EJYM;+rr7T4msF;YasfW!(dOrC9D.S_HqIeg6Di4n`Dhk(,`'pL(5i<H@W;
-	s]Zd``Y=S;al>]?I;qD=d?8Ord9rWFIFh=tSEmh>a%!CB@G5u]6I<Kb$j!`9M_k:Xr=,Z_q5b"&sG;
-	G[rt.URa>d`8".,_X;o-JD:!g2%lE_<cpGj#;o@9X6$%B?lo,H[!AD2QKe,8Wn`<%Yk.rhsWuZ:"/K
-	Q$fbM`o$(bKT@Ra7=P=lK4oF_f1K0euP/;"a^"sdZJ#I%F-o)We?sqQ'\$PVTC)%<e31V8'Lb)IHNr
-	b62^fD87ZU1:cDuo:0G)DdQFDfB7J#Q&!qPhp1hLa)F\\0&%%)_$:e\s_P,!>Do\E(hRl.9LUM%gqh
-	^0(,R\>b<5.cE[-0pERbH(NXRFg%LmmHa#3BiSZ%EhDU^C;oKo&M2*<V&_m)Q6bM\GLf9&lE%1-lSU
-	8[3D)sY(5kVVdI>j;+`Fck^r`C&+e]:,(I_beB!^aZfR#4p5D:&d;gs]Jcnh/CqI55pz8OZBBY!QNJ
-	ASCII85End
+ASCII85Begin
+M,6r;%14!\!!!!.8Ou6I!!!!1!!!!-#Qau+!9Aj6ec5[R&SXU":e=#A+Ad)sAnc'm!!%6Ejct6f;ca
+gUhg8S]67j<&+"Mut!MU:-TX#%.9DK:A.Ni)mf_4m`8_ZnK<"MHfLbcI'KGd$c5r4H.-E%cPS*3]36
+l.19*'-oQ)of[FC`9%U41F%cZ=pQD4ZBq7GMi:fF7+BmT(<#&`YBb%J-1<k9BhXL+p@-JR0*(6huXQ
+Ohu[d'<=p[Fb7fuu(%'+;_!"i%rq'IcR1A52Ngm9pL<_P\F56ar%/N'0e"['I0EDM?j]QgWbt8Aad_
+(D\.AY([=d?05&<ho=qNN6Ci[2Uio?<0Fe#YA^UQ/r=.M%MMmR8\X&o'#Xo)K2',,[s8_!X__o.!Y!
+1`T]ZYL2R\r#DL5?[=A%O.$i$d0^Ihlg\db\I>,_&qL#@Cs;&u!4O`ah4N$5VZ"a9K7saMjTYmWVo'
+K8cl,n2e&2LlQNpo'DDKK7BJMa>"L(c**4`!tef2h:J.g?fcl[625ELF/WhC*o@]if_FoWK%=5XP_$
+Ut/,N(G]NXgYQhX?Q>Y:7*oZqMrhPgt"IjG`B.em7u=F3nQKrGIlkJd\Y9Li3V4n4li1Jo5!1in@If
+3jJuAs+L:P[$b3jF1[*c&O+Sr/q@I5:4Bs)l7i3I@UG'P,?<*Q#0laU+P2r1nPfc`WA\?)nY'8O&8=
+;_Zc98"YNEM_=aa!bdEG`h/ZD`ZUD2,(F]?3?1fpc9V^]*t[e04_?ShJ5J_bM,rFIeVFHi#nL2,8YA
+@)amEUj$Y@Gk_D"ebc0-RET4<:[U3H@4leT(nr,l.\HsJ_@5Rfj^W/[1bQ\8E$HTg1!E=$N`bOJ>h3
+mQ_%C]/=ngQ*F*Gm.i,,a$[VN,Ib(8MR3"MP6>k?hYj;[!hi2N3l'K15.]S@;>>Nih86r^Wt/p:>P*
+-?:*7IXJPG_f_*+P]o\,83S$`?`GPj#=`bs1Qm^7oOZ3&a:$u(Y:ZZCD6k=FRBld`l;ZFcGEI/D,]H
+Voil/\#HAD\)L()l1LA,*-_'P5'XY1#g5i)#QoVkK)j^pS>ai=*qI+JR_pC&\1jAtE;"i6q=o*C&C$
+N#<0?r;ogd)&n+WZI!;`G-qY^+kNC^5,$\&G]Cis\!R`OL]/^M1+$C6DT7p1N:Fe68d(#]6/RLZ\6u
+\np-g^9m?s467=@eEn7@1?;K]pMoZn:jS/INtlh`n\'/A9_i9Rm.Z^#c7XQ-i9ZWj^n6o2Q?rfH8fC
+&(6e@'*9!ts1;+G,6XMPY-8M$'49Qj]O8/ofYP;SSqX(2j`o>pZ-C4rBuOd@6&['G(P11L.-cGnZtH
+Wk/Sl_R=h/]q+CgV[N&:3N7D4*RX4q9"ic4Z=G=>4?V/rC>n;-ABp`c&A&a(9^m]@Q@A#rq5\1:Ybu
+*d@"M71Tb)i!*Wh31)^-*XoWq@#f+%g^mPKO8,c,C!+(iiGd0'_f1V3p8cUmJol:eipU,%i?hqDomK
+'QA1mBqL:l9"-NZa`>-Ib(BUq2@5:m;;tM?:1`YFonAJY`q*8rs+2XocZF!@.c$:)O,_TL2M;W%Tp@
+;a;dXQ@T,%e>NT9&Q*3EJYM;+rr7T4msF;YasfW!(dOrC9D.S_HqIeg6Di4n`Dhk(,`'pL(5i<H@W;
+s]Zd``Y=S;al>]?I;qD=d?8Ord9rWFIFh=tSEmh>a%!CB@G5u]6I<Kb$j!`9M_k:Xr=,Z_q5b"&sG;
+G[rt.URa>d`8".,_X;o-JD:!g2%lE_<cpGj#;o@9X6$%B?lo,H[!AD2QKe,8Wn`<%Yk.rhsWuZ:"/K
+Q$fbM`o$(bKT@Ra7=P=lK4oF_f1K0euP/;"a^"sdZJ#I%F-o)We?sqQ'\$PVTC)%<e31V8'Lb)IHNr
+b62^fD87ZU1:cDuo:0G)DdQFDfB7J#Q&!qPhp1hLa)F\\0&%%)_$:e\s_P,!>Do\E(hRl.9LUM%gqh
+^0(,R\>b<5.cE[-0pERbH(NXRFg%LmmHa#3BiSZ%EhDU^C;oKo&M2*<V&_m)Q6bM\GLf9&lE%1-lSU
+8[3D)sY(5kVVdI>j;+`Fck^r`C&+e]:,(I_beB!^aZfR#4p5D:&d;gs]Jcnh/CqI55pz8OZBBY!QNJ
+ASCII85End
 End
 
 //***********************************
@@ -5247,11 +5249,11 @@ static Function SetCoefListFromWave(w, col, SetOnlySelectedCells, OKtoSetLinkRow
 	endif
 	
 	for (i = 0; i < nTotalCoefs; i += 1)		// indent 1
-//		if ( SetOnlySelectedCells && ((CoefSelWave[i][col] & 9) == 0) )
+		//		if ( SetOnlySelectedCells && ((CoefSelWave[i][col] & 9) == 0) )
 		if ( SetOnlySelectedCells && !IsRowSelected(CoefSelWave, i) )
 			continue
 		endif
-//		if (!OKtoSetLinkRows && !IsLinkText(CoefListWave[i][1]))
+		//		if (!OKtoSetLinkRows && !IsLinkText(CoefListWave[i][1]))
 		if (!IsLinkText(CoefListWave[i][1]))		// indent 2
 			// first part sets the coefficient list wave text from the appropriate element in the input wave
 		
@@ -5327,7 +5329,7 @@ static Function SetCoefListFromWave(w, col, SetOnlySelectedCells, OKtoSetLinkRow
 							endif
 							CoefListWave[j][col] = dumstr
 						endif		// indent 6
-//						coefIndex += 1
+						//						coefIndex += 1
 					endif		// indent 5
 				endfor		// indent 4
 			endif		// indent 3
