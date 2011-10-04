@@ -1034,6 +1034,7 @@ static Function moto_change_plotyp(plotyp)
 		default:
 			ModifyGraph/z/w=reflectivitygraph log(left)=0
 		break
+		case 3:
 		case 4:
 		case 2:
 			ModifyGraph/z/w=reflectivitygraph log(left)=1

@@ -481,7 +481,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 			
 			variable rebinning,ii,jj, dontoverwrite = 0
 			string tempDF,filenames, water = ""
-			string fileNameList="", righteousFileName = ""	
+			string fileNameList="", righteousFileName = "", fileFilterStr = ""
 			string cmd
 
 			strswitch(ba.ctrlname)
@@ -572,8 +572,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					string thePathstring = ""
 					if(V_flag == 1)
 						thePathstring = inputpathStr
+						fileFilterStr = ".hdf;.xml;.itx;.xrdml;.spectrum;"
 					elseif(V_flag == 2)
 						thePathstring = outputpathStr
+						fileFilterStr = ".xml;.itx;.xrdml;.spectrum;.hdf;"
 					endif
 					
 					GetFileFolderInfo/q/z thePathstring
@@ -586,7 +588,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 									
 					//find the files with the new multiopenfiles XOP
 					Newpath/o/q/z pla_temppath_read, thePathstring
-					multiopenfiles/P=pla_temppath_read/M="Select the files you wish to view"/F=".hdf;.xml;.itx;.xrdml;.spectrum;"
+					multiopenfiles/P=pla_temppath_read/M="Select the files you wish to view"/F=fileFilterStr
 					killpath/z pla_temppath_read
 					if(V_Flag!=0)
 						return 0
