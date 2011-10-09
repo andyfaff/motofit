@@ -620,8 +620,15 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 			GEN_setlimitsforGENcurvefit(root:packages:MotofitGF:NewGlobalFit:MasterCoefs, newGF_HoldString)
 			Wave GENcurvefitlimits =  root:packages:motofit:old_genoptimise:GENcurvefitlimits
 			SVAR newGF_HoldString = root:packages:MotofitGF:NewGlobalFit:newGF_HoldString
+			NVAR k_m =  root:packages:motofit:old_genoptimise:k_m
+			NVAR recomb =  root:packages:motofit:old_genoptimise:recomb
+			NVAR popsize =  root:packages:motofit:old_genoptimise:popsize
+			NVAR iterations =  root:packages:motofit:old_genoptimise:iterations
+			NVAR fittol =  root:packages:motofit:old_genoptimise:fittol
+			
+			newdatafolder/o/s root:packages:motofit:old_genoptimise
 			make/o/n=(numpnts(mastercoefs)) W_Sigma = 0
-			Gencurvefit/K={200,10,0.7,0.5}/Q=(quiet)/MAT=(covarianceArg)/R=$residWave/X=$xwave/I=(weightType)/W=$weightName/D=fity $funcname, Yw, MasterCoefs, newGF_HoldString, GENcurvefitlimits
+			Gencurvefit/K={iterations,popsize,k_m,recomb}/TOL=(fittol)/Q=(quiet)/MAT=(covarianceArg)/R=$residWave/X=$xwave/I=(weightType)/W=$weightName/D=fity $funcname, Yw, MasterCoefs, newGF_HoldString, GENcurvefitlimits
 			break
 	endswitch
 
