@@ -2110,6 +2110,13 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 			//this function loads the data into IGOR.
 			//the plot will try to append the loaded data to the first graph.
 			Moto_Plotreflectivity()
+			string loadeddatasets = Moto_fittable_datasets()
+			if(itemsinlist(loadeddatasets) == 1)
+				popupmenu dataset_tab0, win=reflectivitypanel, mode=1, value= motofit#Moto_fittable_datasets()
+				setmotofitoption("dataset", stringfromlist(0, loadeddatasets))
+				moto_update_theoretical()	
+			endif
+			
 			break
 		case "dofit_tab0":
 			//start a report notebook for the fitting
