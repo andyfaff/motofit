@@ -226,11 +226,11 @@ Function Moto_add_chemical(ctrlName) : ButtonControl
 		setdatafolder saveDF
 		return 0
 	endif
-	chemical[(numchemical+1)]=chem
-	SLD_neutrons[numchemical+1]=SLDn
-	SLD_X_rays[numchemical+1]=SLDx
-	Mass_density[numchemical+1]=rho
-	chemical_composition[numchemical+1]=chemcom
+	chemical[numchemical]=chem
+	SLD_neutrons[numchemical]=SLDn
+	SLD_X_rays[numchemical]=SLDx
+	Mass_density[numchemical]=rho
+	chemical_composition[numchemical]=chemcom
 	chemicals += chem+";"
 	Setdatafolder saveDF
 End
