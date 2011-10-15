@@ -421,7 +421,7 @@ static Function Moto_Reflectivitypanel() : Panel
 	ListBox layerparams_tab0,selWave=root:packages:motofit:reflectivity:layerparams_selwave
 	ListBox layerparams_tab0,mode= 5,editStyle= 2
 	ListBox layerparams_tab0,widths={60,60,21,60,21,60,21,60,21}
-	CheckBox usemultilayer_tab0,pos={407,308},size={96,14},proc=motofit#Setupmultilayer,title="make multilayer?"
+	CheckBox usemultilayer_tab0,pos={407,308},size={96,14},proc=motofit#moto_GUI_check,title="make multilayer?"
 	CheckBox usemultilayer_tab0,value= 0, fsize=12
 	
 	PopupMenu coefwave_tab0,pos={236,270},size={176,20},bodyWidth=139,proc=motofit#moto_GUI_PopMenu,title="Model"
@@ -2250,6 +2250,10 @@ static Function  moto_GUI_check(s) : CheckBoxControl
 		return 0
 	endif
 	strswitch(s.ctrlname)
+		case "usemultilayer_tab0":
+			Doalert 0, "Coming soon, not yet implemented in the GUI"
+			return 0
+			break
 		case "usedqwave_tab0":
 			setmotofitoption("usedqwave", num2istr(s.checked))
 			break
