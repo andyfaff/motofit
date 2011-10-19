@@ -1629,11 +1629,14 @@ Function setup_motoMPI()
 		endif
 
 		//but only for a restricted Q range dictated by the cursors.
-		findlevel/P/Q originaldata, hiQ
+		make/free/d/n=(dimsize(originaldata, 0)) tempqq
+		tempqq[] = originaldata[p][0]
+		
+		findlevel/P/Q tempqq, hiQ
 		if(!numtype(V_levelX))
 			deletepoints/M=0 V_levelX, dimsize(datatext, 0) , datatext
 		endif
-		findlevel/P/Q originaldata, loQ
+		findlevel/P/Q tempqq, loQ
 		if(!numtype(V_levelX))
 			deletepoints/M=0 0, V_levelX , datatext
 		endif
