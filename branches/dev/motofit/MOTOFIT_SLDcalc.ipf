@@ -249,7 +249,10 @@ Function Moto_Savedatabase(ctrlName) : ButtonControl
 		ABORT
 	endif
 	variable refnum
-	open refnum as fname
+	open/z refnum as fname
+	if(V_flag)
+		return 0
+	endif
 	fprintf refnum, "chemical,chemical_composition,SLD_neutrons,SLD_X_rays,Mass_density\r"
 	wfprintf refnum, "%s\t%s\t%g\t%g\t%g\r", chemical,chemical_composition,SLD_neutrons,SLD_X_rays,Mass_Density
 	close refnum
