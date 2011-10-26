@@ -389,10 +389,10 @@ Function pauseDetector(pauseORrestart)
 
 	switch(pauseORrestart)
 		case 1:		//pause acquisition
-			sics_cmd_cmd("histmem veto on")
+			sics_cmd_interest("histmem veto on")
 			break
 		case 0:		//restart after a pause
-			sics_cmd_cmd("histmem veto off")
+			sics_cmd_interest("histmem veto off")
 			break
 	endswitch
 	

@@ -60,14 +60,12 @@ Function DefaultHistogram()
 	oat_table("X",210.5,209.5,421)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50000,1,freq=20)
-	sics_cmd_interest("chopperController status")
 End
 
 Function testHistogram()
 	oat_table("X",60.5,59.5,201)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50000,1,freq=20)
-	sics_cmd_interest("chopperController status")
 End
 
 
@@ -75,28 +73,24 @@ Function aHistogram()		//suitable for 40mm HG
 	oat_table("X",40,-39,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50, 1000,freq=20)
-	sics_cmd_interest("chopperController status")
 End
 
 Function bHistogram()		//suitable for 40mm HG with FOC
 	oat_table("X",56,-52,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50,1000,freq=20)
-	sics_cmd_interest("chopperController status")
 End
 
 Function cHistogram()		//suitable for 30mm HG with FOC hslits(40,30,30,38)
 	oat_table("X",50,-50,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50,1000,freq=20)
-	sics_cmd_interest("chopperController status")
 End
 
 Function dHistogram()	//suitable for 40mm HG with FOC + 50mm St4vt
 	oat_table("X",64,-56,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50,1000,freq=20)
-	sics_cmd_interest("chopperController status")
 End
 
 Function eHistogram()		//suitable for 25mm HG with FOC
@@ -104,21 +98,18 @@ Function eHistogram()		//suitable for 25mm HG with FOC
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,30,1000,freq=33)
 	//for 33Hz, change to 30us.  For 20Hz use 50.
-	sics_cmd_interest("chopperController status")
 End
 
 Function fHistogram()		//suitable for 30mm HG with SB
-	oat_table("X",25,-24,1)
+	oat_table("X",25.5,-25.5,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50,1000,freq=20)
-	sics_cmd_interest("chopperController status")
 End
 
 Function gHistogram()		//suitable for 7mm HG with FOC
 	oat_table("X",10,-10,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50,1000,freq=20)
-	sics_cmd_interest("chopperController status")
 End
 
 
@@ -130,21 +121,18 @@ Function hHistogram()
 	oat_table("X",54.5,-54.5,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50,1000,freq = 20)
-	sics_cmd_interest("chopperController status")
 End
 
 Function iHistogram() //Bills SAW, hslits(10,4,4,20)
 	oat_table("X",5.5,-5.5,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50,1000,freq=20)
-	sics_cmd_interest("chopperController status")
 End
 
 Function jHistogram()		//suitable for hslits(44,35,35,43) "SB"
-	oat_table("X",35,-35,1)
+	oat_table("X",35.5,-35.5,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,50,1000,freq=20)
-	sics_cmd_interest("chopperController status")
 End
 
 Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
@@ -295,7 +283,7 @@ Function setExperimentalMode(mode)
 	print "Be careful, combined omega_2theta motion is now different"
 	print "__________________________________________________________"
 	
-	sockitsendmsg SOCK_cmd, cmd+"\n"
+	sockitsendmsg SOCK_cmd, cmd + "\n"
 	return err
 End
 
@@ -303,7 +291,7 @@ Function omega_2theta(omega, twotheta, [s1, s2, s3, s4])
 	variable omega,twotheta, s1, s2, s3, s4
 	//sets the angle of incidence (omega) and the total beam deviation (2theta)
 	//also optionally opens the slits _after_ the reflected beam is moved
-	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
+	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	string cmd = ""
 	if(paramisdefault(s1))
 		s1 = 0
@@ -318,10 +306,10 @@ Function omega_2theta(omega, twotheta, [s1, s2, s3, s4])
 		s4 = 0
 	endif
 	if(numtype(omega) || numtype(twotheta) )//|| omega<0 || twotheta<0)
-		print "ERROR: omega and twotheta must be greater than zero and NOT NaN or Inf"
+		print "ERROR: omega and twotheta NOT be NaN or Inf"
 	endif
-	sprintf cmd, "::exp_mode::omega_2theta %3.3f %3.3f %3.3f %3.3f %3.3f %3.3f\n", omega, twotheta, s1, s2, s3, s4
-	sockitsendmsg SOCK_cmd, cmd    	
+	sprintf cmd, "::exp_mode::omega_2theta %3.3f %3.3f %3.3f %3.3f %3.3f %3.3f", omega, twotheta, s1, s2, s3, s4
+	sics_cmd_interest(cmd)
 End
 
 Function attenuate(pos)
@@ -329,22 +317,22 @@ Function attenuate(pos)
 	//pos = -1 take the attenuator out
 	//pos = 0 park the attenuator in the beam
 	//pos = 1 oscillate the attenuator
-	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
+	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
 	switch(pos)
 		case -1:
-			sockitsendmsg sock_interest,"bat send oscd=-1\n"
+			sockitsendmsg sock_sync,"bat send oscd=-1\n"
 			if(V_Flag)
 				return V_Flag
 			endif
 			break
 		case 0:
-			sockitsendmsg sock_interest,"bat send oscd=0\n"
+			sockitsendmsg sock_sync,"bat send oscd=0\n"
 			if(V_Flag)
 				return V_Flag
 			endif
 			break
 		case 1:
-			sockitsendmsg sock_interest,"bat send oscd=1\n"
+			sockitsendmsg sock_sync,"bat send oscd=1\n"
 			if(V_Flag)
 				return V_Flag
 			endif
@@ -1536,7 +1524,7 @@ Function Instrumentlayout_panel()
 	dowindow/c instrumentlayout
 	SetDrawLayer/w=instrumentlayout UserBack
 	drawpict 0,0,0.6,0.6,Procglobal#platypuspicture
-	
+		
 	TitleBox dz,pos={3,112},size={25,21},title="dz=",labelBack=(65535,65535,65535), win=instrumentlayout
 	TitleBox dz,fSize=10, win=instrumentlayout
 	TitleBox sth,pos={127,177},size={28,21},title="sth=", win=instrumentlayout
@@ -1580,6 +1568,10 @@ Function Instrumentlayout_panel()
 	SetVariable sicsstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
 	SetVariable sicsstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:sicsstatus,noedit= 1, win=instrumentlayout
 
+	SetVariable julabo,pos={90,253},size={90,16},title="Julabo temp", win=instrumentlayout,bodywidth=40
+	SetVariable julabo,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout
+
 	DrawRect/w=instrumentlayout 219,322,311,357
 	DrawRect/w=instrumentlayout 180,364,213,439
 	DrawRect/w=instrumentlayout 316,364,349,439
@@ -1613,24 +1605,38 @@ Function Instrumentlayout_panel()
 	SetDrawEnv/w=instrumentlayout arrow= 3
 	DrawLine/w=instrumentlayout 583,424,679,424
 	
-	TitleBox ss2vg,pos={252,376},size={34,13},title="ss2vg=", win=instrumentlayout
-	TitleBox ss2vg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
-	TitleBox ss2hg,pos={261,408},size={34,13},title="ss2hg=", win=instrumentlayout
-	TitleBox ss2hg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
-	TitleBox ss1vg,pos={63,376},size={34,13},title="ss1vg=", win=instrumentlayout
-	TitleBox ss1vg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
-	TitleBox ss1hg,pos={72,408},size={34,13},title="ss1hg=", win=instrumentlayout
-	TitleBox ss1hg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
-	TitleBox ss3vg,pos={422,376},size={34,13},title="ss3vg=", win=instrumentlayout
-	TitleBox ss3vg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
-	TitleBox ss3hg,pos={431,408},size={34,13},title="ss3hg=", win=instrumentlayout
-	TitleBox ss3hg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	SetVariable ss2vg_l,pos={252,376},size={74,13},title="ss2vg", win=instrumentlayout
+	SetVariable ss2vg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss2vg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/second/vertical/gap")][1],noedit= 1, win=instrumentlayout
+	SetVariable ss2hg_l,pos={252,408},size={74,13},title="ss2hg", win=instrumentlayout
+	SetVariable ss2hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss2hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/second/horizontal/gap")][1],noedit= 1, win=instrumentlayout
+	
+	SetVariable ss1vg_l,pos={63,376},size={74,13},title="ss1vg", win=instrumentlayout
+	SetVariable ss1vg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss1vg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/first/vertical/gap")][1],noedit= 1, win=instrumentlayout
+	SetVariable ss1hg_l,pos={65,408},size={74,13},title="ss1hg", win=instrumentlayout
+	SetVariable ss1hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss1hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/first/horizontal/gap")][1],noedit= 1, win=instrumentlayout
+
+
+	SetVariable ss3vg_l,pos={424,376},size={74,13},title="ss3vg", win=instrumentlayout
+	SetVariable ss3vg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss3vg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/third/vertical/gap")][1],noedit= 1, win=instrumentlayout
+	SetVariable ss3hg_l,pos={424,408},size={74,13},title="ss3hg", win=instrumentlayout
+	SetVariable ss3hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss3hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/third/horizontal/gap")][1],noedit= 1, win=instrumentlayout
+	
 	TitleBox st3vt,pos={402,303},size={29,13},title="st3vt=", win=instrumentlayout
 	TitleBox st3vt,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
-	TitleBox ss4vg,pos={607,376},size={34,13},title="ss4vg=", win=instrumentlayout
-	TitleBox ss4vg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
-	TitleBox ss4hg,pos={616,408},size={34,13},title="ss4hg=", win=instrumentlayout
-	TitleBox ss4hg,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	
+	SetVariable ss4vg_l,pos={609,376},size={74,13},title="ss4vg", win=instrumentlayout
+	SetVariable ss4vg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss4vg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/fourth/vertical/gap")][1],noedit= 1, win=instrumentlayout
+	SetVariable ss4hg_l,pos={609,408},size={74,13},title="ss4hg", win=instrumentlayout
+	SetVariable ss4hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss4hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/fourth/horizontal/gap")][1],noedit= 1, win=instrumentlayout
+	
 	TitleBox st4vt,pos={586,303},size={29,13},title="st4vt=", win=instrumentlayout
 	TitleBox st4vt,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
 	
@@ -1927,20 +1933,20 @@ Function/t createFizzyCommand(type)
 	strswitch(type)
 		case "":
 			break
-		case "julabo_on":
-			julabo_on();
-			break
-		case "julabo_off":
-			julabo_off();
-			break
-		case "julabo_settemp":
-			variable temp = 25
-			prompt temp, "temperature (-20 < temp < 70)"
-			doprompt "Enter a temp for the waterbath", temp
-			if(V_Flag)
+		case "tempbath":
+			variable temperature = 25, waitforequil
+			prompt temperature, "what temperature do you want to set the julabo to?"
+			prompt waitforequil, "Did you want to wait for equilibration?", popup, "YES;NO"
+			Doprompt "Water bath", temperature, waitforequil
+			if(V_flag)
 				return ""
 			endif
-			sprintf cmd, "julabo_settemp(%d)", temp
+			if(waitforequil ==2)
+				waitforequil = 0
+			else
+				waitforequil = 1
+			endif
+			sprintf cmd, "tempbath(%3.2f, wait=%d)", temperature, waitforequil
 			break
 		case "txtme":
 			string text = ""
@@ -2252,6 +2258,42 @@ Function positions_panel() : Panel
        SetVariable numpositions,limits={1,10,1},value= _NUM:0, win=position_panel
 End
 
+Function positioner_fill_position(position, sx, sz, sth, sphi, [ask])
+	variable position, sx, sz, sth, sphi, ask
+	//a function that can setup the position panel from the command line.
+	//position is the number of the line
+	//the other parameters are what you think they are, but the function
+	//does not affect whether the variable specified is going to be a relative or absolute move.
+	
+	if(numtype(sx) || numtype(sz) || numtype(sth) || numtype(sphi))
+		Doalert 0, "Can't have NaN/Inf setups"
+		return 0
+	endif
+
+	if(ask)
+		prompt position, "which line in the position panel"
+		prompt sx, "sx value"
+		prompt sz, "sz value"
+		prompt sth, "sth value"
+		prompt sphi, "sphi value"
+		Doprompt "enter offsets (abs/relative not changed)", position, sx, sz, sth, sphi
+		if(V_flag)
+			return 0
+		endif
+	endif
+
+	Wave/t/z position_listwave = root:packages:platypus:SICS:position_listwave
+	if(!waveexists(position_listwave) || position < 0 || position > dimsize(position_listwave, 0) - 1)
+		Doalert 0, "position_listwave doesn't exist, or that position doesn't exist"
+		return 0
+	endif
+
+	position_listwave[position][1] = num2str(sx)
+	position_listwave[position][3] = num2str(sz)
+	position_listwave[position][5] = num2str(sth)
+	position_listwave[position][7] = num2str(sphi)
+End
+
 Function anglerlist(numangles)
        //sets up pre-defined position waves for various samples.
        variable numangles
@@ -2419,115 +2461,15 @@ End
 //			JULABO/THERMOHAAKE water bath for Platypus
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-Function/t julabo_checkStatus()
-	//check if julabo is connected
-	NVAR SOCK_MOXA1 = root:packages:platypus:SICS:SOCK_MOXA1
-	string msg = ""
-	//if socket is closed, julabo comms don't work
-	if(!sockitisitopen(SOCK_MOXA1))
-		print "ERROR: Julabo MOXA TCP/IP socket isn't connected"
-		return "JULERR:TCP"
-	endif
-	
-	//if can't get the status julabo must be off
-#ifdef JULABO
-	sockitsendnrecv SOCK_MOXA1, "status\r"
-	if(V_Flag || strlen(S_tcp)==0)
-		print "ERROR: didn't get a response from Julabo bath"
-		return "JULERR:JUL"
-	endif
-	msg = "JULERR:;STATUS:" + replacestring("\r", S_tcp, "")
-	
-	//is the temp system on or off
-	sockitsendnrecv SOCK_MOXA1, "in_mode_05\r"
-	msg += "STARTED:" + replacestring("\r", S_tcp, "") + ";"
-
-	//what is the current temp of the bath
-	sockitsendnrecv SOCK_MOXA1, "in_pv_00\r"
-	msg += "TEMP:" + replacestring("\r", S_tcp, "") + ";"
-
-	//what is the current settemp
-	sockitsendnrecv SOCK_MOXA1, "in_sp_00\r"
-	msg += "SETTEMP:" + replacestring("\r", S_tcp, "") + ";"
-#endif
-
-	print msg
-	return msg
-End
-
-Function julabo_on()
-	//assumes julabo is on MOXA port 1
-#ifdef JULABO
-	variable err = MOXA("out_mode_05 1\r", 1)
-#endif
-#ifdef THERMOHAAKE
-	variable err = MOXA("GO \r", 1)
-#endif
-	return err
-End
-
-Function julabo_off()
-	//assumes julabo is on MOXA port 1
-#ifdef JULABO
-	variable err = MOXA("out_mode_05 0\r", 1)
-#endif
-#ifdef THERMOHAAKE
-	variable err = MOXA("ST \r", 1)
-#endif
-
-	return err
-end
-
-Function julabo_gettemp()
-	//assumes julabo is on MOXA port 1
-	variable err = 0
-	variable temperature = NaN
-	NVAR SOCK_MOXA1 = root:packages:platypus:SICS:SOCK_MOXA1
-	
-#ifdef JULABO
-	sockitsendnrecv SOCK_MOXA1, "in_pv_00\r"
-#endif
-#ifdef THERMOHAAKE
-	sockitsendnrecv SOCK_MOXA1, "I\r"
-#endif
-	if(V_Flag)
-		return NaN
-	endif
-	temperature = str2num(replacestring("\r", S_tcp, ""))
-	if(numtype(temperature))
-		return NaN
+function tempbath(temperature, [wait])
+	variable temperature, wait
+	string cmd = ""
+	if(wait)
+		sprintf cmd, "drive tc1_driveable %3.2f", temperature
 	else
-		return temperature
+		sprintf cmd, "run tc1_driveable %3.2f", temperature
 	endif
-End
-
-Function julabo_settemp(temperature)
-	//assumes julabo is on MOXA port 1
-	variable temperature
-	variable err, ii
-	string cmd="00000", cmd2=""
-	
-	if(numtype(temperature))
-		return 1
-	elseif(temperature < -20 || temperature > 70)
-		print "Temperature limits hardcoded to -20 < temp <60, check that tubing can handle these temps (julabo_settemp)"
-		return 1
-	endif
-
-#ifdef JULABO
-	err = MOXA("out_sp_00 "+num2str(temperature)+"\r", 1)
-#endif
-#ifdef THERMOHAAKE
-	sprintf cmd2, "%g", abs(temperature) * 100
-	if(temperature < 0)
-		cmd[0] = "-"
-	endif
-	cmd[5 - strlen(cmd2), strlen(cmd)-1] = cmd2	
-	cmd = "S  " + cmd + "\r"
-	MOXA(cmd, 1)
-#endif
-	return err
+	sics_cmd_interest(cmd)	
 end
 
 
@@ -2780,7 +2722,7 @@ Function pumpset(v0, r0, v1, r1, [mvp, inject])
     	    mvp = round(mvp)
     	    template = "drive mvp_driveable %d\n"	
     	    sprintf cmd, template, mvp
-    	    sics_cmd_cmd(cmd)
+    	    sics_cmd_interest(cmd)
     	endif
     endif
     
@@ -2789,9 +2731,9 @@ Function pumpset(v0, r0, v1, r1, [mvp, inject])
     template += "hset /sample/syr/pump1/Vol %3.3f\n"
     template += "hset /sample/syr/pump1/rat %3.3fMM"
     sprintf cmd, template, v0, r0, v1, r1
-    sics_cmd_cmd(cmd)
+    sics_cmd_interest(cmd)
     
     if(!paramisdefault(inject) && inject)
-        sics_cmd_cmd("drive syr_driveable 1")
+        sics_cmd_interest("drive syr_driveable 1")
     endif
 End

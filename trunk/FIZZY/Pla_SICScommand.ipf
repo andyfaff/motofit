@@ -320,7 +320,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 1: //mouse down
 			if(lba.eventmod & 2^4)
-				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;angler;txtme;julabo_on;julabo_off;julabo_settemp"
+				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;angler;txtme;tempbath"
 				listwave[row][col] = createFizzyCommand(S_Selection)
 			endif
 			break
@@ -1999,21 +1999,28 @@ NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
 	endif
 End
 
-Function SICSstatus(msg)
+Function SICSstatus(msg, [oninterest])
 	string &msg
+	variable oninterest
 	//tests if SICS is willing and able to perform commands.
 	//returns 0 if SICS is ok to do something
 	//returns 1 if SICS is not OK.
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
+	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	
-	variable err=0
+	variable err=0, sockID
 	SVAR sicsstatus = root:packages:platypus:SICS:sicsstatus
 	msg = sicsstatus
 	string left
 	
+	if(oninterest)
+		sockID = SOCK_interest
+	else
+		sockID = SOCK_sync
+	endif
 //	DoXOPIdle
-	sockitsendnrecv/time=2/smal sock_sync,"\n"
-	sockitsendnrecv/time=2/smal sock_sync,"status\n"
+	sockitsendnrecv/time=2/smal sockID,"\n"
+	sockitsendnrecv/time=60/smal sockID,"status\n"
 	msg = S_tcp
 	parsereply(S_tcp,left,msg)
 	msg=replacestring("\n",msg,"")
@@ -2290,7 +2297,7 @@ string cmd
 	//	print s_tcp
 	//	print cmd
 	if(V_flag)
-		print "Error while sending SICScmd (sics)"
+		print "Error while sending SICScmd (sics)", cmd, time()
 		return 1
 	endif
 	return 0
@@ -2415,7 +2422,7 @@ Function run(motor,desiredPosition)
 	endif
 	
 	cmd = "run "+ motor + " "+ num2str(desiredPosition) + "\n"
-	if(sics_cmd_cmd(cmd))
+	if(sics_cmd_interest(cmd))
 		print "Error while driving "+motor + " (run)"
 		return 1
 	endif	

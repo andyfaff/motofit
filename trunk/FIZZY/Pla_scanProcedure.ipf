@@ -104,6 +104,7 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	//		a string that is send on SOCK_cmd channel for user commands
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
+	SVAR Gsicsstatus = root:packages:platypus:SICS:sicsstatus
 	
 	if(paramisDefault(auto))
 		auto = 0
@@ -174,6 +175,7 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	Wave/t statemon = root:packages:platypus:SICS:statemon
 	if(numpnts(statemon)>0)
 		print "The SICS statemon isn't cleared, may need to clear it? (fpx)"
+		print statemon
 		return 1
 	endif
 	//check the histogram
@@ -183,8 +185,12 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	endif
 
 	//see if SICS is doing anything
-	if(SICSstatus(msg))
-		Print "SICS is: "+msg + " (fpx)"
+//	if(SICSstatus(msg)) 
+//		Print "SICS is: "+msg + " (fpx)"
+//		return 1
+//	endif
+	if(!stringmatch(Gsicsstatus, "Eager to execute commands"))
+		Print "ERROR - SICS is: "+Gsicsstatus + " (fpx)", time()
 		return 1
 	endif
 		

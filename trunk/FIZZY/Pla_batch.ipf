@@ -68,7 +68,7 @@ Function batchScan(batchfile)
 	variable/g root:packages:platypus:data:batchscan:userPaused = 0		//says whether you are currently in a user paused situation
 	
 	//start the scan task
-	CtrlNamedBackground  batchScan period=120, proc=batchbkgtask,  dialogsOK =0
+	CtrlNamedBackground  batchScan period=150, proc=batchbkgtask,  dialogsOK =0, burst = 0
 	CtrlNamedBackground  batchScan start
 	print "______________________________________________________"
 	print "STARTING BATCH MODE"
@@ -121,10 +121,12 @@ Function batchScanReadyForNextPoint()
 	try
 		if(userPaused)
 			return 2
-		elseif(fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus() || dimsize(statemon,0)>0)
+		elseif(dimsize(statemon, 0) > 0 || fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus())
+			Execute/P/Q/Z "DoXOPIdle"
 			return 1
 		elseif(!stringmatch(sicsstatus, "Eager to execute commands") || SICSstatus(msg))
 			sics_cmd_interest("status")
+			Execute/P/Q/Z "DoXOPIdle"
 	//		print time(), "DEBUG BATCH FPX:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
 			return 1
 		else
@@ -132,6 +134,7 @@ Function batchScanReadyForNextPoint()
 			if(status)
 				return 1
 			endif
+
 			
 			//if it's an acquire or fpx run, and you've just finished an acquisition then put the filename in the last column
 			string theCmd = list_batchbuffer[currentpoint][1]
@@ -269,7 +272,7 @@ Function executenextbatchpoint(batchbuffer, currentpoint)
 	if(strlen(batchbuffer[currentpoint][1])>0 && (sel_batchbuffer[currentpoint][2] & 2^4))
 		print "STARTED POINT: "+num2str(currentpoint)+" of batch Scan at:    ", Secs2Time(DateTime,2)
 		batchbuffer[currentpoint][3] = "Executing"
-		execute batchbuffer[currentpoint][1]	
+		execute/P/Z batchbuffer[currentpoint][1]	
 	endif
 End
 
