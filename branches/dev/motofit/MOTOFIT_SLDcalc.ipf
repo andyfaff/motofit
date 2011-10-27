@@ -284,20 +284,20 @@ Function Moto_addchemicalfromcalculator(ctrlName) : ButtonControl
 		Abort
 	Endif
 		
-	chemical[(numchemical+1)]=chemicalname
+	chemical[(numchemical)]=chemicalname
 	
 	//parse the real part of the neutron SLD
 	controlinfo/W=SLDpanel calcNeutronSLD_tab0
-	SLD_neutrons[numchemical+1]=V_Value*1e6
+	SLD_neutrons[numchemical]=V_Value*1e6
 
 	controlinfo/W=SLDpanel calcXraySLD_tab0	
-	SLD_X_rays[numchemical+1] = V_Value * 1e6
+	SLD_X_rays[numchemical] = V_Value * 1e6
 	
 	controlinfo/W=SLDpanel calcMASSDENSITY_tab0
-	Mass_density[numchemical+1] = V_Value
+	Mass_density[numchemical] = V_Value
 	
 	controlinfo/W=SLDpanel chemical_tab0 
-	chemical_composition[numchemical+1] = S_value
+	chemical_composition[numchemical] = S_value
 
 	chemicals+=chemicalname+";"
 	Setdatafolder savedf
