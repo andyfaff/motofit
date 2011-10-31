@@ -626,7 +626,7 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 			NVAR iterations =  root:packages:motofit:old_genoptimise:iterations
 			NVAR fittol =  root:packages:motofit:old_genoptimise:fittol
 			
-			newdatafolder/o/s root:packages:motofit:old_genoptimise
+	//		newdatafolder/o/s root:packages:motofit:old_genoptimise
 			make/o/n=(numpnts(mastercoefs)) W_Sigma = 0
 			Gencurvefit/K={iterations,popsize,k_m,recomb}/TOL=(fittol)/Q=(quiet)/MAT=(covarianceArg)/R=$residWave/X=$xwave/I=(weightType)/W=$weightName/D=fity $funcname, Yw, MasterCoefs, newGF_HoldString, GENcurvefitlimits
 			break
