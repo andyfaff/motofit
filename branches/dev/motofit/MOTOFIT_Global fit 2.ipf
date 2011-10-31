@@ -1144,7 +1144,7 @@ end
 
 static Function InitNewGlobalFitGlobals()
 	
-	DFREF GFfolder = root:Packages:motofitgf
+	DFREF GFfolder = root:Packages:motofitgf:newglobalfit
 	if (DataFolderRefStatus(GFFolder) > 0)
 		return 0		// if the folder already exists, just use it so the set-up will be the same as before. This risks using a damaged folder...
 	endif
