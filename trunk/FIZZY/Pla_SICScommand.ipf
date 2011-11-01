@@ -2018,14 +2018,23 @@ Function SICSstatus(msg, [oninterest])
 	else
 		sockID = SOCK_sync
 	endif
-//	DoXOPIdle
-	sockitsendnrecv/time=2/smal sockID,"\n"
-	sockitsendnrecv/time=60/smal sockID,"status\n"
-	msg = S_tcp
-	parsereply(S_tcp,left,msg)
-	msg=replacestring("\n",msg,"")
-	sicsstatus = msg
 	
+	do
+	//	DoXOPIdle
+	//	sockitsendnrecv/time=2/smal sockID,"\n"
+		sockitsendnrecv/time=60/smal sockID,"status\n"
+
+		S_tcp = replacestring("\n",S_tcp,  "")
+		parsereply(S_tcp,left,msg)
+		if(strlen(msg)==0)
+			print "BUSY - still trying to get SICS status (sicsstatus)"
+			sleep/t 10
+		endif	
+	while(strlen(msg) == 0)
+	
+	if(strlen(msg) > 0)
+		sicsstatus = msg
+	endif
 //	if(cmpstr(sicsstatus,"Eager to execute commands")==0)
 	if(stringmatch(msg,"Eager to execute commands"))
 		return 0
@@ -2047,6 +2056,10 @@ Function statemonstatus(item)
 	endif
 End
 
+Function showStatemon()
+	Wave/t statemon = root:packages:platypus:SICS:statemon
+	edit/K=1 statemon
+End
 
 // PNG: width= 324, height= 108
 Picture go_pict

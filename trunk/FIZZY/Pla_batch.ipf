@@ -44,7 +44,7 @@ Function batchScan(batchfile)
 	batchfile[][4] = ""
 	
 	if(SICSstatus(msg))
-		print "Cannot start batch, because SICS is doing something (batchScan)"
+		print "Cannot start batch, because SICS is doing something (batchScan)", msg
 		return 1
 	endif 
 	if(fpxStatus())
@@ -124,17 +124,17 @@ Function batchScanReadyForNextPoint()
 		elseif(dimsize(statemon, 0) > 0 || fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus())
 			Execute/P/Q/Z "DoXOPIdle"
 			return 1
-		elseif(!stringmatch(sicsstatus, "Eager to execute commands") || SICSstatus(msg))
+		elseif(!stringmatch(sicsstatus, "Eager to execute commands"))
 			sics_cmd_interest("status")
 			Execute/P/Q/Z "DoXOPIdle"
 	//		print time(), "DEBUG BATCH FPX:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
 			return 1
 		else
-			variable status = SICSstatus(msg)
+			variable status = SICSstatus(msg, oninterest = 1)
+			print time(), "DEBUG BATCH:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
 			if(status)
 				return 1
 			endif
-
 			
 			//if it's an acquire or fpx run, and you've just finished an acquisition then put the filename in the last column
 			string theCmd = list_batchbuffer[currentpoint][1]
@@ -146,7 +146,7 @@ Function batchScanReadyForNextPoint()
 				list_batchbuffer[currentpoint][4] = theFile
 			endif
 		
-			//			print time(), "DEBUG BATCH:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
+			
 			return 0
 		endif
 	catch

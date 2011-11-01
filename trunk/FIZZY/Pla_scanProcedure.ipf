@@ -39,6 +39,7 @@ Function fpxStop()
 	CtrlNamedBackground  scanTask status
 	if(numberbykey("RUN",S_info))	//if the scan is running, stop it, and finish
 		finishscan(1)
+		sics_cmd_interest("statemon stop FPX")
 		CtrlNamedBackground  scanTask kill=1
 	endif
 End
@@ -130,8 +131,8 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	
 	Dowindow/k fpxScan
 	
-	if( fpxStatus() )	//if the scan is running we can't continue
-		print "scan is already running (fpx)"
+	if( fpxStatus() || statemonstatus("FPX"))	//if the scan is running we can't continue
+		print "scan is already running (fpx)", time()
 		return 1
 	endif
 	
@@ -165,12 +166,6 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	NVAR motoraxisrow = root:packages:platypus:data:scan:motoraxisrow
 
 	cDF = getdatafolder(1)
-
-	//see if you're already doing an fpx scan
-	if(fpxStatus())
-		print "you are currently doing an fpx scan, please stop that first (fpx)"
-		return 1	
-	endif
 
 	Wave/t statemon = root:packages:platypus:SICS:statemon
 	if(numpnts(statemon)>0)
@@ -354,6 +349,7 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 //	DoXOPIdle
 	print "Beginning scan"
 	//start the scan task
+	sics_cmd_interest("statemon start FPX")
 	CtrlNamedBackground  scanTask period=600, proc=scanBkgTask, burst=0, dialogsOK =0
 	CtrlNamedBackground  scanTask start
 	return 0
@@ -673,6 +669,7 @@ Function finishScan(status)
 	
 	if(stringmatch(scanmotor,"_none_"))
 		print "finished scan"
+		sics_cmd_interest("statemon stop FPX")
 		return 0
 	endif
 					
@@ -770,6 +767,7 @@ Function finishScan(status)
 	//reset the progress bar
 	ValDisplay/z progress_tab1, win=SICScmdpanel, limits={0,0,0}
 	ctrlnamedbackground scanTask, kill=1
+	sics_cmd_interest("statemon stop FPX")
 	return err
 End
 

@@ -62,6 +62,12 @@ Function DefaultHistogram()
 	oat_table("T",0,50000,1,freq=20)
 End
 
+Function DefaultHistogram2()
+	oat_table("X",210.5,209.5,421)
+	oat_table("Y",110.5,109.5,221)
+	oat_table("T",0,50,1000,freq=20)
+End
+
 Function testHistogram()
 	oat_table("X",60.5,59.5,201)
 	oat_table("Y",110.5,109.5,221)
