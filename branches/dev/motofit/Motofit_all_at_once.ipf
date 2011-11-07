@@ -333,7 +333,7 @@ static Function Moto_localchi2()
 				make/o/d/n=(201, 201) chi2map = 0
 				setscale/I x, local_copy_coefs[par0] * (1 - extent0/100), local_copy_coefs[par0] * (1 + extent0/100), chi2map
 				setscale/I y, local_copy_coefs[par1] * (1 - extent1/100), local_copy_coefs[par1] * (1 + extent1/100), chi2map
-				newimage/K=1 chi2map as "2D Chi2 map"
+				newimage/K=1 chi2map
 
 				for(ii = 0 ; ii < dimsize(chi2map, 0) ; ii += 1)
 					for(jj = 0 ; jj < dimsize(chi2map, 1) ; jj += 1)

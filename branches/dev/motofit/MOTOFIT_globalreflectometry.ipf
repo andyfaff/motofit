@@ -26,10 +26,11 @@ static Function buildpanel() : Panel
 	ListBox datasetparams_tab0,listWave=root:Packages:motofit:reflectivity:globalfitting:datasets_listwave
 	ListBox datasetparams_tab0,selWave=root:Packages:motofit:reflectivity:globalfitting:datasets_selwave, fsize = 12
 	ListBox datasetparams_tab0,mode= 10,colorwave = root:Packages:motofit:reflectivity:globalfitting:M_colors
+	listbox datasetparams_tab0 win=globalreflectometrypanel, widths = {160}, userColumnResize=1, frame=3
 	ListBox coefficients_tab1,pos={17,72},size={526,499},proc=Motofit_GR#globalpanel_GUI_listbox
 	ListBox coefficients_tab1,listWave=root:Packages:motofit:reflectivity:globalfitting:coefficients_listwave
 	ListBox coefficients_tab1,selWave=root:Packages:motofit:reflectivity:globalfitting:coefficients_selwave
-	ListBox coefficients_tab1,clickEventModifiers= 4, fsize = 11,mode=6
+	ListBox coefficients_tab1,clickEventModifiers= 4, fsize = 11,mode=6, widths={60}, usercolumnresize=1
 	Button do_global_fit,pos={184,600},size={80,40},proc=Motofit_GR#globalpanel_GUI_button,title="Fit"
 	Button do_global_fit,fSize=12
 	Button simulate,pos={276,600},size={80,40},proc=Motofit_GR#globalpanel_GUI_button,title="Simulate"
@@ -337,7 +338,7 @@ static Function globalpanel_GUI_button(ba) : ButtonControl
 				case "linkparameter_tab0":
 					temp = which_cells_sel(datasets_selwave)
 					linkParameterList(temp)
-					regenerateLinkageListBoxes()
+					//regenerateLinkageListBoxes()
 					break
 				case "unlinkparameter_tab0":
 					temp = which_cells_sel(datasets_selwave)
@@ -958,19 +959,21 @@ static Function change_numparameters_in_linkage(datasetnum, params)
 	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
 
 	string unlinklist = ""
-	variable ii, jj, row, col, diff_params
+	variable ii, jj, row, col, diff_params, oldnumberofparams, lastuniqueparam
 	
 	if(params < 1 || numtype(datasetnum) || numtype(params) || datasetnum < 0 || datasetnum > numpnts(numcoefs) - 1)
 		return 1
 	endif
 
+	oldnumberofparams = numcoefs[datasetnum]
+	
 	for(ii = 0 ; ii < numcoefs[datasetnum] ; ii+=1)
 		unlinklist += num2istr(datasetnum) + ":" + num2istr(ii) +";"
 	endfor
 	unlinkParameterList(unlinklist, removeFollowing = 1)
 	
 	//all the unique parameters following this dataset have to be incremented/decremented by the difference in param number
-	diff_params = params - numcoefs[datasetnum] 
+	diff_params = params - oldnumberofparams 
 	
 	Wave uniqueparametermask = isuniqueparam()
 	
@@ -983,25 +986,31 @@ static Function change_numparameters_in_linkage(datasetnum, params)
 				findvalue/S=0/i=(linkages[jj][ii]) linkages
 				col = floor(V_value/dimsize(linkages, 0))
 				if(col > datasetnum)
-					linkages[jj][ii] += numcoefs[datasetnum]
+					linkages[jj][ii] += oldnumberofparams
 				endif 
 			endif
 		endfor
 	endfor
 	
-	for(ii = numcoefs[datasetnum] ; ii < numcoefs[datasetnum] + diff_params ; ii  += 1)
-		linkages[ii][datasetnum] = lastUniqueParameter(ii, datasetnum) + 1
-	endfor
-
 	numcoefs[datasetnum] = params
+	redimension/n=(wavemax(numcoefs), -1) linkages
+	lastuniqueparam = lastUniqueParameter(0, datasetnum)
 
-	for(ii = params ; ii < dimsize(linkages, 0) ; ii += 1)
-		linkages[ii][datasetnum] = -1
+	for(ii = 0 ; ii < params ; ii  += 1)
+		linkages[ii][datasetnum] = lastuniqueparam + ii
+	endfor	
+	
+	for(ii = 0 ; ii < dimsize(linkages, 1) ; ii += 1)
+		for(jj = numcoefs[ii] ; jj < dimsize(linkages, 0) ; jj += 1)
+			linkages[jj][ii] = -1
+		endfor
 	endfor
-	redimension/n=(wavemax(numcoefs), -1) linkages	
 End
 
-
+Function save_linkage()
+	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
+	
+End
 static Function build_combined_dataset([fitcursors])
 	variable fitcursors
 	variable loQ, hiQ
@@ -1786,6 +1795,7 @@ Function ingest_motoMPI_input([folderStr])
 			Wave indy = $("root:data:" + datanames[ii][0] + ":coef_" + datanames[ii][0] + "_R")
 			coefs[ii] = indy
 			close pilotID
+			pilotID = 0
 		endfor
 		//now we've loaded the pilot files and data, try and set the global fitting up.
 		isImagOrSolvent = mod((dimsize(params, 0) - 6), 4)

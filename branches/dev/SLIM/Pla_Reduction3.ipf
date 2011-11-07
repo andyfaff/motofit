@@ -547,7 +547,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							print "Warning setting scale factor to 1 ", angledata_list[ii][3]
 						endif
 						
-						string template =  " reduce(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_centre=cmplx(%g, NaN), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
+						string template =  " reduce(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_peak=cmplx(%g, NaN), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
 						sprintf cmd, template, replacestring("\\", inputpathStr, "\\\\"), replacestring("\\", outputpathStr, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, dontoverwrite, normalisebymonitor, saveSpectrum, saveoffspec
 						cmdToHistory(cmd)
 						

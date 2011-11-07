@@ -176,7 +176,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	endif
 	
 	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
-	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=%d,water=\"%s\", expected_centre=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
+	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=%d,water=\"%s\", expected_peak=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
 	sprintf reductionCmd, cmd, inputPathStr, outputPathStr, scalefactor, runfilename, lowLambda, highLambda, rebin, background, scanpointrange, eventstreaming, water, real(expected_peak), imag(expected_peak), manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
 	if(verbose)
 		print reductionCmd
