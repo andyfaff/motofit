@@ -21,7 +21,7 @@ Menu "Motofit"
 	"Load experimental data",Moto_Plotreflectivity()()
 	"Co-refine Reflectometry Data", Motofit_GR#init_fitting()
 	"SLD calculator", Moto_SLDdatabase()
-	"create local chi2map for requested parameter",Moto_localchi2()
+	"create local chi2map for requested parameter",motofit#Moto_localchi2()
 	Submenu "Fit batch data"
 		"Load batch data", LoadAndGraphAll ("")
 		"Fit batch data", FitRefToListOfWaves()
@@ -279,6 +279,79 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 		layerparams_selwave[ii + 1][8] = layerparams_selwave[ii + 1][8] | selectnumber(str2num(holdstring[4 * ii + 9 + mode]), 0, 16)
 	endfor
 End
+
+static Function Moto_localchi2()
+	Wave/z coef_theoretical_R = root:data:theoretical:coef_theoretical_R
+	variable dimension, par0 = 1, par1 = 2, extent0 = 100, extent1 = 100, ii, jj, chi2
+
+	duplicate/free coef_theoretical_R, local_copy_coefs
+	prompt dimension, "1D or 2D calculation?", popup, "1D;2D"
+	doprompt "Chi2 map for how many dimensions?", dimension
+	if(V_flag)
+		return 0
+	endif
+	switch(dimension)
+		case 1:
+				prompt par0, "first parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs))
+				prompt extent0, "Percentage range either side"
+				Doprompt "Please select the parameter number and extent for chi2map", par0, extent0
+				if(V_flag)
+					return 0
+				endif
+				if(par0 > numpnts(local_copy_coefs) || par0 < 1)
+					abort "enter a reasonable parameter number"
+					return 0
+				endif
+				make/o/d/n=501 chi2map = 0
+				setscale/I x, local_copy_coefs[par0] * (1 - extent0/100), local_copy_coefs[par0] * (1 + extent0/100), chi2map
+				display/K=1 chi2map as "Chi2map for parameter " + num2istr(par0)
+				for(ii = 0 ; ii < dimsize(chi2map, 0) ; ii += 1)
+					coef_theoretical_R[par0] = pnt2x(chi2map, ii)
+					chi2 = Moto_calcchi2()
+					if(numtype(chi2))
+						coef_theoretical_R = local_copy_coefs
+						abort "chi2 calculation was NaN for a value, please check setup"					
+					endif
+					chi2map[ii] = chi2
+				endfor
+				
+			break
+		case 2:
+				prompt par0, "first parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs))
+				prompt extent0, "Percentage range either side"
+				prompt par1, "second parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs))
+				prompt extent1, "Percentage range either side"
+
+				Doprompt "Please select the parameter number and extent for chi2map", par0, extent0, par1, extent1
+				if(V_flag)
+					return 0
+				endif
+				if(par0 > numpnts(local_copy_coefs) || par0 < 1 || par1 < 1 || par1 > numpnts(local_copy_coefs))
+					abort "enter a reasonable parameter number"
+					return 0
+				endif
+				make/o/d/n=(201, 201) chi2map = 0
+				setscale/I x, local_copy_coefs[par0] * (1 - extent0/100), local_copy_coefs[par0] * (1 + extent0/100), chi2map
+				setscale/I y, local_copy_coefs[par1] * (1 - extent1/100), local_copy_coefs[par1] * (1 + extent1/100), chi2map
+				newimage/K=1 chi2map as "2D Chi2 map"
+
+				for(ii = 0 ; ii < dimsize(chi2map, 0) ; ii += 1)
+					for(jj = 0 ; jj < dimsize(chi2map, 1) ; jj += 1)
+						coef_theoretical_R[par0] = DimOffset(chi2map, 0) + ii *DimDelta(chi2map, 0)
+						coef_theoretical_R[par1] = DimOffset(chi2map, 1) + jj *DimDelta(chi2map, 1)
+						chi2 = Moto_calcchi2()
+						if(numtype(chi2))
+							coef_theoretical_R = local_copy_coefs
+							abort "chi2 calculation was NaN for a value, please check setup"					
+						endif
+						chi2map[ii][jj] = chi2
+					endfor
+				endfor
+			break
+	endswitch
+	coef_theoretical_R = local_copy_coefs
+End
+
 
 static Function Moto_calcchi2()
 	//this function calculates chi2 when you change the model in the reflectivity panel

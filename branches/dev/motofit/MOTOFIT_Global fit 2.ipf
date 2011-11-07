@@ -344,11 +344,9 @@ Function MOTO_DoNewGlobalFit(FitFuncNames, DataSets, CoefDataSetLinkage, CoefWav
 	String saveDF = GetDataFolder(1)
 	
 	//ARJN
-	SetDataFolder root:
-	NewDataFolder/O/S Packages
-	NewDataFolder/O/S root:packages:motofitgf
-	NewDataFolder/O NewGlobalFit
-	SetDataFolder $saveDF
+	NewDataFolder/O root:Packages
+	NewDataFolder/O root:packages:motofitgf
+	NewDataFolder/O root:packages:motofitgf:NewGlobalFit
 	
 	//added by ARJN
 	Variable/g  root:packages:MotofitGF:NewGlobalFit:isLevORgen		//Levenberg==0,Genetic==1
