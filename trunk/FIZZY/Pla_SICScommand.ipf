@@ -2056,6 +2056,21 @@ Function statemonstatus(item)
 	endif
 End
 
+Function statemonclear(item)
+	string item
+	//sees if item is still live in SICS statemon statecontrol engine.
+	//if it is still live then a number >0 will be returned.  If it has finished, then it will return 0.
+	Wave/t statemon = root:packages:platypus:SICS:statemon
+	for(;;)
+		findvalue/TEXT=item/TXOP=4 statemon
+		if(V_Value == -1)
+			break
+		else
+			deletepoints V_Value, 1, statemon
+		endif
+	endfor
+End
+
 Function showStatemon()
 	Wave/t statemon = root:packages:platypus:SICS:statemon
 	edit/K=1 statemon

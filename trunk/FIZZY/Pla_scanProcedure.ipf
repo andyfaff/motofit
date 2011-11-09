@@ -592,6 +592,8 @@ Function finishScan(status)
 	string var,whichStat
 	variable num, offsetValue
 	
+	sics_cmd_interest("statemon stop FPX")
+	statemonclear("FPX")
 	controlinfo/w=sicscmdpanel sicstab
 	if(V_Value==1)
 		Button/z Go_tab1 win=sicscmdpanel,disable=0	
@@ -669,7 +671,6 @@ Function finishScan(status)
 	
 	if(stringmatch(scanmotor,"_none_"))
 		print "finished scan"
-		sics_cmd_interest("statemon stop FPX")
 		return 0
 	endif
 					
@@ -767,7 +768,6 @@ Function finishScan(status)
 	//reset the progress bar
 	ValDisplay/z progress_tab1, win=SICScmdpanel, limits={0,0,0}
 	ctrlnamedbackground scanTask, kill=1
-	sics_cmd_interest("statemon stop FPX")
 	return err
 End
 
