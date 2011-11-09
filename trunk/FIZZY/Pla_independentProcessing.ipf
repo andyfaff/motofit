@@ -6,6 +6,8 @@
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
 
+strconstant log_path = "foobar:Users:anz:Desktop:tmp:"
+
 static function parseReply(msg,lhs,rhs)
 	string msg
 	string &lhs,&rhs
@@ -187,6 +189,7 @@ Function interestProcessor(w,x)
 			if(col==0)
 				hipadaba_paths[row][1] = str2
 			endif
+			log_msg(str1 + "\t" + str2)
 		endif
 	endif
 End
@@ -212,6 +215,38 @@ Function updatelayout(motor)
 		titlebox/z $motor,win=instrumentlayout,title = motor+"="+ axeslist[row][col+2]
 	Endif
 end
+
+Function log_close()
+	NVAR/z logID = root:packages:platypus:SICS:logID
+	fstatus logID
+	if(V_flag)
+		close logID
+	endif
+ENd
+
+Function log_msg(msg)
+	string msg
+	NVAR/z logID = root:packages:platypus:SICS:logID
+
+	string fname, msg2
+
+	if(!NVAR_exists(logID))
+		variable/g root:packages:platypus:SICS:logID = 0
+		NVAR/z logID = root:packages:platypus:SICS:logID
+	endif
+	fstatus logID
+	if(!V_flag || (V_Flag && V_logEOF> 52800000))
+		if (V_Flag && V_logEOF> 52800000)
+			close logID
+			logID = 0
+		endif
+		fname = "FIZlog"+Secs2Date(DateTime,-2,"-")
+		fname += "T" + replacestring(":", Secs2Time(DateTime,3), "")
+		open logID as log_path + fname
+	endif
+	msg2 = Secs2Time(DateTime,3) + "\t" + msg + "\n"
+	fbinwrite logID, msg2
+End
 
 Function processBMON3rate(w,x)
 	Wave/t w
