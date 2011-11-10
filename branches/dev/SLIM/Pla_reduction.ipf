@@ -398,11 +398,6 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		multithread M_qzSD = sqrt(M_qzSD)
 		multithread M_qzSD *= M_qz
 		
-		//scale reflectivity by scale factor
-		// because refSD is stil fractional variance (dr/r)^2 have to divide by scale factor squared.
-		multithread M_ref /= scalefactor
-		multithread M_refSD /= (scalefactor)^2
-		
 		//correct for the beam monitor one counts.  This assumes that the direct beam was measured with the same
 		//slit characteristics as the reflected beam.  This assumption is normally ok for the first angle.  One can only hope that everyone
 		//have done this for the following angles.
@@ -425,6 +420,12 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		//M_refSD is still (dr/r)^2
 		multithread M_refSD = sqrt(M_refSD)
 		multithread M_refSD *= M_ref
+		
+		//scale reflectivity by scale factor
+		// because refSD is stil fractional variance (dr/r)^2 have to divide by scale factor squared.
+		multithread M_ref /= scalefactor
+		multithread M_refSD /= (scalefactor)
+		
 			
 		//now cut out the pixels that aren't in the reflected beam
 		//			deletepoints/M=1 hiPx+1, dimsize(M_ref,1), M_ref,M_refSD, M_qz, M_qzSD, M_omega, M_twotheta
