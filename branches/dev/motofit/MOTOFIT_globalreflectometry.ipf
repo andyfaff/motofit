@@ -338,7 +338,7 @@ static Function globalpanel_GUI_button(ba) : ButtonControl
 				case "linkparameter_tab0":
 					temp = which_cells_sel(datasets_selwave)
 					linkParameterList(temp)
-					//regenerateLinkageListBoxes()
+					regenerateLinkageListBoxes()
 					break
 				case "unlinkparameter_tab0":
 					temp = which_cells_sel(datasets_selwave)
