@@ -16,7 +16,7 @@ dif_XX = abs(dif_XX)
 areas = areaxy(xx, dif_XX)
 killwaves dif_XX
 for(ii = 0 ; ii < numpnts(xx) ; ii += 1)
-	if(abs((yy[ii] - lastyy)*(xx[ii] - lastxx)) >  areas/30 || ii == numpnts(xx) - 1)
+	if(abs((yy[ii] - lastyy)*(xx[ii] - lastxx)) >  areas/60 || ii == numpnts(xx) - 1)
 		redimension/n=(dimsize(W_adapt, 0) + 1, -1) W_adapt
 		W_adapt[dimsize(W_adapt, 0) - 1][0] = xx[ii]
 		W_adapt[dimsize(W_adapt, 0) - 1][1] = yy[ii]
@@ -27,7 +27,8 @@ endfor
 duplicate/o W_adapt, W_layers
 redimension/n=(dimsize(W_adapt, 0) - 1, -1) W_layers
 W_layers[][0] = W_adapt[p+1][0] - W_adapt[p][0]
-W_layers[][1] = W_adapt[p][1]
+W_layers[][1] = 0.5 * (W_adapt[p][1] + W_adapt[p+1][1])
+//W_layers[][1] =W_adapt[p][1]
 
 End
 
@@ -38,6 +39,6 @@ for(ii = 0 ; ii < dimsize(W_layers, 0) ; ii+=1)
 	coefs[4 * ii + 6] = W_layers[ii][0]
 	coefs[4 * ii + 7] = W_layers[ii][1]
 	coefs[4 * ii + 8] = 0
-	coefs[4 * ii + 9] = 0
+	coefs[4 * ii + 9] = 1/2 * W_layers[ii][0]
 endfor
 End
