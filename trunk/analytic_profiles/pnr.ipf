@@ -20,7 +20,7 @@ Function allatoncefitfunction(w,y,x)
 	Wave w,y,x
 End
 
-//a fit function for fitting NSF reflectivity
+//a fit function for fitting NSF reflectivity (both spin channels)
 //assumes that y and x are concatenated datasets. i.e.
 //Rplusplus comes first, then Rminusminus. 
 //The number of data points in each channel should be put into ffsWaves[0]
@@ -48,6 +48,23 @@ Function motofitNSF(s):fitfunc
 	Abeles_bmagall(w, rspin, qspin)
 	yy[] = imag(rspin[p + npointsplus])
 	yy = log(yy)
+End
+
+//a fit function for fitting NSF reflectivity (one spin channel)
+Function NSFplusplus(w, yy, xx):fitfunc
+Wave w, yy, xx
+duplicate/free yy, rtemp
+redimension/c rtemp
+Abeles_bmagall(w, rtemp, xx)
+yy = log(real(rtemp))
+End
+
+Function NSFminusminus(w, yy, xx):fitfunc
+Wave w, yy, xx
+duplicate/free yy, rtemp
+redimension/c rtemp
+Abeles_bmagall(w, rtemp, xx)
+yy = log(imag(rtemp))
 End
 
 Function main(w, limitwave, holdwave, iterations, Qplusplus, Rplusplus, Eplusplus, Qminusminus, Rminusminus, Eminusminus)
