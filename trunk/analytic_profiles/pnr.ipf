@@ -1,5 +1,110 @@
 #pragma rtGlobals=1		// Use modern global access method.
 
+Structure fitfuncStruct   
+Wave w
+wave y
+wave x[50]
+ 
+int16 numVarMD
+wave ffsWaves[50]
+wave ffsTextWaves[10]
+variable ffsvar[5]
+string ffsstr[5]
+nvar ffsnvars[5]
+svar ffssvars[5]
+funcref allatoncefitfunction ffsfuncrefs[10]
+uint32 ffsversion    // Structure version. 
+EndStructure 
+
+Function allatoncefitfunction(w,y,x)
+	Wave w,y,x
+End
+
+//a fit function for fitting NSF reflectivity
+//assumes that y and x are concatenated datasets. i.e.
+//Rplusplus comes first, then Rminusminus. 
+//The number of data points in each channel should be put into ffsWaves[0]
+Function motofitNSF(s):fitfunc
+	Struct fitfuncStruct &s
+	variable npointsPlus, npointsminus
+	Wave numpoints = s.ffsWaves[0]
+	Wave yy = s.y
+	Wave xx = s.x[0]
+	Wave w = s.w
+	npointsplus = numpoints[0]
+	npointsminus = numpoints[1]
+	
+	make/n=(npointsplus)/c/d/free rspin
+	make/n=(npointsplus)/d/free qspin
+	qspin[] = xx[p]
+	
+	Abeles_bmagall(w, rspin, qspin)
+	yy[] = real(rspin[p])
+
+	redimension/n=(npointsminus)/c/d rspin
+	redimension/n=(npointsminus)/d qspin
+	qspin[] = xx[p + npointsplus]
+	
+	Abeles_bmagall(w, rspin, qspin)
+	yy[] = imag(rspin[p + npointsplus])
+	yy = log(yy)
+End
+
+Function main(w, limitwave, holdwave, iterations, Qplusplus, Rplusplus, Eplusplus, Qminusminus, Rminusminus, Eminusminus)
+	Wave w, limitwave, holdwave
+	variable iterations
+	Wave Qplusplus, Rplusplus, Eplusplus, Qminusminus, Rminusminus, Eminusminus
+
+	//w should have size 4 * n + 8.
+	//w[0] = nlayers
+	//w[1] = scale
+	//w[2] = SLDf
+	//w[3] = bmagf
+	//w[4] = SLDb
+	//w[5] = bmagf
+	//w[6] = bkg
+	//w[7] = backingrough
+	//w[4*n + 8] = thickn
+	//w[4*n + 9] = SLDn
+	//w[4*n + 10] = bmagn
+	//w[4*n + 11] = roughn
+	
+	//limitwave[numpnts(w)][2] - first column is lowerlimit, second column upperlimit
+	//holdwave[numpnts(w)] - set to 0 to let param vary, !=0 to fix param.
+	//iterations is number of mc iterations.
+	
+	Struct fitfuncStruct s
+	variable ii, totaltime
+	totaltime = datetime
+	
+	make/d/free/n=(numpnts(Rplusplus) + numpnts(Rminusminus)) tempqq, tempRR, tempee
+	make/d/n=2/free numpoints
+	
+	numpoints[0] = numpnts(Rplusplus)
+	numpoints[1] = numpnts(Rminusminus)
+	
+	tempqq[] = qplusplus[p]
+	temprr[] = Rplusplus[p]
+	tempee[] = eplusplus[p]
+	tempqq[] = qminusminus[p + numpoints[0]]
+	temprr[] = Rminusminus[p + numpoints[0]]
+	tempee[] = eminusminus[p + numpoints[0]]
+
+	s.ffswaves[0] = numpoints
+
+	make/n=(iterations, dimsize(w, 0)) M_montecarlo = 0
+	for(ii = 0 ; ii < iterations ; ii += 1)
+		if(ii == 0)
+			Gencurvefit /strc=s /X=tempqq /hold=holdwave motofitNSF, tempyy, w, "", limitwave
+		else
+			Gencurvefit /MC/strc=s /X=tempqq /hold=holdwave motofitNSF, tempyy, w, "", limitwave
+		endif	
+		
+		M_montecarlo[ii][] = w[q]
+		print "done iteration", ii, "in", datetime - totaltime, "seconds"
+	endfor
+End
+
 Function pmatrix(qu,qd,dspac)
 	variable/c qu,qd
 	variable dspac
