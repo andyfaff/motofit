@@ -3,19 +3,19 @@
 
 //a fit function for fitting NSF reflectivity (one spin channel)
 Function NSFplusplus(w, yy, xx):fitfunc
-Wave w, yy, xx
-duplicate/free yy, rtemp
-redimension/c rtemp
-Abeles_bmagall(w, rtemp, xx)
-yy = log(real(rtemp))
+	Wave w, yy, xx
+	duplicate/free yy, rtemp
+	redimension/c rtemp
+	Abeles_bmagall(w, rtemp, xx)
+	yy = log(real(rtemp))
 End
 
 Function NSFminusminus(w, yy, xx):fitfunc
-Wave w, yy, xx
-duplicate/free yy, rtemp
-redimension/c rtemp
-Abeles_bmagall(w, rtemp, xx)
-yy = log(imag(rtemp))
+	Wave w, yy, xx
+	duplicate/free yy, rtemp
+	redimension/c rtemp
+	Abeles_bmagall(w, rtemp, xx)
+	yy = log(imag(rtemp))
 End
 
 Function NSF_globally(w, RR, qq):fitfunc
@@ -31,17 +31,36 @@ Function NSF_globally(w, RR, qq):fitfunc
 	for(ii = 0 ; ii < numpnts(numcoefs) ; ii+=1)
 		redimension/n=(pnts_each_dataset[ii]) xtemp, ytemp
 		xtemp = qq[offset + p]
-		Wave indy = individual_coefs[ii]
-		if(ii == 0)
-			NSFplusplus(individual_coefs[ii], ytemp, xtemp)
-		elseif(ii == 1)
-			NSFminusminus(individual_coefs[ii], ytemp, xtemp)
-		endif
+		Wave indy = convertBMAGintoREF(individual_coefs[ii]) 
+		motofit(indy, ytemp, xtemp)
+		
 		RR[offset, offset + pnts_each_dataset[ii] - 1] = ytemp[p - offset]
 		offset += pnts_each_dataset[ii]
 	endfor
 End
 
+Function/wave convertBMAGintoREF(w)
+	Wave w
+	variable ii, isplusplus
+
+	isplusplus = w[1] < 0 ? 0 : 1
+
+	make/n=(4 * w[0] + 6)/d/free coef_forreflectivity
+	coef_forreflectivity[0] = w[0]
+	coef_forreflectivity[1] = abs(w[1])
+	coef_forreflectivity[2] = isplusplus ? w[2] + w[3] : w[2] - w[3]
+	coef_forreflectivity[3] = isplusplus ? w[4] + w[5] : w[4] - w[5]
+	coef_forreflectivity[4] = w[6]
+	coef_forreflectivity[5] = w[7]
+
+	for(ii = 0 ; ii < w[0] ; ii+=1)
+		coef_forreflectivity[4 * ii + 6] = w[4 * ii + 8]
+		coef_forreflectivity[4 * ii + 7] = isplusplus ? w[4* ii + 9] + w[4* ii + 10] : w[4* ii + 9] - w[4* ii + 10]
+		coef_forreflectivity[4 * ii + 8] = 0
+		coef_forreflectivity[4 * ii + 9] = w[4 * ii + 11]
+	endfor
+	return coef_forreflectivity
+End
 
 Function main(dplusplus, dminusminus, wplusplus, wminusminus, holdwave, linkages, iterations)
 	string dplusplus, dminusminus
@@ -136,10 +155,10 @@ Function pmatrix(qu,qd,dspac)
 	variable dspac
 	make/o/n=(4,4)/c/d M_p
 	M_p=cmplx(0,0)	
-		M_p[0][0] = exp(-cmplx(0,1)*qu*dspac)
-		M_p[1][1] = exp(cmplx(0,1)*qu*dspac)
-		M_p[2][2] = exp(-cmplx(0,1)*qd*dspac)
-		M_p[3][3] = exp(cmplx(0,1)*qd*dspac)
+	M_p[0][0] = exp(-cmplx(0,1)*qu*dspac)
+	M_p[1][1] = exp(cmplx(0,1)*qu*dspac)
+	M_p[2][2] = exp(-cmplx(0,1)*qd*dspac)
+	M_p[3][3] = exp(cmplx(0,1)*qd*dspac)
 End
 
 Function dmatrix(qu,qd)
