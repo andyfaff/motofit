@@ -76,8 +76,8 @@ Function main(dplusplus, dminusminus, wplusplus, wminusminus, holdwave, linkages
 	Wave Rplusplus = $("root:data:" + dplusplus + ":" + dplusplus + "_R")
 	Wave Eplusplus = $("root:data:" + dplusplus + ":" + dplusplus + "_E")
 	Wave Qminusminus = $("root:data:" + dminusminus + ":" + dminusminus + "_q")
-	Wave Rminusminus = $("root:data:" + dminusminus + ":" + dminusminus + "_q")
-	Wave Eminusminus = $("root:data:" + dminusminus + ":" + dminusminus + "_q")
+	Wave Rminusminus = $("root:data:" + dminusminus + ":" + dminusminus + "_R")
+	Wave Eminusminus = $("root:data:" + dminusminus + ":" + dminusminus + "_E")
 
 	//w should have size 4 * n + 8.
 	//w[0] = nlayers
@@ -98,36 +98,39 @@ Function main(dplusplus, dminusminus, wplusplus, wminusminus, holdwave, linkages
 		abort
 	endif
 	
-	newdatafolder/o root:packages
-	newdatafolder/o root:packages:motofit
-	newdatafolder/o root:Packages:motofit:reflectivity:
-	newdatafolder/o/s root:Packages:motofit:reflectivity:globalfitting:
-	
-	make/d/free/n=(numpnts(Rplusplus) + numpnts(Rminusminus)) tempqq, tempRR, tempee
+	make/d/n=(numpnts(Rplusplus) + numpnts(Rminusminus))/o tempqq, tempRR, tempee
 	Duplicate/O linkages, $("root:Packages:motofit:reflectivity:globalfitting:linkages")
 
-	make/n=2/d numcoefs
+	newdatafolder/o root:packages
+	newdatafolder/o root:packages:motofit
+	newdatafolder/o root:Packages:motofit:reflectivity
+	newdatafolder/o root:Packages:motofit:reflectivity:globalfitting
+	
+	make/n=2/d/o root:Packages:motofit:reflectivity:globalfitting:numcoefs
+	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
 	numcoefs[0] = dimsize(wplusplus, 0)
 	numcoefs[1] = dimsize(wminusminus, 0)
 	
-	make/d/n=2 pnts_each_dataset
+	make/d/n=2/o root:Packages:motofit:reflectivity:globalfitting:pnts_each_dataset
+	Wave pnts_each_dataset = root:Packages:motofit:reflectivity:globalfitting:pnts_each_dataset
 	pnts_each_dataset[0] = numpnts(Rplusplus)
 	pnts_each_dataset[1] = numpnts(Rminusminus)
 	
 	tempqq[] = qplusplus[p]
 	temprr[] = Rplusplus[p]
 	tempee[] = eplusplus[p]
-	tempqq[] = qminusminus[p + pnts_each_dataset[0]]
-	temprr[] = Rminusminus[p + pnts_each_dataset[0]]
-	tempee[] = eminusminus[p + pnts_each_dataset[0]]
+	tempqq[pnts_each_dataset[0], dimsize(tempqq, 0) - 1] = qminusminus[p - pnts_each_dataset[0]]
+	temprr[pnts_each_dataset[0], dimsize(tempqq, 0) - 1] = Rminusminus[p- pnts_each_dataset[0]]
+	tempee[pnts_each_dataset[0], dimsize(tempqq, 0) - 1] = eminusminus[p - pnts_each_dataset[0]]
 	
 	//make combined coefficients
 	Wave uniqueparams = Motofit_GR#isUniqueParam()
-	duplicate/free wplusplus, w_combined
+	duplicate/o wplusplus, w_combined
 	duplicate/free holdwave, w_hold
 	
 	redimension/n=(-1, 2) w_combined
-	redimension/n=(numpnts(w_hold), 0) w_hold
+	w_combined[][1] = wminusminus[p]
+	redimension/n=(numpnts(w_hold), 0) w_combined, w_hold
 	redimension/n=(numpnts(uniqueparams), 0) uniqueparams
 
 	for(ii = dimsize(uniqueparams, 0) - 1; ii > -1 ; ii -= 1)
@@ -135,19 +138,26 @@ Function main(dplusplus, dminusminus, wplusplus, wminusminus, holdwave, linkages
 			deletepoints ii, 1, w_combined, w_hold
 		endif
 	endfor
+	
+	string holdstring = ""
+	sockitwavetostring/txt="" w_hold, holdstring
 
-	make/n=(iterations, dimsize(w_combined, 0)) root:M_montecarlo = 0
+	GEN_setlimitsforGENcurvefit(w_combined, holdstring)
+	Wave limitwave = root:packages:motofit:old_genoptimise:GENcurvefitlimits
+	
+	make/n=(iterations, dimsize(w_combined, 0))/o root:M_montecarlo = 0
 	Wave M_montecarlo = root:M_montecarlo
+	
 	for(ii = 0 ; ii < iterations ; ii += 1)
 		if(ii == 0)
-			Gencurvefit  /X=tempqq /hold=holdwave NSF_globally, tempyy, w_combined, "", limitwave
+			Gencurvefit/q/I=1/TOL=0.01/K={1000,20,0.7,0.5}/X=tempqq /hold=w_hold NSF_globally, temprr, w_combined, "", limitwave
 		else
-			Gencurvefit /MC /X=tempqq /hold=holdwave NSF_globally, tempyy, w_combined, "", limitwave
+			Gencurvefit/q/I=1/TOL=0.01/K={1000,20,0.7,0.5}/W=tempEE/MC /X=tempqq /hold=w_hold NSF_globally, temprr, w_combined, "", limitwave
 		endif	
-		
 		M_montecarlo[ii][] = W_combined
-		print "done iteration", ii, "in", datetime - totaltime, "seconds"
+		print "done iteration", ii, "in", datetime - totaltime, "seconds, Chi2=", V_chisq
 	endfor
+	setdatafolder saveDFR
 End
 
 Function pmatrix(qu,qd,dspac)
