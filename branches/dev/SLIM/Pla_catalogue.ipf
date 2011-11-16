@@ -5,7 +5,7 @@
 // SVN rev.:    $Revision$
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
-
+#pragma ModuleName = Pla_catalogue
 
 Menu "Platypus"
 	"Catalogue HDF data",catalogueNexusdata()
@@ -553,4 +553,62 @@ Function catalogueFIZ(pathName[, start, finish])
 	Killpath/z PATH_TO_DATAFILES
 
 	setdatafolder $cDF
+End
+
+Function parseFIZlog(filename, hipadabapaths)
+	string filename, hipadabapaths
+	variable ii, jj, theTime, theEntry
+	make/free/t/n=0/o W_relevantlines
+	make/free/t/n=(0)/o W_output
+	for(ii = 0 ; ii < itemsinlist(hipadabapaths) ; ii+=1)
+		grep/E=(stringfromlist(ii, hipadabapaths)) filename as W_relevantlines
+		if(V_Flag)
+			abort
+		endif
+		if(dimsize(W_relevantlines, 0) > dimsize(W_output, 0))
+			redimension/n=(dimsize(W_relevantlines, 0), dimsize(W_output, 1) + 1) W_output
+		else
+			redimension/n=(-1, dimsize(W_output, 1) + 1) W_output		
+		endif
+		W_output[][ii] = W_relevantlines[p]
+	endfor
+	//now find out the times and insert them into a log
+	make/n=(0, dimsize(W_output, 1) + 1)/T/o M_logEntries
+	for(ii = 0 ; ii < dimsize(W_output, 1) ; ii +=1 )
+		for(jj = 0 ; jj < dimsize(W_output, 0) ; jj+=1)
+			if(strlen(W_output[jj][ii]) == 0)
+				break
+			endif
+			redimension/n=(dimsize(M_logEntries, 0) + 1, -1) M_logentries
+			M_logentries[dimsize(M_logtime, 0) - 1][0] = stringfromlist(0, W_output[jj][ii], "\t")			
+			M_logentries[dimsize(W_logtime, 0) - 1][ii + 1] = stringfromlist(2, W_output[jj][ii], "\t")
+		endfor
+	endfor
+	MDtextsort(M_logentries, 0)
+	make/n=(dimsize(M_logentries, 0))/d/o W_logtime
+	W_logtime[] = str2num(M_logentries[p])
+	deletepoints/M=1 0, 1, M_logentries
+End
+
+static Function MDtextsort(w,keycol)
+	Wave/t w
+	variable keycol
+ 
+	variable ii
+ 
+	make/t/free/n=(dimsize(w,0)) key
+	make/o/free/n=(dimsize(w,0)) valindex
+ 
+	key[] = w[p][keycol]
+	valindex=p
+ 
+	sort/a key,key,valindex
+ 
+	duplicate/free/t w, M_newtoInsert
+ 
+	for(ii=0;ii<dimsize(w,0);ii+=1)
+		M_newtoInsert[ii][] = w[valindex[ii]][q]
+	endfor
+ 
+	duplicate/o/t M_newtoInsert,w
 End
