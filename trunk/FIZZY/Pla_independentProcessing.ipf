@@ -244,7 +244,7 @@ Function log_msg(msg)
 		fname += "T" + replacestring(":", Secs2Time(DateTime,3), "")
 		open logID as log_path + fname
 	endif
-	msg2 = Secs2Time(DateTime,3) + "\t" + msg + "\n"
+	msg2 = num2istr(datetime) + "\t" + msg + "\n"
 	fbinwrite logID, msg2
 End
 
