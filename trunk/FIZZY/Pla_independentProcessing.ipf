@@ -6,8 +6,8 @@
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
 
-strconstant log_path = "foobar:Users:anz:Desktop:tmp:"
-
+strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
+	
 static function parseReply(msg,lhs,rhs)
 	string msg
 	string &lhs,&rhs

@@ -30,6 +30,8 @@
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
 	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
+	strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
+	
 	Constant ChopperN_delay = 2.491		// a time delay between the first chopper pulse and chopper N
 	//a logfile to record all SICS input and output
 		
@@ -142,7 +144,7 @@ Function jHistogram()		//suitable for hslits(44,35,35,43) "SB"
 End
 
 Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
-	oat_table("X",16,-15,1)
+	oat_table("X",16.5,-16.5,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,30,1000,freq=33)
 	sics_cmd_interest("chopperController status")

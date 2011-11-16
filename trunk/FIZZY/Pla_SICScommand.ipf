@@ -398,9 +398,8 @@ Function startSICS()
 	endif
 	
 	//socket for sending vanilla sics commands from user
-	string LOGFILE = specialdirpath("Desktop", 1, 1, 0) + "SICSlog.txt"
-	sockitopenconnection/TIME=2/Q/TOK="\n" SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
-//	sockitopenconnection/TIME=2/Q/TOK="\n"/LOG=LOGFILE SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
+	NewPath/o/z/q logpath, LOG_PATH
+	sockitopenconnection/LOG=logpath/TIME=2/Q/TOK="\n" SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
 
 	if(V_flag)
 		abort "Could'nt open a connection to SICS"
@@ -416,8 +415,7 @@ Function startSICS()
 	sockitsendnrecv/time=3/SMAL SOCK_interupt, sicsuser + " "+sicspassword+"\n"
 	
 	//socket for receiving status messages and for sending messages you don't want to appear in the command buffer
-	sockitopenconnection/Q/TIME=2/TOK="\n" SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
-//	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=LOGFILE SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
+	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=logpath SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
 	if(V_flag)
 		abort "Could'nt open a connection to SICS"
 	endif
@@ -426,7 +424,6 @@ Function startSICS()
 	
 	//socket for synchronous queries
 	sockitopenconnection/Q/TIME=2/TOK="\n" SOCK_sync, ICSserverIP, ICSserverPort, sync_buffer
-//	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=LOGFILE SOCK_sync, ICSserverIP, ICSserverPort, sync_buffer
 	if(V_flag)
 		abort "Could'nt open a connection to SICS"
 	endif
@@ -1040,6 +1037,8 @@ Function SICSclose()
 	dowindow/k sicscmdpanel
 	dowindow/k spawngraphstats
 	dowindow/k spawngraph0
+	
+	Ind_Process#log_close()
 	
 	//An instrumental defined closedown
 	Instrumentdefinedclose()
