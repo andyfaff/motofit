@@ -2506,7 +2506,7 @@ Function set_dc_current(current)
 	variable current
 	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	string cmd = ""
-	if(current < -30 || current > 30)
+	if(current < -30.5 || current > 30.5)
 		return 1
 	endif
 	sprintf cmd, "hset /sample/ma1/sensor/desired_current %3.2f \n", current
@@ -2567,6 +2567,26 @@ Function ThomasMagnetStatus()
 	SetVariable desired_current,pos={0,22},size={240,16},proc=magnet_SetVarProc,title="desired current"
 	hipapos = gethipapos("/sample/ma1/sensor/desired_current")
 	SetVariable desired_current,limits={-30,30,1},value= root:packages:platypus:SICS:hipadaba_paths[hipapos][1]
+End
+
+Function flipper1(state)
+variable state
+	if(state)
+		sics_cmd_interest("hset /instrument/polarizer_flipper/switch_on 1")
+	else
+		sics_cmd_interest("hset /instrument/polarizer_flipper/switch_on 0")	
+	endif
+	wait(60)
+End
+
+Function flipper2(state)
+variable state
+	if(state)
+		sics_cmd_interest("hset /instrument/analyzer_flipper/switch_on 1")
+	else
+		sics_cmd_interest("hset /instrument/analyzer_flipper/switch_on 0")	
+	endif
+	wait(60)
 End
 
 //a function to make a quick check connection to the chopper system
