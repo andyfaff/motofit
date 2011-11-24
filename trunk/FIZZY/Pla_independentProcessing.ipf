@@ -312,6 +312,8 @@ Threadsafe Function DetectorSentinel()
 				sockitsendmsgF(sock_sics,"INT1712 3\n")
 				temp = ThreadGroupGetDF(0, 200 )
 				sockitsendmsgf(sock_sics,"bat send oscd=0\ndrive ss1vg 0 ss2vg 0 ss3vg 0 ss4vg 0 bz 250\n")
+				sockitsendmsgf(sock_sics,"broadcast COUNTRATETOOHIGH\n")
+
 				print "DETECTOR RATE IS TOO HIGH, CLOSING SLITS, inserting ATTENUATOR (DetectorSentinel)"
 				temp = ThreadGroupGetDF(0, 5000 )
 			endif
