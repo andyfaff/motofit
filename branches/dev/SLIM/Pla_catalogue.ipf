@@ -576,17 +576,16 @@ Function parseFIZlog(filename, hipadabapaths)
 	make/n=(0, dimsize(W_output, 1) + 1)/T/o M_logEntries
 	for(ii = 0 ; ii < dimsize(W_output, 1) ; ii +=1 )
 		for(jj = 0 ; jj < dimsize(W_output, 0) ; jj+=1)
-			if(strlen(W_output[jj][ii]) == 0)
-				break
+			if(strlen(W_output[jj][ii]))
+				redimension/n=(dimsize(M_logEntries, 0) + 1, -1) M_logentries
+				M_logentries[dimsize(M_logtime, 0) - 1][0] = stringfromlist(0, W_output[jj][ii], "\t")			
+				M_logentries[dimsize(W_logtime, 0) - 1][ii + 1] = stringfromlist(2, W_output[jj][ii], "\t")
 			endif
-			redimension/n=(dimsize(M_logEntries, 0) + 1, -1) M_logentries
-			M_logentries[dimsize(M_logtime, 0) - 1][0] = stringfromlist(0, W_output[jj][ii], "\t")			
-			M_logentries[dimsize(W_logtime, 0) - 1][ii + 1] = stringfromlist(2, W_output[jj][ii], "\t")
 		endfor
 	endfor
 	MDtextsort(M_logentries, 0)
-	make/n=(dimsize(M_logentries, 0))/d/o W_logtime
-	W_logtime[] = str2num(M_logentries[p])
+	make/n=(dimsize(M_logentries, 0))/d/o W_logtime = NaN
+	W_logtime[] = str2num(M_logentries[p][0])
 	deletepoints/M=1 0, 1, M_logentries
 End
 
