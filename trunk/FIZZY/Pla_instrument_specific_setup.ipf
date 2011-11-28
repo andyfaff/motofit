@@ -2765,3 +2765,12 @@ Function pumpset(v0, r0, v1, r1, [mvp, inject])
         sics_cmd_interest("drive syr_driveable 1")
     endif
 End
+
+Function flipperstatuspanel()
+	PauseUpdate; Silent 1		// building window...
+	NewPanel /W=(94,131,794,528)
+	SetVariable analyser,pos={235,161},size={390,16},title="analyser"
+	SetVariable analyser,value= root:packages:platypus:SICS:hipadaba_paths[55][1]
+	SetVariable polarizerflipper,pos={237,133},size={390,16},title="polariser flipper"
+	SetVariable polarizerflipper,value= root:packages:platypus:SICS:hipadaba_paths[46][1]
+	End
