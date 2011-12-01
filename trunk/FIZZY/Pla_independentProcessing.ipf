@@ -189,7 +189,7 @@ Function interestProcessor(w,x)
 			if(col==0)
 				hipadaba_paths[row][1] = str2
 			endif
-			log_msg(str1 + "\t" + str2)
+			Ind_Process#log_msg(str1 + "\t" + str2)
 		endif
 	endif
 End
@@ -224,7 +224,7 @@ Function log_close()
 	endif
 ENd
 
-Function log_msg(msg)
+Threadsafe Function log_msg(msg)
 	string msg
 	NVAR/z logID = root:packages:platypus:SICS:logID
 
@@ -312,8 +312,7 @@ Threadsafe Function DetectorSentinel()
 				sockitsendmsgF(sock_sics,"INT1712 3\n")
 				temp = ThreadGroupGetDF(0, 200 )
 				sockitsendmsgf(sock_sics,"bat send oscd=0\ndrive ss1vg 0 ss2vg 0 ss3vg 0 ss4vg 0 bz 250\n")
-				sockitsendmsgf(sock_sics,"broadcast COUNTRATETOOHIGH\n")
-
+				log_msg("COUNTRATETOOHIGH")
 				print "DETECTOR RATE IS TOO HIGH, CLOSING SLITS, inserting ATTENUATOR (DetectorSentinel)"
 				temp = ThreadGroupGetDF(0, 5000 )
 			endif
