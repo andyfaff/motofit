@@ -591,9 +591,11 @@ Function finishScan(status)
 	variable err
 	string var,whichStat
 	variable num, offsetValue
-	
+
 	sics_cmd_interest("statemon stop FPX")
 	statemonclear("FPX")
+	ctrlnamedbackground scanTask, kill=1
+
 	controlinfo/w=sicscmdpanel sicstab
 	if(V_Value==1)
 		Button/z Go_tab1 win=sicscmdpanel,disable=0	
@@ -709,7 +711,6 @@ Function finishScan(status)
 		Prompt var,"which variable",popup,"counts;"
 		Prompt whichStat,"which statistic",popup,"gaussian;centroid;graph cursors"
 		Doprompt "Do you want to move to the peak centre?", var, whichstat			
-
 		if(V_Flag==1)	//if you don't want to move to peak centre
 			if(!stringmatch(scanmotor,"_none_") )
 				print "Scan finishing"
@@ -734,6 +735,7 @@ Function finishScan(status)
 						UserCursorAdjustForCentre("fpxScan", "Adjust cursor to centre")
 					endfor
 					num = hcsr(A, "fpxScan")
+	
 					break
 			endswitch
 			

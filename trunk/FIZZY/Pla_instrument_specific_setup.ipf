@@ -1650,7 +1650,7 @@ Function Instrumentlayout_panel()
 	
 	valdisplay bmon3, value = #"root:packages:platypus:SICS:bmon3_rate", limits={0, FSD,0}, title = "Detector\rRate", win=instrumentlayout
 	ValDisplay bmon3 mode=3,barmisc={14,50}, size={280,50},fsize=14, valueBackColor=(51456,44032,58880), win=instrumentlayout
-	ValDisplay bmon3 lowColor= (65280,16384,16384), pos = {425,13}, frame=2, win=instrumentlayout
+	ValDisplay bmon3 lowColor= (65280,16384,16384), pos = {425,13}, frame=2, format="%d", win=instrumentlayout
 
 	
 	//print the chopper status

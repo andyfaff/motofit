@@ -269,7 +269,7 @@ Function processBMON3rate(w,x)
 	rateStr = w[x][0]
 	variable val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
 	sscanf rateStr,"%d:%d:%g ( %g), %d (%d),%g ( %g, %g, %g)" , val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
-	bmon3_rate = val6
+	bmon3_rate = round(val6)
 
 //	if(bmon3_rate > 20000 &&  val4 >= bmon3_counts)
 //		sockitsendmsg sock_interupt,"INT1712 3\n"
