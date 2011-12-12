@@ -62,8 +62,8 @@ End
 
 Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 	string DAQfileListStr, inputPathStr
-	string user="", password="", folder, data = "", datasetFolderStr = "", DAQfileStr = ""
-	variable ii, fileID, jj
+	string user="", password="", folder, data = "", datasetFolderStr = "", DAQfileStr = "", URL = ""
+	variable ii, fileID, jj, outsideAnsto = 1
 	
 	if(paramisdefault(inputPathStr))
 		newpath/o/c/q/z/M="Where would you like to store your Platypus data?" PLA_temppath_dPD
@@ -84,13 +84,20 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 	for(;;)
 		prompt user, "User name"
 		prompt password, "Password"
-		Doprompt "Enter your credentials for scp.nbi.ansto.gov.au", user, password
+		prompt outsideAnsto, "Are you on the ANSTO network?", popup, "Yes;No"
+		Doprompt "Enter your credentials for scp.nbi.ansto.gov.au", user, password, outsideAnsto
 		if(V_Flag)
 			return 1
 		else
 			break
 		endif
 	endfor
+	outsideAnsto -= 1
+	if(outsideAnsto)
+		URL = "sftp://scp.nbi.ansto.gov.au/experiments/platypus/hsdata/"
+	else
+		URL = "sftp://custard.nbi.ansto.gov.au/experiments/platypus/hsdata/"
+	endif
 	
 	for(jj = 0 ; jj < itemsinlist(DAQfileListStr) ; jj += 1)
 		//create the folder in the input directory
@@ -103,7 +110,7 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 		killpath/z PLA_temppath_dPD
 	
 		print "Starting to download Platypus data."
-		easyHttp/PROX=""/PASS=user+":"+password/FILE=folder + "CFG.xml" "sftp://scp.nbi.ansto.gov.au/experiments/platypus/hsdata/"+DAQfileStr + "/CFG.xml"
+		easyHttp/PROX=""/PASS=user+":"+password/FILE=folder + "CFG.xml" URL + DAQfileStr + "/CFG.xml"
 		if(V_Flag)
 			print "Error while downloading Platypus data (downloadPlatypusStreamedFile)"
 			return 1
@@ -112,7 +119,7 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 		ii = 0
 		do	
 			//try getting the file
-			easyHttp/PROX=""/PASS=user+":"+password "sftp://scp.nbi.ansto.gov.au/experiments/platypus/hsdata/"+DAQfileStr + "/DATASET_" + num2istr(ii) + "/EOS.bin", data
+			easyHttp/PROX=""/PASS=user+":"+password URL + DAQfileStr + "/DATASET_" + num2istr(ii) + "/EOS.bin", data
 			if(V_flag)
 				break
 			endif
@@ -124,20 +131,30 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 			ii+=1
 		while(!V_Flag)
 		killpath/z PLA_temppath_dPD
+		print "Got ", DAQfileStr
 	endfor
 	print "Finished downloading Platypus data."
 End
 
-Function builddirectorylist(user, password)
+Function builddirectorylist(user, password, lowFi, hiFi,  [outsideANSTO])
 	string user, password
-	string data = "", direct, files, file, a, b, c
+	variable lowFi, hiFi, outsideANSTO
+	string data = "", direct, files, file, a, b, c, URL="", stopfile
 	variable ii, isdirectory, jj, lowf = inf, hif = -inf, startDir
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o root:packages:platypus:catalogue
+	
+	sprintf stopfile, "PLP%07d.nx.hdf", lowfi
+
+	if(outsideANSTO)
+		URL = "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/"
+	else
+		URL = "sftp://custard.nbi.ansto.gov.au/experiments/platypus/data/"
+	endif
 
 	make/o/t/n=(0, 2) root:packages:platypus:catalogue:directories/Wave=directories
-	easyHttp/PROX=""/PASS=USER + ":"+PASSWORD "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/cycle/", data
+	easyHttp/TIME=2/PROX=""/PASS=USER + ":"+PASSWORD URL + "cycle/", data
 	if(V_Flag)
 		return 1
 	endif
@@ -150,13 +167,15 @@ Function builddirectorylist(user, password)
 			directories[dimsize(directories, 0) - 1][0] = "cycle/" + direct + "/"
 		endif
 	endfor
-	redimension/n=(dimsize(directories, 0) + 1, -1) directories
-	directories[dimsize(directories, 0) - 1][0] = "current/"
+	
+	Pla_catalogue#MDtextsort(directories, 0, reverse=1)
+	insertpoints 0, 1, directories
+	directories[0][0] = "current/"
 
 	startDir = 0
 	for(ii = startDir ; ii < dimsize(directories, 0) ; ii += 1)
 		direct = directories[ii][0]
-		easyHttp/PROX=""/PASS=USER + ":"+PASSWORD "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/" + direct, files
+		easyHttp/TIME=2/PROX=""/PASS=USER + ":"+PASSWORD URL + direct, files
 		if(V_Flag)
 			return 1
 		endif
@@ -169,6 +188,9 @@ Function builddirectorylist(user, password)
 				directories[ii][1] += file + ";"
 			endif
 		endfor
+		if(grepstring(directories[ii][1], stopfile))
+			return 0
+		endif
 	endfor
 End
 
@@ -224,7 +246,7 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 	string inputPathStr
 	variable lowFi, hiFi
 	string user= "", password="", fname, direct, url
-	variable ii, col, row, rowsinwave
+	variable ii, col, row, rowsinwave, outsideANSTO
 	if(paramisdefault(inputPathStr))
 		newpath/o/c/q/z/M="Where would you like to store your Platypus data?" PLA_temppath_dPD
 		if(V_Flag)
@@ -246,7 +268,8 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 		prompt hiFI, "end file"
 		prompt user, "User name"
 		prompt password, "Password"
-		Doprompt "Enter your credentials for scp.nbi.ansto.gov.au", user, password, lowFi, hiFi
+		prompt outsideANSTO, "Are you inside ANSTO?", popup, "Yes;No"
+		Doprompt "Enter your credentials for nbi.ansto.gov.au", user, password, outsideANSTO, lowFi, hiFi
 		if(V_Flag)
 			return 1
 		endif
@@ -255,13 +278,22 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 		else
 			break
 		endif
+		
 	endfor
-
-	if(builddirectorylist(user, password))
+	outsideANSTO -= 1
+	
+	if(outsideANSTO)
+		url = "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/"
+	else
+		url = "sftp://custard.nbi.ansto.gov.au/experiments/platypus/data/"
+	endif
+	
+	if(builddirectorylist(user, password, lowFi, hiFi, outsideANSTO = outsideANSTO))
 		abort "problem building remote directory list"
 	endif
 	Wave/t directory = root:packages:platypus:catalogue:directories
 	//see if the file exists in the directory list.  If it does, download it.
+	
 	rowsinWave = dimsize(directory, 0)
 	for(ii = lowFi ; ii <= hiFi ; ii += 1)
 		//search to see if it's in the cycles, if it is then great.  If not, then skip"
@@ -273,10 +305,11 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 		col=floor(V_value/rowsInWave)
 		row=V_value-col*rowsInWave
 		direct = directory[row][0]
-		url = "sftp://scp.nbi.ansto.gov.au/experiments/data/" + direct + fname
-		easyHttp/PROX=""/PASS=user + ":" + password/File=inputpathStr + fname "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/" + direct + fname
+		easyHttp/TIME=2/PROX=""/PASS=user + ":" + password/File=inputpathStr + fname  url + direct + fname
 		if(V_flag)
 			print "couldn't get", url
+		else
+			print "downloaded ", fname
 		endif
 	endfor
 End

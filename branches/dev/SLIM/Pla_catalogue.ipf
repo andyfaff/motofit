@@ -589,9 +589,9 @@ Function parseFIZlog(filename, hipadabapaths)
 	deletepoints/M=1 0, 1, M_logentries
 End
 
-static Function MDtextsort(w,keycol)
+static Function MDtextsort(w,keycol, [reverse])
 	Wave/t w
-	variable keycol
+	variable keycol, reverse
  
 	variable ii
  
@@ -600,9 +600,13 @@ static Function MDtextsort(w,keycol)
  
 	key[] = w[p][keycol]
 	valindex=p
- 
-	sort/a key,key,valindex
- 
+
+ 	if(!reverse) 		
+		sort/a key,key,valindex
+	else
+		sort/a/r key,key,valindex
+	endif
+	
 	duplicate/free/t w, M_newtoInsert
  
 	for(ii=0;ii<dimsize(w,0);ii+=1)
