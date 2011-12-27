@@ -340,6 +340,7 @@ Function  reducerpanel() : Panel
 	variable/g root:packages:platypus:data:Reducer:normalisebymonitor=1
 	variable/g root:packages:platypus:data:Reducer:saveSpectrum=0
 	variable/g root:packages:platypus:data:Reducer:saveoffspec=0
+	variable/g root:packages:platypus:data:Reducer:streamedReduction= 0
 		
 	SVAR inputpathStr = root:packages:platypus:data:Reducer:inputpathStr
 	SVAR outputpathStr = root:packages:platypus:data:Reducer:outputpathStr
@@ -397,7 +398,7 @@ End
 Function  reducerVariablesPanel() : Panel
 	PauseUpdate; Silent 1		// building window...
 	Dowindow/k SLIMvarpanel
-	NewPanel /K=1 /W=(385,164,588,370)
+	NewPanel /K=1 /W=(385,164,588,390)
 	Dowindow/c SLIMvarpanel
 	
 	Newdatafolder/o root:packages
@@ -411,6 +412,8 @@ Function  reducerVariablesPanel() : Panel
 	NVAR normalisebymonitor = root:packages:platypus:data:Reducer:normalisebymonitor
 	NVAR saveSpectrum = root:packages:platypus:data:Reducer:saveSpectrum
 	NVAR saveoffspec = root:packages:platypus:data:Reducer:saveoffspec
+	NVAR streamedReduction = root:packages:platypus:data:Reducer:streamedReduction
+	 
 	SetVariable lowLambda_tab0,pos={10,10},size={177,16},title="lowWavelength", win=SLIMvarpanel
 	SetVariable lowLambda_tab0,fSize=10, win=SLIMvarpanel
 	SetVariable lowLambda_tab0,limits={0.5,30,0.1},value= root:packages:platypus:data:Reducer:lowLambda, win=SLIMvarpanel
@@ -433,6 +436,8 @@ Function  reducerVariablesPanel() : Panel
 	CheckBox saveSpectrum_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:saveSpectrum, value = saveSpectrum
 	CheckBox saveoffspec_tab0,pos={9,178},size={94,14},title="save offspecular map?", win=SLIMvarpanel
 	CheckBox saveoffspec_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:saveoffspec, value =  saveoffspec
+	CheckBox streamedreduction_tab0,pos={9,199},size={94,14},title="do streamed reduction?", win=SLIMvarpanel
+	CheckBox streamedreduction_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:streamedReduction, value =  streamedReduction
 End
 
 Function SLIM_listproc(lba) : ListBoxControl
@@ -511,11 +516,12 @@ Function SLIM_buttonproc(ba) : ButtonControl
 			NVAR normalisebymonitor = root:packages:platypus:data:Reducer:normalisebymonitor
 			NVAR saveSpectrum =  root:packages:platypus:data:Reducer:saveSpectrum
 			NVAR saveoffspec =  root:packages:platypus:data:Reducer:saveoffspec
-			
-			variable rebinning,ii,jj, dontoverwrite = 0
+			NVAR streamedReduction = root:packages:platypus:data:Reducer:streamedReduction
+
+			variable rebinning,ii,jj, dontoverwrite = 0, temp
 			string tempDF,filenames, water = ""
 			string fileNameList="", righteousFileName = "", fileFilterStr = ""
-			string cmd
+			string cmd, template
 
 			strswitch(ba.ctrlname)
 				case "reduce_tab0":
@@ -529,7 +535,16 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						Doalert 0, "Please enter a valid filepath for the output files"
 						return 0	
 					endif
-
+					if(streamedReduction)
+							prompt temp, "time (s)"
+							Doprompt "What timescale did you want each bin in the  streamed reduction to be?", temp
+							if(V_flag)
+								abort
+							endif
+							streamedReduction = temp
+							dontoverwrite = 1
+					endif
+					
 					//did you want to rebin?
 					rebinning = rebinpercent
 										
@@ -565,7 +580,11 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							else
 								angledata_list[ii][jj+3] = righteousFileName
 								fileNameList += righteousFileName + ";"
-							endif			
+							endif
+							//don't want to reduce all the angles for a line, if you are doing streamed reduction		
+							if(streamedReduction)
+								break
+							endif	
 						endfor
 						//is there a water run?
 						if(strlen(angledata_list[ii][9]) > 0 )
@@ -580,13 +599,22 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							print "Warning setting scale factor to 1 ", angledata_list[ii][3]
 						endif
 						
-						string template =  " reduce(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_peak=cmplx(%g, NaN), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
-						sprintf cmd, template, replacestring("\\", inputpathStr, "\\\\"), replacestring("\\", outputpathStr, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, dontoverwrite, normalisebymonitor, saveSpectrum, saveoffspec
-						cmdToHistory(cmd)
-						
-						if(reduce(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_peak = cmplx(expected_centre, NaN), manual=manualbeamfind, dontoverwrite = dontoverwrite, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec))
-							print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
+						if(!streamedReduction)
+							template =  " reduce(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_peak=cmplx(%g, NaN), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
+							sprintf cmd, template, replacestring("\\", inputpathStr, "\\\\"), replacestring("\\", outputpathStr, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, dontoverwrite, normalisebymonitor, saveSpectrum, saveoffspec
+							cmdToHistory(cmd)
+							if(reduce(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_peak = cmplx(expected_centre, NaN), manual=manualbeamfind, dontoverwrite = dontoverwrite, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec))
+								print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
+							endif
+						else
+							template =  "reduceasinglefile(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_peak=cmplx(%g, NaN), manual = %g, dontoverwrite = 1, normalise = %g, saveSpectrum = %g, saveoffspec=%g, eventstreaming = 1)"
+							sprintf cmd, template, replacestring("\\", inputpathStr, "\\\\"), replacestring("\\", outputpathStr, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, normalisebymonitor, saveSpectrum, saveoffspec
+							cmdToHistory(cmd)
+							if(!strlen(reduceASingleFile(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_peak = cmplx(expected_centre, NaN), manual=manualbeamfind, dontoverwrite = 1, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec, eventstreaming=streamedReduction)))
+								print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
+							endif
 						endif
+						
 					endfor	
 					break
 				case "showreducervariables_tab0":
