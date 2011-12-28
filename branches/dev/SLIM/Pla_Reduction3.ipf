@@ -305,7 +305,7 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 		col=floor(V_value/rowsInWave)
 		row=V_value-col*rowsInWave
 		direct = directory[row][0]
-		easyHttp/TIME=2/PROX=""/PASS=user + ":" + password/File=inputpathStr + fname  url + direct + fname
+		easyHttp/PROX=""/PASS=user + ":" + password/File=inputpathStr + fname  url + direct + fname
 		if(V_flag)
 			print "couldn't get", url
 		else
