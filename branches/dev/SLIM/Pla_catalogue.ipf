@@ -59,7 +59,7 @@ Function catalogueHDF(pathName[, start, finish])
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o/s root:packages:platypus:catalogue
 	make/o/t/n=(1,9) runlist
-	make/o/d/n=(1,4) vgaps
+	make/o/d/n=(1,4) vgaps, hgaps
 	string/g DAQfiles = ""
 	
 	if(paramisdefault(start))
@@ -103,7 +103,7 @@ Function catalogueHDF(pathName[, start, finish])
 				abort
 			endif
 		
-			appendCataloguedata(HDFref, xmlref, jj, stringfromlist(ii,nexusfiles), runlist, vgaps)
+			appendCataloguedata(HDFref, xmlref, jj, stringfromlist(ii,nexusfiles), runlist, vgaps, hgaps)
 		
 			if(HDFref)
 				HDF5closefile(HDFref)
@@ -136,11 +136,11 @@ Function catalogueHDF(pathName[, start, finish])
 	setdatafolder $cDF
 End
 
-Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps)
+Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hgaps)
 	variable HDFref,xmlref,fileNum
 	string filename
 	Wave/t runlist
-	Wave vgaps
+	Wave vgaps, hgaps
 	SVAR DAQfiles
 	print fileNum
 	
@@ -153,7 +153,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps)
 	
 	//add another row to the runlist
 	redimension/n=(fileNum+1,-1) runlist
-	redimension/n=(fileNum+1,-1) vgaps
+	redimension/n=(fileNum+1,-1) vgaps, hgaps
 	row = dimsize(runlist,0)
 	
 	if(xmladdnode(xmlref,"//catalogue","","nexus","",1))
@@ -309,6 +309,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps)
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first/horizontal","","gap",num2str(gap[0]),1))
 			abort
 		endif
+		hgaps[row][0] = gap[0]
 	endif
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/first/vertical/gap"
 	if(!V_flag)
@@ -326,6 +327,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps)
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second/horizontal","","gap",num2str(gap[0]),1))
 			abort
 		endif
+		hgaps[row][1] = gap[0]
 	endif
 
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/second/vertical/gap"
@@ -344,6 +346,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps)
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third/horizontal","","gap",num2str(gap[0]),1))
 			abort
 		endif
+		hgaps[row][2] = gap[0]
 	endif
 	
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third/vertical/gap"
@@ -369,6 +372,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps)
 		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth/horizontal","","gap",num2str(gap[0]),1))
 			abort
 		endif
+		hgaps[row][3] = gap[0]
 	endif
 
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth/vertical/gap"

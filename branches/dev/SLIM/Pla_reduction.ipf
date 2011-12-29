@@ -57,13 +57,13 @@
 	//We'll have two
 	//StrConstant PATH_TO_DATA = "Macintosh HDD:Users:andrew:Documents:Andy:Platypus:TEMP:"
 
-Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilename, lowlambda, highlambda, rebin, [scanpointrange, eventStreaming, water, background, expected_peak, actual_peak, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
+Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilename, lowlambda, highlambda, rebin, [scanpointrange, timeslices, water, background, expected_peak, actual_peak, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
 	string inputPathStr, outputPathStr
 	variable scalefactor
 	string runfilename
 	variable lowLambda,highLambda, rebin
 	string scanpointrange
-	variable eventStreaming
+	Wave/z timeslices
 	string water
 	variable background
 	variable/c expected_peak, actual_peak
@@ -92,7 +92,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 //   then individual scans in a single file are reduced separately. If the range isn't specified then individual scans in a single file are integrated. 
 //	 If there is only one scan point (specified, or not specified) AND the eventStreaming variable > 0, then the neutron events are split into different images.  This is useful for kinetic data.
 //	
-//	eventStreaming - IFF you wish to do event streaming you should set this value > 0.  The value is taken to be the number of seconds that the event file, EOS.bin, is binned to.  The DAQ_ directory
+//	timeslices - IFF you wish to do event streaming you should set this wave with the timeslices filled out (the bin edges in seconds).   The DAQ_ directory
 //                          should be present in the input directory.
 //	
 //	water - string containing the water runfile for detector normalisation
@@ -144,9 +144,6 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	else
 		scanpointrange = replacestring(" ", scanpointrange, "")
 	endif
-	if(paramisdefault(eventStreaming))
-		eventStreaming = -1
-	endif
 	if(paramisdefault(background))
 		background = 1
 	endif
@@ -176,8 +173,8 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 	endif
 	
 	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
-	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=%d,water=\"%s\", expected_peak=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
-	sprintf reductionCmd, cmd, inputPathStr, outputPathStr, scalefactor, runfilename, lowLambda, highLambda, rebin, background, scanpointrange, eventstreaming, water, real(expected_peak), imag(expected_peak), manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
+	cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=%s,water=\"%s\", expected_peak=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
+	sprintf reductionCmd, cmd, inputPathStr, outputPathStr, scalefactor, runfilename, lowLambda, highLambda, rebin, background, scanpointrange, nameofwave(timeslices), water, real(expected_peak), imag(expected_peak), manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
 	if(verbose)
 		print reductionCmd
 	endif
@@ -268,7 +265,7 @@ Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		//when you process the reflected nexus file you have to use the lambda spectrum from the direct beamrun
 		make/n=(dimsize(M_lambdaHISTD, 0))/free/d W_lambdaHISTD
 		W_lambdaHISTD[] = M_lambdaHISTD[p][0]
-		if(processNeXUSfile(inputPathStr, outputPathStr, angle0, background, lowLambda, highLambda, scanpointrange = scanpointrange, eventStreaming = eventStreaming, water = water, isDirect = 0, expected_peak = expected_peak, rebinning = W_lambdaHISTD, manual=manual, normalise = normalise, saveSpectrum = saveSpectrum))
+		if(processNeXUSfile(inputPathStr, outputPathStr, angle0, background, lowLambda, highLambda, scanpointrange = scanpointrange, timeslices = timeslices, water = water, isDirect = 0, expected_peak = expected_peak, rebinning = W_lambdaHISTD, manual=manual, normalise = normalise, saveSpectrum = saveSpectrum))
 			print "ERROR while processing a reflected beam run (reduce)" ; abort
 		endif
 		
@@ -807,11 +804,12 @@ Function doesNexusfileExist(inputPathStr, filename)
 	endif
 End
 
-Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, eventStreaming,isDirect, expected_peak, actual_peak, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose, backgroundMask, dontoverwrite])
+Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, timeslices, isDirect, expected_peak, actual_peak, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose, backgroundMask, dontoverwrite])
 	string inputPathStr, outputPathStr, fileName
 	variable background, loLambda, hiLambda
 	string water, scanpointrange
-	variable eventstreaming, isDirect
+	Wave/z timeslices
+	variable isDirect
 	variable/c expected_peak, actual_peak
 	variable omega, two_theta, manual, saveSpectrum, normalise,verbose
 	Wave/z backgroundMask
@@ -834,8 +832,8 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	//scanpointrange = if a datafile contains several images this variable controls which are processed.  If you omit this parameter SLIM will ask you which points you want to accumulate over
 	// 					if you use a parameter with a null string, i.e. scanpointrange = "", then all scans are aggregated.  If you want to select a range specify it like   scanpointrange = "1>20".
 	//					If you specify the scanpoint range "-1", then each spectrum is output individually.
-	//eventStreaming = if there is only one spectrum to be processed (as would be the case if there is only one point in the file, or if the scanpoint range is e.g. 1>1) then this variable will cause the load
-	//						of neutron event based data, but only if the variable is > 0.  Each subimage is split into eventStreaming seconds.
+	//timeslices = if there is only one spectrum to be processed (as would be the case if there is only one point in the file, or if the scanpoint range is e.g. 1>1) then this wave will cause the load
+	//						of neutron event based data, but only if the wave is specified and there is more than 1 point in the wave. The wave contains the time slices for the framing.
 	//saveSpectrumLoc = if this variable !=0 then the spectrum is saved to file.
 	//backgroundMask - see topAndTail.  A way of specifying the exact points to calculate the background region.
 	//dontoverwrite - if you are saving the spectrum, you possibly don't want to overwrite existing files.  Specify dontoverwrite=1 if you want a new file to be created.  Default is 0.....
@@ -847,8 +845,8 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	//M_Spec,M_specSD,M_lambda,M_lambdaSD,M_lambdaHIST,M_specTOF,M_specTOFHIST, W_waternorm, M_beampos
 	
 	variable ChoD, toffset, nrebinpnts,ii, jj, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint, MASTER_OPENING
-	variable originalScanPoint, scanpoint, numTimeSlices, numSpectra, typeOfIntegration, timeSliceDuration, fractionalTimeSlices
-	string tempDF, cDF,tempDFwater, eventStreamingFile, cmd, proccmd
+	variable originalScanPoint, scanpoint, numTimeSlices, numSpectra, typeOfIntegration, timeSliceDuration
+	string tempDF, cDF,tempDFwater, eventStreamingFile, cmd, proccmd, fractionalTimeStr
 	variable/c bkgloc
 	Wave/z hmmWater
 	
@@ -869,9 +867,6 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	if(paramisdefault(scanpointrange))
 		scanpointrange = ""
 	endif
-	if(paramisdefault(eventStreaming))
-		eventStreaming = -1
-	endif	
 	if(paramisdefault(manual))
 		manual = 0
 	endif
@@ -1004,19 +999,19 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		//scanpoint = 0, finishingpoint = 2 means sum 0, 1 & 2.:
 		//		typeOfIntegration = 0
 		
-		//if(scanpoint - finishingpoint) == 0, and if the eventstreaming variable is > 0, then we want to parse the event data.
+		//if(scanpoint - finishingpoint) == 0, and if the timeslices wave is specified, then we want to parse the event data.
 		//		typeOfIntegration = 1
 		
-		//scanpoint == -1 means output spectra individually (UNLESS EVENTSTREAMING is specified && scanpoint -finishingpoint == 0)
+		//scanpoint == -1 means output spectra individually (UNLESS TIMESLICES is specified && scanpoint -finishingpoint == 0)
 		//		typeOfIntegration = 2
 
 		if(scanpoint == -1)
 			typeOfIntegration = 2
 		endif
-		if(scanpoint ==  finishingpoint && eventStreaming > 0)
+		if(scanpoint ==  finishingpoint && waveexists(timeSlices) && numpnts(timeslices) > 1)
 			typeOfIntegration = 1
 		endif
-		if(scanpoint == -1 && eventStreaming > 0 && dimsize(hmm, 0) == 1)
+		if(scanpoint == -1 && waveexists(timeSlices) && numpnts(timeslices) > 1 &&  dimsize(hmm, 0) == 1)
 			typeOfIntegration = 1
 			scanpoint = 0
 			finishingpoint = 0
@@ -1061,10 +1056,6 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 						abort
 					endif
 				endif
-				timeSliceDuration = eventstreaming
-				if(numtype(timeSliceDuration))
-					timeSliceDuration = 60
-				endif
 				if(Pla_openStreamer(inputPathStr + eventStreamingFile, dataset = scanpoint))
 					print "ERROR opening streaming dataset (processNexusfile)"
 					abort
@@ -1074,17 +1065,19 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				Wave xbins = $(tempDF+":data:x_bin")
 				Wave ybins = $(tempDF+":data:y_bin")
 				Wave tbins = $(tempDF+":data:time_of_flight")
-				Wave streamedDetector = Pla_streamedDetectorImage(xbins, ybins, tbins, frequency[scanpoint] / 60, timeSliceDuration, round(time0[scanpoint]))
+				Wave streamedDetector = Pla_streamedDetectorImage(xbins, ybins, tbins, frequency[scanpoint] / 60, timeSlices, round(time0[scanpoint]))
 				numtimeslices = dimsize(streamedDetector, 0)	
-				fractionalTimeSlices = round(time0[scanpoint]) / timesliceduration
+				fractionalTimeStr = stringbykey("TIME", note(streamedDetector))
+				
+				make/d/n=(numtimeSlices)/free fractionOfTotalTime
+				for(ii = 0 ; ii < numtimeslices ; ii+=1)
+//					print str2num(stringfromlist(ii, fractionalTimeStr, ","))
+					fractionOfTotalTime[ii] = str2num(stringfromlist(ii, fractionalTimeStr, ","))
+				endfor
 				
 				make/o/d/n=(numTimeSlices) BM1counts
-				if(numtimeslices == 1)
-					BM1counts = bm1_counts[scanpoint]
-				else
-					BM1counts = bm1_counts[scanpoint] / fractionalTimeSlices
-					BM1counts[numtimeslices - 1] = bm1_counts[scanpoint] * (fractionalTimeSlices - (ceil(fractionalTimeSlices) - 1)) / fractionalTimeSlices 
-				endif
+				BM1counts = bm1_counts[scanpoint] * fractionofTotalTime[p]
+//				BM1counts[numtimeslices - 1] = bm1_counts[scanpoint] * (fractionalTimeSlices - (ceil(fractionalTimeSlices) - 1)) / fractionalTimeSlices 
 				make/o/d/n=(numTimeSlices) dBM1counts = sqrt(BM1counts)
 			
 				make/o/d/n=(dimsize(tbins, 0) - 1, dimsize(ybins, 0) - 1, numTimeSlices) detector = 0
@@ -1505,11 +1498,11 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	
 		if(verbose)
 			if(waveexists(rebinning))
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=%d,isdirect=%d, expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
-				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=%s,isdirect=%d, expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, nameofwave(timeslices), isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
 			else
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=%d,isdirect=%d,  expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
-				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect,real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, normalise,verbose		
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=%s,isdirect=%d,  expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, nameofwave(timeslices), isDirect,real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, normalise,verbose		
 			endif
 			print proccmd
 		endif
@@ -1529,11 +1522,11 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	
 		if(verbose)
 			if(!paramisdefault(rebinning) && waveexists(rebinning))
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=%d,isdirect=%d, expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
-				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",timeslices=%s,isdirect=%d, expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, rebinning=%s, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, nameofwave(timeslices),isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, GetWavesDataFolder(rebinning, 2 ), normalise,verbose
 			else
-				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",eventstreaming=%d,isdirect=%d,expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
-				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, eventStreaming,isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, normalise,verbose		
+				cmd = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\", scanpointrange=\"%s\",timeslices=%s,isdirect=%d,expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
+				sprintf proccmd, cmd, inputPathStr, outputPathStr, filename, background, loLambda, hiLambda, water, scanpointrange, nameofwave(timeslices),isDirect, real(expected_peak), imag(expected_peak), omega, two_theta,manual, saveSpectrum, normalise,verbose		
 			endif
 			print proccmd
 		endif

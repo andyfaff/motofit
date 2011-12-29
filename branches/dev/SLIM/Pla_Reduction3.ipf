@@ -518,7 +518,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 			NVAR saveoffspec =  root:packages:platypus:data:Reducer:saveoffspec
 			NVAR streamedReduction = root:packages:platypus:data:Reducer:streamedReduction
 
-			variable rebinning,ii,jj, dontoverwrite = 0, temp
+			variable rebinning,ii,jj, dontoverwrite = 0, temp, maxtime
 			string tempDF,filenames, water = ""
 			string fileNameList="", righteousFileName = "", fileFilterStr = ""
 			string cmd, template
@@ -536,12 +536,19 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						return 0	
 					endif
 					if(streamedReduction)
-							prompt temp, "time (s)"
-							Doprompt "What timescale did you want each bin in the  streamed reduction to be?", temp
+							prompt temp, "time each bin (s)"
+							prompt maxtime, "maximum time (s)"
+							Doprompt "What timescales did you want for the streamed reduction?", maxtime, temp
 							if(V_flag)
 								abort
 							endif
 							streamedReduction = temp
+							make/n=(ceil(maxtime/temp) + 1)/free/d timeslices
+							timeslices = temp * p
+							if(timeslices[numpnts(timeslices) - 1] > maxtime)
+								timeslices[numpnts(timeslices) - 1] = maxtime
+							endif
+							
 							dontoverwrite = 1
 					endif
 					
@@ -607,10 +614,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 								print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
 							endif
 						else
-							template =  "reduceasinglefile(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_peak=cmplx(%g, NaN), manual = %g, dontoverwrite = 1, normalise = %g, saveSpectrum = %g, saveoffspec=%g, eventstreaming = 1)"
+							template =  "reduceasinglefile(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_peak=cmplx(%g, NaN), manual = %g, dontoverwrite = 1, normalise = %g, saveSpectrum = %g, saveoffspec=%g, timeslices = ??wave??)"
 							sprintf cmd, template, replacestring("\\", inputpathStr, "\\\\"), replacestring("\\", outputpathStr, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, normalisebymonitor, saveSpectrum, saveoffspec
 							cmdToHistory(cmd)
-							if(!strlen(reduceASingleFile(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_peak = cmplx(expected_centre, NaN), manual=manualbeamfind, dontoverwrite = 1, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec, eventstreaming=streamedReduction)))
+							if(!strlen(reduceASingleFile(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_peak = cmplx(expected_centre, NaN), manual=manualbeamfind, dontoverwrite = 1, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec, timeslices=timeslices)))
 								print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
 							endif
 						endif

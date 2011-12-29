@@ -94,16 +94,19 @@ Function Pla_openStreamer(folderStr, [dataset])
 	return 0
 End
 
-Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, timeSliceDuration, totaltime)
+Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, slicebins, totaltime)
 	//they should be monotonically sorted histogram edges for x, y and t.
 	//produces a wave root:packages:platypus:data:Reducer:streamer:Detector[slice][t][y][x]
 	Wave xbins, ybins, tbins
 	//how many frames per sec
-	variable framefrequency, timeSliceDuration, totalTime
+	variable framefrequency
+	Wave slicebins
+	variable totalTime
 
 	variable numevents, period, ii, xpos, ypos, tpos, slicepos, totalEvents, numTimeSlices
-	variable numxbins, numtbins, numybins
-	string cDF
+	variable numxbins, numtbins, numybins, val
+	string cDF, timeEachSliceStr
+	
 	cDF = getdatafolder(1)
 	//setup the datafolders
 	Setdatafolder root:packages:platypus:data:Reducer:streamer
@@ -113,23 +116,30 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, tim
 
 	Wave W_unpackedNeutronsF, W_unpackedNeutronsx, W_unpackedNeutronsy, W_unpackedNeutronst
 
-	numTimeSlices = ceil(totalTime / timeSliceDuration)
+	duplicate/free slicebins, tempSlicebins
+	val = binarySearchInterp(tempSlicebins, totalTime)
+	if(!numtype(val))
+		deletepoints ceil(val) + 1, numpnts(tempslicebins), tempSlicebins
+		tempSlicebins[numpnts(tempslicebins)] = totalTime
+	endif
+
+	numTimeSlices = dimsize(tempslicebins, 0) - 1
 	
 	numxbins = dimsize(xbins, 0) - 1
 	numybins = dimsize(ybins, 0) - 1
 	numtbins = dimsize(tbins, 0) - 1
 	//make the detector image
 	make/n=(numTimeSlices, numtbins, numybins, numxbins)/I/U/O detector
+	make/n=(numtimeslices)/d/free timeEachSlice
 	detector = 0
 	
-	make/o/n=(numTimeSlices + 1)/free slicebins
-	slicebins = p * timesliceduration * framefrequency
-	
+	timeEachSlice = (tempslicebins[p+1] - tempslicebins[p]) / totalTime
+
 	numevents = dimsize(W_unpackedNeutronsy, 0)
 	for(ii = 0 ; ii < numevents ; ii += 1)
 		xpos = binarysearch(xbins, W_unpackedNeutronsX[ii])
 		if(xpos >= 0)
-			slicepos = binarysearch(slicebins, W_unpackedNeutronsf[ii])
+			slicepos = binarysearch(tempslicebins, W_unpackedNeutronsf[ii] * period)
 			ypos = binarysearch(ybins, W_unpackedNeutronsy[ii])
 			tpos = binarysearch(tbins, W_unpackedNeutronst[ii])
 			if(xpos == numxbins )
@@ -151,7 +161,8 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, tim
 			endif
 		endif
 	endfor
-	Note/k detector, "Events:"+num2istr(totalEvents)+";TIME:"+num2str(totaltime)
+	sockitwavetostring/TXT="," timeeachslice, timeeachslicestr
+	Note/k detector, "Events:"+num2istr(totalEvents)+";TIME:"+timeeachslicestr
 	killwaves/z W_unpackedNeutronsF, W_unpackedNeutronsx, W_unpackedNeutronsy, W_unpackedNeutronst
 	setdatafolder $cDF
 	return detector
