@@ -1102,6 +1102,7 @@ static Function moto_change_plotyp(plotyp)
 	popupmenu plotype_tab0, win=reflectivitygraph, mode = plotyp
 	
 	setmotofitoption("plotyp", num2istr(plotyp))
+	setaxis/a/W=reflectivitygraph left
 	moto_update_theoretical()
 	switch(plotyp)
 		default:

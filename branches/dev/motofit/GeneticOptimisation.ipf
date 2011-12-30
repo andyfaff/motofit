@@ -1898,7 +1898,8 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 		//now lets do the montecarlo fitting
 		variable timed = datetime
 		for(ii=0 ; ii<Iters ; ii+=1)
-			//			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+//			y_montecarlo = yy + gnoise(ee)
+//			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			Gencurvefit/MC/D=tempdump/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			M_montecarlo[ii][] = w[q]
 			W_chisq[ii] = V_chisq
