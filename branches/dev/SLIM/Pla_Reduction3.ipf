@@ -616,7 +616,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						else
 							template =  "reduceasinglefile(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_peak=cmplx(%g, NaN), manual = %g, dontoverwrite = 1, normalise = %g, saveSpectrum = %g, saveoffspec=%g, timeslices = ??wave??)"
 							sprintf cmd, template, replacestring("\\", inputpathStr, "\\\\"), replacestring("\\", outputpathStr, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, normalisebymonitor, saveSpectrum, saveoffspec
-							cmdToHistory(cmd)
+							cmdToHistory(cmd)								
 							if(!strlen(reduceASingleFile(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_peak = cmplx(expected_centre, NaN), manual=manualbeamfind, dontoverwrite = 1, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec, timeslices=timeslices)))
 								print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
 							endif
