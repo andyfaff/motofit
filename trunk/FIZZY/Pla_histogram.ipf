@@ -89,7 +89,7 @@ Function currentacquisitionStatus(msg)
 	//return 4 if undetermined
 	
 	//other functions use if(status > 1) to see if the histogram server is doing something
-	string statusstr = grabHistoStatus("DAQ")
+	string statusstr = Ind_Process#grabHistoStatus("DAQ")
 	msg = statusstr
 	strswitch(statusStr)
 		case "Stopped":
@@ -113,26 +113,6 @@ Function currentacquisitionStatus(msg)
 End
 
 
-Function/t grabHistoStatus(keyvalue)
-	string keyvalue
-	//this function returns the status of the Histogram server from it's text status
-	string retStr,cmd
-
-	sprintf cmd,"http://%s:%d/admin/textstatus.egi",DASserverIP,DASserverport
-	easyHttp/PROX=""/PASS="manager:ansto" cmd
-
-	if(V_Flag)
-		Print "Error while speaking to Histogram Server (grabHistoStatus)"
-		return ""
-	endif
-	retStr = S_getHttp
-	retStr = replacestring("\n",retStr,"\r")
-	retstr = stringbykey(keyvalue,retStr,":","\r")
-	if(!cmpstr(retstr[0]," "))
-		retstr = retstr[1,inf]		
-	endif
-	return retstr
-End
 
 Function/t grabAllHistoStatus()
 	//this function returns the status of the Histogram server from it's text status
@@ -213,7 +193,7 @@ Function startDetector()
 		return 1
 	endif
 
-	if(stringmatch(grabhistostatus("DAQ"),"Started"))
+	if(stringmatch(Ind_Process#grabhistostatus("DAQ"),"Started"))
 		print "ERROR, detector is already counting (startDetector)"
 		return 1
 	endif
@@ -249,7 +229,7 @@ Function HISTMEM_preparedetector(presettype,preset)
 	//frame
 	
 	//please note, Upper or lower case matters!
-	if(stringmatch(grabhistostatus("DAQ"),"Started"))
+	if(stringmatch(Ind_Process#grabhistostatus("DAQ"),"Started"))
 		print "ERROR, detector is already counting (HISTMEM_preparedetector)"
 		return 1
 	endif
@@ -279,7 +259,7 @@ Function HISTMEM_preparedetector(presettype,preset)
 End
 
 Function HISTMEM_startDetector()
-	if(stringmatch(grabhistostatus("DAQ"), "Started"))
+	if(stringmatch(Ind_Process#grabhistostatus("DAQ"), "Started"))
 		print "ERROR, detector is already counting (HISTMEM_startDetector)"
 		return 1
 	endif

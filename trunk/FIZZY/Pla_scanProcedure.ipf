@@ -51,7 +51,7 @@ Function pausefpx(pauseORrestart)
 	NVAR userPaused = root:packages:platypus:data:scan:userPaused
 	userPaused = pauseOrRestart
 	
-	string histostatus = grabHistostatus("DAQ")
+	string histostatus = Ind_Process#grabHistostatus("DAQ")
 	CtrlNamedBackground  scanTask status
 	if(numberbykey("RUN",S_info))	//if the scan is running
 		pauseDetector(pauseORrestart)
@@ -636,7 +636,7 @@ Function finishScan(status)
 	endif
 	
 	//save the scan itself, not the overall data, just counts vs position
-	Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
+	Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + Ind_Process#grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
 	string fname =  "FIZscan" + num2str(getFIZscanNumberAndIncrement()) + ".itx"
 	save/o/t position, counts as PATH_TO_DATA + "FIZ:" + fname
 	print "FPXscan (position vs counts) saved to ", PATH_TO_DATA + "FIZ:" + fname

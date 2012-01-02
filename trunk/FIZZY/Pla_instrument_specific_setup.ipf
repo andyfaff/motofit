@@ -31,6 +31,7 @@
 	Constant 	MOXA4serverPort = 4004
 	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
 	strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
+
 	
 	Constant ChopperN_delay = 2.491		// a time delay between the first chopper pulse and chopper N
 	//a logfile to record all SICS input and output
@@ -387,6 +388,7 @@ Function Instrumentdefinedclose()
 	sockitcloseconnection(SOCK_MOXA2)
 	sockitcloseconnection(SOCK_MOXA3)
 	sockitcloseconnection(SOCK_MOXA4)
+	Ind_process#stopstreamingimage()
 	variable temp = threadgrouprelease(detectorSentinelThreadID)
 End
 
@@ -466,6 +468,9 @@ Function Instrument_Specific_Setup()
 	
 	//make a wave to track the frame deasset time, AKA the chopper delay in ms.
 //	make/n=(0,2)/o root:packages:platypus:SICS:frame_deassert
+	
+	//start streaming the detector image
+	ind_process#startStreamingImage()
 	
 	return err
 End
@@ -2684,7 +2689,7 @@ Function chopperRephaseArator(s)
 		return 1
 	endif
 	variable timer = startmstimer
-	actualTimeOffset = str2num(grabHistoStatus("frame_deassert_time"))
+	actualTimeOffset = str2num(Ind_Process#grabHistoStatus("frame_deassert_time"))
 	if(abs(actualTimeoffset - s.desiredTimeOffset) < 0.01 || abs(actualTimeoffset - s.desiredTimeOffset) > 0.23)
 		print "NO REPHASE"
 		return 0

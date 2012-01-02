@@ -1,12 +1,17 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IndependentModule=Ind_Process
+
 // SVN date:    $Date$
 // SVN author:  $Author$
 // SVN rev.:    $Revision$
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
 
-strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
+	static strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
+	static StrConstant PATH_TO_PLATYPUS = "\\\\Filer\\experiments:platypus:"
+	static constant BUFSIZE = 8192
+	static Strconstant DASserverIP = "137.157.202.140"
+	static Constant DASserverPort = 8080
 	
 static function parseReply(msg,lhs,rhs)
 	string msg
@@ -14,7 +19,7 @@ static function parseReply(msg,lhs,rhs)
 	lhs = ""
 	rhs = ""
 	msg=replacestring(" = ",msg, "=")
-      msg = removeending(msg, "\n")
+	msg = removeending(msg, "\n")
 	variable items = itemsinlist(msg,"=")
 	if(items==2)
 		lhs = replacestring(" ", stringfromlist(0,msg, "="),"")
@@ -68,8 +73,16 @@ Function interestProcessor(w,x)
 
 	//current datafilename
 	SVAR samplename = root:packages:platypus:SICS:sampleStr
+	
+	//for streameddetector
+	NVAR/z EOSfileID = root:packages:platypus:data:RAW:EOSfileID
+	NVAR/z endoflastevent = root:packages:platypus:data:RAW:endoflastevent
+	Wave/z streamedDetector = root:packages:platypus:data:RAW:streamedDetector
+	Wave/z tbins = root:packages:platypus:data:RAW:tbins
+	Wave/z ybins = root:packages:platypus:data:RAW:ybins
+	Wave/z xbins = root:packages:platypus:data:RAW:xbins
 
-	variable num,col,row,items,pos
+	variable num,col,row,items,pos, temp
 	string str,str1,str2
 	Struct WMBackgroundStruct s
 	
@@ -84,7 +97,7 @@ Function interestProcessor(w,x)
 	Wave/t axeslist = root:packages:platypus:SICS:axeslist
 	Wave selaxeslist = root:packages:platypus:sics:selAxesList
 	items = parseReply(w[x][0],str1,str2)
-//	print x, "                ", w[x][0]
+	//	print x, "                ", w[x][0]
 	//this code should parse upper and lower limit changes, as well as position changes.
 	if(items==2)
 		strswitch(str1)//see what the message is about
@@ -106,9 +119,10 @@ Function interestProcessor(w,x)
 					endif
 				endif
 				if(stringmatch(str2, "hmcontrol") || stringmatch(str2, "HistogramMemory"))
-//					execute/P/Q "DoXOPIdle"
+					//					execute/P/Q "DoXOPIdle"
 					execute/Q "ProcGlobal#Platypus#forceScanBkgTask()"
 					execute/P/Q "DoXOPIdle"
+					startStreamingImage()
 				endif
 				break
 			case "FINISH":		//this is listening to the statemon finishing an axis
@@ -126,13 +140,21 @@ Function interestProcessor(w,x)
 						selaxeslist[row][][1] = 0
 					endif
 				endif
+				if(stringmatch(str2, "hmcontrol") || stringmatch(str2, "HistogramMemory"))
+					temp = endoflastevent 
+					if(sum(streameddetector) != str2num(str2))
+						nunpack_intodet(EOSfileID, temp, streamedDetector, tbins, ybins, xbins)
+						endoflastevent = temp
+					endif
+					stopStreamingImage()
+				endif
 				
 				//cause any scans to see if they need updating
-//				execute/P/Q "DoXOPIdle"
-//				execute/P/Q "ProcGlobal#Platypus#forceScanBkgTask()"
-//				execute/P/Q "DoXOPIdle"
-//				execute/P/Q "ProcGlobal#forcebatchbkgtask()"
-//				execute/P/Q "DoXOPIdle"
+				//				execute/P/Q "DoXOPIdle"
+				//				execute/P/Q "ProcGlobal#Platypus#forceScanBkgTask()"
+				//				execute/P/Q "DoXOPIdle"
+				//				execute/P/Q "ProcGlobal#forcebatchbkgtask()"
+				//				execute/P/Q "DoXOPIdle"
 								
 				break
 			case "status":
@@ -147,16 +169,24 @@ Function interestProcessor(w,x)
 				
 				if(stringmatch(str2, "Eager to execute commands"))
 					//cause any scans to see if they need updating
-//					execute/P/Q "DoXOPIdle"
+					//					execute/P/Q "DoXOPIdle"
 					execute/Q "ProcGlobal#Platypus#forceScanBkgTask()"
 					execute/P/Q "DoXOPIdle"
-//					execute/P/Q "ProcGlobal#forcebatchbkgtask()"
-//					execute/P/Q "DoXOPIdle"
+					//					execute/P/Q "ProcGlobal#forcebatchbkgtask()"
+					//					execute/P/Q "DoXOPIdle"
 				endif
 								
 				break
 			case "/sample/name":
 				sampleName = str2
+				break
+			case "/instrument/detector/total_counts":
+
+				temp = endoflastevent 			
+				if(sum(streameddetector) != str2num(str2))
+					nunpack_intodet(EOSfileID, temp, streamedDetector, tbins, ybins, xbins)
+					endoflastevent = temp
+				endif
 				break
 			default:
 				Findvalue/Text=str1/TXOP=4 axeslist
@@ -243,6 +273,7 @@ Threadsafe Function log_msg(msg)
 		fname = "FIZlog"+Secs2Date(DateTime,-2,"-")
 		fname += "T" + replacestring(":", Secs2Time(DateTime,3), "")
 		open logID as log_path + fname
+		print "opened FIZlog as", log_path+fname, logID
 	endif
 	msg2 = num2istr(datetime) + "\t" + msg + "\n"
 	fbinwrite logID, msg2
@@ -253,8 +284,8 @@ Function processBMON3rate(w,x)
 	variable x
 	//a SOCKIT processor function for the messages coming back from the open TCPIP connection to beam monitor 3.
 	//the whole point of this is to make sure that the detector isn't overwhelmed.
-//	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
-//	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
+	//	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
+	//	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 		
 	NVAR bmon3_rate = root:packages:platypus:SICS:bmon3_rate
 	NVAR bmon3_counts = root:packages:platypus:SICS:bmon3_counts
@@ -271,15 +302,15 @@ Function processBMON3rate(w,x)
 	sscanf rateStr,"%d:%d:%g ( %g), %d (%d),%g ( %g, %g, %g)" , val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
 	bmon3_rate = round(val6)
 
-//	if(bmon3_rate > 20000 &&  val4 >= bmon3_counts)
-//		sockitsendmsg sock_interupt,"INT1712 3\n"
-//		doxopidle
-//		sleep/t 20
-//		sockitsendmsg SOCK_interest,"bat send oscd=0\n"
-//		sockitsendmsg SOCK_interest,"run ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\n"
-//		sockitsendmsg SOCK_interest,"run bz 250\n"
-//		print "DETECTOR RATE IS TOO HIGH, CLOSING SLITS, inserting ATTENUATOR (processBMON3rate)"
-//	endif
+	//	if(bmon3_rate > 20000 &&  val4 >= bmon3_counts)
+	//		sockitsendmsg sock_interupt,"INT1712 3\n"
+	//		doxopidle
+	//		sleep/t 20
+	//		sockitsendmsg SOCK_interest,"bat send oscd=0\n"
+	//		sockitsendmsg SOCK_interest,"run ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\n"
+	//		sockitsendmsg SOCK_interest,"run bz 250\n"
+	//		print "DETECTOR RATE IS TOO HIGH, CLOSING SLITS, inserting ATTENUATOR (processBMON3rate)"
+	//	endif
 	bmon3_counts = val4
 	return 0
 End
@@ -307,7 +338,7 @@ Threadsafe Function DetectorSentinel()
 		for(ii=0 ; ii<itemsinlist(msg, "\n") ; ii+=1)
 			sscanf stringfromlist(ii, msg, "\n"), "%d:%d:%g ( %g), %d (%d),%g ( %g, %g, %g)" , val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
 			bmon3_rate = val6
-//			print bmon3_rate, val4, bmon3_counts
+			//			print bmon3_rate, val4, bmon3_counts
 			if((bmon3_rate > 12000 && lastrate > 12000))
 				sockitsendmsgF(sock_sics,"INT1712 3\n")
 				temp = ThreadGroupGetDF(0, 200 )
@@ -340,4 +371,218 @@ Threadsafe Function DetectorSentinel()
 	sockitcloseconnection(sock_SICS)
 	sockitcloseconnection(sock_bmon3)
 	return 0
+End
+
+Function/t grabHistoStatus(keyvalue)
+	string keyvalue
+	//this function returns the status of the Histogram server from it's text status
+	string retStr,cmd
+
+	sprintf cmd,"http://%s:%d/admin/textstatus.egi",DASserverIP,DASserverport
+	easyHttp/PROX=""/PASS="manager:ansto" cmd
+
+	if(V_Flag)
+		Print "Error while speaking to Histogram Server (grabHistoStatus)"
+		return ""
+	endif
+	retStr = S_getHttp
+	retStr = replacestring("\n",retStr,"\r")
+	retstr = stringbykey(keyvalue,retStr,":","\r")
+	if(!cmpstr(retstr[0]," "))
+		retstr = retstr[1,inf]		
+	endif
+	return retstr
+End
+
+
+Function startStreamingImage()
+	//setup the datafolders
+	DFREF saveDFR = GetDataFolderDFR()
+	
+	Newdatafolder/o root:packages
+	Newdatafolder/o root:packages:platypus
+	Newdatafolder/o root:packages:platypus:data
+	newdatafolder/o/s root:packages:platypus:data:RAW
+		
+	//get the daq filename
+	string/g DAQdirectory = grabHistoStatus("DAQ_dirname")
+	variable/g datanumber = str2num(grabHistoStatus("DATASET_number"))
+	string/g EOSfileStr = PATH_TO_PLATYPUS + "hsdata:" + DAQdirectory + ":DATASET_" + num2istr(datanumber) + ":EOS.bin"
+	//grab the config file for the bins.
+	NVAR/z EOSfileID, endoflastevent
+	if(NVAR_exists(EOSfileID))
+		if(EOSfileID)
+			close EOSfileID
+			EOSfileID = 0
+		endif
+	else
+		variable/g EOSfileID = 0	
+		variable/g endoflastevent
+	endif
+	endoflastevent = 127
+
+	variable cfgfileID = xmlopenfile(PATH_TO_PLATYPUS + "hsdata:" + DAQdirectory + ":CFG.xml")
+	if(cfgfileID < 1)
+//		print "ERROR, could not find config file, cannot update streamed detector image"
+		setdatafolder saveDFR
+		return 1
+	endif
+	//get the bin settings
+	xmlwavefmxpath(cfgfileID, "//OAT/X/X", "", " \n")
+	Wave/t M_xmlcontent
+	make/n=(dimsize(M_xmlcontent, 0) - 1)/d/o xbins
+	xbins[] = str2num(M_xmlcontent[p])
+	xmlwavefmxpath(cfgfileID, "//OAT/Y/Y", "", " \n")
+	Wave/t M_xmlcontent
+	make/n=(dimsize(M_xmlcontent, 0) - 1)/o/d ybins
+	ybins[] = str2num(M_xmlcontent[p])
+	xmlwavefmxpath(cfgfileID, "//OAT/T/T", "", " \n")
+	Wave/t M_xmlcontent
+	make/n=(dimsize(M_xmlcontent, 0) - 1)/o/d tbins
+	tbins[] = str2num(M_xmlcontent[p])
+	killwaves/z M_xmlcontent, W_xmlcontentnodes
+	xmlclosefile(cfgfileID, 0)
+	//create a detector image
+	Wave/z hmm = root:packages:platypus:data:RAW:streamedDetector
+	if(!waveexists(hmm))
+		make/n=(numpnts(tbins) - 1, numpnts(ybins) - 1, numpnts(xbins) - 1)/o/u/i streamedDetector = 0
+	else
+		redimension/u/i/n=(numpnts(tbins) - 1, numpnts(ybins) - 1, numpnts(xbins) - 1) hmm
+		hmm = 0
+	endif
+	//open the streamed file
+	open/r/z EOSfileID as EOSfileStr
+	if(V_flag)
+//		print "ERROR, could not find EOS.bin file, cannot update streamed detector image"
+		setdatafolder saveDFR
+		EOSfileID = 0
+		return 1
+	endif	
+	setdatafolder saveDFR
+End
+
+Function stopstreamingimage()
+	NVAR/z EOSfileID = root:packages:platypus:data:RAW:EOSfileID
+	if(NVAR_exists(EOSfileID) && EOSfileID)
+		close EOSfileID
+		EOSfileID = 0
+	endif
+End
+
+Function nunpack_intodet(fileID, endoflastevent, detector, tbins, ybins, xbins)
+	variable fileID, &endoflastevent
+	wave detector, tbins, ybins, xbins
+
+	variable state = 0, event_ended = 0, frame_number = -1;
+	variable x, y;
+	variable dt, t = 0;
+	variable c
+	variable filePos, currentbuffersize, ii, entries, processedEvents, finish
+
+	variable xpos, ypos, tpos, numxbins, numybins, numtbins
+	
+	if(!fileID)
+		return 0
+	endif
+	
+	numxbins = dimsize(xbins, 0) - 1
+	numybins = dimsize(ybins, 0) - 1
+	numtbins = dimsize(tbins, 0) - 1
+	
+	make/n=(BUFSIZE)/free/u/b buffer
+	finish = 0
+	currentbuffersize = BUFSIZE
+	for(;!finish;)
+		fstatus fileID
+		if(endoflastevent + 1 != V_logEOF && endoflastevent < V_logEOF)
+			fsetpos fileID, endoflastevent + 1
+		else
+			break
+		endif	
+		filePos = endoflastevent + 1
+		if(V_logEOF - filepos < BUFSIZE)
+			redimension/n=(V_logEOF - filepos) buffer
+			currentbuffersize = V_logEOF - filepos
+			finish = 1
+		elseif(currentbuffersize != BUFSIZE)
+			redimension/n=(BUFSIZE) buffer
+			currentbuffersize = BUFSIZE
+		endif
+		fbinread/u/f=1 fileID, buffer
+		state = 0
+		
+		for(ii = 0 ; ii < currentbuffersize ; ii += 1)
+			c = buffer[ii]
+			switch(state)
+				case 0:
+					x = c;
+					state += 1;
+					break;
+				case 1:
+					x = x | ((c & 0x3) * 256)
+					if (x & 0x200)
+						x = -(2^32 - ( x | 0xFFFFFC00))
+					endif
+					y= c / 4;
+					state += 1
+					break;
+				case 2:
+					y = y | ((c & 0xF) * 64)
+					if (y & 0x200)
+						y = -(2^32 - ( y | 0xFFFFFC00));
+					endif
+				case 3:
+				case 4:
+				case 5:
+				case 6:
+				case 7:	
+					event_ended = (state >= 7 || (c & 0xC0) != 0xC0)
+
+					if (!event_ended)
+						c = c & 0x3F;
+					endif
+					if (state == 2)
+						dt= c / 16;
+					else
+						dt = dt | (c * (2^(2 + 6 * (state - 3))))
+					endif
+					if (!event_ended)
+						state += 1;
+					else
+						state=0;
+						endoflastevent = filepos + ii
+						if (x == 0 && y == 0 && dt == 0xFFFFFFFF)
+							t = 0;
+							frame_number += 1;
+						else	
+							t += dt;
+							if(frame_number == -1)
+								return 1;
+							endif
+		
+							xpos = binarysearch(xbins, x)
+							ypos = binarysearch(ybins, y)
+							tpos = binarysearch(tbins, t/1000)
+							if(xpos < 0 || ypos < 0 || tpos < 0)
+								continue
+							endif
+
+							if(xpos == numxbins )
+								xpos -= 1
+							endif
+							if(ypos == numybins )
+								ypos -= 1
+							endif
+							if(tpos == numtbins )
+								tpos -= 1
+							endif
+							detector[tpos][ypos][xpos] += 1
+						endif
+					endif
+					break
+			endswitch	
+		endfor
+
+	endfor
+	return endoflastevent
 End
