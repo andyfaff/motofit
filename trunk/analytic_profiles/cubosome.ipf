@@ -80,9 +80,9 @@ funcoefs[25] = w[19]
 //	funcoefs[4*(ii+5)+9] = 0
 //endfor
 
-variable/g root:packages:motofit:reflectivity:tempwaves:Vmulrep=N_Rep
-variable/g root:packages:motofit:reflectivity:tempwaves:Vmullayers=SLABS_PER_PERIOD
-variable/g root:packages:motofit:reflectivity:tempwaves:Vappendlayer=5
+variable/g Vmulrep=N_Rep
+variable/g Vmullayers=SLABS_PER_PERIOD
+variable/g Vappendlayer=5
 
 for(ii = 0 ; ii< SLABS_PER_PERIOD ; ii+=1)
 	zed = (ii+0.5) * w[23] / SLABS_PER_PERIOD
@@ -96,6 +96,5 @@ endfor
 //AbelesAll(funcoefs, yy, xx)
 //yy = log(yy)
 motofit(funcoefs,yy,xx)
-
 
 End
