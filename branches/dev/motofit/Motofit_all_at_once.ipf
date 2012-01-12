@@ -1943,57 +1943,85 @@ Function Moto_SLDplot(w, sld)
 	//
 	//This function calculates the SLD profile.
 	//	
-	variable nlayers,zstart,zend,ii,temp,zinc	 
-	variable mode = mod(numpnts(w) - 6, 4)
-	if(numtype(mode))
-		mode = 0
-		if(dimsize(w, 0) == 4*w[0] + 8)
-			mode = 1
-		endif
-	endif
+	variable nlayers,zstart,zend,ii, jj, temp,zinc, ismultilayer, npoints, layerInsert
+	variable mode =  mod(numpnts(w) - 6, 4)
 	
+	make/d/n=0/free SLDmodelcoefwav
+		
+	if(mode == 0)
+		mode = 0
+		redimension/n=(4 * w[0] + 6) SLDmodelcoefwav
+		Wave SLD_calcwav = SLDmodelcoefwav
+		SLD_calcwav = w
+	elseif(mode == 2)
+		mode = 1
+		redimension/n=(4 * w[0] + 8) SLDmodelcoefwav
+		Wave SLD_calcwav = SLDmodelcoefwav
+		SLD_calcwav = w
+	endif
+
 	nlayers=w[0]
 	
+	if(4 * w[0] + 6 + 2 * mode != numpnts(w))
+		ismultilayer = 1
+		NVAR/z Vmulrep, Vmullayers, Vappendlayer
+		if(!NVAR_exists(Vmulrep) || !NVAR_exists(Vmullayers) || !NVAR_exists(Vappendlayer))
+			print "error, you are trying to produce an SLD plot for a multilayer but the multilayer variables don't exist"
+			return 1
+		endif
+		Wave SLD_calcwav = expandMultilayerToNormalModel(w, mode, Vmullayers, Vappendlayer, Vmulrep)
+	endif
+
 	//setup the start and finish points of the SLD profile
 	if(!mode)
 		if (nlayers == 0)
-			zstart= -5-4 * abs(w[5])
+			zstart= -5-4 * abs(SLD_calcwav[5])
 		else
-			zstart= -5-4 * abs(w[9])
+			zstart= -5-4 * abs(SLD_calcwav[9])
 		endif
 		
 		temp = 0
 		if (nlayers == 0)
-			zend = 5+4*abs(w[5])
+			zend = 5+4*abs(SLD_calcwav[5])
 		else	
 			for(ii = 1 ; ii < nlayers + 1 ; ii+=1)
-				temp += abs(w[4*ii+2])
+				temp += abs(SLD_calcwav[4*ii+2])
 			endfor 	
-			zend = 5 + temp + 4 * abs(w[5])
+			zend = 5 + temp + 4 * abs(SLD_calcwav[5])
 		endif
 	else
 		if (nlayers == 0)
-			zstart= -5-4 * abs(w[7])
+			zstart= -5-4 * abs(SLD_calcwav[7])
 		else
-			zstart= -5-4 * abs(w[11])
+			zstart= -5-4 * abs(SLD_calcwav[11])
 		endif
 		
 		temp = 0
 		if (nlayers == 0)
-			zend = 5+4*abs(w[7])
+			zend = 5+4*abs(SLD_calcwav[7])
 		else	
 			for(ii = 1 ; ii < nlayers + 1 ; ii += 1)
-				temp += abs(w[4 * ii + 4])
+				temp += abs(SLD_calcwav[4 * ii + 4])
 			endfor 	
-			zend = 5 + temp + 4 * abs(w[7])
+			zend = 5 + temp + 4 * abs(SLD_calcwav[7])
 		endif
 	
 	endif
 
 	setscale/I x, zstart, zend, sld
 
-	sld = Moto_SLD_at_depth(w, x)
+	sld = Moto_SLD_at_depth(SLD_calcwav, x)
 End
+
+Function/Wave expandMultilayerToNormalModel(w, mode, Vmullayers, Vappendlayer, Vmulrep)
+	Wave W
+	variable mode, Vmullayers, Vappendlayer, Vmulrep
+	//this function takes a multilayer coefficientwave and expands it to look like a normal coefficient wave
+	make/n=0/d/free expandedSLDmodelwave
+	
+	return expandedSLDmodelwave
+End
+
 
 static Function Moto_backupModel()
 	duplicate/o root:data:theoretical:coef_theoretical_R, root:packages:motofit:reflectivity:coef_theoretical_R_BAK
@@ -2004,12 +2032,11 @@ Function Moto_SLD_at_depth(w, zed)
 	variable zed
 	variable nlayers,SLD1,SLD2,ii,summ
 	Variable deltarho,sigma,thick,dist,rhosolv
-	variable mode = mod(numpnts(w) - 6, 4)
-	if(numtype(mode))
+	variable mode =  mod(numpnts(w) - 6, 4)
+	if(mode == 0)
 		mode = 0
-		if(dimsize(w, 0) == 4*w[0] + 8)
-			mode = 1
-		endif
+	elseif(mode == 2)
+		mode = 1
 	endif
 		 
 	if(!mode)
