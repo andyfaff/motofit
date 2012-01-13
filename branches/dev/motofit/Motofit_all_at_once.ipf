@@ -1969,7 +1969,8 @@ Function Moto_SLDplot(w, sld)
 			print "error, you are trying to produce an SLD plot for a multilayer but the multilayer variables don't exist"
 			return 1
 		endif
-		Wave SLD_calcwav = expandMultilayerToNormalModel(w, mode, Vmullayers, Vappendlayer, Vmulrep)
+		Wave SLD_calcwav = moto_expandMultiToNormalModel(w, mode, Vmullayers, Vappendlayer, Vmulrep)
+		nlayers = SLD_calcwav[0]
 	endif
 
 	//setup the start and finish points of the SLD profile
@@ -2013,12 +2014,50 @@ Function Moto_SLDplot(w, sld)
 	sld = Moto_SLD_at_depth(SLD_calcwav, x)
 End
 
-Function/Wave expandMultilayerToNormalModel(w, mode, Vmullayers, Vappendlayer, Vmulrep)
+Function/Wave moto_expandMultiToNormalModel(w, mode, Vmullayers, Vappendlayer, Vmulrep)
 	Wave W
 	variable mode, Vmullayers, Vappendlayer, Vmulrep
 	//this function takes a multilayer coefficientwave and expands it to look like a normal coefficient wave
-	make/n=0/d/free expandedSLDmodelwave
+	variable layer, jj, kk, layerinsert, muloffset, multilayeroffset
+
+	switch(mode)
+		case 0:
+			make/n=(4 * (w[0] + (Vmullayers * Vmulrep)) + 6)/d/free expandedSLDmodelwave
+			expandedSLDmodelwave[0,5] = w
+			expandedSLDmodelwave[0] = w[0] + (Vmullayers  * Vmulrep)
+			muloffset = 4 * w[0] + 6
+			multilayeroffset = 0
+		break
+		case 1:
+			make/n=(4 * (w[0] + Vmullayers) + 8)/d/free expandedSLDmodelwave
+			expandedSLDmodelwave[0, 7] = w
+			expandedSLDmodelwave[0] = w[0] + (Vmullayers  * Vmulrep)
+			muloffset = 4 * w[0] + 8
+			multilayeroffset = 2
+			break
+	endswitch
 	
+	for(layerinsert = 0, layer = 0 ; layerinsert < expandedSLDmodelwave[0] ; )
+				if(layerinsert == Vappendlayer)
+					for(jj = 0 ; jj < Vmulrep ; jj += 1)
+						for(kk = 0 ; kk < Vmullayers ; kk += 1)
+							expandedSLDmodelwave[4 * layerinsert + 6 + multilayeroffset] = w[muloffset + (4 * kk) ]
+							expandedSLDmodelwave[4 * layerinsert + 7 + multilayeroffset] = w[muloffset + (4 * kk) + 1]
+							expandedSLDmodelwave[4 * layerinsert + 8 + multilayeroffset] = w[muloffset + (4 * kk) + 2]
+							expandedSLDmodelwave[4 * layerinsert + 9 + multilayeroffset] = w[muloffset + (4 * kk) + 3]			
+							layerinsert += 1
+						endfor
+					endfor				
+				else
+					expandedSLDmodelwave[4 * layerinsert + 6 + multilayeroffset] = w[4 * layer + 6 + multilayeroffset]
+					expandedSLDmodelwave[4 * layerinsert + 7 + multilayeroffset] = w[4 * layer + 7 + multilayeroffset]
+					expandedSLDmodelwave[4 * layerinsert + 8 + multilayeroffset] = w[4 * layer + 8 + multilayeroffset]
+					expandedSLDmodelwave[4 * layerinsert + 9 + multilayeroffset] = w[4 * layer + 9 + multilayeroffset]
+					layer += 1
+					layerinsert += 1		
+				endif
+			endfor
+
 	return expandedSLDmodelwave
 End
 
