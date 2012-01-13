@@ -96,5 +96,5 @@ endfor
 //AbelesAll(funcoefs, yy, xx)
 //yy = log(yy)
 motofit(funcoefs,yy,xx)
-
+killvariables/z Vmulrep, Vmullayers, Vappendlayer
 End
