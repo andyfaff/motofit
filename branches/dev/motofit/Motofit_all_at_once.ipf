@@ -2587,12 +2587,16 @@ static Function moto_GUI_slider(s) : SliderControl
 		endif
 	endif
 	if(s.eventcode & 2^1)
-		slider slider0_tab0, limits = {0.5 * str2num(listwave[row][col]), 1.5 * str2num(listwave[row][col]), str2num(listwave[row][col])/500}, value=str2num(listwave[row][col])
+		if(row < dimsize(listwave, 0) && col < dimsize(listwave, 1))
+			slider slider0_tab0, limits = {0.5 * str2num(listwave[row][col]), 1.5 * str2num(listwave[row][col]), str2num(listwave[row][col])/500}, value=str2num(listwave[row][col])
+		endif
 	endif
 	if(s.eventcode & 2^3)
-		listwave[row][col] = num2str(s.curval)
-		Moto_LayerTableToCref(root:data:theoretical:coef_theoretical_R)
-		moto_update_theoretical()
+		if(row < dimsize(listwave, 0) && col < dimsize(listwave, 1))
+			listwave[row][col] = num2str(s.curval)
+			Moto_LayerTableToCref(root:data:theoretical:coef_theoretical_R)
+			moto_update_theoretical()
+		endif
 	endif
 	if(s.eventcode & 2^2)
 		slider slider0_tab0, value = 0, limits = {-1, 1, 0.2}
