@@ -14,8 +14,6 @@
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
 
-#define THERMOHAAKE	//JULABO
-
 	Strconstant ICSserverIP  = "137.157.202.139"
 	Constant 	ICSserverPort = 60003
 	Strconstant DASserverIP = "137.157.202.140"
@@ -1985,6 +1983,21 @@ Function/t createFizzyCommand(type)
 			endif
 			sprintf cmd, "run(\"%s\",%f)", motor, position
 			break
+		case "setpos":
+			Wave/t axeslist = root:packages:platypus:SICS:axeslist
+			motorlist = ""
+			for(ii=0 ; ii<dimsize(axeslist,0) ; ii+=1)
+				motorlist += axeslist[ii][0] + ";"
+			endfor
+		
+			prompt motor, "motor:", popup, motorlist
+			prompt position, "position:"
+			doprompt "Select motor and desired position", motor, position
+			if(V_Flag)
+				return ""
+			endif
+			sprintf cmd, "setpos(\"%s\",%f)", motor, position
+			break
 		case "rel":
 			Wave/t axeslist = root:packages:platypus:SICS:axeslist
 			motorlist = ""
@@ -2394,7 +2407,7 @@ Function angler_listboxproc(s) : ListboxControl
 	STRUCT WMListboxAction &s
 	switch(s.eventcode)
 		case 7:
-			if(abs(str2num(s.listwave[s.row][1])) < 0.3)
+			if(abs(str2num(s.listwave[s.row][1])) < 0.25)
 				s.listwave[s.row][2] = "0"
 				s.listwave[s.row][3] = "0"
 				s.listwave[s.row][4] = "0"

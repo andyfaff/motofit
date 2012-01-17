@@ -131,7 +131,7 @@ Function batchScanReadyForNextPoint()
 			return 1
 		else
 			variable status = SICSstatus(msg, oninterest = 1)
-			print time(), "DEBUG BATCH:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
+		//	print time(), "DEBUG BATCH:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
 			if(status)
 				return 1
 			endif
