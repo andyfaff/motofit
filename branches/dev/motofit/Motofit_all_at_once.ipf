@@ -2359,7 +2359,7 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 			endif
 		
 			//this following sections writes the wavenote to file so that it can be used to reconstruct the coefficient wave
-			fprintf refnum, "X Note %s, %s\r", coefwave, coefnote
+			fprintf refnum, "X Note %s, \"%s\"\r", coefwave, coefnote
 					
 			close refnum
 			break
