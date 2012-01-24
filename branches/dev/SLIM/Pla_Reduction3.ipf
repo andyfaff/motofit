@@ -518,7 +518,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 			NVAR saveoffspec =  root:packages:platypus:data:Reducer:saveoffspec
 			NVAR streamedReduction = root:packages:platypus:data:Reducer:streamedReduction
 
-			variable rebinning,ii,jj, dontoverwrite = 0, temp, maxtime
+			variable rebinning,ii,jj, dontoverwrite = 0, temp, maxtime, mintime
 			string tempDF,filenames, water = ""
 			string fileNameList="", righteousFileName = "", fileFilterStr = ""
 			string cmd, template
@@ -537,14 +537,19 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					endif
 					if(streamedReduction)
 							prompt temp, "time each bin (s)"
-							prompt maxtime, "maximum time (s)"
-							Doprompt "What timescales did you want for the streamed reduction?", maxtime, temp
+							prompt maxtime, "ending time (s)"
+							prompt mintime, "starting time (s)"
+							maxtime = 3600
+							mintime = 0
+							temp = 60
+							Doprompt "What timescales did you want for the streamed reduction?", mintime, maxtime, temp
 							if(V_flag)
 								abort
 							endif
 							streamedReduction = temp
-							make/n=(ceil(maxtime/temp) + 1)/free/d timeslices
-							timeslices = temp * p
+							
+							make/n=(ceil((maxtime - mintime) / temp))/free/d timeslices
+							timeslices = temp * p + mintime
 							if(timeslices[numpnts(timeslices) - 1] > maxtime)
 								timeslices[numpnts(timeslices) - 1] = maxtime
 							endif
