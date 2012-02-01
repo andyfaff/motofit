@@ -120,7 +120,7 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, sli
 	val = binarySearchInterp(tempSlicebins, totalTime)
 	if(!numtype(val))
 		deletepoints ceil(val) + 1, numpnts(tempslicebins), tempSlicebins
-		tempSlicebins[numpnts(tempslicebins)] = totalTime
+		tempSlicebins[numpnts(tempslicebins) - 1] = totalTime
 	endif
 
 	numTimeSlices = dimsize(tempslicebins, 0) - 1

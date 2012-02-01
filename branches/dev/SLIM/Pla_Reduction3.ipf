@@ -548,7 +548,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							endif
 							streamedReduction = temp
 							
-							make/n=(ceil((maxtime - mintime) / temp))/free/d timeslices
+							make/n=(ceil((maxtime - mintime) / temp) + 1)/free/d timeslices
 							timeslices = temp * p + mintime
 							if(timeslices[numpnts(timeslices) - 1] > maxtime)
 								timeslices[numpnts(timeslices) - 1] = maxtime
