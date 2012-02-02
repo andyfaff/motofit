@@ -1,0 +1,92 @@
+Version history
+
+11/10/2005:
+first release on sourceforge
+
+
+15/01/06
+fixed some (none fatal) bugs that relate to pressing cancel when you want to load data
+Also introduced a global string (motofitcontrol) that controls the fitting.
+These changes have made it possible to load a coefficient wave directly into IGOR, which autoboots the reflectivity macro. (double click the coefficient wave)
+The coefficient waves are now saved as Igor Text files.  These are more complicated in structure than normal text files, but the added complication is more than offset by the extra functionality.
+revamped the reflectivity panel to make it a bit easier to view. (you now select a dataset, instead of selecting waves for R,Q, and dR).
+fixed bugs associated with the global string (Motofitcontrol) that controls the program.
+Also made it possible to use a user defined dq wave to handle the resolution during fitting.
+Introduced a batch file fitting utility, which fits multiple datasets (>100 files in ~5 minutes), and makes the output easily available to study trends.
+Made it easier to save coefficient waves.  The saved coefficient waves contain information on how the data was fitted.
+The simulated reflectivity curves have been renamed theoretical_R and theoretical_Q.
+The reflectivity is now calculated using an Abeles matrix approach, which gives identical output as Parratt recursion, but makes fitting multilayers faster.  
+
+7/2/06
+A bug has been fixed that prevented the program from loading the SLDdatabase.  This was originally hard coded in, but has been changed to load the database from the folder where the program has been installed.  This problem would have affected Windows and MAC users.
+A Chi2 box has been added to the reflectivity panel that allows the user to see the Chi2 value as the model values are updated.
+A menu item has been added that allows the user to change the theoretical Q range at any time.
+A constraint parser has been added that allows equality constraints (e.g. K5=K11) to be used.  This is normally disallowed in IGOR.
+When simulated annealing is used the Chi2 value updates periodically and the running total of iterations is printed in the history window.  
+Fixed more bugs related to all the "cancel buttons" being ignored sometimes.
+When fit waves are saved now they save as R vs Q.  THey were previously being saved as the "plotype", e.g. logR vs Q.
+
+27/02/06
+This version now contains genetic optimisation, which is a powerful technique for finding global minima in Chi2.
+
+21/03/06
+A few bugs have been removed from genetic optimisation.
+Also, Genetic Optimisation has been added to Globalfit, which means that you can co-refine multicontrast datasets and be more likely to reach a global minimum, this is more powerful than just using Levenberg-Marquardt.
+
+**An XOP has been developed, which calculates reflectivities for the program.  This runs around 5-6 times faster than the normal procedure.  This makes a huge difference when performing Genetic Optimisations.
+
+You can now get a map of how Chi2 changes, as a function of parameter value.  THis enables you to examine the locality of Chi2 around the optimal fit position.
+
+29/03/06
+Support for the XOP in Motofit has been updated and a few bugs caused by that introduction eliminated.  Genetic Optimisation has been updated, which gives the user a better idea of how their fit is developing.
+
+5/5/06
+I have forked Globalfit2 from the modified Wavemetrics version to MOTOFIT_Global fit 2.ipf (included with the Motofit distribution).  This was because people were getting in a mess over installing a bug fix for Globalfit2.ipf.  Since Wavemetrics are now distributing this bugfix in the update, there is no need for the user to fiddle about with this anymore.  
+HOWEVER, MOTOFIT_Global fit 2.ipf is now being distributed for installation within the Motofit package, as I have allowed the user to perform GeneticOptimisation in terms of a globalfit context.  This provides extra functionality over the Wavemetrics version.  Motofit_Global fit 2.ipf has been designed to run separately and co-exist from the Wavemetrics version (Globalfit 2.ipf).
+I have also added a GUI for the genetic optimisation, which sits on top of the command line interface.  Of course, this will only be of interest if you wish to use Genetic Optimisation with a different function.
+An annoying aspect of GeneticOptimisation has been removed: when you are trying to fit negative parameters the program didn't provide nice default limits, it does much better now.
+In addition, when you used GeneticOptimisation for fitting between cursors, Motofit used to delete points not in that range.  It no longer does this.
+
+25/6/06
+All motofit operations now take place in dedicated datafolder called Motofit.  This cleans up the root: datafolder.
+Listboxes are now used to enter all the parameters in the reflectivity panel.  This means that samples with many layers can be setup more easily.  It also makes the GUI look nicer.  
+The user can right-click in the listbox SLD cells to import values from the SLD database.  There is an extra popup to select whether you import X-ray or neutron values.
+The Fourier transform of the data is now integrated into the Reflectivitypanel, instead of a separate window.
+One can now estimate how Chi2 varies around selected parameter values, although this feature was already present you can now select a 1D or 2D option.
+A control bar has been added to the reflectivitygraph to allow the user to autoscale the data, to change the theoretical Q range, and to change the plot type.  You don't have to go to menus anymore.
+The batch fitting procedure is been beefed up.  You can now select the extension of the file that you wish to load (e.g. .csv or .txt or .out), any points that you wish to delete.  WHen you load the data in all the datasets are presented in a single graph, with a user defined vertical offset.  After fitting the fits to all the datasets are appended to the batch fit graph, with the same vertical offset.  This makes the graph immediately useful for publication, instead of putting in extra work.
+A few bugs have been removed from Genetic Optimisation, and a progress graph has been added.  A few bits have been added to make the fit faster.
+
+02/07/06
+Zapped a speed issue with GeneticOptimisation, which caused slowdown by a factor of 2 (two reflectivity calculations instead of 1).  The current version should therefore work twice as fast
+
+05/07/06
+Changed the Reflectivity calculation within Motofit from point-by-point to all-at-once.  This results in a big speed increase for those without the AbelesXOP installed
+I have re-compiled the AbelesXOP with extra features, specifically the reflectivity can be calculated point-by-point with the Abeles function, or all-at-once with the AbelesAll function.  Using the all-at-once function results in a speed increase of around 20-30%!
+I have changed the reflectivity panel, such that only one fit button is present now, and you either choose Levenberg-Marquardt or GeneticOptimisation from a popup.
+Point-by-point resolution smearing wasn't possible from GeneticOptimisation, this has now been fixed.
+
+31/08/06
+Introduction of integrated Scattering length density calculator with SLD database
+Improved command line support for Genetic Optimisation fitting (callable from your function)
+Added pointwise estimation of parameter errors after Genetic Optimisation
+Added Waveform support for Genetic Optimisation fitting
+Can now perform Genetic Optimisation in batch fit mode
+Added graphical output of trends in batch fit mode (directly exportable to publication)
+Point by point resolution smearing for batch fit mode (requires some user editing of code).
+Added option for fitting with Genetic Optimisation/Levenberg Marquardt combination
+Introduced notebook function that records the history of each fit.  This is exportable as rich text file format (RTF) or HTML
+
+18/10/06
+When IGOR fails to fit the error msg "Function Execution Error: While executing Duplicate, the following occurred: expected wave name" was being produced.  Graceful error handling has been implemented.
+Moto_restoremodel() - Implemented a roll-back function - you do a fit and things go haywire, then you can simply roll-back to the state at which you were before you did the fit. 
+Moto_holdall() - type this from the command line and you can automatically hold all the parameters.
+Fixed bug in Genetic OPtimisation that meant mutation wasn't large enough.
+
+05/12/06
+Added molecular volume to SLD calculator - SLD calculator now uses mass density or molecular volume.  If mol. vol. is changed then the mass density updates (and vice versa)
+Fixed minor loading bug concerning theoretical model coefficients saved as coef_multicref (i.e. saved as multilayer).  On loading these coefficients would be overwritten.
+
+10/4/06
+Updated Global fit to reflect changes made by Wavemetrics.  The main issue was that linkages were being made incorrectly.
+The ability to simulate has also been added, which enables you to visualise the model fits as you set them up.  This may save a lot of time spent in fitting.
