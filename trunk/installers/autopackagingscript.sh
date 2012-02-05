@@ -20,3 +20,6 @@ mv platypusInstaller.mpkg.dmg platypusInstaller.dmg
 
 makeNSIS -V1 motofitInstaller.nsi
 makeNSIS -V1 platypusInstaller.nsi
+
+zip motofit_installers4.zip *.dmg *.exe
+rsync -e ssh motofit_installers4.zip andrew_nelson,motofit@frs.sourceforge.net:/home/frs/project/m/mo/motofit/motofit
