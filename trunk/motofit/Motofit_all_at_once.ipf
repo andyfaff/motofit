@@ -2994,3 +2994,51 @@ static Function moto_transfer_data()
 
 	setdatafolder savDF
 End
+
+Function Moto_reversemodel(coefs)
+	Wave coefs
+
+	variable ii, isImag
+	isImag = mod(numpnts(coefs) - 6, 4)
+	duplicate/free/d coefs, coefs_copy
+	
+	switch(isImag)
+		case 0:
+			coefs[2] = coefs_copy[3]
+			coefs[3] = coefs_copy[2]
+
+			for(ii = 0 ; ii < coefs_copy[0] ; ii+=1)
+				coefs[4 * ii + 6] = coefs_copy[4 * (coefs_copy[0] - ii - 1) + 6]
+				coefs[4 * ii + 7] = coefs_copy[4 * (coefs_copy[0] - ii - 1) + 7]
+				coefs[4 * ii + 8] = coefs_copy[4 * (coefs_copy[0] - ii - 1) + 8]
+			endfor
+
+			coefs[9] = coefs_copy[5]
+			coefs[5] = coefs_copy[9]
+
+			for(ii = 1; ii < coefs_copy[0] ; ii+=1)
+				coefs[4  * ii + 9] = coefs_copy[ 4  * (coefs_copy[0] - ii ) + 9]
+			endfor
+			break
+		default:
+			coefs[2] = coefs_copy[4]
+			coefs[3] = coefs_copy[5]
+			coefs[4] = coefs_copy[2]
+			coefs[5] = coefs_copy[3]
+
+			for(ii = 0 ; ii < coefs_copy[0] ; ii+=1)
+				coefs[4 * ii + 8] = coefs_copy[4 * (coefs_copy[0] - ii - 1) + 8]
+				coefs[4 * ii + 9] = coefs_copy[4 * (coefs_copy[0] - ii - 1) + 9]
+				coefs[4 * ii + 10] = coefs_copy[4 * (coefs_copy[0] - ii - 1) + 10]
+			endfor
+
+			coefs[11] = coefs_copy[7]
+			coefs[7] = coefs_copy[11]
+
+			for(ii = 1; ii < coefs_copy[0] ; ii+=1)
+				coefs[4  * ii + 11] = coefs_copy[ 4  * (coefs_copy[0] - ii ) + 11]
+			endfor
+			break
+	endswitch
+
+End
