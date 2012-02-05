@@ -386,7 +386,7 @@ static function add_a_dataset(datasetname, numlayers)
 	NVAR isImag = root:Packages:motofit:reflectivity:globalfitting:isImag
 
 	string listofdatasets = ""
-	variable numparams = 0, maxparams, numdatasets, ii
+	variable numparams = 0, maxparams, numdatasets, ii, maxlayers
 	
 	listofdatasets = motofit#Moto_fittable_datasets()
 	
@@ -416,9 +416,9 @@ static function add_a_dataset(datasetname, numlayers)
 	if(numparams > maxparams || numtype(maxparams))
 		maxparams = numparams
 	else
-		numparams = maxparams
+//		numparams = maxparams
 	endif
-	
+		
 	redimension/n=(maxparams, 2 * (numdatasets + 1) + 1) coefficients_selwave, coefficients_listwave
 	coefficients_selwave[][dimsize(coefficients_selwave, 1) - 1] = 32
 	coefficients_selwave[][dimsize(coefficients_selwave, 1) - 2] = 2
@@ -436,7 +436,14 @@ static function add_a_dataset(datasetname, numlayers)
 		setdimlabel 1, 2 * ii+1, $(datasets[ii]), coefficients_listwave
 	endfor
 	regenerateLinkageListBoxes()
-	Wave/t pardes =  moto_paramdescription(numlayers, isImag)
+	
+	if(!isimag)
+		maxlayers = (dimsize(coefficients_listwave, 0) - 6) / 4
+	else
+		maxlayers = (dimsize(coefficients_listwave, 0) - 8) / 4
+	endif
+	
+	Wave/t pardes =  moto_paramdescription(maxlayers, isImag)
 	datasets_listwave[][0] = pardes[p]
 	coefficients_listwave[][0] = pardes[p]
 End
