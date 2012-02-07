@@ -402,16 +402,22 @@ static Function Moto_calcchi2()
 
 
 	make/d/free/n=(dimsize(RR, 0)) rrcalc, diff
+	make/d/o/n=(dimsize(RR, 0)) root:data:theoretical:res_theoretical_R
+	Wave res_theoretical_R = root:data:theoretical:res_theoretical_R
+	
 	if(usedqwave && waveexists(dq))
 		Motofit_smeared(coef_theoretical_R, RRcalc, qq, dq)
 	else
 		Motofit(coef_theoretical_R, RRcalc, qq)
 	endif
 	
+	res_theoretical_R =  rr - RRcalc
+	
 	diff = (RRcalc - rr)^2
 	
 	if(useerrors && waveexists(dR))
 		diff /= dR^2
+		res_theoretical_R /= dR
 	endif
 	Wavestats/q/z/m=1/R=[leftval, rightval] diff
 	chi2 = V_avg
@@ -618,6 +624,17 @@ static Function moto_appendresiduals()
 		endif
 		Waveclear res
 	endfor
+	//also append the theoreticalresidual for the currently selected dataset
+	Wave/z res = root:data:theoretical:res_theoretical_R
+	if(waveexists(res))
+		//need to work out the current dataset
+		controlinfo/w=reflectivitypanel dataset_tab0
+		dataset = S_value
+		Wave qq = $("root:data:" + dataset + ":" + dataset + "_q")
+		AppendToGraph/W=reflectivitygraph/L=res res vs qq
+		execute/z "modifygraph/W=reflectivitygraph rgb(" + nameofwave(RES) + ")=(0,0,0), lsize("+nameofwave(RES) + ")=2"
+	endif
+	
 	if(changeaxis)
 		ModifyGraph/W=reflectivitygraph standoff(left)=0, standoff(res)=0, axisEnab(left)={0.15,1};
 		ModifyGraph/W=reflectivitygraph axisEnab(res)={0,0.12},freePos(res)={0,bottom}
