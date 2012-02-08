@@ -1,0 +1,20 @@
+IGOR
+X plotcalcref()
+WAVES/D coef_c_PLP0011848_R
+BEGIN
+	2
+	0.955935
+	0
+	2.07
+	1.55507e-07
+	0.567836
+	265.005
+	2.15361
+	0
+	2.9975
+	35.2067
+	3.47
+	0
+	6.15599
+END
+X Note coef_c_PLP0011848_R, "mode:0;res:4.8;plotyp:1;SLDpts:500;mulrep:0;Vmullayers:0;mulappend:0;holdstring:10110000100110;usedqwave:0;useconstraint:0;fitcursors:0;useerrors:1;multilayer:0;V_chisq:7.454;dataset:c_PLP0011848;"
