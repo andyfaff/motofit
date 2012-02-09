@@ -1,0 +1,3804 @@
+#LyX 1.4.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 245
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\usepackage{hyperref}
+\end_preamble
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize default
+\spacing single
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\leftmargin 1.5in
+\topmargin 1in
+\rightmargin 1.5in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes true
+\end_header
+
+\begin_body
+
+\begin_layout Title
+
+\emph on
+Motofit
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename moto_2.eps
+	scale 30
+	keepAspectRatio
+	BoundingBox -250bp -50bp 584bp 992bp
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Standard
+
+
+\backslash
+href{http://motofit.sourceforge.net}{http://motofit.sourceforge.net}
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\begin_layout Standard
+
+
+\backslash
+href{mailto:Andrew
+\backslash
+_Nelson@users.sourceforge.net}{Andrew
+\backslash
+_Nelson@users.sourceforge.net}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Abstract
+
+\emph on
+Motofit
+\emph default
+ uses the Abeles Formalism to fit multiple contrast neutron and X-ray reflectome
+try data.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+newpage
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset LatexCommand \tableofcontents{}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+newpage
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+
+\emph on
+Motofit
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Motofit
+\emph default
+ aids the fitting of specular X-ray and neutron reflectivity data.
+ It works within the analysis package IGOR PRO (Wavemetrics, OR).
+ It was created in version 5 of IGOR.
+\end_layout
+
+\begin_layout Standard
+The specular reflectivity is calculated using the 
+\emph on
+Abeles
+\begin_inset LatexCommand \cite{Heavens1955}
+
+\end_inset
+
+
+\emph default
+ formulation (giving identical results to 
+\emph on
+Parratts
+\begin_inset LatexCommand \cite{Parratt1954}
+
+\end_inset
+
+
+\emph default
+ recursion formula for stratified thin films), as a function of the perpendicula
+r momentum transfer, Q
+\begin_inset Formula $_{\textrm{z}}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+Q_{z}=\frac{4\pi}{\lambda}\sin\theta\label{Equation:Qvector}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Specular reflectivity (R) is defined as the ratio of reflected intensity
+ over incident intensity, where the angle of reflection (
+\begin_inset Formula $\theta$
+\end_inset
+
+) is equal to the angle of incidence.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Motofit
+\emph default
+ was created with the aim of allowing a scientist to easily fit her/his
+ reflectivity data.
+ In particular, an easy way to analyse multiple contrast NR and XR data.
+ This is achieved through a simple GUI, and genetic optimisation for fitting
+ (Genetic Optimisation allows the use of initial guesses that are far from
+ a final solution, which would otherwise trouble normal least squares fitting
+ packages).
+ Other reflectivity packages are obviously out there, but sometimes they
+ don't allow you to do what you want.
+\end_layout
+
+\begin_layout Standard
+A further advantage with 
+\emph on
+Motofit
+\emph default
+/
+\noun on
+IGOR
+\noun default
+ is that the graphics and output is publication quality, you just put the
+ graph straight into your paper.
+ You can control all aspects of the graphs you create.
+ With most other analysis packages you have to export data into another
+ plotting package, which take time.
+ If you have to re-analyse data you have to do the export again.
+ With 
+\emph on
+Motofit
+\emph default
+, you just re-analyse, and the graphs are changed automatically.
+ You can also save the whole experiment you are working on.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Motofit
+\emph default
+ is also open source, which means you can change the behaviour of the program
+ to whatever you want, if you don't like it.
+ 
+\noun on
+IGOR
+\noun default
+ is a proven data-analysis program, which means you can rely on the numbers
+ coming out
+\end_layout
+
+\begin_layout Section
+Acknowledging the use of
+\emph on
+ Motofit
+\end_layout
+
+\begin_layout Standard
+If you use 
+\emph on
+Motofit
+\emph default
+ to analyse data that you then use in a publication, then please cite 
+\emph on
+Motofit 
+\emph default
+in the references.
+ This is so I can justify the time I spent writing the program to my bosses.
+\end_layout
+
+\begin_layout Standard
+Inclusion in the reference should be done by referring to the 
+\emph on
+Journal of
+\emph default
+ 
+\emph on
+Applied Crystallography 
+\emph default
+paper
+\begin_inset LatexCommand \cite{Nelson2006}
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+A.
+ Nelson.
+ 'Co-refinement of multiple contrast neutron / X-ray reflectivity data using
+ MOTOFIT.' 
+\emph on
+Journal of Applied Crystallography,
+\emph default
+ 
+\series bold
+39
+\series default
+, 273-276, 2006.
+\end_layout
+
+\begin_layout Section
+Fitting reflection from a stratified medium
+\end_layout
+
+\begin_layout Standard
+The reflectivity is calculated using the 
+\emph on
+Abeles
+\emph default
+ matrix method for stratified interface
+\begin_inset LatexCommand \cite{Heavens1955}
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename stratified.eps
+	display none
+	scale 80
+	BoundingBox 100bp 250bp 735bp 450bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+Reflection from a stratified medium
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The measured reflectivity depends on the variation in the scattering length
+ density (SLD) profile, (
+\begin_inset Formula $\rho\left(z\right)$
+\end_inset
+
+) perpendicular to the interface.
+ Although the scattering length density profile is normally a continuously
+ varying function, the interfacial structure can often be well approximated
+ by a slab model in which layers of thickness (
+\begin_inset Formula $d_{n}$
+\end_inset
+
+), scattering length density (
+\begin_inset Formula $\rho_{n}$
+\end_inset
+
+) and roughness (
+\begin_inset Formula $\sigma_{n,n+1}$
+\end_inset
+
+) are sandwiched between the super- and sub-phases.
+ One then uses a refinement procedure to minimise the differences between
+ the theoretical and measured reflectivity curves, by changing the parameters
+ that describe each layer.
+\end_layout
+
+\begin_layout Standard
+In this description the interface is split into 
+\emph on
+n
+\emph default
+ layers.
+ Since the incident neutron beam is refracted by each of the layers the
+ wavevector, 
+\emph on
+k
+\emph default
+, in layer 
+\emph on
+n
+\emph default
+, is given by:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+k_{n}=\sqrt{k_{0}^{2}-4\pi\left(\rho_{n}-\rho_{0}\right)}\label{Equation:wavevector}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The Fresnel reflection coefficient between layer 
+\emph on
+n
+\emph default
+ and 
+\emph on
+n+1
+\emph default
+ is then given by:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+r_{n,n+1}=\frac{k_{n}-k_{n+1}}{k_{n}+k_{n+1}}\label{eq:}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+r_{n,n+1}=\frac{k_{n}-k_{n+1}}{k_{n}+k_{n+1}}\exp\left(-2k_{n}k_{n+1}\sigma_{n,n+1}^{2}\right)\label{eq:rough}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Since the interface between each layer is unlikely to be perfectly smooth
+ the roughness/diffuseness of each interface modifies the Fresnel coefficient
+ 
+\begin_inset LatexCommand \ref{eq:rough}
+
+\end_inset
+
+ and is accounted for by an error function, as described by Nevot and Croce
+\begin_inset LatexCommand \cite{Nevot1980}
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+A phase factor, 
+\begin_inset Formula $\beta$
+\end_inset
+
+ is introduced, which accounts for the thickness of each layer.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+\beta_{n}=k_{n}d_{n}\label{eq:phasefactor}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A characteristic matrix,cn is then calculated for each layer.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+c_{n}=\left[\begin{array}{cc}
+\exp\left(\beta_{n}\right) & r_{n}\exp\left(\beta_{n}\right)\\
+r_{n}\exp\left(-\beta_{n}\right) & \exp\left(-\beta_{n}\right)\end{array}\right]\label{eq:characteristic matrix}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The resultant matrix is defined as the product of these characteristic matrices,
+ from which the reflectivity is calculated.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+M=\prod_{0}^{n}c_{n}\label{eq:matrixmultiply}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+R=\left|\frac{M_{00}}{M_{10}}\right|^{2}\label{eq:reflectivity}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+What files do you need?
+\begin_inset LatexCommand \label{sec:What-files-do}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Motofit_all_at_once.ipf
+\end_layout
+
+\begin_layout Enumerate
+Motofit_multilayers.ipf
+\end_layout
+
+\begin_layout Enumerate
+Motofit_Fresnel.ipf
+\end_layout
+
+\begin_layout Enumerate
+Motofit_Global fit 2.ipf
+\end_layout
+
+\begin_layout Enumerate
+Motofit_SetupGlobals.ipf
+\end_layout
+
+\begin_layout Enumerate
+Motofit_Xrayreduction.ipf
+\end_layout
+
+\begin_layout Enumerate
+Motofit_Batch.ipf
+\end_layout
+
+\begin_layout Enumerate
+GeneticOptimisation.ipf
+\end_layout
+
+\begin_layout Enumerate
+Abeles.xop (optional)
+\end_layout
+
+\begin_layout Standard
+You will need to open them all for the program to work.
+ I suggest creating a 
+\emph on
+Motofit
+\emph default
+ folder in
+\emph on
+ 
+\backslash
+Igor Pro Folder
+\backslash
+User Procedures
+\backslash
+
+\emph default
+.
+ Then place a shortcut to the Motofit folder in the IGOR procedures folder.
+ This will ensure that 
+\emph on
+Motofit
+\emph default
+ starts up whenever you open IGOR.
+\end_layout
+
+\begin_layout Standard
+However, make sure that you remove previous versions of 
+\emph on
+Motofit
+\emph default
+ (keep the scattering length density database if you have changed it).
+\end_layout
+
+\begin_layout Standard
+Please note that you can also download the optional Abeles XOP file.
+ This file speeds up the reflectivity calculations by a factor of 5.
+ You don't need this to run 
+\emph on
+Motofit
+\emph default
+, but it is highly recommended, as you SAVE A LOT OF TIME.
+ This XOP can be downloaded from a link on the 
+\emph on
+Motofit
+\emph default
+ website 
+\begin_inset LatexCommand \htmlurl[http://motofit.sourceforge.net]{http://motofit.sourceforge.net}
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Section
+Getting Started
+\end_layout
+
+\begin_layout Standard
+Open all the required procedure files (which should happen automatically
+ if you install using the instructions above).
+ Once the procedures have compiled then a 
+\emph on
+Motofit 
+\emph default
+menu should appear on the top menu.
+ Use Fit Reflectivity Data to start fitting your data.
+ 
+\end_layout
+
+\begin_layout Standard
+The 
+\emph on
+Motofit
+\emph default
+ menu has several sub-options: 
+\end_layout
+
+\begin_layout Enumerate
+Genetic Optimisation
+\end_layout
+
+\begin_layout Enumerate
+Fit Reflectivity Data
+\end_layout
+
+\begin_layout Enumerate
+Load Experimental Data
+\end_layout
+
+\begin_layout Enumerate
+Scattering Length Density database
+\end_layout
+
+\begin_layout Enumerate
+Create local Chi2map for requested parameter
+\end_layout
+
+\begin_layout Enumerate
+Change Q range of theoretical data.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Reduce Xray data (reduces data from ANSTOs X-ray reflectometer)
+\end_layout
+
+\begin_layout Enumerate
+Reduce Neutron data (reduces data from ANSTOs Neutron reflectometer).
+\end_layout
+
+\begin_layout Enumerate
+Fit batch data (this fits multiple datasets, from kinetic data for example).
+\end_layout
+
+\begin_layout Enumerate
+Moto_globalfit
+\end_layout
+
+\begin_layout Subsection
+Genetic Optimisation
+\end_layout
+
+\begin_layout Standard
+This option allows the user to fit data to any fit function, using Genetic
+ Optimisation with least squares.
+ This allows the user to fit any other type of 1D data, e.g.
+ Small-Angle Scattering measurements.
+ Genetic Optimisation is a powerful way of fitting data, which allows the
+ use of poor initial parameter guesses, but still finds the best fit solution.
+ In comparison, normal least squares methods, such as Levenberg-Marquardt,
+ are often quicker, but probably won't find the best fit if given poor initial
+ guesses.
+ With Genetic Optimisation you set up limits for parameters, and the optimisatio
+n finds the best fit from within the limits you set.
+\end_layout
+
+\begin_layout Standard
+For fitting reflectometry data you will mostly use Genetic Optimisation
+ from within the Reflectivity panel, but you can also run it from within
+ the genetic optimisation panel created by this menu option.
+ 
+\end_layout
+
+\begin_layout Standard
+It is extremely simple to set up your own user function to perform curvefitting,
+ the following function fits a gaussian:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Function gaussian(w,x): Fitfunc
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Wave w
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Variable x
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+return w[0]+w[1]*exp(-(x-w[2])
+\begin_inset Formula $^{\textrm{2}}$
+\end_inset
+
+/w[3]
+\begin_inset Formula $^{\textrm{2}}$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+End
+\end_layout
+
+\begin_layout Standard
+See the IGOR manual for more details.
+\end_layout
+
+\begin_layout Subsection
+Fit Reflectivity Data
+\end_layout
+
+\begin_layout Standard
+This option creates a user interface for you to fit your data.
+\end_layout
+
+\begin_layout Standard
+When you click on this option a dialogue is brought up.
+ This dialogue enables you to select some of the parameters required to
+ produce the theoretical curve.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename dialogue.eps
+	lyxscale 65
+	scale 70
+	BoundingBox -40bp 14bp 466bp 306bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+
+\emph on
+Motofit 
+\emph default
+Initialisation
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Most of the selections are obvious.
+ You can control the Q range for the plot, as well as the number of points
+ in that plot.
+ dq/q relates to the resolution function of your instrument (note use dq/q=0
+ if you want quicker calculations), if you are unsure set this equal to
+ zero.
+ There are 500 points in the SLD profile graph that is created for your
+ layered system.
+ When you press continue the Reflectivity Fit Panel and Reflectivity Graph
+ are produced.
+\end_layout
+
+\begin_layout Standard
+The theoretical Q range can be altered at a later stage using the menu item
+ 
+\emph on
+
+\begin_inset Quotes eld
+\end_inset
+
+Change Q range of theoretical data
+\begin_inset Quotes erd
+\end_inset
+
+,
+\emph default
+or from within the reflectivity graph.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename reflectivitygraph.eps
+	scale 60
+	keepAspectRatio
+	BoundingBox -20bp 14bp 612bp 440bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+\begin_inset LatexCommand \label{cap:The-reflectivity-graph,}
+
+\end_inset
+
+The reflectivity graph, showing a Ti/Ni multilayer
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename reflectivitypanel.eps
+	scale 50
+	keepAspectRatio
+	BoundingBox -20bp 14bp 746bp 677bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+The reflectivity fit panel, setup for a two layer system.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+There are several sections to the panel:
+\end_layout
+
+\begin_layout Subsubsection
+Model parameters
+\end_layout
+
+\begin_layout Standard
+\begin_inset LatexCommand \label{sub:Model-Parameters}
+
+\end_inset
+
+The model parameters reside in the parameter wave 
+\emph on
+coef_Cref
+\emph default
+.
+ This wave is updated when you change the values in the reflectivity panel.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Motofitmodel.eps
+	BoundingBox 0bp 14bp 567bp 241bp
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+The 
+\emph on
+Motofit
+\emph default
+ model
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The first box allows you to change the parameters required for the base
+ model.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide true
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename baselayer.eps
+	scale 80
+	keepAspectRatio
+	BoundingBox -100bp 14bp 296bp 174bp
+	clip
+	rotateOrigin center
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+Parameters required for the basemodel.
+ The numbers 0 to 5 represent the parameter number (which will be needed
+ to set constraints)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\noun on
+number of layers : 
+\noun default
+how many layers there are in your model.
+ Layer 1 is closest to the superstrate, layer n is closest to the subphase
+ (refer to Figure 3).
+ You can have as many layers as you like.
+ To increase the number of layers, change this value.
+\end_layout
+
+\begin_layout Itemize
+
+\noun on
+scale :
+\noun default
+ The scale factor for the reflectivity measurement (should be 1, or close
+ to 1).
+ All the values in the theoretical reflectivity curve are multiplied by
+ this number.
+\end_layout
+
+\begin_layout Itemize
+
+\noun on
+sldtop
+\noun default
+ : Scattering length density of the Superphase (the incident medium for
+ the radiation).
+ If you are doing an air-solid measurement then this will 0.
+ If you are doing a solid-liquid measurement, incident through the solid,
+ then this will be the SLD of the solid.
+\end_layout
+
+\begin_layout Itemize
+
+\noun on
+sldbase : 
+\noun default
+Scattering length density of the subphase
+\noun on
+.
+\end_layout
+
+\begin_layout Itemize
+
+\noun on
+bkg : 
+\noun default
+This adds in a Q independent linear background to the fit.
+\end_layout
+
+\begin_layout Itemize
+
+\noun on
+sigma_base :
+\noun default
+ The roughness at the top of the subphase.
+\end_layout
+
+\begin_layout Standard
+The second box allows you to change the parameters for each of the layers.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename layermodel.eps
+	scale 120
+	BoundingBox 14bp 14bp 342bp 70bp
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+Parameters for each of the layers.
+ The number at the far left hand side of the white box indicates the layer
+ number.
+ The number to the left of each parameter is the parameter number (which
+ is needed to set constraints).
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\noun on
+thick : 
+\noun default
+thickness of the each layer (in Angstrom).
+\end_layout
+
+\begin_layout Itemize
+
+\noun on
+sld : 
+\noun default
+scattering length density of the first layer.
+\end_layout
+
+\begin_layout Itemize
+
+\noun on
+solv :
+\noun default
+ how much of the subphase (solvent) penetrates into layer 1.
+ This is expressed as a percentage.
+\end_layout
+
+\begin_layout Itemize
+
+\noun on
+rough : 
+\noun default
+the roughness at the top of the first layer (in Angstrom).
+\end_layout
+
+\begin_layout Standard
+All the scattering length densities are expressed as 
+\begin_inset Formula $\rho$
+\end_inset
+
+/10
+\begin_inset Formula $^{\textrm{-6}}$
+\end_inset
+
+
+\begin_inset Formula $\textrm{Å{}}$
+\end_inset
+
+
+\begin_inset Formula $^{\textrm{-2}}$
+\end_inset
+
+.
+ Roughnesses are implemented in terms of an error function, according to
+ Nevot+Croce
+\begin_inset LatexCommand \cite{Nevot1980}
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+When you right click on a SLD cell, a prompt appears that asks if you would
+ like to set the SLD value from the scattering length database.
+ When the user selects a chemical using this prompt then the SLD is automaticall
+y inserted into the relevant SLD parameter.
+ This is useful for quick initialisation of models.
+ You can choose if an X-ray or neutron value is imported by changing the
+ SLD type.
+\end_layout
+
+\begin_layout Standard
+The checkboxes in these tables are used to define which parameters are held
+ during the fit (held=checked).
+\end_layout
+
+\begin_layout Standard
+The model can be saved by using the
+\emph on
+ Save model
+\emph default
+ button.
+ If you want to use a saved parameter file as a starting point then you
+ can use 
+\emph on
+Load model
+\emph default
+, then select the parameter file in the 
+\emph on
+model wave
+\emph default
+ popup.
+\end_layout
+
+\begin_layout Subsubsection
+Load Data
+\end_layout
+
+\begin_layout Standard
+This button loads experimental data.
+ The program asks if you want to append the data to the theoretical reflectivity
+ curve.
+ When you load data the program removes NaN's and sorts the data as increasing
+ Q
+\begin_inset Formula $_{\textrm{z}}$
+\end_inset
+
+.
+ You can load either 2, 3 or 4 column data:
+\end_layout
+
+\begin_layout Standard
+Two column data is Q,R
+\end_layout
+
+\begin_layout Standard
+Three column data is Q, R, dR
+\end_layout
+
+\begin_layout Standard
+Four column data is Q, R, dR, dQ.
+ 
+\end_layout
+
+\begin_layout Standard
+Q, and its associated uncertainty dQ are measured in reciprocal Angstroms,
+ Å
+\begin_inset Formula $^{\textrm{-1}}$
+\end_inset
+
+.
+ Only Q and R are required for a fit.
+ dR is required if you wish to weight the data according to counting statistics.
+ dQ is required if you wish to use resolution smearing on a point by point
+ basis.
+\end_layout
+
+\begin_layout Subsubsection
+Dataset / Model Wave
+\end_layout
+
+\begin_layout Standard
+These popup menus select the experimental datasets that you wish to fit.
+ The default coefficient (parameter) wave is 
+\emph on
+coef_Cref.
+
+\emph default
+ However, each time you fit a different set of data another coefficient
+ wave is produced (
+\emph on
+coef_Rwave
+\emph default
+), corresponding to the fit coefficients.
+ You can use these coefficients as a starting point for a new fit.
+ (However, if you are fitting the same dataset then beware, the starting
+ coefficients get overwritten).
+\end_layout
+
+\begin_layout Standard
+You can save and load coefficient waves using the 
+\emph on
+save and load model
+\emph default
+ buttons.
+ This saves a lot of effort.
+\end_layout
+
+\begin_layout Standard
+The coefficient wave is saved as an IGOR text file (
+\emph on
+*.itx
+\emph default
+).
+ This means that you can double click on the file and it loads straight
+ into IGOR, and initialises the reflectivity panel.
+ The saved coefficient wave remembers the exact state of how the data was
+ fitted (including which parameters were held).
+\end_layout
+
+\begin_layout Subsubsection
+Use weight wave
+\end_layout
+
+\begin_layout Standard
+If you check this box the fitting process uses the statistical errors on
+ each of the datapoints to weight the fit.
+ See the FAQ section for different weighting scenarios.
+\end_layout
+
+\begin_layout Subsubsection
+Plot type
+\end_layout
+
+\begin_layout Standard
+You can change the plot type by simply using this pop up menu.
+ The data fitting operates on the sample plot-type.
+ E.g.
+ if you select RQ4 vs Q, you fit the data as RQ4 vs Q.
+ The plots update as you change the selection in this box.
+\end_layout
+
+\begin_layout Subsubsection
+Checkboxes
+\end_layout
+
+\begin_layout Standard
+If you want to hold a parameter while fitting then tick the checkbox.
+ If left unchecked then the parameter will vary in the fitting process.
+\end_layout
+
+\begin_layout Subsubsection
+Resolution
+\end_layout
+
+\begin_layout Standard
+There are two different ways of handling the resolution smearing.
+ The first method assumes that the resolution of the instrument is a constant
+ percentage, e.g.
+ 
+\emph on
+dq/q=5%
+\emph default
+, where dq is defined in 
+\begin_inset LatexCommand \ref{eq: resolution}
+
+\end_inset
+
+.
+ This is often the case if the instrument measures at constant footprint.
+ This value resides in the wave 
+\emph on
+resolution[0].
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+\left(\frac{\Delta Q}{Q}\right)^{2}=\left(\frac{\Delta\theta}{\theta}\right)^{2}+\left(\frac{\Delta\lambda}{\lambda}\right)^{2}\label{eq: resolution}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In 
+\begin_inset LatexCommand \ref{eq: resolution}
+
+\end_inset
+
+ 
+\begin_inset Formula $\Delta Q$
+\end_inset
+
+ is the uncertainty in Q, 
+\begin_inset Formula $\Delta\theta$
+\end_inset
+
+ is the error in the incident angle and 
+\begin_inset Formula $\Delta\lambda$
+\end_inset
+
+ is the error in the wavelength of the incident radiation.
+\end_layout
+
+\begin_layout Standard
+If the data is from a nice instrument that outputs the resolution function
+ as an extra (4th) column (containing dQ values) in the data file, then
+ you can use this to resolution smear the data point by point.
+ This is handy if the resolution varies across the Q range.
+ This is often the case if a single slit setting is used.
+ 
+\end_layout
+
+\begin_layout Standard
+The first method is automatically used (as it's faster).
+ To use point by point resolution smearing the select the 
+\emph on
+use dQ wave
+\emph default
+ checkbox.
+ Note that the second option is only used when you are fitting, it's not
+ used while you are setting the model up.
+\end_layout
+
+\begin_layout Standard
+In both cases smearing is done by gaussian convolution.
+ If you use 
+\emph on
+constant dq/q
+\emph default
+ then the convolution is handled using IGOR's convolve operation and is
+ quite fast.
+ If you select the 
+\emph on
+use dq wave 
+\emph default
+option then the convolution is performed by the following calculation:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y = AbelesReflectivity(w,z)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y += 0.056*AbelesReflectivity(w,z+1.2*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y += 0.056*AbelesReflectivity(w,z-1.2*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y+=0.135*AbelesReflectivity(w,z-1.0*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y+=0.135*AbelesReflectivity(w,z+1.0*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y+=0.278*AbelesReflectivity(w,z-0.8*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y+=0.278*AbelesReflectivity(w,z+0.8*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y+=0.487*AbelesReflectivity(w,z-0.6*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y+=0.487*AbelesReflectivity(w,z+0.6*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y+=0.726*AbelesReflectivity(w,z-0.4*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y+=0.725*AbelesReflectivity(w,z+0.4*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y+=0.923*AbelesReflectivity(w,z-0.2*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y+=0.923*AbelesReflectivity(w,z+0.2*dq)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+y /= 6.211 
+\end_layout
+
+\begin_layout Subsubsection
+Fit between cursors
+\end_layout
+
+\begin_layout Standard
+If you want to limit the region of the dataset that the fit function uses
+ then tick this box.
+ Note that you should have both cursors (A and B) on the 
+\emph on
+dataset
+\emph default
+ you are fitting.
+\end_layout
+
+\begin_layout Subsubsection
+Use constraints
+\end_layout
+
+\begin_layout Standard
+If you want to use constraints then you should tick this checkbox.
+ Constraints are numbered with respect to their parameter.
+ The parameter numbers are listed in the parameter selection boxes.
+ For example, the roughness of the first layer is referred to as K9, whilst
+ the thickness of the first layer is K6.
+ The constraints should be entered in the constraints tab, using 
+\emph on
+add or remove constraint
+\emph default
+.
+ You should not leave any blank boxes, otherwise nothing will happen when
+ you try to do the fit.
+ You can either enter simple constraints, e.g.
+ K6>5 or complicated constraints (K10>5*K2).
+ You can also make equality constraints (special to 
+\emph on
+Motofit
+\emph default
+), e.g.
+ K5=K10.
+ For further details on valid constraints please refer to the Wavemetrics
+ manual.
+ 
+\end_layout
+
+\begin_layout Standard
+One often used example is when all the roughness are constrained.
+ If you have a two layer system then you will have three roughness parameters,
+ K5, K9 and K13.
+ If you want to make these equal during fitting then you have to enter two
+ constraints.
+\end_layout
+
+\begin_layout Itemize
+K9=K5
+\end_layout
+
+\begin_layout Itemize
+K13=K5
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+note
+\noun default
+: If you have ticked the use constraints box, then you must have at least
+ one constraint, or nothing will appear to happen.
+ In a similar manner, nothing will happen if you enter a constraint then
+ don't allow it to vary when you do the fit.
+ 
+\end_layout
+
+\begin_layout Standard
+When you have a multilayer system, then the coefficients of the reflectivity
+ panel take precedence, then the coefficients of the multilayer panel follow
+ on.
+ (if you have two layers in the "base" model then there will be parameters
+ up to K13.
+ The first parameter in the multilayer panel is then referred to as K14).
+ The parameter number for the a multilayer system is simply number of params
+ in base model + multilayer parameter number.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+\noun on
+Constraints don't apply during simulated annealing or genetic optimisation!
+\end_layout
+
+\begin_layout Subsubsection
+Make multilayer
+\end_layout
+
+\begin_layout Standard
+This sets up the multilayer panel for analysing multilayer repeat systems.
+ The multilayer created by the multilayer panel is inserted in the base
+ model (the layer system contained in the reflectivity panel), at a position
+ determined by the user.
+ The multilayer is defined in terms of the number of repeats and how many
+ individual layers are in each of those repeats.
+ For a clearer picture try messing around with the test dataset e179r, using
+ the test coefficients provided.
+ 
+\end_layout
+
+\begin_layout Standard
+This option will be really useful for people studying samples such as cadmium
+ arachidate.
+ 
+\end_layout
+
+\begin_layout Standard
+Note that in this case you are fitting the data with parameters contained
+ in 
+\emph on
+coef_MultiCref
+\emph default
+, not 
+\emph on
+coef_Cref.
+
+\emph default
+ For more guidance examine the e179r dataset that is provided as an example.
+\end_layout
+
+\begin_layout Subsubsection
+Do fit
+\end_layout
+
+\begin_layout Standard
+Fits the experimental dataset with the theoretical model.
+ This option uses the Levenburg-Marquardt method for minimising the Chi2
+ value.
+ The fitfunc that IGOR uses is called 
+\emph on
+Motofit
+\emph default
+.
+ The output of the fit are updated graphs.
+ In addition, 
+\emph on
+coef_Cref
+\emph default
+ is updated and a new wave 
+\emph on
+coef_Rwave
+\emph default
+ is produced, which contains your fit results.
+ The wave 
+\emph on
+W_sigma
+\emph default
+ (or the history window) contains the uncertainties in fit parameters.
+ You can print/save those parameter waves (they come out as Igor text files).
+ The normalised correlation matrix is contained in the 
+\emph on
+M_Covariance
+\emph default
+ wave.
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+Note
+\noun default
+: 
+\end_layout
+
+\begin_layout Enumerate
+Negative numbers may appear as fit results, for the thickness and roughness.
+ 
+\noun on
+don't panic
+\noun default
+.
+ Internally in 
+\emph on
+Motofit
+\emph default
+ the absolute value of these numbers are taken, i.e.
+ abs(thickness), or 
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Coef_Cref
+\emph default
+ is always used as the coefficient wave for the fit.
+ If you specify the use of a different coefficient wave using the popup,
+ then the action of selecting the popup makes 
+\emph on
+Coef_Cref
+\emph default
+ equal to 
+\emph on
+Coef_otherwave.
+\end_layout
+
+\begin_layout Subsubsection
+Genetic Optimisation
+\end_layout
+
+\begin_layout Standard
+Fits the experimental dataset with the theoretical model.
+ This type of method is very efficient at finding global minima in the Chi2
+ function, even if the starting guesses are far from the final solution.
+ The algorithm used in the program is a differential evolution technique
+ from Wormington et al
+\begin_inset LatexCommand \cite{Wormington1999}
+
+\end_inset
+
+ and Storn and Price
+\begin_inset LatexCommand \cite{Storn1995}
+
+\end_inset
+
+.
+ This method should be the first point of call if confronted with a difficult
+ reflectivity pattern.
+ I suggest using this as the default fitting procedure.
+\end_layout
+
+\begin_layout Standard
+The program asks for information to set up the genetic optimisation.
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Number of generations
+\emph default
+.
+ This is effectively the number of iterations you want to do.
+ The more generations you use, the longer it takes, but you should expect
+ a closer answer.
+ I suggest trying 100 generations to start with.
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Mutation constant
+\emph default
+.
+ The mutation constant is used to create genetic diversity.
+ A larger number means more genetic diversity, but may mean that the solution
+ takes longer to find.
+ This value should lie between 0 and 1.
+ Start out with 0.7 and see how you go.
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Population size multiplier.
+
+\emph default
+ The genetic algorithm works by starting off with a large population of
+ initial randomised solutions (that lie in between the limits you set),
+ which are then refined.
+ The size of this population is set by 
+\emph on
+popsizemultiplier*the number of free parameters
+\emph default
+.
+ If you have a large parameter space to examine, then it may help to set
+ this value larger, but 10 has worked in the past.
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Recombination constant
+\emph default
+.
+ Should lie between 0 and 1.
+ This controls how much of the original guess is used in the evolved guess.
+ If you use a low number then the original guess will not evolve that much.
+ If you use a large number then the guess will evolve a lot, making it more
+ likely to find a solution, but taking longer in the process.
+ Try starting out with 0.5.
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Fractional tolerance to terminate fit
+\emph default
+.
+ If the fractional decrease in the best chi2 value is less than this value
+ then the fit will terminate.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename evolve.eps
+	scale 90
+	keepAspectRatio
+	BoundingBox -80bp 14bp 301bp 301bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+\begin_inset LatexCommand \label{cap:Following-genetic-optimisation}
+
+\end_inset
+
+Following genetic optimisation on some X-ray reflectometry data.
+ The fit is converging.
+ Note the Chi2 value in the bottom corner.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The user is then presented with a table showing the initial guesses (
+\emph on
+GEN_b
+\emph default
+) and the limits to be placed on those parameters during the fit (
+\emph on
+GEN_limits
+\emph default
+).
+ 
+\emph on
+GEN_limits
+\emph default
+[][0] contains the lower bound for that parameter, 
+\emph on
+GEN_limits
+\emph default
+[][1] contains the upper bound, i.e.
+ the optimisation is unable to search for solutions outside those bounds.
+ When you are satisfied with the setup press 
+\emph on
+continue
+\emph default
+ and the optimisation will start.
+ If the limits are not set correctly you will be asked to set them up again.
+\end_layout
+
+\begin_layout Standard
+While the optimisation is proceeding the updated Chi2 value will be displayed
+ in a graph(
+\begin_inset LatexCommand \prettyref{cap:Following-genetic-optimisation}
+
+\end_inset
+
+).
+ This graph is used to show the colourised fit parameters for each of the
+ members of the genetic population.
+ As the fit proceeds towards convergence then the colour for a particular
+ parameter, over all the population, should converge.
+\end_layout
+
+\begin_layout Standard
+On finishing the optimisation (or aborting it part way through) a coefficient
+ wave and fitwaves will be produced in your original datafolder.
+\end_layout
+
+\begin_layout Standard
+Remember to check the final answer, to make sure the model is something
+ that is physically realistic.
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+note: Constraints do not apply during genetic optimisation.
+\end_layout
+
+\begin_layout Subsubsection
+FFT of data / Fringe spacing
+\end_layout
+
+\begin_layout Standard
+The Fourier transform of the selected dataset (from the dataset popup) is
+ displayed in the bottom of the reflectivity panel.
+ If you have oscillations in your reflectivity curve you will get a peak
+ in the fourier transform that corresponds to your layer thickness.
+ Use the cursor in the Fourier transform plot to get values for each of
+ the peak positions.
+ This option is excellent for setting up fits.
+\end_layout
+
+\begin_layout Standard
+If you have many layers present then you will get multiple peaks present
+ in the fourier transform.
+ You can change the region over which the FFT is applied.
+ The low Q region should be above the critical edge of the data, and the
+ high Q end should stop before the background is reached.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename FFToutput.eps
+	scale 50
+	BoundingBox -80bp 14bp 577bp 492bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+Fourier transform of some X-ray data.
+ This data fitted to a 338A layer
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+(for the techno-nerd: the reflectivity curve is multiplied by Q4, then Fourier
+ transformed with an FFT.
+ The data is zero padded before the fourier transform, and a cosine window
+ is applied during the transform).
+\end_layout
+
+\begin_layout Standard
+If you have multiple Kiessig fringes then you can estimate layer thicknesses
+ by assessing the 
+\noun on
+fringe spacing.
+ 
+\end_layout
+
+\begin_layout Standard
+Put the cursors on the reflectivity graph by pressing 
+\emph on
+Cursors
+\emph default
+.
+ This button appends the cursors to the trace in the 
+\emph on
+Dataset
+\emph default
+ popup.
+ Move the cursors until you have selected an integer number of fringes,
+ change the number of fringes, the layer thickness is then displayed.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ value and other statistics
+\end_layout
+
+\begin_layout Standard
+As the model is updated the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+value is also updated, which tells you if your fit is improving.
+ The 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ value is normalised to the number of points.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+\chi^{2}=\sum_{n=1}^{L}\frac{1}{L-P}\left(\frac{y_{n,obs}-y_{n,calc}}{y_{n,error}}\right)^{2}\label{eq:}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+After fitting data the normalised correlation matrix (
+\emph on
+M_Covariance
+\emph default
+) is produced in the root datafolder, which indicates interdependence of
+ fit parameters.
+ To see this correlation matrix type 
+\emph on
+Edit M_Covariance
+\emph default
+ in the command line.
+\end_layout
+
+\begin_layout Subsection
+Reflectivity Graph
+\end_layout
+
+\begin_layout Standard
+This plot shows the theoretical reflectivity curve (
+\begin_inset LatexCommand \prettyref{cap:The-reflectivity-graph,}
+
+\end_inset
+
+) for the layer model specified in the Reflectivity Fit Panel.
+ Whenever you change a parameter in the panel then the graph will update.
+ The main part of the graph is the theoretical reflectivity profile, the
+ other part the SLD profile corresponding to your model.
+ 
+\end_layout
+
+\begin_layout Standard
+If you wish to change the theoretical Q range of the plot then select the
+ 
+\emph on
+Change Q range of theoretical data.
+ 
+\emph default
+You can also change the plot type.
+\end_layout
+
+\begin_layout Standard
+The SLD profile is calculated using 
+\begin_inset LatexCommand \ref{eq:SLDprofile}
+
+\end_inset
+
+.
+ Where N is the total number of layers, 
+\emph on
+z
+\emph default
+ is the distance from the top interface and 
+\emph on
+erf
+\emph default
+ is the error function.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+\rho_{z}=\sum_{i=0}^{N}\frac{\rho_{i}-\rho_{i+1}}{2}\left(1+\textrm{erf}\left(\frac{z-z_{i}}{\sqrt{2}{\sigma_{i}}}\right)\right)\label{eq:SLDprofile}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If you have the full version of IGOR you can export the graph in whatever
+ way you would like.
+ This manual was created with the EPS export.
+\end_layout
+
+\begin_layout Subsection
+Load Reflectivity data
+\end_layout
+
+\begin_layout Standard
+When you bring up this option from the top menu you load in 2, 3 or 4 column
+ reflectivity data.
+ The data format is tab delimited, with the data columns as:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Q, R, dR, dQ
+\end_layout
+
+\begin_layout Standard
+If you have a graph already open (e.g.
+ you have already opened the reflectivity panel), and this graph is on top,
+ then it asks if you want to append it to that graph, which is quite useful.
+ In other words, you see your experimental data and the theoretical data
+ on the same plot.
+ If there is no graph already open, then it creates a new graph.
+ You can then open (and append) further reflectivity datasets to this graph.
+ 
+\end_layout
+
+\begin_layout Subsection
+Fitting Multiple Contrasts / Global Fitting
+\end_layout
+
+\begin_layout Standard
+Fitting multiple (neutron + X-ray) contrasts is a cinch in 
+\emph on
+Motofit
+\emph default
+.
+ You use the global fit package.
+ Simply follow the following steps.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Load all the experimental data (preferably in the same graph).
+ 
+\end_layout
+
+\begin_layout Enumerate
+Fit the individual datasets/contrasts separately to start off with, with
+ a best guess model.
+ This should give you a good starting point.
+ You should use the same number of layers for each contrast.
+ If you can't do this for each contrast, then the model is probably incorrect.
+ 
+\end_layout
+
+\begin_layout Enumerate
+This procedure should give you coefficient waves, 
+\emph on
+coef_Rwave
+\emph default
+, for each of your datasets.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Select the 
+\emph on
+Make globals
+\emph default
+ tab.
+ Enter the correct number of layers, and the correct number of contrasts.
+ Now select which parameters you want to be "global", i.e.
+ the same for all the datasets.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Select the coefficient waves for each of the datasets.
+ Note: the program uses the names of the coefficient waves to set up the
+ fit, so they must tally with the dataset.
+ For example, the coefficient wave is 
+\emph on
+coef_e361r_datR
+\emph default
+; so the reflectivity wave 
+\emph on
+e361r_datR
+\emph default
+ and a Q wave 
+\emph on
+e361r_datQ
+\emph default
+ MUST exist.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Now press 
+\emph on
+Make Global Coefficient
+\emph default
+ wave.
+ At this step you should have the global fitting dialogue there.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Select the parameters you want to hold.
+ Don't forget to hold the number of layers, this should be invariant! 
+\end_layout
+
+\begin_layout Enumerate
+If you want to weight the datasets, or make constraints, this is the time
+ to do it.
+\end_layout
+
+\begin_layout Enumerate
+Press "
+\emph on
+Fit
+\emph default
+".
+ Choose either Levenberg Marquardt or Genetic Optimisation.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename setupglobals.eps
+	BoundingBox -30bp 14bp 347bp 355bp
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+Setting up a global coefficient wave
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename globalpanel.eps
+	scale 75
+	keepAspectRatio
+	BoundingBox -30bp 14bp 468bp 306bp
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+The global fit dialogue
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The global fit appends fit curves to the top graph.
+ Unfortunately at this stage the SLD profiles don't update.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Note that you don't have to use the panel as described, you can enter all
+ the parameters by hand.
+ It just makes setting up the global wave a LOT QUICKER!!! 
+\end_layout
+
+\begin_layout Enumerate
+The global fitting only uses the constant dQ/Q option at the moment (i.e.
+ It doesn't use the relevant dQ wave, if it exists).
+ 
+\end_layout
+
+\begin_layout Enumerate
+You can fit X-ray and Neutron data at the same time.
+\end_layout
+
+\begin_layout Enumerate
+Global fit is extremely powerful, and you can make more complicated linkages
+ than described here.
+ For example one can link parameter 
+\emph on
+x 
+\emph default
+of dataset 
+\emph on
+y
+\emph default
+, with parameter 
+\emph on
+a
+\emph default
+ of dataset 
+\emph on
+b
+\emph default
+.
+ This is particularly suited when you would like to fit a air-solid dataset
+ at the same time as a solid-liquid dataset.
+\end_layout
+
+\begin_layout Enumerate
+The constraints you entered for fitting a single dataset in the reflectivity
+ panel no longer apply for global fitting, you have to enter them in the
+ global fit panel.
+ Note that any entered constraints only apply to the Levenberg Marquardt
+ fit, they don't apply to Genetic Optimisation!
+\end_layout
+
+\begin_layout Subsection
+Scattering Length Density Database
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename SLDdatabase.eps
+	keepAspectRatio
+	BoundingBox 14bp 64bp 468bp 340bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+The scattering length density database
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If you can't remember all the SLD values that you use then you can add them
+ to the database.
+ This is accessed from the reflectivity menu.
+ You can add as many new values as you like.
+ (You can edit the database using Excel as well).
+ The SLD database is automatically loaded when the reflectivity macro's
+ are initialised, so should be present in the 
+\emph on
+Motofit
+\emph default
+ folder.
+ Values from the SLD database can be automatically inserted into a structural
+ model by using the popup menu's in the reflectivity panel.
+ The format for new lines of the SLDdatabase is: 
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Chemname <tab> chemformula <tab> SLDneut <tab> SLDXray <tab> massdensity.
+\end_layout
+
+\begin_layout Standard
+To calculate a scattering length density please see Section 
+\begin_inset LatexCommand \ref{sub:How-do-I-cal-SLD}
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Using the curve fitting dialogue
+\end_layout
+
+\begin_layout Standard
+Although the panel can handle as many layers as you want sometimes you may
+ want to use the curvefitting dialogue.
+ Heres what you have to do.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Bring the parameter table, 
+\emph on
+coef_Cref
+\emph default
+, to the front.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Enter the required number of layers in 
+\emph on
+coef_Cref
+\emph default
+[0].
+ (Wave numbering starts from 0).
+\end_layout
+
+\begin_layout Enumerate
+You will need 
+\emph on
+4n+6
+\emph default
+ parameters in total, so type in: 
+\emph on
+Redimension/n=(4n+6) coef_Cref
+\emph default
+ in the command line.
+ where 
+\emph on
+4n+6
+\emph default
+ is a number.
+ Alternatively you can enter the numbers directly into the table if you
+ want to.
+ The extra parameters will have the following index numbers: 
+\emph on
+thick(n)=4n+2, SLD(n)= 4n+3, solv(n)= 4n+4, rough(n)= 4n+5
+\emph default
+.
+ i.e.
+ the SLD of the 7th layer should be in coef_Cref[31].
+ 
+\end_layout
+
+\begin_layout Enumerate
+You have to have the correct number of parameters for the number of layers
+ entered.
+\end_layout
+
+\begin_layout Enumerate
+Start the curve fitting dialogue, Analysis Curve Fitting.
+ 
+\end_layout
+
+\begin_layout Enumerate
+In the Function tab select 
+\emph on
+Motofit
+\emph default
+ as the fitfunc and select the correct y and x waves.
+ 
+\end_layout
+
+\begin_layout Enumerate
+If you want to use the cursor positions to select a particular fit range
+ then press cursors on the data options tab.
+ 
+\end_layout
+
+\begin_layout Enumerate
+In the coefficients tab select the 
+\emph on
+coef_Cref
+\emph default
+ as the coefficient wave.
+ Select the hold checkbox if you want to hold that parameter.
+ You HAVE to hold the first parameter.
+ 
+\end_layout
+
+\begin_layout Enumerate
+If you have more parameters than are required for the number of layers then
+ hold the extra parameters.
+\end_layout
+
+\begin_layout Enumerate
+If you want to enter constaints use the constraints wave.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Press Do-it.
+ The curve will hopefully fit without a problem 
+\end_layout
+
+\begin_layout Standard
+Note that all the reflectivity panel does is perform the same procedure
+ as outlined in the 11 steps above.
+ 
+\end_layout
+
+\begin_layout Standard
+IGOR can perform a lot more advanced functions than those outlined above.
+ You should be able to find more options to suit you, if you want them.
+ (You can get covariance matrices, residual waves, etc).
+\end_layout
+
+\begin_layout Subsection
+Batch fitting datasets
+\end_layout
+
+\begin_layout Standard
+This function is essential for people with many kinetic datasets (e.g.
+ >5).
+ When you select 
+\emph on
+Load batch data
+\emph default
+ (from the 
+\emph on
+Reflectivity
+\emph default
+ menu) you are prompted for a folder in which your data resides.
+ The program then loads in all the files in that directory, with the extension
+ you provide.
+ Please take care, if you specify loading all 
+\begin_inset Quotes eld
+\end_inset
+
+.txt
+\begin_inset Quotes erd
+\end_inset
+
+ files, then move any non-reflectivity text files from that directory beforehand.
+ The program only loads 3 column reflectivity data at the time being.
+ You can also specify an offset for the plotting, this offsets all the datasets
+ in the batchdata graph so that you can see each of them clearly.
+ The data is placed in the 
+\emph on
+MOTOFIT_batchfits
+\emph default
+ datafolder.
+\end_layout
+
+\begin_layout Standard
+Now use the reflectivity panel to set up the parameters for the first dataset
+ (you should try fitting that dataset before loading the batch data).
+ Setup any other details (e.g.
+ constraints or held parameters).
+ Now select 
+\emph on
+fit batch data
+\emph default
+ from the topmenu.
+ This fits the first dataset (as normal), using the parameters in the reflectivi
+ty panel as a starting point.
+ It then uses the fit parameters from that first dataset as a starting point
+ for the second dataset.
+ The program then cycles through all the datasets fitting them all.
+ In testing around 100 files were fitted in 5 minutes.
+ On installing the AbelesXOP this time decreased to 20seconds!!!! All the
+ fit curves, coefficients and errors are collected as the batch fit proceeds.
+ A table is presented at the end, which contains all the coefficients and
+ their associated errors.
+ In addition, the fits are appended to the batchdata graph, ready to export
+ to your Nature paper.
+\end_layout
+
+\begin_layout Subsection
+Create local chi2map for requested parameter
+\end_layout
+
+\begin_layout Standard
+This option is available from the 
+\emph on
+Motofit 
+\emph default
+menu.
+ You can use this to explore how Chi2 varies for selected parameters, around
+ their current values.
+ 
+\end_layout
+
+\begin_layout Standard
+If you choose the 1D version you are prompted to enter a parameter number
+ (available from the reflectivity panel), and a range to explore (expressed
+ as a percentage of the value).
+ A graph is then displayed of Chi2 versus parameter value.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename chi2map.eps
+	scale 70
+	BoundingBox -70bp 14bp 408bp 222bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+Layer thickness Chi2 map for a sample with well defined Kiessig Fringes
+ (212A)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The 2D version allows you to examine a Chi2 surface, as a function of two
+ parameters.
+ For example you can look at how Chi2 varies as a function of layer thickness
+ and layer scattering length density.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename 2dchi2map.eps
+	scale 70
+	keepAspectRatio
+	BoundingBox -80bp 14bp 370bp 382bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+A 2D chi2map of layer thickness and SLD
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Fitting user defined functions.
+ 
+\end_layout
+
+\begin_layout Standard
+If you have a specific profile to fit, then this will probably replace 
+\emph on
+Motofit
+\emph default
+.
+ In this situation you will have to use the curve-fitting dialogue, as the
+ panel will be useless.
+ You will create a specific parameter wave for your model, which will be
+ sent to a user function.
+ This function will then create a specific 
+\emph on
+coef_Cref
+\emph default
+ wave which can be read by the kernel that calculates the reflectivity,
+ 
+\emph on
+Abelesreflectivity
+\emph default
+.
+ This probably sounds harder than it really is.
+ If you want help then email me and I'll try to help.
+ 
+\end_layout
+
+\begin_layout Subsection
+Test datasets
+\end_layout
+
+\begin_layout Standard
+The distribution package contains several test datasets (can you fit them?).
+ Also included are the coefficient waves for each dataset.
+ The resolution for these experiments is dQ/Q = 4%
+\end_layout
+
+\begin_layout Standard
+Dataset e179 is a multilayer sample.
+ This sample consists of a two layer stack of Ti/Ni, which has 25 repeats.
+ The multilayer is appended to layer 0.
+ 
+\end_layout
+
+\begin_layout Standard
+e361r, e365r and e366r are solid-liquid datasets of silicon vs water.
+ On top of the silicon substrate is a native SiO
+\begin_inset Formula $_{2}$
+\end_inset
+
+ layer, on top of that is a polymer layer; which makes it a two layer system.
+ The only difference between the different datasets is the scattering length
+ density of the water phase.
+ Of the 14 parameters (0 --> 13 inclusive) the only parameters that aren't
+ global are: 
+\emph on
+SLDbase, bkg, SLD
+\emph default
+ (layer 2).
+ Therefore these datasets are ideal for the global fit routines.
+ 
+\end_layout
+
+\begin_layout Standard
+Sitest.txt is a solid air experiment of a silicon wafer vs air.
+ The Si wafer has a native oxide layer (SiO
+\begin_inset Formula $_{2}$
+\end_inset
+
+) of around 15A thickness on top.
+ 
+\end_layout
+
+\begin_layout Section
+Useful functions that not many people know about
+\end_layout
+
+\begin_layout Standard
+To access these functions you need to type commands in the 
+\begin_inset Quotes eld
+\end_inset
+
+command line
+\begin_inset Quotes erd
+\end_inset
+
+.
+ To pull this window up type Ctrl-J
+\emph on
+.
+\end_layout
+
+\begin_layout Subsection
+getrid()
+\end_layout
+
+\begin_layout Standard
+This helper function gets rid of all graph windows, all tables, and kills
+ all loaded waves.
+ Instead of this you could type Ctrl-N, which starts a new experiment.
+\end_layout
+
+\begin_layout Subsection
+moto_holdall()
+\end_layout
+
+\begin_layout Standard
+Holds all the parameters in the reflectivity panel.
+ Useful when you've used globalfit and want to update the SLD profiles.
+ The only way to do that is by performing a 
+\begin_inset Quotes eld
+\end_inset
+
+spoof fit
+\begin_inset Quotes erd
+\end_inset
+
+, i.e.
+ performing a fit on an individual dataset, with all the parameters held.
+\end_layout
+
+\begin_layout Subsection
+moto_restoremodel()
+\end_layout
+
+\begin_layout Standard
+If you perform a fit and you don't like what happens to the parameters,
+ then you can use this command to 
+\begin_inset Quotes eld
+\end_inset
+
+revert
+\begin_inset Quotes erd
+\end_inset
+
+ to the initial guesses.
+\end_layout
+
+\begin_layout Subsection
+moto_backupmodel()
+\end_layout
+
+\begin_layout Standard
+This makes a backup of the current guesses.
+ e.g.
+ You can change several parameters and if you don't like the new theoretical
+ curve you can revert the the backed up guesses using moto_restoremodel().
+ The backup is overridden when you perform a fit.
+\end_layout
+
+\begin_layout Subsection
+moto_offsetq(
+\noun on
+qwave,thetaoffset,lambda
+\noun default
+)
+\end_layout
+
+\begin_layout Standard
+If your sample is misaligned, then you can correct your q values (contained
+ in the wave 
+\noun on
+qwave
+\noun default
+), assuming you know the angular offset (
+\noun on
+thetaoffset
+\noun default
+) and the wavelength of the radiation (
+\noun on
+lambda
+\noun default
+).
+\end_layout
+
+\begin_layout Section
+Frequently asked questions
+\end_layout
+
+\begin_layout Subsection
+How do I calculate a scattering length density?
+\end_layout
+
+\begin_layout Standard
+\begin_inset LatexCommand \label{sub:How-do-I-cal-SLD}
+
+\end_inset
+
+One of the easiest ways is to use the NCNR NIST website.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset LatexCommand \url{http://www.ncnr.nist.gov/resources/sldcalc.html}
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+But you should also be able to calculate them for yourself.
+ The formula for calculating a scattering length density is given in 
+\begin_inset LatexCommand \ref{eq:sldcalculation}
+
+\end_inset
+
+.
+ In this equation 
+\begin_inset Formula $V_{m}$
+\end_inset
+
+ is the molecular volume of the material and 
+\begin_inset Formula $b_{c_{i}}$
+\end_inset
+
+ is the bound coherent scattering length of the 
+\emph on
+i
+\emph default
+ th atom of a molecule with 
+\emph on
+n
+\emph default
+ atoms.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+\rho=\frac{\sum_{i=1}^{n}b_{c_{i}}}{V_{m}}\label{eq:sldcalculation}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+You can also write this as 
+\begin_inset LatexCommand \ref{eq:altsldcalculation}
+
+\end_inset
+
+, where 
+\begin_inset Formula $N_{a}$
+\end_inset
+
+ is Avogadro's number, 
+\begin_inset Formula $\rho_{mass}$
+\end_inset
+
+ is the mass density of the material and 
+\begin_inset Formula $M_{R}$
+\end_inset
+
+ is its relative molecular mass.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+\rho=\frac{N_{a}\rho_{mass}}{M_{R}}\times\sum_{i=1}^{n}b_{c_{i}}\label{eq:altsldcalculation}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+You can find a table of neutron scattering lengths at:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset LatexCommand \url{http://www.ncnr.nist.gov/resources/n-lengths/}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For X-rays you have to calculate the scattering length for each atom before
+ doing the calculation, 
+\begin_inset LatexCommand \ref{eq:xrayscattlength}
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+b_{i}=\frac{e^{2}}{4\pi\epsilon_{0}mc^{2}}f_{1i}\label{eq:xrayscattlength}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\emph on
+e 
+\emph default
+is the charge on a single electron, 
+\begin_inset Formula $\epsilon_{0}$
+\end_inset
+
+ is the permittivity of free space, 
+\emph on
+m
+\emph default
+ is the mass of an electron and 
+\emph on
+c
+\emph default
+ is the speed of light.
+ 
+\begin_inset Formula $f_{1i}$
+\end_inset
+
+ is the scattering factor for an atom of element 
+\emph on
+i 
+\emph default
+and may be found from:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset LatexCommand \url{http://www-phys.llnl.gov/Research/scattering/asf.html}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+To use this website you will need to know the wavelength of the X-ray radiation
+ that you are using (1.54Å=8047eV).
+\end_layout
+
+\begin_layout Standard
+This is an exact way of calculating 
+\begin_inset Formula $b_{i}$
+\end_inset
+
+, a much quicker approximation is to use 
+\begin_inset LatexCommand \ref{eq:compton radius}
+
+\end_inset
+
+, where 
+\emph on
+Z 
+\emph default
+is the atomic number and 
+\begin_inset Formula $r_{e}$
+\end_inset
+
+is the Compton radius (
+\begin_inset Formula $r_{e}=2.8179\times10^{-5}\textrm{Å}$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+b_{i}=Zr_{e}\label{eq:compton radius}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+To find out how to enter the scattering length densities are entered into
+ the program please see Section 
+\begin_inset LatexCommand \ref{sub:Model-Parameters}
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Why can't I install the program properly? 
+\end_layout
+
+\begin_layout Standard
+Did you follow the installation instructions carefully? If you think you
+ have:
+\end_layout
+
+\begin_layout Itemize
+make sure that you have loaded all the required files.
+\end_layout
+
+\begin_layout Itemize
+update to the latest version of IGOR.
+\end_layout
+
+\begin_layout Itemize
+if all these steps fail then please email:
+\newline
+
+\begin_inset LatexCommand \htmlurl{mailto:Andrew_Nelson@users.sourceforge.net}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Do I need to install Abeles.xop?
+\end_layout
+
+\begin_layout Standard
+Abeles.xop is a pre-compiled function written in C that calculates reflectivity.
+ Although it is not necessary to install this file, I strongly recommend
+ it, as it makes the program run around 5-6 times faster.
+ This means that if you have lots of layers, or prefer to fit with Genetic
+ Optimisation, or want to fit batch data, then the fit is blazing fast,
+ and you don't need to go for a cup of tea in the meantime.
+ There is a link on the 
+\emph on
+Motofit 
+\emph default
+website (
+\begin_inset LatexCommand \url[http://motofit.sourceforge.net]{http://motofit.sourceforge.net}
+
+\end_inset
+
+) directed towards the XOP.
+\end_layout
+
+\begin_layout Subsection
+Installation issues for the XOP?
+\end_layout
+
+\begin_layout Standard
+Please refer to installation section (
+\begin_inset LatexCommand \ref{sec:What-files-do}
+
+\end_inset
+
+).
+ Note that the XOP is platform dependent, so please don't install the Windows
+ version on a MAC, and vice versa.
+\end_layout
+
+\begin_layout Subsection
+What is a wave in IGOR? 
+\end_layout
+
+\begin_layout Standard
+A wave is a data object, which contains a column of data, similar to Excel.
+ When you load a reflectivity dataset with Q, R and dR, you are loading
+ 3 waves.
+ One wave contains the Q values, and there is a wave for the Reflectivity
+ values and a wave for the error in reflectivity values.
+ Obviously Q,R and dR should have the same number of points.
+ Each of the waves has a different name.
+ If you opened the same dataset in Excel you would see 3 columns containing
+ the Q,R and dR values.
+ IGOR is a program that performs mathematical operations on these waves.
+ 
+\end_layout
+
+\begin_layout Subsection
+What is a coefficient wave? 
+\end_layout
+
+\begin_layout Standard
+A coefficient wave is a wave containing the parameters for the fit.
+ They are saved as IGOR text files (*.itx), which have some extra advantages
+ to normal text files.
+ The program will only load Igor text files.
+ 
+\end_layout
+
+\begin_layout Subsection
+What should I call my coefficient waves when I save them to disk?
+\end_layout
+
+\begin_layout Standard
+You can save them as anything, but call it something you will remember.
+ 
+\end_layout
+
+\begin_layout Subsection
+Why are the layer thicknesses and roughnesses sometimes negative after the
+ fit?
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Motofit
+\emph default
+ uses the modulus of the thickness and roughness values, so there is no
+ need to worry.
+\end_layout
+
+\begin_layout Subsection
+The model doesn't seem to be sensitive to roughness?
+\end_layout
+
+\begin_layout Standard
+Sometimes you may fit some data and some of the roughness parameters appear
+ to go haywire.
+ This is because in a lot of situations the modelled data isn't sensitive
+ to roughness and when you start to fit the roughnesses oscillate dramatically.
+ This often occurs in situations where there aren't many features in the
+ reflectivity profile and where the data doesn't extend to large Q values.
+ To combat this change the troublesome roughnesses to a realistic value,
+ then fix them during the fit.
+ Once you get close to a good solution then this problem usually gets better.
+ Be sure to look at the correlation matrix to determine any problems.
+ 
+\end_layout
+
+\begin_layout Subsection
+Can I fit X-ray data and Neutron data at the same time?
+\end_layout
+
+\begin_layout Standard
+Using global fit you can fit as many neutron contrasts as you like.
+ You can also fit X-ray and neutron data together.
+ However, difficulties may arise because X-ray datasets normally have much
+ better statistics than neutron data.
+ Therefore when you try to fit neutrons and X-rays together the data is
+ sometimes preferentially weighted towards the X-ray set.
+ 
+\end_layout
+
+\begin_layout Subsection
+What format should my dataset be in? 
+\end_layout
+
+\begin_layout Standard
+The dataset should have either 2,3 or 4 columns.
+ If there is a two column dataset then the columns should consist of Q and
+ R values.
+ For a three column dataset you should have Q, R and dR (where dR is error
+ in reflectivity).
+ For a four column dataset you should have Q, R, dR and dQ (where dQ is
+ uncertainty in Q).
+ The reflectivity values should be a value between 0 and 1.
+ i.e.
+ you cant load in Q, logR, dR or Q, RQ
+\begin_inset Formula $^{4}$
+\end_inset
+
+, dR data.
+ You should get rid of errant datapoints which have R<0 (which may happen
+ if you subtract a background).
+ All columns should be the same length.
+ For best results the file should be saved without a header (i.e.
+ the data starts in the first line), and in the tab delimited format.
+ This file manipulation is easy in Excel.
+ 
+\end_layout
+
+\begin_layout Subsection
+Why doesn't the global fit produce SLD profiles for each dataset? 
+\end_layout
+
+\begin_layout Standard
+The global fit procedures don't produce SLD profiles for each dataset and
+ there is no intention at the moment to implement this functionality.
+ To get around this and get SLD profiles for each dataset it is suggested
+ that you fit each dataset individually, but hold all the parameters.
+\end_layout
+
+\begin_layout Subsection
+What is a global parameter in IGOR? 
+\end_layout
+
+\begin_layout Standard
+If you have several datasets on a particular system, and the data can be
+ described by the same structure, then some of the fit parameters may be
+ the same for all the different datasets.
+ Such parameters are referred to as global because they are common to all
+ the datasets.
+ 
+\end_layout
+
+\begin_layout Subsection
+When should I use Levenberg-Marquardt or genetic optimisation?
+\end_layout
+
+\begin_layout Standard
+I would use Genetic Optimisation to perform the fitting (for both single
+ datasets and multiple contrast fitting), then follow up with Levenberg
+ Marquardt to calculate errors, etc.
+ This is because Genetic Optimisation is very good at finding global minima
+ from poor initial guesses.
+ However, you need to perform Levenberg-Marquardt to get a full statistical
+ analysis on the errors.
+\end_layout
+
+\begin_layout Subsection
+Can I fit normalised Fresnel reflectivity curves? 
+\end_layout
+
+\begin_layout Standard
+Yes! Thats what the 
+\emph on
+Fresnel.ipf 
+\emph default
+file is for.
+ However, if you want to fit curves like this you will have to use the curve
+ fitting dialogue.
+ Follow these steps: It will help if you are acquainted with the curve fitting
+ dialogue, since all the curve fitting will go on in there.
+ 
+\end_layout
+
+\begin_layout Itemize
+Load the experimental datasets that you measured, using the "
+\emph on
+Load data
+\emph default
+" button.
+\end_layout
+
+\begin_layout Itemize
+Make sure that the plot type is "
+\emph on
+R vs Q
+\emph default
+" for all the steps (important).
+\end_layout
+
+\begin_layout Itemize
+subtract the background from your dataset, you can find out the name of
+ the dataset in IGOR by using the databrowser (Data --> Databrowser) OR
+ by using the 
+\emph on
+dataset
+\emph default
+ popup menu in the reflectivity panel.
+ The R data will be something like 
+\emph on
+dataset_extR
+\emph default
+.
+\end_layout
+
+\begin_layout Itemize
+You subtract the background by using this command in the command window
+ (ctrl-J): 
+\emph on
+dataset_extR=dataset_extR-backgroundvalue
+\end_layout
+
+\begin_layout Itemize
+You then need to normalise the dataset by the Fresnel reflectivity.
+ (still keep the plot type as "R vs Q").
+\end_layout
+
+\begin_layout Itemize
+First put the correct parameters in the Reflectivity panel (i.e.
+ number of layers=0, scale=1, SLDtop=SLDtop, SLDbase=SLDbase, bkg=0, sigma_base=
+0).
+\end_layout
+
+\begin_layout Itemize
+Now enter the following command in the command line: 
+\newline
+
+\emph on
+Calcfresnel(coef_Cref,dataset_extR,dataset_extQ)
+\emph default
+.
+ 
+\newline
+This will take the Rwave (
+\emph on
+dataset_extR
+\emph default
+) and the Q wave (
+\emph on
+dataset_extQ
+\emph default
+), calculate the Fresnel reflectivity at each of the points in your experimental
+ dataset, then divide 
+\emph on
+dataset_extR
+\emph default
+ by the Fresnel reflectivity.
+ At this stage you should have the normalised curve.
+\end_layout
+
+\begin_layout Itemize
+TO display the normalised curve type:
+\newline
+
+\emph on
+display dataset_extR vs dataset_extR
+\emph default
+ 
+\emph on
+
+\newline
+
+\emph default
+in the command line.
+ You will see a line plot, but you can change this by clicking on various
+ aspects of the graph.
+\end_layout
+
+\begin_layout Itemize
+Now put the parameters you expect for the system in the Reflectivity panel,
+ i.e.
+ the required number of layers, thicknesses, solvent penetration, roughnesses,
+ etc.
+ This updates the wave "
+\emph on
+coef_Cref
+\emph default
+" 
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+**you must keep the scale, sldbase, sldtop, sigma_base the same as for the
+ fresnel curve (and the bkg=0), but obviously use the number of layers that
+ is right for your system.
+\end_layout
+
+\begin_layout Itemize
+You are now are at a stage to do the fit.
+ Go to the Igor menu and select: 
+\emph on
+Analysis
+\emph default
+-->
+\emph on
+Curve Fitting
+\emph default
+.
+ Use "
+\emph on
+Fresnelreflectivity
+\emph default
+" as the fitfunction.
+ Use the normalised reflectivity curve (
+\emph on
+dataset_extR
+\emph default
+) as the ydata, and 
+\emph on
+Dataset_extq
+\emph default
+ as the xdata.
+ Go to the coefficients tab and use "
+\emph on
+coef_Cref
+\emph default
+" as the coefficient wave.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+**you must have updated the layer parameters to reflect your system.
+ ** the plotype must be 
+\begin_inset Quotes eld
+\end_inset
+
+r vs q
+\begin_inset Quotes erd
+\end_inset
+
+ ** the fit will not be weighted!
+\end_layout
+
+\begin_layout Itemize
+Now select the parameters to hold.
+ 
+\noun on
+you must hold
+\noun default
+ 
+\noun on
+parameters 0 to 5
+\noun default
+ (
+\noun on
+numlayers, scale=1, sldtop, sldbase, bkg=0, sigma_base
+\noun default
+).
+ You have to hold these because you have normalised your data by the fresnel
+ reflectivity created by these parameters.
+ Select any other parameters to hold, then do the fit (DO IT button).
+\end_layout
+
+\begin_layout Itemize
+There will be a parameter wave produced as a result, (
+\emph on
+coef_dataset_extR
+\emph default
+) and the graph that you produced will have the fit curve on it.
+\end_layout
+
+\begin_layout Itemize
+You can also global fit with this function, once you have normalised all
+ your contrasts by their individual fresnel reflectivity.
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+caveats
+\noun default
+: I've tried fitting X-ray data this way, and it works ok.
+ However it doesn't work very well if the data is very different to the
+ fresnel reflectivity (very likely at high Q).
+ This may be true if you have X-ray data extending to high Q (and therefore
+ low reflectivity).
+ Therefore it's 
+\emph on
+VERY, VERY, VERY
+\emph default
+ sensitive to the roughness (
+\emph on
+sigma_base
+\emph default
+) of the fresnel reflectivity curve that you normalise by.
+ In order to get this to fit I created a theoretical reflectivity out to
+ Q=0.7, and experimented with different 
+\emph on
+sigma_base
+\emph default
+.
+ In addition 
+\noun on
+you also have to subtract the right amount of background
+\noun default
+.
+ You might want to restrict the range you fit over using the "cursors".
+ 
+\end_layout
+
+\begin_layout Standard
+If you don't choose the correct values then the reflectivity curve will
+ have a large upturn at high Q, this is bad.
+ 
+\end_layout
+
+\begin_layout Subsection
+I want a normalised correlation matrix, how do I do it? 
+\end_layout
+
+\begin_layout Standard
+The normalised correlation matrix is automatically produced after a fit.
+ To get this displayed type the following in the command window (Ctrl-J):
+\newline
+
+\noun on
+Edit M_Covariance
+\end_layout
+
+\begin_layout Subsection
+What type of weighting should I use? 
+\end_layout
+
+\begin_layout Standard
+Here we explore the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ function for different types of weighting.
+ I have plotted 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ as a function of Q for all the types I use and they are listed below.
+ I have also investigated the situation where dR=1 (i.e.
+ weighting has no effect).
+ This should give a guide on how to weight data.
+ Note that the investigation is on a single dataset only.
+ In addition, the SLD of the top and subphase is fixed.
+ This means that if I'm slightly off with those values then there might
+ be spikes in 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ at low Q.
+ I created all these graphs sequentially, from situation a).
+ In other words I performed a) first, then used this as a starting point
+ for all the other fits.
+ This is a significant assumption when drawing conclusions, as this does
+ not take into account the fact that each of the different ways of weighting
+ may have different 'descent pathways' to the global minimum.
+ Thus one should consider various starting points.
+ 
+\end_layout
+
+\begin_layout Itemize
+fitting as log R vs Q, no weighting (dR=1).
+ As you see this option has a good fit, and the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ function starts to weight the data towards high Q (which in this case isn't
+ bad).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename logR.eps
+	scale 60
+	keepAspectRatio
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Fitting logR vs Q, with errors.
+ When you take this option you get rid of the bias towards the higher Q
+ end, and the program will essentially fit uniformly over the Q range.
+ However, you have to be careful with low Q data, as poor fitting around
+ the critical edge (sometimes not unusual) will increase 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ significantly and may weight towards low Q, which is bad!
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename logRerror.eps
+	scale 60
+	keepAspectRatio
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Fit R vs Q, no weighting This one really doesn't work, never try this option.
+ This is appalling.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename RQ.eps
+	scale 60
+	keepAspectRatio
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Fitting R vs Q, with error weighting.
+ Ok, but similar to b).
+ In this situation you really need to make sure that the fit is good around
+ the critical edge, or the fit is bad.
+ The fit is often bad around the critical edge if you are not handling the
+ resolution correctly, or if you don't allow the top or subphase SLD's to
+ vary (which control the position of the critical edge).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename RQerror.eps
+	scale 60
+	keepAspectRatio
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Fitting R vs Q, weighting as dR=1/R.
+ This is often used as a way of weighting, as it handles the entire Q range
+ successfully.
+ I like this option.
+ Unfortunately you're not using errors.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename RQ1_R.eps
+	scale 60
+	keepAspectRatio
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Fitting as 
+\begin_inset Formula $RQ^{4}$
+\end_inset
+
+, no weighting.
+ Seems to handle entire Q range ok, but there is some bias towards high
+ Q.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename RQ4.eps
+	scale 60
+	keepAspectRatio
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Fitting as 
+\begin_inset Formula $RQ^{4}$
+\end_inset
+
+vs Q, with errors.
+ This one is telling us that the fit is correctly weighting all the Q range,
+ but will show some bias towards low Q, if the critical edge isn't handled
+ correctly.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename RQ4error.eps
+	scale 60
+	keepAspectRatio
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So what are the conclusions? These examples show that it's essential to
+ make sure the critical edge is handled correctly if you want to fit with
+ the error bars! This is because all the examples with error weighting have
+ spikes in the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ function at low Q.
+ Of course, the critical edge region is the part of the reflectivity curve
+ that has the least information about the sample.
+ If I was fitting with error bars I would do these types of plots to make
+ sure that the crit edge region was being handled correctly, otherwise your
+ fits may be skewed towards low Q.
+ Fitting programs and reduction programs should make sure that the resolution
+ is being used properly, in order to remove this problem.
+ 
+\end_layout
+
+\begin_layout Standard
+The graphs show that fitting without error bars is quite robust if you fit
+ as logR vs Q or R
+\begin_inset Formula $Q^{4}$
+\end_inset
+
+ vs Q (R vs Q doesn't work).
+ This is fairly effective at weighting equally over the entire Q range,
+ but there is a slight risk of bias towards higher Q.
+ 
+\end_layout
+
+\begin_layout Standard
+Overall I would use all the options except c).
+ The graphs show that there isn't really an advantage to fitting one way
+ or another, so I suggest that it's a fallacy to say that fitting as R
+\begin_inset Formula $Q^{4}$
+\end_inset
+
+vs Q is better! All this option offers is the removal of the  Fresnel influence,
+ which makes it easier to see what is happening to all the layers.
+ Of course this is a simple analysis, so take these conclusions with a pinch
+ of salt.
+ 
+\end_layout
+
+\begin_layout Section
+Future Features
+\end_layout
+
+\begin_layout Itemize
+I am also intending to produce a 'report' function, which will produce a
+ formatted page, with data+fit, SLDprofile and parameters, which the user
+ can stick straight into their lab book.
+\end_layout
+
+\begin_layout Section
+Bugs
+\end_layout
+
+\begin_layout Standard
+Send me details of any bugs and I'll fix them.
+ I have benchmarked the program against other programs and I know that the
+ reflectivity is calculated correctly.
+ If you have any suggestions on how to improve things/would like to help
+ develop things then please email me.
+ 
+\newline
+
+\begin_inset LatexCommand \htmlurl{mailto:Andrew_Nelson@users.sourceforge.net}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset LatexCommand \bibtex[plain]{D:/andy/reference}
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

@@ -70,7 +70,7 @@ Function Moto_SLDdatabase() : Panel
 		Setvariable mixSLD1_tab2,proc = Moto_mixCalculateSetvariable,limits={-inf,inf,0.01}
 		SetVariable mixSLD2_tab2,pos={243,57},size={200,23},title="SLD 2nd component",fSize=12,value=_NUM:-0.56
 		Setvariable mixSLD2_tab2, proc = Moto_mixCalculateSetvariable,limits={-inf,inf,0.01}
-		SetVariable mixvolfrac1_tab2,pos={29,105},size={200,23},title="vol. frac. 1st component",fSize=12,value=_NUM:0
+		SetVariable mixvolfrac1_tab2,pos={29,105},size={220,23},title="vol. frac. 1st component",fSize=12,value=_NUM:0
 		Setvariable mixvolfrac1_tab2, limits={0,1,0.01},proc= Moto_mixCalculateSetvariable
 		SetVariable mixvolfrac2_tab2,pos={243,105},size={200,23},title="vol. frac. 2nd component",fSize=12,value=_NUM:0
 		Setvariable mixvolfrac2_tab2, limits={0,1,0},proc = Moto_mixCalculateSetvariable
@@ -454,6 +454,7 @@ Function Moto_mixCalculateSetvariable(SV_Struct) : Setvariablecontrol
 
 		mixvolfrac2=1-mixvolfrac1
 		variable mixOverallSLD = mixvolfrac1*mixSLD1 + mixvolfrac2 * mixSLD2
+		setvariable mixvolfrac2_tab2 win=sldpanel, value = _NUM:mixvolfrac2
 		setvariable mixoverallSLD_tab2 win=sldpanel, value = _NUM:mixoverallSLD
 	endif
 	return 0
