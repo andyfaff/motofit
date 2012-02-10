@@ -81,6 +81,7 @@ Motofit
 \begin_layout Standard
 \begin_inset Graphics
 	filename moto_2.jpg
+	display none
 	scale 40
 	BoundingBox -250bp -50bp 584bp 992bp
 
@@ -366,7 +367,7 @@ key "Heavens1955"
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Standard
 \begin_inset Graphics
@@ -427,17 +428,29 @@ The measured reflectivity depends on the variation in the scattering length
 \begin_layout Standard
 In this description the interface is split into 
 \emph on
-n
+
+\begin_inset Formula $n$
+\end_inset
+
+
 \emph default
  layers.
  Since the incident neutron beam is refracted by each of the layers the
  wavevector, 
 \emph on
-k
+
+\begin_inset Formula $k$
+\end_inset
+
+
 \emph default
 , in layer 
 \emph on
-n
+
+\begin_inset Formula $n$
+\end_inset
+
+
 \emph default
 , is given by:
 \end_layout
@@ -452,7 +465,21 @@ k_{n}=\sqrt{k_{0}^{2}-4\pi\left(\rho_{n}-\rho_{0}\right)}\label{Equation:wavevec
 \end_layout
 
 \begin_layout Standard
-The Fresnel reflection coefficient between layer 
+where 
+\begin_inset Formula $k_{0}=Q/2$
+\end_inset
+
+.
+ Note that the wavevector can be complex if 
+\begin_inset Formula $4\pi(\rho_{n}-\rho_{0})$
+\end_inset
+
+ is greater than 
+\begin_inset Formula $k_{0}^{2}$
+\end_inset
+
+.
+ The Fresnel reflection coefficient between layer 
 \emph on
 n
 \emph default
@@ -466,15 +493,6 @@ n+1
 \begin_layout Standard
 \begin_inset Formula \begin{equation}
 r_{n,n+1}=\frac{k_{n}-k_{n+1}}{k_{n}+k_{n+1}}\label{eq:}\end{equation}
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula \begin{equation}
-r_{n,n+1}=\frac{k_{n}-k_{n+1}}{k_{n}+k_{n+1}}\exp\left(-2k_{n}k_{n+1}\sigma_{n,n+1}^{2}\right)\label{eq:rough}\end{equation}
 
 \end_inset
 
@@ -497,6 +515,15 @@ key "Nevot1980"
 \end_inset
 
 .
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+r_{n,n+1}=\frac{k_{n}-k_{n+1}}{k_{n}+k_{n+1}}\exp\left(-2k_{n}k_{n+1}\sigma_{n,n+1}^{2}\right)\label{eq:rough}\end{equation}
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1760,7 +1787,11 @@ reference "sub:The-organisation-of"
 
 \begin_layout Enumerate
 Fit curves for the data you analysed.
- An SLD profile is also appended to the SLDplot
+ An SLD profile is also appended to the 
+\noun on
+Scattering Length Density Graph
+\noun default
+.
 \end_layout
 
 \begin_layout Enumerate
@@ -1785,7 +1816,7 @@ W_Sigma
 \end_layout
 
 \begin_layout Enumerate
-The normalised correlation matrix is contained in a wave called 
+The covariance matrix is contained in a wave called 
 \noun on
 M_Covar.
 \end_layout
@@ -2062,6 +2093,11 @@ Motofit
 \end_layout
 
 \begin_layout Subsubsection
+\begin_inset LatexCommand label
+name "sub:Genetic-+-Monte"
+
+\end_inset
+
 Genetic + Monte Carlo Error analysis
 \end_layout
 
@@ -2742,7 +2778,7 @@ As Motofit v3.04 a scattering length density calculator is integrated into
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Standard
 \begin_inset Graphics
@@ -2875,7 +2911,7 @@ You can then enter the calculated value into the SLD database, on the next
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Standard
 \begin_inset Graphics
@@ -2951,7 +2987,7 @@ Batch fitting datasets
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Standard
 \begin_inset Graphics
@@ -3000,8 +3036,7 @@ Batchfitting is easy in Motofit.
 \end_layout
 
 \begin_layout Standard
-This function is essential for people with many kinetic datasets (e.g.
- >5).
+This function is essential for people with many kinetic datasets.
  When you select 
 \emph on
 Load batch data
@@ -3048,13 +3083,17 @@ fit between cursors
 
 \begin_layout Standard
 Now select 
-\emph on
+\noun on
 fit batch data
-\emph default
- from the menu 
-\emph on
-Motofit->Batchdata
-\emph default
+\noun default
+ from the menu
+\noun on
+ Motofit
+\noun default
+->
+\noun on
+Batchdata
+\noun default
 .
  This fits the first dataset (as normal), using the parameters in the reflectivi
 ty panel as a starting point.
@@ -3066,6 +3105,11 @@ ty panel as a starting point.
  fit proceeds.
  Comprehensive graphs detailing the fits and trends in parameters are available
  at the end, ready to export to your Nature paper.
+ Please bear in mind that this technique cannot handle with a system that
+ changes in structure, i.e.
+ you transition from a single layer model to a two layer model.
+ Also, if you use Genetic Optimisation the limits that you set must be suitable
+ for all datasets.
 \end_layout
 
 \begin_layout Subsection
@@ -3112,6 +3156,11 @@ status open
 \begin_inset Caption
 
 \begin_layout Standard
+\begin_inset LatexCommand label
+name "fig:Layer-thickness-Chi2"
+
+\end_inset
+
 Layer thickness Chi2 map for a sample with well defined Kiessig Fringes
  (212A)
 \end_layout
@@ -3196,8 +3245,8 @@ ng polymer layers, chebyshev polynomials describing a free form SLD profile,
 \end_layout
 
 \begin_layout Standard
-In the last example listed above parameterisation using an area-per-molecule
- reduces the number of parameters by one.
+In this last example parameterisation using an area-per-molecule reduces
+ the number of parameters by one.
  Normally one fits two thicknesses and two SLD values for a lipid layer
  (headgroup and tailgroup).
  However, the volume of the head and tail groups, and their scattering lengths
@@ -3211,7 +3260,15 @@ le.
 \end_layout
 
 \begin_layout Standard
-In this situation you will have to use the curve-fitting dialogue.
+In this situation you will have to use the curve-fitting dialogue (
+\noun on
+Analysis->Curve fitting
+\noun default
+ or 
+\noun on
+Analysis -> Genetic curvefitting
+\noun default
+).
  You will create a specific parameter wave for your model.
  You will then write a function that will take your parameter wave as input,
  create a specific wave (see 
@@ -3230,7 +3287,7 @@ target "mailto:andrew_nelson@users.sourceforge.net"
 \end_inset
 
  for the code required to do this.
- This is very simple, so don't be afraid.
+ This is very simple, so don't be afraid to ask.
 \end_layout
 
 \begin_layout Subsection
@@ -3639,11 +3696,33 @@ When should I use Levenberg-Marquardt or genetic optimisation?
 \end_layout
 
 \begin_layout Standard
-I would use Genetic Optimisation to perform the fitting (for both single
- datasets and multiple contrast fitting), then follow up with Levenberg
- Marquardt to calculate errors, etc.
- This is because Genetic Optimisation is very good at finding global minima
- from poor initial guesses, but Levenberg Marquardt is much faster.
+Levenberg Marquardt is fast, but can get stuck in local minima - solutions
+ which aren't the best - especially if the starting solutions are not great.
+ Genetic Optimisation has a higher probability of finding the correct solution,
+ even if the starting solution is not good, but is slower.
+\end_layout
+
+\begin_layout Subsection
+How are the parameter uncertainties calculated?
+\end_layout
+
+\begin_layout Standard
+See 
+\begin_inset LatexCommand ref
+reference "sub:What-is-a"
+
+\end_inset
+
+.
+ Both Levenberg Marquardt and the Genetic Optimisation approach use a finite
+ difference approach to estimate parameter uncertainty.
+ For a more robust (but much slower) approach see 
+\begin_inset LatexCommand ref
+reference "sub:Genetic-+-Monte"
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Subsection
@@ -3661,15 +3740,83 @@ The covariance matrix is the inverse of the Hessian matrix, which describes
 \begin_inset Formula $\chi^{2}$
 \end_inset
 
- with respect to each fit parameter (the partial derivative of 
+ with respect to each fit parameter (the second order partial derivative
+ of 
 \begin_inset Formula $\chi^{2}$
 \end_inset
 
  with respect to the parameters).
- The leading diagonal of the covariance matrix gives you the uncertainty
- in fitted parameter, whereas the off diagonal elements tell youtells you
- about the interdependence of parameters.
- When the covariance matrix is normalised (to give you a correlation matrix)
+ The leading diagonal of the covariance matrix gives you the 
+\emph on
+variance
+\emph default
+ (remember, standard deviation is the square root of the variance) in uncertaint
+y of the fitted parameter, whereas the off diagonal elements tell you about
+ the 
+\emph on
+covariance
+\emph default
+ (interdependence) of parameters.
+ 
+\end_layout
+
+\begin_layout Standard
+There should be an inverse relationship between the second-order derivative
+ (of 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+) for a parameter and its variance.
+ If the minimum of the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ function is sharp with respect to a parameter (see 
+\begin_inset LatexCommand ref
+reference "fig:Layer-thickness-Chi2"
+
+\end_inset
+
+, then the change of slope of 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ around the minimum is sharp and the second order derivative is large.
+ In such cases the parameter estimate is stable and the variance in parameter
+ estimate is low.
+ However, if the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ function is not sharp, because the parameter can move greatly without affecting
+ the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ value, then the change in slope around the minimum is negligible and the
+ second order derivative is nearly zero.
+ As a result the variance in parameter estimate is large.
+\end_layout
+
+\begin_layout Standard
+The Hessian matrix is calculated using a finite difference approximation,
+ then inverted to give the covariance matrix.
+\end_layout
+
+\begin_layout Standard
+In some cases the matrix inversion is unstable and may give incorrect values
+ for the variance/standard deviation of the parameter estimate.
+ In such cases use the Monte Carlo resampling technique (
+\begin_inset LatexCommand ref
+reference "sub:Genetic-+-Monte"
+
+\end_inset
+
+) for a robust estimation of the parameter standard deviations.
+\end_layout
+
+\begin_layout Standard
+When the covariance matrix is normalised (to give you a correlation matrix)
  the off diagonal elements will have values in the range -1 to 1.
  A value of 1 means perfect correlation, i.e.
  as one parameter changes the other parameter will increase concomitantly.
