@@ -1884,8 +1884,8 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 		duplicate/free y_montecarlo, tempdump
 		
 		//make a wave to put the montecarlo iterations in
-		make/o/d/n=(Iters, dimsize(w, 0)) M_montecarlo = 0
-		make/o/d/n=(iters) W_chisq
+		make/o/d/n=(0, dimsize(w, 0)) M_montecarlo = 0
+		make/o/d/n=(0) W_chisq
 		
 		//take care of cursors
 		if(paramisdefault(cursA))
@@ -1901,6 +1901,9 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 //			y_montecarlo = yy + gnoise(ee)
 //			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
 			Gencurvefit/MC/D=tempdump/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+			redimension/n=(ii + 1, -1) M_montecarlo
+			redimension/n=(ii + 1) W_chisq
+			
 			M_montecarlo[ii][] = w[q]
 			W_chisq[ii] = V_chisq
 			if(strlen(outf))
@@ -1912,20 +1915,22 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 	
 		//now work out correlation matrix and errors.
 		//see Heinrich et al., Langmuir, 25(7), 4219-4229
-		make/n=(dimsize(w, 0))/o W_sigma954, means, stdevs
-		make/n=(dimsize(w,0), dimsize(w, 0))/o M_correlation
+		make/n=(dimsize(w, 0))/d/o W_sigma, means, stdevs
+		make/n=(dimsize(w,0), dimsize(w, 0))/o/d M_correlation
 		M_correlation = NaN
 	
+		iters = dimsize(M_montecarlo, 0)
+		
 		for(ii = 0 ; ii<dimsize(w, 0) ; ii+=1)
-			make/o/d/n=(Iters) goes
+			make/o/d/n=(iters) goes
 			goes = M_montecarlo[p][ii]
-			Wavestats/alph=0.045501/M=2/q/w goes
+			Wavestats/M=2/q/w goes
 			Wave M_wavestats
-			W_sigma954[ii] = M_wavestats[25]- M_wavestats[24]
+			W_sigma[ii] =  M_wavestats[4]
 			means[ii] = M_wavestats[3]
 			stdevs[ii] = M_wavestats[4]
 			if(stringmatch(holdstring[ii], "1"))
-				W_sigma954[ii] = NaN
+				W_sigma[ii] = NaN
 			endif
 		endfor
 		for(ii=0 ; ii< dimsize(w, 0) ; ii+=1)

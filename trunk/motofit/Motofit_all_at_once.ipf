@@ -835,7 +835,7 @@ static Function Moto_do_a_fit()
 					abort
 				endif
 				//declare the output of the montecarlo
-				Wave M_correlation, M_montecarlo, W_sigma954
+				Wave M_correlation, M_montecarlo
 				make/free/d/n=(dimsize(M_montecarlo, 0)) stats
 				make/d/o/n=(dimsize(coef, 0)) W_sigma = 0
 				for(ii = 0 ; ii < dimsize(M_Montecarlo, 1) ; ii+=1)
@@ -848,7 +848,6 @@ static Function Moto_do_a_fit()
 				endfor
 				//create a graph of all the montecarloSLDcurves
 				Moto_montecarlo_SLDcurves(M_montecarlo, 0.02, 250)
-				killwaves/z W_sigma954
 				break
 		endswitch
 		if(!V_fiterror)
