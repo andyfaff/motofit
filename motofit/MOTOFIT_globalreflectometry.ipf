@@ -1465,9 +1465,13 @@ Function Do_a_global_fit()
 				endif
 				
 				Moto_montecarlo(fitfunction, coefs, yy, fitxx, dy, holdstring, Iters)
-				Wave M_montecarlo
-				processGlobalMonteCarlo(M_montecarlo)
-				
+				Wave M_montecarlo //also outputs W_sigma
+				//overwrite the original coefficients
+				matrixop/free/o summ = sumcols(M_montecarlo)
+				coefs = summ[0][p] / dimsize(M_montecarlo, 0)
+				extract_combined_into_list(coefs)
+			
+				processGlobalMonteCarlo(M_montecarlo)	
 				break
 		endswitch
 	catch
@@ -1514,14 +1518,14 @@ Function Do_a_global_fit()
 	endif
 	
 	//get the best fit waves AFTER THE FIT
-	evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")), usedqwave = str2num(motofit#getmotofitoption("usedqwave")))
+	variable chi2 = evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")), usedqwave = str2num(motofit#getmotofitoption("usedqwave")))
 	
 	//do you want to append residuals
 	controlinfo/W=reflectivitygraph appendresiduals
 	if(V_Value)
 		motofit#moto_appendresiduals()
 	endif
-	ValDisplay Chi2_tab1, win=globalreflectometrypanel, value = _NUM:(V_chisq/V_npnts)
+	ValDisplay Chi2_tab1, win=globalreflectometrypanel, value = _NUM:(chi2)
 	dowindow/k globalreflectometrygraph
 End
 
@@ -1563,12 +1567,12 @@ Function processGlobalMonteCarlo(M_montecarlo)
 	endfor
 
 	//make an individual output coefficient
-	tempcoefs = M_montecarlo[0][p]
-	Wave/wave outputcoefs = decompose_into_individual_coefs(tempcoefs)
 	for(ii = 0 ; ii < numdatasets ; ii += 1)
-		Wave indy = outputcoefs[ii]
-		make/o/d/n=(numpnts(indy)) $("root:data:" + datasets[ii] + ":coef_" + datasets[ii] + "_R")/Wave=indy2
-		indy2 = indy
+		Wave indy3 = montecarlowaves[ii]
+		make/o/d/n=(dimsize(indy3, 1)) $("root:data:" + datasets[ii] + ":coef_" + datasets[ii] + "_R")/Wave=indy2
+
+		matrixop/free summ = sumcols(indy3)
+		indy2 = summ[0][p] / dimsize(indy3, 0)
 	endfor
 
 	plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
