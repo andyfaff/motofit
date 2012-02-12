@@ -194,9 +194,7 @@ Function interestProcessor(w,x)
 					col = floor(v_value/dimsize(axeslist,0))
 					row = v_value-col*dimsize(axeslist,0)
 					if(col==1 || col==0)
-						axeslist[row][2] = num2str(str2num(str2))				
-						//update the layout picture
-						updatelayout(axeslist[row][0])
+						axeslist[row][2] = num2str(str2num(str2))				 
 						//				beep
 					endif
 		
@@ -223,28 +221,6 @@ Function interestProcessor(w,x)
 		endif
 	endif
 End
-
-Function updatelayout(motor)
-	string motor
-	Wave/t axeslist = root:packages:platypus:SICS:axeslist
-	variable rowsinwave = dimsize(axeslist,0),col,row,val,ii
-
-	string controls = ""
-	if(itemsinlist(winlist("instrumentlayout", ";", "WIN:64")))
-		controls = controlnamelist("instrumentlayout","",motor)
-	endif
-	if(itemsinlist(controls)) 
-		findvalue/z/text = motor axeslist
-		if(V_value==-1)
-			return 0
-		endif
-		col=floor(V_value/rowsInWave)
-		row=V_value-col*rowsInWave
-		val = str2num(axeslist[row][col+1])
-		
-		titlebox/z $motor,win=instrumentlayout,title = motor+"="+ axeslist[row][col+2]
-	Endif
-end
 
 Function log_close()
 	NVAR/z logID = root:packages:platypus:SICS:logID
