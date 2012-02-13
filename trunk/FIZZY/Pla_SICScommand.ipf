@@ -700,7 +700,7 @@ Function enumerateHipadabapaths(filepath)
 	endtry
 
 	//now remove the nodes that aren't leaves.
-	removeBranchNodes(hipadaba_paths)
+	//removeBranchNodes(hipadaba_paths)
 
 	if(fileID>1)
 		xmlclosefile(fileID,0)
