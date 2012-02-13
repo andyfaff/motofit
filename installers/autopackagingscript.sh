@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ~/Documents/Andy/MOTOFIT/motofit/branches/dev/installers
+cd ~/Documents/Andy/MOTOFIT/motofit/trunk/installers
 
 rm motofitInstaller.dmg
 
