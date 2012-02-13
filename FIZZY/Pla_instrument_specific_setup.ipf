@@ -1535,18 +1535,28 @@ Function Instrumentlayout_panel()
 	dowindow/c instrumentlayout
 	SetDrawLayer/w=instrumentlayout UserBack
 	drawpict 0,0,0.6,0.6,Procglobal#platypuspicture
-		
-	TitleBox dz,pos={3,112},size={25,21},title="dz=",labelBack=(65535,65535,65535), win=instrumentlayout
-	TitleBox dz,fSize=10, win=instrumentlayout
-	TitleBox sth,pos={127,177},size={28,21},title="sth=", win=instrumentlayout
-	TitleBox sth,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
-	TitleBox sz,pos={127,203},size={28,21},title="sz=", win=instrumentlayout
-	TitleBox sz,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
-	TitleBox sx,pos={127,229},size={28,21},title="sx=", win=instrumentlayout
-	TitleBox sx,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
-	TitleBox dy,pos={3,139},size={25,21},title="dy=",labelBack=(65535,65535,65535), win=instrumentlayout
-	TitleBox dy,fSize=10, win=instrumentlayout
 
+
+	SetVariable dz_l,pos={3,115},size={70,21},title="dz", win=instrumentlayout
+	SetVariable dz_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable dz_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/detector/vertical_translation")][1],noedit= 1, win=instrumentlayout
+	
+	SetVariable sth_l,pos={127,183},size={65,21},title="sth", win=instrumentlayout
+	SetVariable sth_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable sth_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/sth")][1],noedit= 1, win=instrumentlayout
+	
+	SetVariable sz_l,pos={127,203},size={65,21},title="sz", win=instrumentlayout
+	SetVariable sz_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable sz_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/translate_z")][1],noedit= 1, win=instrumentlayout
+	
+	SetVariable sx_l,pos={127,223},size={65,21},title="sx", win=instrumentlayout
+	SetVariable sx_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable sx_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/translate_x")][1],noedit= 1, win=instrumentlayout
+	
+	SetVariable dy_l,pos={3,139},size={70,21},title="dy", win=instrumentlayout
+	SetVariable dy_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable dy_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/detector/longitudinal_translation")][1],noedit= 1, win=instrumentlayout
+	
 	SetVariable CNStemp,pos={521,105},size={130,16},title="CNS temp", win=instrumentlayout
 	SetVariable CNStemp,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable CNStemp,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/cns_inlet_temp")][1],noedit= 1, win=instrumentlayout
@@ -1638,8 +1648,13 @@ Function Instrumentlayout_panel()
 	SetVariable ss3hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
 	SetVariable ss3hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/third/horizontal/gap")][1],noedit= 1, win=instrumentlayout
 	
-	TitleBox st3vt,pos={402,303},size={29,13},title="st3vt=", win=instrumentlayout
-	TitleBox st3vt,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
+	SetVariable st3vt_l,pos={402,303},size={75,21},title="st3vt", win=instrumentlayout
+	SetVariable st3vt_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable st3vt_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/third/vertical/st3vt")][1],noedit= 1, win=instrumentlayout
+	
+	SetVariable st4vt_l,pos={586,303},size={75,21},title="st4vt", win=instrumentlayout
+	SetVariable st4vt_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable st4vt_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/fourth/vertical/st4vt")][1],noedit= 1, win=instrumentlayout
 	
 	SetVariable ss4vg_l,pos={609,376},size={74,13},title="ss4vg", win=instrumentlayout
 	SetVariable ss4vg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
@@ -1647,14 +1662,10 @@ Function Instrumentlayout_panel()
 	SetVariable ss4hg_l,pos={609,408},size={74,13},title="ss4hg", win=instrumentlayout
 	SetVariable ss4hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
 	SetVariable ss4hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/fourth/horizontal/gap")][1],noedit= 1, win=instrumentlayout
-	
-	TitleBox st4vt,pos={586,303},size={29,13},title="st4vt=", win=instrumentlayout
-	TitleBox st4vt,labelBack=(65535,65535,65535),fSize=10,frame=0, win=instrumentlayout
-	
+		
 	valdisplay bmon3, value = #"root:packages:platypus:SICS:bmon3_rate", limits={0, FSD,0}, title = "Detector\rRate", win=instrumentlayout
 	ValDisplay bmon3 mode=3,barmisc={14,50}, size={280,50},fsize=14, valueBackColor=(51456,44032,58880), win=instrumentlayout
 	ValDisplay bmon3 lowColor= (65280,16384,16384), pos = {425,13}, frame=2, format="%d", win=instrumentlayout
-
 	
 	//print the chopper status
 //	Button printchopspeed,pos={569,105},size={100,40},proc=printCHopSpeedBTN,title="Print Chopper\rStatus"
