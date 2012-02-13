@@ -1546,6 +1546,10 @@ Function processGlobalMonteCarlo(M_montecarlo)
 	
 	numdatasets = dimsize(datasets, 0)
 	
+	//overwrite the coefficient wave (this is repeated in do_a_fit, but isn't present when you ingest motoMPI
+	matrixop/free summ = sumcols(M_montecarlo)
+	coefs = summ[0][p] / dimsize(M_montecarlo, 0)
+	
 	//now got to split M_Montecarlo into individual waves, in the root:data folder
 	make/wave/n=(numdatasets)/free montecarlowaves
 	duplicate/free coefs, tempcoefs
@@ -1568,11 +1572,21 @@ Function processGlobalMonteCarlo(M_montecarlo)
 
 	//make an individual output coefficient
 	for(ii = 0 ; ii < numdatasets ; ii += 1)
-		Wave indy3 = montecarlowaves[ii]
-		make/o/d/n=(dimsize(indy3, 1)) $("root:data:" + datasets[ii] + ":coef_" + datasets[ii] + "_R")/Wave=indy2
-
-		matrixop/free summ = sumcols(indy3)
-		indy2 = summ[0][p] / dimsize(indy3, 0)
+		Wave indy = montecarlowaves[ii]
+		make/o/d/n=(dimsize(indy, 1)) $("root:data:" + datasets[ii] + ":coef_" + datasets[ii] + "_R")/Wave=indy2
+		make/o/d/n=(dimsize(indy, 1)) $("root:data:" + datasets[ii] + ":W_sigma")/Wave=indy4
+		
+		//work out the mean parameter
+		matrixop/free summ = sumcols(indy)
+		indy2 = summ[0][p] / dimsize(indy, 0)
+		
+		//work out the parameter error.
+		duplicate/free indy, mc_squared
+		mc_squared *= mc_squared
+		matrixop/free summ = sumcols(mc_squared)
+		summ /= dimsize(mc_squared, 0)
+		
+		indy4 = sqrt(summ - indy2)
 	endfor
 
 	plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
