@@ -1,5 +1,5 @@
 ; Script generated with the Venis Install Wizard
-
+;
 ; Define your application name
 !define APPNAME "motofit"
 !define APPNAMEANDVERSION      "platypus  "
