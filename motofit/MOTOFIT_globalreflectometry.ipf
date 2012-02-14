@@ -1576,17 +1576,13 @@ Function processGlobalMonteCarlo(M_montecarlo)
 		make/o/d/n=(dimsize(indy, 1)) $("root:data:" + datasets[ii] + ":coef_" + datasets[ii] + "_R")/Wave=indy2
 		make/o/d/n=(dimsize(indy, 1)) $("root:data:" + datasets[ii] + ":W_sigma")/Wave=indy4
 		
-		//work out the mean parameter
-		matrixop/free summ = sumcols(indy)
-		indy2 = summ[0][p] / dimsize(indy, 0)
-		
-		//work out the parameter error.
-		duplicate/free indy, mc_squared
-		mc_squared *= mc_squared
-		matrixop/free summ = sumcols(mc_squared)
-		summ /= dimsize(mc_squared, 0)
-		
-		indy4 = sqrt(summ - indy2)
+		for(jj = 0 ; jj < dimsize(indy, 1) ; jj+=1)
+			make/n=(dimsize(indy, 0))/d/free temp
+			temp[] = indy[p][jj]
+			indy2[jj] = mean(temp)
+			indy4[jj] = variance(temp)
+		endfor
+		indy4 = sqrt(indy4)
 	endfor
 
 	plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
