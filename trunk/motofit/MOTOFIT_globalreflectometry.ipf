@@ -1547,8 +1547,14 @@ Function processGlobalMonteCarlo(M_montecarlo)
 	numdatasets = dimsize(datasets, 0)
 	
 	//overwrite the coefficient wave (this is repeated in do_a_fit, but isn't present when you ingest motoMPI
-	matrixop/free summ = sumcols(M_montecarlo)
-	coefs = summ[0][p] / dimsize(M_montecarlo, 0)
+	make/o/d/n=(numpnts(coefs)) W_sigma
+	for(ii = 0 ; ii < dimsize(M_Montecarlo, 0) ; ii += 1)
+		make/d/free/n=(dimsize(M_Montecarlo, 0)) temp
+		temp = M_montecarlo[p][ii]
+		W_sigma[ii] = variance(temp)
+		coefs[ii] = mean(temp)
+	endfor
+	W_sigma = sqrt(W_sigma)
 	
 	//now got to split M_Montecarlo into individual waves, in the root:data folder
 	make/wave/n=(numdatasets)/free montecarlowaves
@@ -1570,7 +1576,7 @@ Function processGlobalMonteCarlo(M_montecarlo)
 		endfor
 	endfor
 
-	//make an individual output coefficient
+	//make an individual output and sigma coefficient
 	for(ii = 0 ; ii < numdatasets ; ii += 1)
 		Wave indy = montecarlowaves[ii]
 		make/o/d/n=(dimsize(indy, 1)) $("root:data:" + datasets[ii] + ":coef_" + datasets[ii] + "_R")/Wave=indy2
