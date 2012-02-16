@@ -1770,7 +1770,7 @@ Monte Carlo Error Analysis
  value.
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Subsubsection
 Output available from the fit
 \end_layout
 
@@ -1819,6 +1819,14 @@ W_Sigma
 The covariance matrix is contained in a wave called 
 \noun on
 M_Covar.
+\end_layout
+
+\begin_layout Enumerate
+The correlation matrix is contained in a wave called 
+\noun on
+M_Correlation
+\noun default
+.
 \end_layout
 
 \begin_layout Enumerate

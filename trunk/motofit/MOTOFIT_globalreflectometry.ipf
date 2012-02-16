@@ -1467,8 +1467,8 @@ Function Do_a_global_fit()
 				Moto_montecarlo(fitfunction, coefs, yy, fitxx, dy, holdstring, Iters)
 				Wave M_montecarlo //also outputs W_sigma
 				//overwrite the original coefficients
-				matrixop/free/o summ = sumcols(M_montecarlo)
-				coefs = summ[0][p] / dimsize(M_montecarlo, 0)
+				Wave M_montecarlostats = 	M_montecarloStatistics(M_montecarlo)
+				coefs = M_montecarlostats[p][0]
 				extract_combined_into_list(coefs)
 			
 				processGlobalMonteCarlo(M_montecarlo)	
@@ -1526,7 +1526,7 @@ Function Do_a_global_fit()
 		motofit#moto_appendresiduals()
 	endif
 	ValDisplay Chi2_tab1, win=globalreflectometrypanel, value = _NUM:(chi2)
-	dowindow/k globalreflectometrygraph
+	dowindow/k globalreflectometrygraph	
 End
 
 Function processGlobalMonteCarlo(M_montecarlo)
@@ -1582,13 +1582,10 @@ Function processGlobalMonteCarlo(M_montecarlo)
 		make/o/d/n=(dimsize(indy, 1)) $("root:data:" + datasets[ii] + ":coef_" + datasets[ii] + "_R")/Wave=indy2
 		make/o/d/n=(dimsize(indy, 1)) $("root:data:" + datasets[ii] + ":W_sigma")/Wave=indy4
 		
-		for(jj = 0 ; jj < dimsize(indy, 1) ; jj+=1)
-			make/n=(dimsize(indy, 0))/d/free temp
-			temp[] = indy[p][jj]
-			indy2[jj] = mean(temp)
-			indy4[jj] = variance(temp)
-		endfor
-		indy4 = sqrt(indy4)
+		Wave M_montecarlostats = M_montecarloStatistics(M_monteCarlo)
+		indy2[] = M_montecarlostats[p][0]
+		indy4[] = M_montecarlostats[p][1]
+		Waveclear M_Montecarlostats
 	endfor
 
 	plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
@@ -1757,8 +1754,13 @@ Function parse_motoMPI([fileStr])
 	
 	//process the output
 	processGlobalMonteCarlo(themontecarlo)
-	
+		
 	duplicate/o theMontecarlo, M_montecarlo
+	
+	string holdstring = ""
+	holdstring = padstring(holdstring, Dimsize(M_Montecarlo, 1), 48)
+	make2DScatter_plot_matrix(M_monteCarlo, holdstring)
+
 	killwaves/z theMonteCarlo
 End
 
