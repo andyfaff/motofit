@@ -990,7 +990,7 @@ Function/wave moto_paramdescription(nlayers, mode, [Vmullayers])
 	return paramdescription
 End
 
-static Function moto_loadcoefs([filestr])
+static Function/t moto_loadcoefs([filestr])
 	string fileStr
 	SVAR/Z Motofitcontrol=root:packages:motofit:reflectivity:motofitcontrol
 	if(!paramisdefault(fileStr) && strlen(fileStr))
@@ -1029,6 +1029,7 @@ static Function moto_loadcoefs([filestr])
 	newdatafolder/o $("root:data:" + datasetname)
 	duplicate/o coefwave, $("root:data:" + datasetname + ":" + "coef_" + datasetname + "_R")
 	killwaves/z coefwave
+	return datasetname
 End
 
 static Function Moto_snapshot(ywave, xwave, sldwave, df)
@@ -2289,7 +2290,10 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 					
 			break
 		case "loadcoefwave_tab0":
-			moto_loadcoefs()
+			datasetname = moto_loadcoefs()
+			if(stringmatch(datasetname, "theoretical"))
+				moto_usecoefWave(root:data:theoretical:coef_theoretical_R)
+			endif
 			break
 		case "savefitwave_tab0":
 			datasetnames = moto_fittable_datasets(justfolders = 1)
