@@ -521,7 +521,8 @@ static Function Moto_Reflectivitypanel() : Panel
 	
 	Slider slider0_tab0,pos={8,544},size={564,50},fSize=12,fColor=(43690,43690,43690)
 	Slider slider0_tab0,valueColor=(43690,43690,43690), help={"adjust a parameter by moving the slider"}
-	Slider slider0_tab0,limits={0,1,0},variable= V_Flag,side=1,vert= 0, proc = motofit#moto_GUI_slider, ticks=0
+	Slider slider0_tab0,limits={0.5,1.5,0.1},variable= V_Flag,side=1, value = 1,vert= 0, proc = motofit#moto_GUI_slider, ticks=0
+	slider slider0_tab0, userdata(whichparam) = "listwave-root:packages:motofit:reflectivity:baselayerparams;row-1;col-1"
 
 	
 	//datasets
