@@ -28,6 +28,7 @@ Menu "Motofit"
 		//	                        "Extract trends", Trends()
 	End
 	"About", Motofit#Moto_AboutPanel()
+	"Manual", browseURL "dav1-platypus.nbi.ansto.gov.au/Motofitmanual.pdf"
 	"-"
 	"Transfer data from old version to new version", motofit#moto_transfer_data()
 	"-"
