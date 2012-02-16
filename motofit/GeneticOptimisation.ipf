@@ -1959,10 +1959,10 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 	return err
 End
 
-Function M_montecarloStatistics(M_monteCarlo)
+Function/wave M_montecarloStatistics(M_monteCarlo)
 	Wave M_montecarlo
 	variable ii
-	make/o/d/n=(dimsize(M_Montecarlo, 1), 2) M_montecarlostats
+	make/free/d/n=(dimsize(M_Montecarlo, 1), 2) M_montecarlostats
 	make/d/free/n=(dimsize(M_montecarlo, 0)) vals
 
 	for(ii = 0 ; ii < dimsize(M_Montecarlo, 1) ; ii += 1)
@@ -1971,7 +1971,7 @@ Function M_montecarloStatistics(M_monteCarlo)
 		M_Montecarlostats[ii][0] = V_avg
 		M_Montecarlostats[ii][1] = V_sdev	
 	endfor
-
+	return M_Montecarlostats
 End
 
 Function make2DScatter_plot_matrix(M_monteCarlo, holdstring)
@@ -1991,10 +1991,10 @@ Function make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 	try
 		for(ii = 0 ; ii < dimsize(M_montecarlo, 1) ; ii += 1)
 			if(stringmatch(holdstring[ii], "0"))
-				make/n=(dimsize(M_montecarlo, 0))/o/y=(wavetype(M_montecarlo)) $("MonteCarlo_" + num2istr(ii))
-				Wave M_montecarloIt = $("MonteCarlo_" + num2istr(ii))
-				M_montecarloIt[] = M_montecarlo[p][ii]
-				allWaves += "root:packages:Motofit:gencurvefit:MonteCarlo_" + num2istr(ii) + ";"
+				make/n=(dimsize(M_montecarlo, 0))/o/y=(wavetype(M_montecarlo)) $("MC_" + num2istr(ii))
+				Wave M_montecarloI = $("MC_" + num2istr(ii))
+				M_montecarloI[] = M_montecarlo[p][ii]
+				allWaves += "root:packages:Motofit:gencurvefit:MC_" + num2istr(ii) + ";"
 			endif
 		endfor
 		SPM_FreeAxisPlotMatrix(allWaves, 21, 2, 1, MarkerSize=1)
@@ -2069,10 +2069,10 @@ endfor
 
 End
 
-Function gen_gcm()
+Function gen_gcm(M_covar)
 Wave M_covar
-Duplicate/o M_Covar, CorMat	 // You can use any name instead of CorMat
-CorMat = M_Covar[p][q]/sqrt(M_Covar[p][p]*M_Covar[q][q])
+Duplicate/o M_Covar, M_correlation	 // You can use any name instead of CorMat
+M_correlation = M_Covar[p][q]/sqrt(M_Covar[p][p]*M_Covar[q][q])
 End
 
 Function gen_Chi2_guess(fitfuncstr, coefs, ywave, xwave, ewave[, cursA, cursB])

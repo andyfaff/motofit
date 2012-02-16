@@ -836,16 +836,12 @@ static Function Moto_do_a_fit()
 				endif
 				//declare the output of the montecarlo
 				Wave M_correlation, M_montecarlo
-				make/free/d/n=(dimsize(M_montecarlo, 0)) stats
 				make/d/o/n=(dimsize(coef, 0)) W_sigma = 0
-				for(ii = 0 ; ii < dimsize(M_Montecarlo, 1) ; ii+=1)
-					if(stringmatch(holdstring[ii,ii], "1"))
-						continue
-					endif
-					stats[] = M_Montecarlo[p][ii]
-					coef[ii] = mean(stats)
-					W_sigma[ii] = sqrt(variance(stats))
-				endfor
+				
+				Wave M_montecarlostats = M_montecarloStatistics(M_monteCarlo)
+				coef = M_montecarlostats[p][0]
+				W_sigma = M_montecarlostats[p][1]
+				
 				//create a graph of all the montecarloSLDcurves
 				Moto_montecarlo_SLDcurves(M_montecarlo, 0.02, 250)
 				break
@@ -880,6 +876,12 @@ static Function Moto_do_a_fit()
 			if(waveexists(residual))
 				residual /= dR
 			endif 
+			
+			//normalised correlation matrix as well
+			Wave/z M_covar
+			if(waveexists(M_covar))
+				gen_gcm(M_covar)
+			endif
 			
 			//create some SLD waves and append them to the SLD graph
 			make/n=(dimsize(SLD_theoretical_R, 0))/d/o $("SLD_" + datasetname + "_R") = SLD_theoretical_R
