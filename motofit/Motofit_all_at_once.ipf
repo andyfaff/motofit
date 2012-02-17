@@ -822,6 +822,9 @@ static Function Moto_do_a_fit()
 					//you still need errors to resample the data, even if you aren't weighting the fit.
 					Waveclear dR
 					Wave/z dR = $(datasetname + "_E")
+					if(!waveexists(dR))
+						abort "You still need to have an error wave to resample the data, even if you aren't weighting the fit"
+					endif
 				endif
 				
 				iters = 200
