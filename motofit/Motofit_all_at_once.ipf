@@ -418,7 +418,7 @@ static Function Moto_calcchi2()
 	
 	if(useerrors && waveexists(dR))
 		diff /= dR^2
-		res_theoretical_R /= dR
+	//	res_theoretical_R /= dR
 	endif
 	Wavestats/q/z/m=1/R=[leftval, rightval] diff
 	chi2 = V_avg
@@ -819,8 +819,11 @@ static Function Moto_do_a_fit()
 				break
 			case "Genetic+MC_Analysis":
 				if(!useerrors)
-					abort "You have to use error weighting when fitting with the MC analysis"
+					//you still need errors to resample the data, even if you aren't weighting the fit.
+					Waveclear dR
+					Wave/z dR = $(datasetname + "_E")
 				endif
+				
 				iters = 200
 				prompt iters, "iterations:"
 				doprompt "Enter the number of Montercarlo iterations", iters
@@ -832,8 +835,8 @@ static Function Moto_do_a_fit()
 				else
 					iters = ceil(iters)
 				endif
-		
-				if(Moto_montecarlo(fitfunc, coef, RR, inputQQ, dR, holdstring, iters,cursA=leftP, cursB=rightP))
+				
+				if(Moto_montecarlo(fitfunc, coef, RR, inputQQ, dR, holdstring, iters,cursA=leftP, cursB=rightP, fakeweight = useerrors))
 					abort
 				endif
 				//declare the output of the montecarlo
