@@ -1847,14 +1847,15 @@ End
 
 
 
-Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, outf])
+Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, outf, fakeweight])
 	String fn
 	Wave w, yy, xx, ee
 	string holdstring
 	variable Iters, cursA, cursB
 	string outf
+	variable fakeweight //fake weight means that you know the weights, but aren't prepared to weight the data as well.
+
 	//the first fit is always on the pristine data
-	
 	string cDF = getdatafolder(1)
 	variable ii,jj,kk, summ, err = 0, fileID
 
@@ -1898,9 +1899,12 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 		//now lets do the montecarlo fitting
 		variable timed = datetime
 		for(ii=0 ; ii<Iters ; ii+=1)
-//			y_montecarlo = yy + gnoise(ee)
-//			Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
-			Gencurvefit/MC/D=tempdump/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+			if(fakeweight)
+				y_montecarlo = yy + gnoise(ee)
+				Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+			else
+				Gencurvefit/MC/D=tempdump/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
+			endif		
 			redimension/n=(ii + 1, -1) M_montecarlo
 			redimension/n=(ii + 1) W_chisq
 			
