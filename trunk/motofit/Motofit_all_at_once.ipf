@@ -611,6 +611,7 @@ static Function moto_appendresiduals()
 		return 0
 	endif
 	
+	datasets += "theoretical"
 	for(ii = 0 ; ii < itemsinlist(datasets) ; ii+=1)
 		dataset = stringfromlist(ii, datasets)
 		tracecolour = moto_gettracecolour("reflectivitygraph", dataset + "_R")
@@ -626,16 +627,6 @@ static Function moto_appendresiduals()
 		endif
 		Waveclear res
 	endfor
-	//also append the theoreticalresidual for the currently selected dataset
-	Wave/z res = root:data:theoretical:res_theoretical_R
-	if(waveexists(res))
-		//need to work out the current dataset
-		controlinfo/w=reflectivitypanel dataset_tab0
-		dataset = S_value
-		Wave qq = $("root:data:" + dataset + ":" + dataset + "_q")
-		AppendToGraph/W=reflectivitygraph/L=res res vs qq
-		execute/z "modifygraph/W=reflectivitygraph rgb(" + nameofwave(RES) + ")=(0,0,0), lsize("+nameofwave(RES) + ")=2"
-	endif
 	
 	if(changeaxis)
 		ModifyGraph/W=reflectivitygraph standoff(left)=0, standoff(res)=0, axisEnab(left)={0.15,1};
