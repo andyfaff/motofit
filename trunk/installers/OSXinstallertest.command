@@ -1,5 +1,5 @@
 #!/bin/bash
-
+ 
 UserProcedures="/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures"
 IgorExtensions="/Documents/WaveMetrics/Igor Pro 6 User Files/Igor Extensions"
 IgorProcedures="/Documents/WaveMetrics/Igor Pro 6 User Files/Igor Procedures"
