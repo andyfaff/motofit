@@ -1,4 +1,6 @@
 #!/bin/bash
+
+cd $HOME/Documents/Andy/MOTOFIT/motofit/trunk/installers
  
 UserProcedures="/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures"
 IgorExtensions="/Documents/WaveMetrics/Igor Pro 6 User Files/Igor Extensions"
