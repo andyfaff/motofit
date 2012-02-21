@@ -966,7 +966,7 @@ static Function change_numparameters_in_linkage(datasetnum, params)
 	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
 
 	string unlinklist = ""
-	variable ii, jj, row, col, diff_params, oldnumberofparams, lastuniqueparam
+	variable ii, jj, kk, row, col, diff_params, oldnumberofparams, lastuniqueparam
 	
 	if(params < 1 || numtype(datasetnum) || numtype(params) || datasetnum < 0 || datasetnum > numpnts(numcoefs) - 1)
 		return 1
@@ -982,20 +982,36 @@ static Function change_numparameters_in_linkage(datasetnum, params)
 	//all the unique parameters following this dataset have to be incremented/decremented by the difference in param number
 	diff_params = params - oldnumberofparams 
 	
-	Wave uniqueparametermask = isuniqueparam()
+	Wave uniqueparametermask = isuniqueparam(following = 1)
 	
 	//now all unique parameters following the dataset have to be incremented/decremented by diff_params	
 	for(ii = datasetnum + 1 ; ii < dimsize(linkages, 1) ; ii+=1)
 		for(jj = 0 ; jj < dimsize(uniqueparametermask, 0) ; jj += 1)
-			if(uniqueparametermask[jj][ii] > 0)
-				linkages[jj][ii] += diff_params
-			elseif(uniqueparametermask[jj][ii] == 0)
-				findvalue/S=0/i=(linkages[jj][ii]) linkages
-				col = floor(V_value/dimsize(linkages, 0))
-				if(col > datasetnum)
-					linkages[jj][ii] += oldnumberofparams
-				endif 
-			endif
+			switch(uniqueparametermask[jj][ii])
+				case 1:
+					linkages[jj][ii] += diff_params
+				break			
+				case 2:
+					findvalue/z/S=(ii * dimsize(linkages, 0)+ jj + 1)/i=(linkages[jj][ii]) linkages
+					for( ; V_Value > 0 ; )
+						col = floor(V_value/dimsize(linkages, 0))
+						row=V_value - col * dimsize(linkages, 0)
+						linkages[row][col] += diff_params
+						findvalue/z/S=(V_Value)/i=(linkages[jj][ii]) linkages
+					endfor	
+					linkages[jj][ii] += diff_params
+				break
+			endswitch
+			
+//			if(uniqueparametermask[jj][ii] > 0)
+//				linkages[jj][ii] += diff_params
+//			elseif(uniqueparametermask[jj][ii] == 0)
+//				findvalue/S=0/i=(linkages[jj][ii]) linkages
+//				col = floor(V_value/dimsize(linkages, 0))
+//				if(col > datasetnum)
+//					linkages[jj][ii] += oldnumberofparams
+//				endif 
+//			endif
 		endfor
 	endfor
 	
@@ -1547,14 +1563,18 @@ Function processGlobalMonteCarlo(M_montecarlo)
 	numdatasets = dimsize(datasets, 0)
 	
 	//overwrite the coefficient wave (this is repeated in do_a_fit, but isn't present when you ingest motoMPI
-	make/o/d/n=(numpnts(coefs)) W_sigma
-	for(ii = 0 ; ii < dimsize(M_Montecarlo, 0) ; ii += 1)
+	make/o/d/n=(numpnts(coefs)) root:W_sigma, root:coefs
+	Wave rootcoefs=root:coefs
+	Wave W_sigma=root:W_sigma
+	
+	for(ii = 0 ; ii < dimsize(M_Montecarlo, 1) ; ii += 1)
 		make/d/free/n=(dimsize(M_Montecarlo, 0)) temp
 		temp = M_montecarlo[p][ii]
 		W_sigma[ii] = variance(temp)
 		coefs[ii] = mean(temp)
 	endfor
 	W_sigma = sqrt(W_sigma)
+	rootcoefs = coefs
 	
 	//now got to split M_Montecarlo into individual waves, in the root:data folder
 	make/wave/n=(numdatasets)/free montecarlowaves
@@ -1582,7 +1602,7 @@ Function processGlobalMonteCarlo(M_montecarlo)
 		make/o/d/n=(dimsize(indy, 1)) $("root:data:" + datasets[ii] + ":coef_" + datasets[ii] + "_R")/Wave=indy2
 		make/o/d/n=(dimsize(indy, 1)) $("root:data:" + datasets[ii] + ":W_sigma")/Wave=indy4
 		
-		Wave M_montecarlostats = M_montecarloStatistics(M_monteCarlo)
+		Wave M_montecarlostats = M_montecarloStatistics(indy)
 		indy2[] = M_montecarlostats[p][0]
 		indy4[] = M_montecarlostats[p][1]
 		Waveclear M_Montecarlostats
@@ -1756,12 +1776,12 @@ Function parse_motoMPI([fileStr])
 	processGlobalMonteCarlo(themontecarlo)
 		
 	duplicate/o theMontecarlo, M_montecarlo
-	
+	killwaves/z theMonteCarlo
+
 	string holdstring = ""
 	holdstring = padstring(holdstring, Dimsize(M_Montecarlo, 1), 48)
 	make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 
-	killwaves/z theMonteCarlo
 End
 
 Function ingest_motoMPI_input([folderStr])
