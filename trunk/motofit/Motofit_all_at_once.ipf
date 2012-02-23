@@ -830,7 +830,7 @@ static Function Moto_do_a_fit()
 					iters = ceil(iters)
 				endif
 				
-				if(Moto_montecarlo(fitfunc, coef, RR, inputQQ, dR, holdstring, iters,cursA=leftP, cursB=rightP, fakeweight = useerrors))
+				if(Moto_montecarlo(fitfunc, coef, RR, inputQQ, dR, holdstring, iters,cursA=leftP, cursB=rightP, fakeweight = !useerrors))
 					abort
 				endif
 				//declare the output of the montecarlo
