@@ -57,7 +57,7 @@
 	//We'll have two
 	//StrConstant PATH_TO_DATA = "Macintosh HDD:Users:andrew:Documents:Andy:Platypus:TEMP:"
 
-Function/t reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilename, lowlambda, highlambda, rebin, [scanpointrange, timeslices, water, background, expected_peak, actual_peak, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
+Function/s reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilename, lowlambda, highlambda, rebin, [scanpointrange, timeslices, water, background, expected_peak, actual_peak, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
 	string inputPathStr, outputPathStr
 	variable scalefactor
 	string runfilename
@@ -650,7 +650,7 @@ Function sumWave(wav, p1, p2)
 	return summ
 end
 
-Function/t cutFileName(filename)
+Function/s cutFileName(filename)
 	string filename
 	//this function cuts a filename like "PLP00000054" down to "PLP54"
 	//returns the shortened name as a string.
@@ -669,7 +669,7 @@ Function/t cutFileName(filename)
 	return ret
 End
 
-Function/t uniqueFileName(outputPathStr, filename, ext,[dontoverwrite])
+Function/s uniqueFileName(outputPathStr, filename, ext,[dontoverwrite])
 	string outputPathStr, filename, ext
 	variable dontoverwrite
 	
