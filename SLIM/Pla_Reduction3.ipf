@@ -294,24 +294,34 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 	Wave/t directory = root:packages:platypus:catalogue:directories
 	//see if the file exists in the directory list.  If it does, download it.
 	
-	rowsinWave = dimsize(directory, 0)
-	for(ii = lowFi ; ii <= hiFi ; ii += 1)
-		//search to see if it's in the cycles, if it is then great.  If not, then skip"
-		sprintf fname, "PLP%07d.nx.hdf", ii
-		findvalue/TEXT=fname directory
-		if(V_Value == -1)
-			continue
-		endif
-		col=floor(V_value/rowsInWave)
-		row=V_value-col*rowsInWave
-		direct = directory[row][0]
-		easyHttp/PROX=""/PASS=user + ":" + password/File=inputpathStr + fname  url + direct + fname
-		if(V_flag)
-			print "couldn't get", url
-		else
-			print "downloaded ", fname
-		endif
-	endfor
+	make/free/i/n=(hiFi-lowFi) filenumbers, succeeded
+	filenumbers = p + lowFi
+	
+	multithread succeeded[] = downloader(url, directory, inputpathstr, user + ":" + password, filenumbers[p])
+End
+
+Threadsafe Function downloader(url, directory, inputpathstr, userpasscombo, fnumber)
+	string url
+	wave/t directory
+	string inputpathStr, userpasscombo
+	variable fnumber
+
+	variable row, col, rowsinwave
+	string fname, direct
+
+	sprintf fname, "PLP%07d.nx.hdf", fnumber
+	findvalue/TEXT=fname directory
+	if(V_Value == -1)
+		return 0
+	endif
+	rowsinwave = dimsize(directory, 0)
+	col=floor(V_value / rowsInWave)
+	row=V_value-col*rowsInWave
+	direct = directory[row][0]
+	
+	easyHttp/PROX=""/PASS=userpasscombo/File=inputpathStr + fname  url + direct + fname
+	print "Got", fname
+	return 0
 End
 
 Function  reducerpanel() : Panel
