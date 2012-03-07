@@ -101,7 +101,7 @@ StrLen $0 $1
 ${If} $0 = 0
 Abort "You don't appear to have IGOR installed"
 ${EndIf}
-StrCpy $INSTDIR "$DOCUMENTS\Wavemetrics\Igor Pro 6 User Files\"
+StrCpy $INSTDIR "$DOCUMENTS\WaveMetrics\Igor Pro 6 User Files\"
 FunctionEnd
 
 ; Modern install component descriptions
