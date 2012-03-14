@@ -55,18 +55,18 @@ ${EndIf}
 	;INSTALL ALL THE XOPs
 	SetOutPath "$INSTDIR\Igor Extensions"
 	
-	File "../../../XOP Toolkit 5/IgorXOPs5/Abeles/trunk/win/Abeles.xop"
-	File "../../../XOP Toolkit 5/IgorXOPs5/Abeles/trunk/win/Abeles Help.ihf"
+	File "../../../XOP Toolkit 6/IgorXOPs6/Abeles/trunk/win/Abeles.xop"
+	File "../../../XOP Toolkit 6/IgorXOPs6/Abeles/trunk/win/Abeles Help.ihf"
 
-	File "../../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/win/GenCurveFit.xop"
-	File "../../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/ExampleExperiment.pxp"
-	File "../../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/GenCurveFit Help.ihf"
-	File "../../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/ReleaseNotes.txt"
-	File "../../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/Structurefitexample.pxp"
-	File "../../../XOP Toolkit 5/IgorXOPs5/MultiDimensionalGenCurvefit/trunk/extra/license.txt"
+	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/win/GenCurveFit.xop"
+	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/extra/ExampleExperiment.pxp"
+	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/extra/GenCurveFit Help.ihf"
+	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/extra/ReleaseNotes.txt"
+	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/extra/Structurefitexample.pxp"
+	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/extra/license.txt"
 
-	File "../../../XOP Toolkit 5/IgorXOPs5/easyHttp/trunk/win/easyHttp.xop"
-	File "../../../XOP Toolkit 5/IgorXOPs5/easyHttp/trunk/win/easyHttp Help.ihf"
+	File "../../../XOP Toolkit 6/IgorXOPs6/easyHttp/trunk/win/easyHttp.xop"
+	File "../../../XOP Toolkit 6/IgorXOPs6/easyHttp/trunk/win/easyHttp Help.ihf"
 	
 	File "../../../XOP Toolkit 5/IgorXOPs5/multiopenfiles/trunk/win/multiopenfiles.xop"
 	File "../../../XOP Toolkit 5/IgorXOPs5/multiopenfiles/trunk/win/multiopenfiles Help.ihf"
@@ -77,7 +77,7 @@ ${EndIf}
 	File "../../../XOP Toolkit 5/IgorXOPs5/XMLutils/trunk/win/XMLutils.xop"
 	File "../../../XOP Toolkit 5/IgorXOPs5/XMLutils/trunk/win/XMLutils Help.ihf"
 	
-	File "../../../XOP Toolkit 5/IgorXOPs5/neutronunpacker/trunk/win/neutronunpacker.xop"
+	File "../../../XOP Toolkit 6/IgorXOPs6/neutronunpacker/trunk/win/neutronunpacker.xop"
 	
 	File "../../../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP.xop"
 	File "../../../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP Help.ihf"
