@@ -54,95 +54,97 @@ Function Genetic_Curvefitting()
 			newdatafolder/o root:packages
 			newdatafolder/o root:packages:motofit
 			newdatafolder/o/s root:packages:motofit:gencurvefit
-			string/g cmd
-			if(!exists("lasttab"))
-				variable/g lasttab=0
-			endif
-			if(!exists("saveStatus"))
-				string/g saveStatus
-			endif
-			if(!exists("numcoefs"))
-				variable/g numcoefs
-			endif
-			if(!exists("weighting_radio"))
-				variable/g weighting_radio=1
-			endif
-			if(!exists("destlen"))
-				variable/g destlen = 200
-			endif
-			if(!exists("cursorstart"))
-				string/g cursorstart=""
-			endif
-			if(!exists("cursorfinish"))
-				string/g cursorfinish=""
-			endif
-			if(!exists("ydataWAV"))
-				string/g ydataWAV = "_none_"
-			endif
-			if(!exists("coefWAV"))
-				string/g coefWAV = "_new wave_"
-			endif
-			if(!exists("xdataWAV"))
-				string/g xdataWAV = "_calculated_"
-			endif
-			if(!exists("weightWAV"))
-				string/g weightWAV = "_none_"
-			endif
-			if(!exists("functionstr"))
-				string/g functionstr = stringfromlist(1,GEN_Functionlists())
-			endif
-			if(!exists("nindvars"))
-				variable/g nindvars = 1
-			endif
-			if(!exists("numpoints"))
-				variable/g numpoints
-			endif
-			if(!exists("holdstring"))
-				string/g holdstring=""
-			endif
-			if(!exists("maskWAV"))
-				string/g maskWAV = "_none_"
-			endif
-			if(!exists("limitsWAV"))
-				string/g limitsWAV = "_from below_"
-			endif
-			if(!exists("destWAV"))
-				string/g destWAV = "_auto_"
-			endif
-			if(!exists("resWAV"))
-				string/g resWAV = "_none_"
-			endif
-			if(!exists("useInitGuess"))
-				variable/g useInitGuess = 0
-			endif
-			if(!exists("tol"))
-				variable/g tol = 0.001
-			endif
-			if(!exists("iterations"))
-				variable/g iterations = 100
-			endif
-			if(!exists("popsize"))
-				variable/g popsize = 20
-			endif
-			if(!exists("recomb"))
-				variable/g recomb = 0.5
-			endif
-			if(!exists("k_m"))
-				variable/g k_m =0.7
-			endif
-	
-			if(!waveexists(root:packages:motofit:gencurvefit:GEN_listwave))
-				make/o/n=(0,5)/t Gen_listwave
-				make/o/n=(0,5) Gen_listselwave
-				numcoefs=1
-			endif
-			Gen_listwave[][0] = num2istr(p)
-			Gen_listselwave=0
-			Gen_listselwave[][1] = 2
-			Gen_listselwave[][2] = 32
-			Gen_listselwave[][3] = 2
-			Gen_listselwave[][4] = 2
 		endif
+		setdatafolder root:packages:motofit:gencurvefit
+		string/g cmd
+		if(!exists("lasttab"))
+			variable/g lasttab=0
+		endif
+		if(!exists("saveStatus"))
+			string/g saveStatus
+		endif
+		if(!exists("numcoefs"))
+			variable/g numcoefs
+		endif
+		if(!exists("weighting_radio"))
+			variable/g weighting_radio=1
+		endif
+		if(!exists("destlen"))
+			variable/g destlen = 200
+		endif
+		if(!exists("cursorstart"))
+			string/g cursorstart=""
+		endif
+		if(!exists("cursorfinish"))
+			string/g cursorfinish=""
+		endif
+		if(!exists("ydataWAV"))
+			string/g ydataWAV = "_none_"
+		endif
+		if(!exists("coefWAV"))
+			string/g coefWAV = "_new wave_"
+		endif
+		if(!exists("xdataWAV"))
+			string/g xdataWAV = "_calculated_"
+		endif
+		if(!exists("weightWAV"))
+			string/g weightWAV = "_none_"
+		endif
+		if(!exists("functionstr"))
+			string/g functionstr = stringfromlist(1,GEN_Functionlists())
+		endif
+		if(!exists("nindvars"))
+			variable/g nindvars = 1
+		endif
+		if(!exists("numpoints"))
+			variable/g numpoints
+		endif
+		if(!exists("holdstring"))
+			string/g holdstring=""
+		endif
+		if(!exists("maskWAV"))
+			string/g maskWAV = "_none_"
+		endif
+		if(!exists("limitsWAV"))
+			string/g limitsWAV = "_from below_"
+		endif
+		if(!exists("destWAV"))
+			string/g destWAV = "_auto_"
+		endif
+		if(!exists("resWAV"))
+			string/g resWAV = "_none_"
+		endif
+		if(!exists("useInitGuess"))
+			variable/g useInitGuess = 0
+		endif
+		if(!exists("tol"))
+			variable/g tol = 0.001
+		endif
+		if(!exists("iterations"))
+			variable/g iterations = 100
+		endif
+		if(!exists("popsize"))
+			variable/g popsize = 20
+		endif
+		if(!exists("recomb"))
+			variable/g recomb = 0.5
+		endif
+		if(!exists("k_m"))
+			variable/g k_m =0.7
+		endif
+	
+		if(!waveexists(root:packages:motofit:gencurvefit:GEN_listwave))
+			make/o/n=(0,5)/t Gen_listwave
+			make/o/n=(0,5) Gen_listselwave
+			numcoefs=1
+		endif
+		Gen_listwave[][0] = num2istr(p)
+		Gen_listselwave=0
+		Gen_listselwave[][1] = 2
+		Gen_listselwave[][2] = 32
+		Gen_listselwave[][3] = 2
+		Gen_listselwave[][4] = 2
+		
 		Execute "Gen_curvefitpanel_init()"
 	else
 		Dowindow/F gencurvefitpanel
@@ -538,12 +540,12 @@ Function GEN_numIndVars_func(funcStr)
 	variable ii
 	string info
 	for(ii = 0 ; ii<100; ii+=1)
-	 	info = FunctionList(funcstr, ";", "KIND:31,NINDVARS:"+num2istr(ii))
-	 	if(strlen(info))
-	 		return ii
-	 	endif
-	 endfor
-	 return NaN
+		info = FunctionList(funcstr, ";", "KIND:31,NINDVARS:"+num2istr(ii))
+		if(strlen(info))
+			return ii
+		endif
+	endfor
+	return NaN
 End
 
 Function GEN_cancelButtonProc(ba) : ButtonControl
@@ -1048,9 +1050,9 @@ Function gen_graphnowbutton(ba) : ButtonControl
 				controlinfo/w=gencurvefitpanel weighting_check0_tab1
 				if(V_value)
 					chi2 /= weighting
-			       else
-			       	chi2 *= weighting
-			       endif
+				else
+					chi2 *= weighting
+				endif
 			endif
 			chi2 *= chi2
 			Wave/z maskwave = $maskWav
@@ -2010,73 +2012,73 @@ Function make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 End
 
 Function gen_synthMCfmCovar(coefs, M_covar, holdstring, howmany)
-wave coefs, m_covar
-string holdstring
-variable howmany
+	wave coefs, m_covar
+	string holdstring
+	variable howmany
 
-variable varying = 0, ii, whichcol
-duplicate/free coefs, tempcoefs
-duplicate/free M_covar, tempM_covar
+	variable varying = 0, ii, whichcol
+	duplicate/free coefs, tempcoefs
+	duplicate/free M_covar, tempM_covar
 
-varying = strlen(holdstring)
-for(ii = dimsize(coefs, 0)-1 ; ii >= 0 ; ii-=1)
-	if(str2num(holdstring[ii]))
-		deletepoints/M=0 ii, 1, tempcoefs, tempM_covar
-		deletepoints/M=1 ii, 1, tempM_covar
-		varying -=1
-	endif
-endfor
+	varying = strlen(holdstring)
+	for(ii = dimsize(coefs, 0)-1 ; ii >= 0 ; ii-=1)
+		if(str2num(holdstring[ii]))
+			deletepoints/M=0 ii, 1, tempcoefs, tempM_covar
+			deletepoints/M=1 ii, 1, tempM_covar
+			varying -=1
+		endif
+	endfor
 
-//create some gaussian noise
-make /free/d/n=(varying, howmany) noises = gnoise(1., 2)
-//and create the correlated noise from the covariance matrix.
-matrixop/free correlatedNoises = (chol(tempm_covar) x noises)^t
+	//create some gaussian noise
+	make /free/d/n=(varying, howmany) noises = gnoise(1., 2)
+	//and create the correlated noise from the covariance matrix.
+	matrixop/free correlatedNoises = (chol(tempm_covar) x noises)^t
 
-make/n=(howmany, dimsize(coefs, 0))/d/o M_montecarlo
-Multithread M_montecarlo[][] = coefs[q]
+	make/n=(howmany, dimsize(coefs, 0))/d/o M_montecarlo
+	Multithread M_montecarlo[][] = coefs[q]
 
-//now add the correlated noise back to the parameters
-whichcol = dimsize(correlatedNoises, 1) - 1
-for(ii = dimsize(coefs, 0)-1 ; ii >= 0 ; ii-=1)
-	if(!str2num(holdstring[ii]))
-		M_montecarlo[][ii] += correlatedNoises[p][whichCol]
-		whichCol -= 1
-	endif
-endfor
+	//now add the correlated noise back to the parameters
+	whichcol = dimsize(correlatedNoises, 1) - 1
+	for(ii = dimsize(coefs, 0)-1 ; ii >= 0 ; ii-=1)
+		if(!str2num(holdstring[ii]))
+			M_montecarlo[][ii] += correlatedNoises[p][whichCol]
+			whichCol -= 1
+		endif
+	endfor
 
 End
 
 
 
 Function GEN_classifyN(values)
-Wave values
-//gets some stats about the convergence of an Monte Carlo run
-variable ii
-make/n=(dimsize(values, 0), 2)/o/d stats = 0
-make/n=100/free/d histo = 0
+	Wave values
+	//gets some stats about the convergence of an Monte Carlo run
+	variable ii
+	make/n=(dimsize(values, 0), 2)/o/d stats = 0
+	make/n=100/free/d histo = 0
 
-for(ii = 1 ; ii < dimsize(values, 0) ; ii+=1)
-	make/d/n=(ii + 1)/free subset_values
-	multithread subset_values[] = values[p]
-	variable V_fitoptions=4
-	histo = 0
-	Histogram/P/C/B=3 subset_values, histo
+	for(ii = 1 ; ii < dimsize(values, 0) ; ii+=1)
+		make/d/n=(ii + 1)/free subset_values
+		multithread subset_values[] = values[p]
+		variable V_fitoptions=4
+		histo = 0
+		Histogram/P/C/B=3 subset_values, histo
 
-	CurveFit/NTHR=0/q/n/M=2/W=0 gauss histo
-	Wave W_coef
-	stats[ii][0] = W_coef[2]
-	stats[ii][1] = W_coef[3]
-	if(!mod(ii, 100))
-		print ii
-	endif
-endfor
+		CurveFit/NTHR=0/q/n/M=2/W=0 gauss histo
+		Wave W_coef
+		stats[ii][0] = W_coef[2]
+		stats[ii][1] = W_coef[3]
+		if(!mod(ii, 100))
+			print ii
+		endif
+	endfor
 
 End
 
 Function gen_gcm(M_covar)
-Wave M_covar
-Duplicate/o M_Covar, M_correlation	 // You can use any name instead of CorMat
-M_correlation = M_Covar[p][q]/sqrt(M_Covar[p][p]*M_Covar[q][q])
+	Wave M_covar
+	Duplicate/o M_Covar, M_correlation	 // You can use any name instead of CorMat
+	M_correlation = M_Covar[p][q]/sqrt(M_Covar[p][p]*M_Covar[q][q])
 End
 
 Function gen_Chi2_guess(fitfuncstr, coefs, ywave, xwave, ewave[, cursA, cursB])

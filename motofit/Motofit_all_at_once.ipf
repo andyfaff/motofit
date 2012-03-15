@@ -293,7 +293,7 @@ static Function Moto_localchi2()
 	endif
 	switch(dimension)
 		case 1:
-				prompt par0, "first parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs))
+				prompt par0, "first parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs) - 1)
 				prompt extent0, "Percentage range either side"
 				Doprompt "Please select the parameter number and extent for chi2map", par0, extent0
 				if(V_flag)
@@ -1456,27 +1456,19 @@ Function Motofit_smeared(w, RR, qq, dq) :Fitfunc
 	
 	variable plotyp = str2num(getMotofitOption("plotyp"))
 		
-	make/free/d/n=(13 * dimsize(qq, 0)) ytemp, xtemp
-	make/free/d/n=13  x13, w13
-	RR = 0
-
-	x13 = {-0.849322,-0.707768,-0.566215,-0.424661,-0.283107,-0.141554,0,0.141554,0.283107,0.424661,0.566215,0.707768,0.849322}
-	w13={0.13534,0.24935,0.4111,0.60653,0.80074,0.94596,1,0.94596,0.80074,0.60653,0.4111,0.24935,0.13534}
-				
-	xtemp[] = x13[mod(p,13)] * dq[floor(p / 13)] + qq[floor(p / 13)]
+	make/free/d/n=(numpnts(qq), 2) xtemp
+	xtemp[][0] = qq[p]
+	xtemp[][1] = dq[p]
+	
 	if(!mode)
 		bkg = abs(w[4])
 		w[4] = 0
-		Abelesall(w, ytemp, xtemp)
+		Abelesall(w, RR, xtemp)
 	else
 		bkg = abs(w[6])
 		w[6] = 0
-		Abeles_imagALl(w, ytemp, xtemp)
+		Abeles_imagALl(w, RR, xtemp)
 	endif
-
-	ytemp *= w13[mod(p, 13)]
-	RR[] = sum(ytemp, 13 * p, 13 * (p + 1) -1)
-	RR = 0.137023 * RR
 
 	//add in the linear background again
 	if(!mode)
