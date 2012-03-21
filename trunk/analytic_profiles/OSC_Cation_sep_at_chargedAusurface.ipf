@@ -55,13 +55,13 @@ cbox1 =  (0 <= x && x < w[17]) ? w[14] : cbox1[p]
 cbox1 =  w[17] <= x ?   0.5 * (((w[14]-0.5)/0.5) * cos(2 * Pi * (x - w[17]) / w[15]) * exp(-(x - w[17]) / w[16]) + 1):cbox1[p]
 
 //CONVERT TO VOL FRACTION
-//cbox1 = cbox1 * VOLCAT / (cbox1 * VOLCAT + (1-cbox1) * VOLANION)
+cbox1 = cbox1 * VOLCAT / (cbox1 * VOLCAT + (1-cbox1) * VOLANION)
 
 cbox1 = (x==0) ? 0.5 * cbox1 : cbox1
 
 abox1 = 1-cbox1-heavi
+
 //now smear the waves
-return 0
 convolve/a gau, heavi, cbox1, abox1
 
 //now cut off the end bits which were designed to contain the wrap-around of the gaussian
