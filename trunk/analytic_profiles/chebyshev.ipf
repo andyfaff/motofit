@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 
 constant NUMSTEPS = 40
-constant DELRHO = 0.03
+constant DELRHO = 0.05
 constant lambda = 10
 
 Function Chebyshevapproximator(w, yy, xx): fitfunc
@@ -9,8 +9,8 @@ Function Chebyshevapproximator(w, yy, xx): fitfunc
 
 	createCoefs_ForReflectivity(w)
 	Wave coef_forReflectivity
-	motofit(coef_forReflectivity, yy, xx)
-//	yy = log(yy)
+	Abelesall(coef_forReflectivity, yy, xx)
+	multithread yy = log(yy)
 	
 End
 
