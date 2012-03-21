@@ -32,13 +32,14 @@ ThreadSafe Function motoMCWorkerFunc()
 		else
 			Gencurvefit/MC/q/n/hold=holdwavetemp/X=xxtemp/I=1/W=eetemp/K={iterstemp, popsizetemp, k_mtemp, recombtemp}/TOL=(fittoltemp) $fntemp, yytemp, wtemp, "", limitstemp
 		endif		
-//		print V_chisq,V_fitIters, V_fiterror
+		print V_chisq,V_fitIters, V_fiterror
 		Setdatafolder ::
 		NewDataFolder/S outDF
 		
 		make/n=(dimsize(wtemp, 0))/d W_output
+		make/n=1/d W_chi2 = V_chisq
 		W_output = wtemp
-		Waveclear wtemp, yytemp, xxtemp, eetemp, holdwavetemp, limitstemp, W_output
+		Waveclear wtemp, yytemp, xxtemp, eetemp, holdwavetemp, limitstemp, W_output, W_chi2
 		ThreadGroupPutDF 0,:		
 		KillDataFolder tdf		// We are done with the input data folder
 	while(1)
@@ -70,13 +71,14 @@ Function motoMC_parallel(fn, w, yy, xx, ee, holdwave, Iters, [limits, cursA, cur
 			SOCKITwavetostring/txt="" holdwave, holdstring
 			GEN_setlimitsforGENcurvefit(w, holdstring)
 			Wave limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
-			NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
-			NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
-			NVAR recomb =  root:packages:motofit:old_genoptimise:recomb
-			NVAR k_m =  root:packages:motofit:old_genoptimise:k_m
-			NVAR fittol = root:packages:motofit:old_genoptimise:fittol
 		endif
 	
+	NVAR  iterations = root:packages:motofit:old_genoptimise:iterations
+	NVAR  popsize = root:packages:motofit:old_genoptimise:popsize
+	NVAR recomb =  root:packages:motofit:old_genoptimise:recomb
+	NVAR k_m =  root:packages:motofit:old_genoptimise:k_m
+	NVAR fittol = root:packages:motofit:old_genoptimise:fittol
+			
 		
 	variable/G tgID= ThreadGroupCreate(nthreads)
 	for(ii =0 ; ii < nthreads ; ii += 1)
@@ -103,19 +105,22 @@ Function motoMC_parallel(fn, w, yy, xx, ee, holdwave, Iters, [limits, cursA, cur
 	endfor
 
 	make/n=(iters, dimsize(w, 0))/o/d M_Montecarlo = 0
+	make/n=(iters)/o W_chisq = 0
 	for(ii = 0 ; ii < iters ; ii += 1)
 		print ii
 		do
 			DFREF dfr= ThreadGroupGetDFR(tgID,1000)	// Get results in free data folder
 			if ( DatafolderRefStatus(dfr) == 0 )
-				Print "Main still waiting for worker thread results"
+	//			Print "Main still waiting for worker thread results"
 			else
 				break
 			endif
 		while(1)
 		Wave/sdfr=dfr W_output
-		M_Montecarlo[ii][] = W_output[q]
+		Wave/sdfr =dfr W_chi2
 		
+		M_Montecarlo[ii][] = W_output[q]
+		W_chisq[ii] = W_chi2[0]
 		// The next two statements are not really needed as the same action
 		// will happen the next time through the loop or, for the last iteration,
 		// when this function returns.

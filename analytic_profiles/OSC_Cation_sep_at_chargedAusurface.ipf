@@ -1,12 +1,13 @@
 #pragma rtGlobals=3		// Use modern global access method.
 
 //Constant SLDcation = 
-Constant ANUMSLICES =80//00
+Constant ANUMSLICES =10000//00
 Constant CONVREDUCER = 1
 Constant VOLCAT = 263.5
 Constant VOLANION = 239.6
+CONSTANT RESOLUTION = 0.052
 
-Function gaussonAu_OSC(w,yy,xx):fitfunc
+Threadsafe Function gaussonAu_OSC(w,yy,xx):fitfunc
 wave w,yy,xx
 
 //w[0] = scale
@@ -54,12 +55,13 @@ cbox1 =  (0 <= x && x < w[17]) ? w[14] : cbox1[p]
 cbox1 =  w[17] <= x ?   0.5 * (((w[14]-0.5)/0.5) * cos(2 * Pi * (x - w[17]) / w[15]) * exp(-(x - w[17]) / w[16]) + 1):cbox1[p]
 
 //CONVERT TO VOL FRACTION
-cbox1 = cbox1 * VOLCAT / (cbox1 * VOLCAT + (1-cbox1) * VOLANION)
+//cbox1 = cbox1 * VOLCAT / (cbox1 * VOLCAT + (1-cbox1) * VOLANION)
 
 cbox1 = (x==0) ? 0.5 * cbox1 : cbox1
-abox1 = 1-cbox1-heavi
 
+abox1 = 1-cbox1-heavi
 //now smear the waves
+return 0
 convolve/a gau, heavi, cbox1, abox1
 
 //now cut off the end bits which were designed to contain the wrap-around of the gaussian
@@ -81,7 +83,7 @@ funcoefs[0] = numpnts(heavi) + 3
 funcoefs[1] = w[0]
 funcoefs[2] = w[1]
 funcoefs[3] = w[2]
-funcoefs[4] = w[3]
+funcoefs[4] = 0
 funcoefs[5] = 0
 funcoefs[6] = w[5]
 funcoefs[7] = w[6]
@@ -114,7 +116,11 @@ funcoefs[17] = w[13]
 	endfor
 	
 	//now calculate the reflectivity
-	motofit(funcoefs,yy,xx)
-//	Abelesall(funcoefs,yy,xx)
-//	yy = log(yy)
+	make/n=(dimsize(xx, 0), 2)/free xxtemp
+	xxtemp[][0] = xx[p]
+	xxtemp[][1] = xx[p] * RESOLUTION
+	
+	Abelesall(funcoefs,yy,xx)
+	multithread yy += w[3]
+	multithread yy = log(yy)
 End
