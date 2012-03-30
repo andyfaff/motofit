@@ -349,7 +349,8 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 //	DoXOPIdle
 	print "Beginning scan"
 	//start the scan task
-	sics_cmd_interest("statemon start FPX")
+	appendstatemon("FPX")
+//	sics_cmd_interest("statemon start FPX")
 	CtrlNamedBackground  scanTask period=600, proc=scanBkgTask, burst=0, dialogsOK =0
 	CtrlNamedBackground  scanTask start
 	return 0

@@ -1151,7 +1151,6 @@ Function createAxisListAndPopulate(sock)
 	for(ii=0;ii<itemsinlist(output,"\n");ii+=1)
 		parseReply(stringfromlist(ii,output,"\n"),str1,str2)
 		axeslist[ii][2] = num2str(str2num(str2))
-		Ind_Process#updatelayout(axeslist[ii][0])
 	endfor
 			
 	//now get softlower and softupper limits
@@ -1237,7 +1236,6 @@ Function moveAxisListBoxProc(lba) : ListBoxControl
 			//if it fails then spoof to get the position correct
 			sockitsendmsg sock_interest,listwave[row][0]+"\n"
 				
-			Ind_process#updatelayout(listwave[row][0])
 			break
 	endswitch
 
@@ -2057,8 +2055,6 @@ End
 
 Function statemonclear(item)
 	string item
-	//sees if item is still live in SICS statemon statecontrol engine.
-	//if it is still live then a number >0 will be returned.  If it has finished, then it will return 0.
 	Wave/t statemon = root:packages:platypus:SICS:statemon
 	for(;;)
 		findvalue/TEXT=item/TXOP=4 statemon
@@ -2073,6 +2069,13 @@ End
 Function showStatemon()
 	Wave/t statemon = root:packages:platypus:SICS:statemon
 	edit/K=1 statemon
+End
+
+Function appendStatemon(item)
+string item
+Wave/t statemon = root:packages:platypus:SICS:statemon
+	redimension/n=(numpnts(statemon)+1) statemon
+	statemon[numpnts(statemon) - 1] = item
 End
 
 // PNG: width= 324, height= 108
