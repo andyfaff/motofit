@@ -320,7 +320,7 @@ Function LoadAndGraphAll (pathname)
 
 			motofit#Moto_removeNAN(qq,RR,dR,dq)
 	
-			moto_lindata_to_plotyp(plotyp, qq, RR, dR = dR, removeNonFinite = 1)
+			moto_lindata_to_plotyp(plotyp, qq, RR, dR = dR, dq = dq, removeNonFinite = 1)
 	
 			if(whichlistitem(nameofwave(RR), tracenamelist("batchdata", ";", 1)) == -1)
 				AppendtoGraph RR vs qq

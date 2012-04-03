@@ -1105,7 +1105,7 @@ static Function moto_change_plotyp(plotyp)
 			else
 				Waveclear dq
 			endif
-			moto_lindata_to_plotyp(plotyp, qq, RR, dr = dR, removeNonFinite = 1)
+			moto_lindata_to_plotyp(plotyp, qq, RR, dr = dR, dq = dq, removeNonFinite = 1)
 		endif
 		//now do the fits, if they exist.
 		Wave/z fitRR =  $("root:data:" + dataset + ":fit_" + dataset + "_R")
@@ -1609,9 +1609,9 @@ Function/C Moto_angletoQ(omega,twotheta,lambda)
 	return Q
 End
 
-Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr, removeNonFinite])
+Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr, dq, removeNonFinite])
 	variable plotyp
-	Wave/z qq, RR, dr
+	Wave/z qq, RR, dr, dq
 	variable removeNonFinite
 	
 	variable ii
@@ -1646,9 +1646,12 @@ Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr, removeNonFinite])
 		if(!waveexists(dR))
 			duplicate/free RR, dR
 		endif
+		if(!waveexists(dq))
+			duplicate/free RR, dq
+		endif
 		for(ii = numpnts(RR) - 1 ; ii >= 0 ; ii -= 1)
 			if(numtype(RR[ii]) || numtype(dR[ii]))
-				deletepoints/M=0 ii, 1, qq, RR, dR
+				deletepoints/M=0 ii, 1, qq, RR, dR, dq
 			endif
 		endfor
 	endif
@@ -1772,7 +1775,7 @@ static Function/s Moto_loadReffile(filename)
 		
 		motofit#moto_removeNaN(qq, RR, dE, dQ)
 		//how are you fitting the data?
-		moto_lindata_to_plotyp(plotyp, qq, RR, dR = dE, removeNonFinite = 1)
+		moto_lindata_to_plotyp(plotyp, qq, RR, dR = dE, dq = dq, removeNonFinite = 1)
 	
 		setdatafolder saveDFR
 		return dataName	
@@ -2976,7 +2979,7 @@ static Function moto_transfer_data()
 				note coef, note(coefold)
 			endif 
 
-			moto_lindata_to_plotyp(newplotyp, qq, RR, dr = ee, removeNonFinite = 1)
+			moto_lindata_to_plotyp(newplotyp, qq, RR, dr = ee, dq = dq, removeNonFinite = 1)
 					
 			index += 1
 		endif
