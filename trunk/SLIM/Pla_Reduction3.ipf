@@ -154,7 +154,7 @@ Function builddirectorylist(user, password, lowFi, hiFi,  [outsideANSTO])
 	endif
 
 	make/o/t/n=(0, 2) root:packages:platypus:catalogue:directories/Wave=directories
-	easyHttp/TIME=2/PROX=""/PASS=USER + ":"+PASSWORD URL + "cycle/", data
+	easyHttp/TIME=5/PROX=""/PASS=USER + ":"+PASSWORD URL + "cycle/", data
 	if(V_Flag)
 		return 1
 	endif
@@ -175,7 +175,7 @@ Function builddirectorylist(user, password, lowFi, hiFi,  [outsideANSTO])
 	startDir = 0
 	for(ii = startDir ; ii < dimsize(directories, 0) ; ii += 1)
 		direct = directories[ii][0]
-		easyHttp/TIME=2/PROX=""/PASS=USER + ":"+PASSWORD URL + direct, files
+		easyHttp/TIME=5/PROX=""/PASS=USER + ":"+PASSWORD URL + direct, files
 		if(V_Flag)
 			return 1
 		endif
