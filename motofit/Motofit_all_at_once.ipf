@@ -2408,8 +2408,11 @@ static Function  moto_GUI_check(s) : CheckBoxControl
 	strswitch(s.ctrlname)
 		case "usemultilayer_tab0":
 			setMotofitOption("multilayer", num2istr(s.checked))
-			Doalert 0, "Coming soon, not yet implemented in the GUI"
-			return 0
+			if(s.checked)
+				moto_initiateMultilayer(0, 0, 0)
+			else
+				moto_removemultilayer()			
+			endif
 			break
 		case "usedqwave_tab0":
 			setmotofitoption("usedqwave", num2istr(s.checked))
@@ -2623,6 +2626,8 @@ End
 static Function moto_GUI_setvariable(s) : SetVariableControl
 	STRUCT WMSetVariableAction &s
  	
+ 	Wave coef_theoretical_R = root:data:theoretical:coef_theoretical_R
+
 	switch(s.eventcode)
 		case -1:
 			return 0
@@ -2658,6 +2663,64 @@ static Function moto_GUI_setvariable(s) : SetVariableControl
 					endif
 					setvariable fringe_tab2, win=reflectivitypanel, value = _NUM:numfringes * 2*Pi/(xwave[rightP] - xwave[leftP])
 				break	
+				case "Vmullayers_tab0":
+					Wave/t  multilayerparams = root:packages:motofit:reflectivity:multilayerparams
+					Wave multilayerparams_selwave = root:packages:motofit:reflectivity:multilayerparams_selwave
+					variable oldlayers = dimsize(multilayerparams, 0)
+					redimension/n=(s.dval, -1) multilayerparams, multilayerparams_selwave
+					
+					multilayerparams_selwave[][0] = 0
+					multilayerparams_selwave[][1] = multilayerparams_selwave[p][1] | 2
+					multilayerparams_selwave[][2] = multilayerparams_selwave[p][2] | 32
+					multilayerparams_selwave[][3] = multilayerparams_selwave[p][3] | 2
+					multilayerparams_selwave[][4] = multilayerparams_selwave[p][4] | 32
+					multilayerparams_selwave[][5] = multilayerparams_selwave[p][5] | 2
+					multilayerparams_selwave[][6] = multilayerparams_selwave[p][6] | 32
+					multilayerparams_selwave[][7] = multilayerparams_selwave[p][7] | 2
+					multilayerparams_selwave[][8] = multilayerparams_selwave[p][8] | 32
+					variable ii
+					if(oldlayers == 0)
+						oldlayers = 1
+					endif
+					for(ii = oldlayers - 1 ; ii < s.dval ; ii += 1)
+						multilayerparams[ii][1] = "0"
+						multilayerparams[ii][3] = "0"
+						multilayerparams[ii][5] = "0"
+						multilayerparams[ii][7] = "0"
+					endfor
+					multilayerparams[][0] = num2istr(p+1)
+					setmotofitoption("Vmullayers", num2istr(s.dval))
+					note/k coef_theoretical_R
+					note coef_theoretical_R, getMotofitOptionString()	
+					NVAR/z Vmullayers = root:data:theoretical:Vmullayers
+					Vmullayers = s.dval
+					variable 	isImag = mod(numpnts(coef_theoretical_R) - 6, 4) 
+					if(!isImag)
+						redimension/n=(coef_theoretical_R[0] * 4 + 6 + 4*s.dval) coef_theoretical_R
+					else
+						redimension/n=(coef_theoretical_R[0] * 4 + 8 + 4*s.dval) coef_theoretical_R					
+					endif
+				break
+				case "Vappendlayer_tab0":
+					variable numlayers = coef_theoretical_R[0]
+					NVAR/z Vappendlayer = root:data:theoretical:Vappendlayer
+					if(s.dval > numlayers)
+						setvariable Vappendlayer_tab0, win=multilayerreflectivitypanel, value=_NUM:numlayers
+						Vappendlayer = numlayers
+					else
+						setmotofitoption("Vappendlayer", num2istr(s.dval))
+						note/k coef_theoretical_R
+						note coef_theoretical_R, getMotofitOptionString()
+						Vappendlayer = s.dval
+					endif					
+				break
+				case "Vmulrep_tab0":
+						NVAR/z Vmulrep = root:data:theoretical:Vmulrep
+						setmotofitoption("Vmulrep", num2istr(s.dval))
+						note/k coef_theoretical_R
+						note coef_theoretical_R, getMotofitOptionString()
+						Vmulrep = s.dval
+				break
 			endswitch
 			break
 	endswitch		
@@ -3092,34 +3155,70 @@ Function moto_initiateMultilayer(Vmullayers, Vappendlayer, Vmulrep)
 	endif
 	
 	coef_theoretical_R = 0
-	coef_theoretical_R = tempcoefs
+	coef_theoretical_R[0, dimsize(tempcoefs, 0) - 1] = tempcoefs
 	
 	note/k coef_theoretical_R
 	note coef_theoretical_R, getMotofitOptionString()
 	
 	setdatafolder root:packages:motofit:reflectivity
-	make/o/t/n=(Vmullayers, 9) multilayerparams
+	make/o/t/n=(Vmullayers, 9) multilayerparams = ""
 	make/o/i/n=(Vmullayers, 9) multilayerparams_selwave = 0
-	moto_createmultilayerpanel(Vmullayers, Vappendlayer, Vmulrep)
+	moto_createmultilayerpanel(Vmullayers, Vappendlayer, Vmulrep, isImag)
+	
+	multilayerparams[][1] = "0"
+	multilayerparams[][3] = "0"
+	multilayerparams[][5] = "0"
+	multilayerparams[][7] = "0"
 	
 	SetDataFolder saveDFR
 End
 
-Function moto_createmultilayerpanel(Vmullayers, Vappendlayer, Vmulrep)
-	variable Vmullayers, Vappendlayer, Vmulrep
+Function moto_createmultilayerpanel(Vmullayers, Vappendlayer, Vmulrep, isImag)
+	variable Vmullayers, Vappendlayer, Vmulrep, isImag
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(547,534,1142,779) as "Multilayer Panel"
+	
+	setdatafolder root:packages:motofit:reflectivity
+	Wave/t multilayerparams
+	Wave multilayerparams_selwave
+	
+	NewPanel /W=(547,534,1142,779)/K=1 as "Multilayer Panel"
+	Dowindow/C multilayerreflectivitypanel
 	ListBox multilayerparams_tab0,pos={6,86},size={578,146}
 	ListBox multilayerparams_tab0,listWave=root:packages:motofit:reflectivity:multilayerparams
 	ListBox multilayerparams_tab0,selWave=root:packages:motofit:reflectivity:multilayerparams_selwave
-	ListBox multilayerparams_tab0,mode= 5
+	ListBox multilayerparams_tab0,mode= 5, proc = motofit#moto_GUI_listbox
 	SetVariable Vmullayers_tab0,pos={184,10},size={200,19},title="Number of multilayers"
-	SetVariable Vmullayers_tab0,fSize=12,limits={0,30,1},value= _NUM:Vmullayers
+	SetVariable Vmullayers_tab0,fSize=12,limits={0,30,1},value= _NUM:Vmullayers, proc=Motofit#moto_GUI_setvariable
 	SetVariable Vappendlayer_tab0,pos={184,33},size={200,19},title="Layer to append to"
-	SetVariable Vappendlayer_tab0,fSize=12,limits={0,30,1},value= _NUM:Vappendlayer
+	SetVariable Vappendlayer_tab0,fSize=12,limits={0,30,1},value= _NUM:Vappendlayer, proc=Motofit#moto_GUI_setvariable
 	SetVariable Vmulrep_tab0,pos={184,58},size={200,19},title="Number of repetitions"
-	SetVariable Vmulrep_tab0,fSize=12,limits={0,inf,1},value= _NUM:Vmulrep
-EndMacro
+	SetVariable Vmulrep_tab0,fSize=12,limits={0,inf,1},value= _NUM:Vmulrep, proc =Motofit#moto_GUI_setvariable
+	
+	setdimlabel 1, 0, layer, multilayerparams
+	setdimlabel 1, 1, thickness, multilayerparams
+	setdimlabel 1, 2, $(""), multilayerparams
+	setdimlabel 1, 3, SLD, multilayerparams
+	if(!isImag)
+		setdimlabel 1, 5, solvent, multilayerparams	
+	else
+		setdimlabel 1, 5, iSLD, multilayerparams	
+	endif
+	setdimlabel 1, 7, roughness, multilayerparams	
+	setdimlabel 1, 8, $(""), multilayerparams
+	
+	variable ii, jj
+	//setup selection waves and parameter numbers	
+	multilayerparams_selwave[][0] = 0
+	multilayerparams_selwave[][1]=2
+	multilayerparams_selwave[][2]=32
+	multilayerparams_selwave[][3]=2
+	multilayerparams_selwave[][4]=32
+	multilayerparams_selwave[][5]=2
+	multilayerparams_selwave[][6]=32
+	multilayerparams_selwave[][7]=2
+	multilayerparams_selwave[][8]=32	
+	multilayerparams[][0] = num2istr(p+1)
+End
 
 Function moto_removemultilayer()
 	variable numlayers, isimag
