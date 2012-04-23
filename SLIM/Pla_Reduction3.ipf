@@ -526,7 +526,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 			NVAR normalisebymonitor = root:packages:platypus:data:Reducer:normalisebymonitor
 			NVAR saveSpectrum =  root:packages:platypus:data:Reducer:saveSpectrum
 			NVAR saveoffspec =  root:packages:platypus:data:Reducer:saveoffspec
-			NVAR streamedReduction = root:packages:platypus:data:Reducer:streamedReduction
+			NVAR/z streamedReduction = root:packages:platypus:data:Reducer:streamedReduction
 
 			variable rebinning,ii,jj, dontoverwrite = 0, temp, maxtime, mintime
 			string tempDF,filenames, water = ""
@@ -1318,12 +1318,17 @@ Function SLIM_redisplay(mode,isLog)
 				abscissa = ("B"+num2istr(ii))
 				colpos = round(mod(ii,cols))
 				rowpos = floor(ii/4)
-				duplicate/o M_topandtail, $(tempDF+":"+"M_tempSLIMPLOT")
+				duplicate/o M_topandtail, $(tempDF+":M_tempSLIMPLOT")
+				duplicate/o M_lambdaHIST, $(tempDF + ":M_tempSLIMPLOTlambdaHIST")
+				
 				Wave M_tempSLIMPLOT = $(tempDF+":"+"M_tempSLIMPLOT")
+				Wave M_tempSLIMPLOTlambdaHIST = $(tempDF+":"+"M_tempSLIMPLOTlambdaHIST")
+				redimension/n=(-1, 0) M_tempSLIMPLOTlambdaHIST
+				
 				if(isLOG)
 					M_tempSLIMPLOT = log(M_tempSLIMplot)
 				endif
-				AppendImage/w=SLIM_PLOTwin/L=$ordinate/B=$abscissa M_tempSLIMPLOT vs {M_lambdaHIST,*}
+				AppendImage/w=SLIM_PLOTwin/L=$ordinate/B=$abscissa M_tempSLIMPLOT vs {M_tempSLIMPLOTlambdaHIST, *}
 				ModifyImage/w=SLIM_PLOTwin  $("M_tempSLIMPLOT#"+num2str(ii)) ctab={0,*,Rainbow,0}
 				ModifyImage/w=SLIM_PLOTwin $("M_tempSLIMPLOT#"+num2str(ii)) minRGB=(0,0,0),maxRGB=0
 				ModifyGraph/w=SLIM_PLOTwin freePos($ordinate)={0,$abscissa},freePos($abscissa)={0,$ordinate}
@@ -1342,11 +1347,16 @@ Function SLIM_redisplay(mode,isLog)
 				colpos = round(mod(ii,cols))
 				rowpos = floor(ii/4)
 				duplicate/o M_topandtail, $(tempDF+":"+"M_tempSLIMPLOT")
+				duplicate/o M_specTOFHIST, $(tempDF + ":M_tempSLIMPLOTspectofHIST")
+				
 				Wave M_tempSLIMPLOT = $(tempDF+":"+"M_tempSLIMPLOT")
+				Wave M_tempSLIMPLOTspectofHIST = $(tempDF+":"+"M_tempSLIMPLOTspectofHIST")
+				redimension/n=(-1, 0) M_tempSLIMPLOTspectofHIST
+
 				if(isLOG)
 					M_tempSLIMPLOT = log(M_tempSLIMplot)
 				endif
-				AppendImage/w=SLIM_PLOTwin/L=$("L"+num2istr(ii))/B=$("B"+num2istr(ii)) M_tempSLIMPLOT vs {M_specTOFHIST,*}
+				AppendImage/w=SLIM_PLOTwin/L=$("L"+num2istr(ii))/B=$("B"+num2istr(ii)) M_tempSLIMPLOT vs {M_tempSLIMPLOTspectofHIST,*}
 				ModifyImage/w=SLIM_PLOTwin  $("M_tempSLIMPLOT#"+num2str(ii)) ctab={0,*,Rainbow,0}
 				ModifyImage/w=SLIM_PLOTwin $("M_tempSLIMPLOT#"+num2str(ii)) minRGB=(0,0,0),maxRGB=0
 				ModifyGraph/w=SLIM_PLOTwin freePos($ordinate)={0,$abscissa},freePos($abscissa)={0,$ordinate}
