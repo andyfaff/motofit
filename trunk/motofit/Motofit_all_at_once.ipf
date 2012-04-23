@@ -1144,9 +1144,9 @@ Static Function setupvariables(mode, res, plotyp, SLDpts)
 	setMotofitOption("res", num2str(res))
 	setMotofitOption("plotyp", num2str(plotyp))
 	setMotofitOption("SLDpts", num2str(SLDpts))
-	setMotofitOption("mulrep", num2str(0))
+	setMotofitOption("Vmulrep", num2str(0))
 	setMotofitOption("Vmullayers", num2str(0))
-	setMotofitOption("mulappend", num2str(0))
+	setMotofitOption("Vmulappend", num2str(0))
 	setMotofitOption("holdstring", "")
 	setmotofitoption("usedqwave",num2str(0))
 	setmotofitoption("useconstraint",num2str(0))
@@ -2407,6 +2407,7 @@ static Function  moto_GUI_check(s) : CheckBoxControl
 	endif
 	strswitch(s.ctrlname)
 		case "usemultilayer_tab0":
+			setMotofitOption("multilayer", num2istr(s.checked))
 			Doalert 0, "Coming soon, not yet implemented in the GUI"
 			return 0
 			break
@@ -3058,3 +3059,103 @@ Function Moto_reversemodel(coefs)
 	endswitch
 
 End
+
+///////////////////////////////////
+//multilayer code
+///////////////////////////////////
+Function moto_initiateMultilayer(Vmullayers, Vappendlayer, Vmulrep)
+	variable Vmullayers, Vappendlayer, Vmulrep
+
+	DFREF saveDFR = GetDataFolderDFR()	// Save
+	SetDataFolder root:data:theoretical
+	
+	wave/z coef_theoretical_R = root:data:theoretical:coef_theoretical_R		
+	variable numlayers, isimag, ii
+	
+	setMotofitOption("multilayer", "1")
+	setMotofitOption("Vmullayers", num2istr(Vmullayers))
+	setMotofitOption("Vappendlayer", num2istr(Vmullayers))
+	setMotofitOption("Vmulrep", num2istr(Vmullayers))	
+	variable/g root:data:theoretical:Vmullayers = Vmullayers
+	variable/g root:data:theoretical:Vappendlayer = Vappendlayer	
+	variable/g root:data:theoretical:Vmulrep = Vmulrep
+	
+	numlayers = coef_theoretical_R[0]
+	isImag = mod(numpnts(coef_theoretical_R) - 6, 4)
+	
+	duplicate/free coef_theoretical_R, tempcoefs
+	
+	if(!isImag)
+		redimension/n=(4 * numlayers + 6 + 4 * Vmullayers) coef_theoretical_R
+	else
+		redimension/n=(4 * numlayers + 8 + 4 * Vmullayers) coef_theoretical_R
+	endif
+	
+	coef_theoretical_R = 0
+	coef_theoretical_R = tempcoefs
+	
+	note/k coef_theoretical_R
+	note coef_theoretical_R, getMotofitOptionString()
+	
+	setdatafolder root:packages:motofit:reflectivity
+	make/o/t/n=(Vmullayers, 9) multilayerparams
+	make/o/i/n=(Vmullayers, 9) multilayerparams_selwave = 0
+	moto_createmultilayerpanel(Vmullayers, Vappendlayer, Vmulrep)
+	
+	SetDataFolder saveDFR
+End
+
+Function moto_createmultilayerpanel(Vmullayers, Vappendlayer, Vmulrep)
+	variable Vmullayers, Vappendlayer, Vmulrep
+	PauseUpdate; Silent 1		// building window...
+	NewPanel /W=(547,534,1142,779) as "Multilayer Panel"
+	ListBox multilayerparams_tab0,pos={6,86},size={578,146}
+	ListBox multilayerparams_tab0,listWave=root:packages:motofit:reflectivity:multilayerparams
+	ListBox multilayerparams_tab0,selWave=root:packages:motofit:reflectivity:multilayerparams_selwave
+	ListBox multilayerparams_tab0,mode= 5
+	SetVariable Vmullayers_tab0,pos={184,10},size={200,19},title="Number of multilayers"
+	SetVariable Vmullayers_tab0,fSize=12,limits={0,30,1},value= _NUM:Vmullayers
+	SetVariable Vappendlayer_tab0,pos={184,33},size={200,19},title="Layer to append to"
+	SetVariable Vappendlayer_tab0,fSize=12,limits={0,30,1},value= _NUM:Vappendlayer
+	SetVariable Vmulrep_tab0,pos={184,58},size={200,19},title="Number of repetitions"
+	SetVariable Vmulrep_tab0,fSize=12,limits={0,inf,1},value= _NUM:Vmulrep
+EndMacro
+
+Function moto_removemultilayer()
+	variable numlayers, isimag
+	
+	DFREF saveDFR = GetDataFolderDFR()	// Save
+	SetDataFolder root:data:theoretical
+	
+	Dowindow/K multilayerreflectivitypanel
+	setMotofitOption("multilayer", "0")
+	setMotofitOption("Vmullayers", "0")
+	setMotofitOption("Vappendlayer", "0")
+	setMotofitOption("Vmulrep", "0")
+	
+	killvariables/z Vmullayers, Vappendlayer, Vmulrep
+	
+	wave/z coef_theoretical_R = root:data:theoretical:coef_theoretical_R
+	
+	numlayers = coef_theoretical_R[0]
+	isImag = mod(numpnts(coef_theoretical_R) - 6, 4)
+	
+	if(!isimag)
+		redimension/n=(4 * numlayers + 6) coef_theoretical_R
+	else
+		redimension/n=(4 * numlayers + 8) coef_theoretical_R	
+	endif
+	
+	note/k coef_theoretical_R
+	note coef_theoretical_R, getMotofitOptionString()
+	
+	setdatafolder root:packages:motofit:reflectivity
+	Wave/t multilayerparams
+	Wave multilayerparams_selwave
+	Killwaves multilayerparams, multilayerparams_selwave
+	
+	SetDataFolder saveDFR
+End
+
+
+
