@@ -100,12 +100,16 @@ static Function Moto_LayerTableToCref(coefficients)
 	//this function the layer tables for the model into the correct coefficient wave
 	Wave coefficients
 	DFREF saveDFR = GetDataFolderDFR()	// Save
-	variable ii
+	variable ii, jj
 	Setdatafolder root:packages:motofit:reflectivity
 
 	Wave/T layerparams,baselayerparams
+	Wave/t/z multilayerparams
 	variable layers=dimsize(layerparams, 0) - 2
 	variable mode = str2num(getmotofitoption("mode"))
+	variable multilayer = str2num(getmotofitoption("multilayer"))
+	variable offset
+	
 	//this is a bodgy way of doing this, but it's difficult to update things.
 	//you are changing the number of layers, so you need to change the length of the coefficient wave
 	//however the coefficient wave has the numbers for the multilayers on the end.
@@ -138,6 +142,18 @@ static Function Moto_LayerTableToCref(coefficients)
 		coefficients[4 * ii + 8 + mode] = str2num(layerparams[ii + 1][5])
 		coefficients[4 * ii + 9 + mode] = str2num(layerparams[ii + 1][7])
 	endfor
+	
+	if(multilayer && waveexists(multilayerparams))
+		offset = 4 * coefficients[0] + 6 + mode
+		redimension/n=(offset + 4 * dimsize(multilayerparams, 0))/d coefficients
+
+		for(ii = 0 ; ii < dimsize(multilayerparams, 0) ; ii += 1)
+			for(jj = 0 ; jj < 4 ; jj += 1)
+				coefficients[offset + jj + 4 * ii] = str2num(multilayerparams[ii][2 * jj + 1])	
+			endfor
+		endfor
+	endif
+	
 	SetDataFolder saveDFR			// and restore
 End
 
@@ -148,7 +164,7 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 	//shortcut just means that you are changing the values in the coefficient wave, you're not changing the size.
 	variable shortcut
 	
-	variable mode, ii, newplotyp
+	variable mode, ii, newplotyp, multilayer, lVmullayers, lVappendlayer, lVmulrep, alreadyMultilayer, offset
 	string coefnote = "", item = "", key = "", val = "", holdstring
 
 	if(!waveexists(coefficientwave))
@@ -158,23 +174,38 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 	redimension/n=(dimsize(coefficientwave, 0)) coef_theoretical_R
 	coef_theoretical_R = coefficientwave
 
+	mode = mod(numpnts(coefficientwave) - 6, 4) 
+
+	coefnote = note(coefficientwave)
+	multilayer = numberbykey("multilayer", coefnote)
+	
 	if(!shortcut)
 		coefnote = note(coefficientwave)
-		if(coefficientwave[0] * 4 + 6 == numpnts(coefficientwave))
-			coefnote = replacenumberbykey("mode", coefnote, 0)
-			coefnote = replacenumberbykey("multilayer", coefnote, 0)
-		elseif(coefficientwave[0] * 4 + 8 == numpnts(coefficientwave))
-			coefnote = replacenumberbykey("mode", coefnote, 1)
-			coefnote = replacenumberbykey("multilayer", coefnote, 0)
-		elseif(!mod(numpnts(coefficientwave) - coefficientwave[0] * 4 + 6, 4))
-			coefnote = replacenumberbykey("mode", coefnote, 0)
+		
+		alreadyMultilayer = str2num(getmotofitoption("multilayer"))		
+		
+		lVmullayers = numberbykey("Vmullayers", coefnote)
+		lVmulrep = numberbykey("Vmulrep", coefnote)
+		lVappendlayer = numberbykey("Vappendlayer", coefnote)
+		
+		coefnote = replacenumberbykey("mode", coefnote, mode)	
+		if(numpnts(coefficientwave) != 4 * coefficientwave[0] + 6 + mode || numberbykey("multilayer", coefnote) == 1)
 			coefnote = replacenumberbykey("multilayer", coefnote, 1)
-			coefnote = replacenumberbykey("Vmullayers", coefnote, (numpnts(coefficientwave) - coefficientwave[0] * 4 + 6)/4)
-		elseif(!mod(numpnts(coefficientwave) - coefficientwave[0] * 4 + 8, 4))
-			coefnote = replacenumberbykey("mode", coefnote, 1)
-			coefnote = replacenumberbykey("multilayer", coefnote, 1)
-			coefnote = replacenumberbykey("Vmullayers", coefnote, (numpnts(coefficientwave) - coefficientwave[0] * 4 + 8)/4)				
+			multilayer = 1
+			lVmullayers = (numpnts(coefficientwave) - coefficientwave[0] * 4 - 6 - mode)/4
+			coefnote = replacenumberbykey("Vmullayers", coefnote, lVmullayers)			
+		else
+			multilayer = 0
+			coefnote = replacenumberbykey("multilayer", coefnote, 0)
+		endif			
+		if(numtype(lVmulrep))
+			lVmulrep = 0
 		endif
+		if(numtype(lVappendlayer))
+			lVappendlayer = 0
+		endif		
+		coefnote = replacenumberbykey("Vmulrep", coefnote, lVmulrep)
+		coefnote = replacenumberbykey("Vappendlayer", coefnote, lVappendlayer)
 		
 		//copy control string to motofitoptionstring
 		for(ii = 0 ; ii < itemsinlist(coefnote) ; ii+=1)
@@ -201,7 +232,16 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 
 		//use error wave?
 		checkbox useerrors_tab0, win=reflectivitypanel, value = str2num(getmotofitoption("useerrors"))
-
+		
+		//use multilayers?
+		checkbox usemultilayer_tab0, win=reflectivitypanel, value = multilayer
+		if(!alreadymultilayer && multilayer)
+			moto_initiateMultilayer(lVmullayers, lVappendlayer, lVmulrep)
+		elseif(alreadymultilayer && multilayer)
+			moto_changemultilayerwave(lVmullayers, lVappendlayer, lVmulrep)
+		elseif(alreadymultilayer && !multilayer)
+			moto_removemultilayer()
+		endif
 		//plotyp?
 		//did plotyp change
 		controlinfo/W=reflectivitypanel plotype_tab0
@@ -225,10 +265,12 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 	holdstring = getmotofitoption("holdstring")
 	
 	Wave/t layerparams = root:packages:motofit:reflectivity:layerparams
+	Wave/t/z multilayerparams = root:packages:motofit:reflectivity:multilayerparams
 	Wave/t baselayerparams = root:packages:motofit:reflectivity:baselayerparams
 	Wave layerparams_selwave = root:packages:motofit:reflectivity:layerparams_selwave
+	Wave/z multilayerparams_selwave = root:packages:motofit:reflectivity:multilayerparams_selwave
 	Wave baselayerparams_selwave = root:packages:motofit:reflectivity:baselayerparams_selwave
-	
+
 	baselayerparams[0][1] = num2istr(coef_theoretical_R[0])
 	baselayerparams_selwave[0][2] = 	baselayerparams_selwave[0][2] | selectnumber(str2num(holdstring[0]), 0, 16)
 	
@@ -279,6 +321,23 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 		layerparams[ii + 1][7] = num2str(coef_theoretical_R[4 * (ii+1) + 5 + mode])
 		layerparams_selwave[ii + 1][8] = layerparams_selwave[ii + 1][8] | selectnumber(str2num(holdstring[4 * ii + 9 + mode]), 0, 16)
 	endfor
+	
+	if(multilayer && waveexists(multilayerparams))
+		offset = 4 * coef_theoretical_R[0] + 6 + mode
+		for(ii = 0 ; ii < dimsize(multilayerparams, 0) ; ii+=1)
+			multilayerparams[ii][1] = num2str(coef_theoretical_R[4 * ii + offset])
+			multilayerparams_selwave[ii][2] = multilayerparams_selwave[ii][2] | selectnumber(str2num(holdstring[4 * ii + offset]), 0, 16)
+
+			multilayerparams[ii][3] = num2str(coef_theoretical_R[4 * ii + 1 + offset])
+			multilayerparams_selwave[ii][4] = multilayerparams_selwave[ii ][4] | selectnumber(str2num(holdstring[4 * ii + 1 + offset]), 0, 16)
+			
+			multilayerparams[ii][5] = num2str(coef_theoretical_R[4 * ii + 2 + offset])
+			multilayerparams_selwave[ii][6] = multilayerparams_selwave[ii ][6] | selectnumber(str2num(holdstring[4 * ii + 2 + offset]), 0, 16)
+			
+			multilayerparams[ii][7] = num2str(coef_theoretical_R[4 * ii + 3 + offset])
+			multilayerparams_selwave[ii][8] = multilayerparams_selwave[ii][8] | selectnumber(str2num(holdstring[4 * ii + 3 + offset]), 0, 16)
+		endfor
+	endif
 End
 
 static Function Moto_localchi2()
@@ -671,7 +730,7 @@ End
 //all the fitting is done here:
 static Function Moto_do_a_fit()	
 	string typeoffit, datasetname, df = "", holdstring = "", fitfunc = "", traces = "", lci = "", rci = "", tracecolour
-	variable useerrors, usedqwave, usecursors, leftP, rightP, useconstraint, mode, ii, jj, iters
+	variable useerrors, usedqwave, usecursors, leftP, rightP, useconstraint, mode, ii, jj, iters, lVmullayers, lVappendlayer, lVmulrep
 	dfref savDF = getdatafolderDFR()
 
 	controlinfo/W=reflectivitypanel typeoffit_tab0
@@ -700,6 +759,10 @@ static Function Moto_do_a_fit()
 	usedqwave = str2num(getmotofitoption("usedqwave"))
 	usecursors = str2num(getmotofitoption("fitcursors"))
 	useconstraint =  str2num(getmotofitoption("useconstraint"))
+	lVmulrep = str2num(getmotofitoption("Vmulrep"))
+	lVappendlayer = str2num(getmotofitoption("Vappendlayer"))
+	lVmullayers = str2num(getmotofitoption("Vmullayers"))
+	
 	try
 		Moto_backupModel()
 		if(!waveexists(RR) || !waveexists(qq))
@@ -768,6 +831,11 @@ static Function Moto_do_a_fit()
 		NVAR V_fiterror
 		
 		mode = str2num(getmotofitoption("mode"))
+		
+		variable/g Vmullayers = lVmullayers
+		variable/g Vappendlayer = lVappendlayer
+		variable/g Vmulrep = lVmulrep
+		
 		strswitch(typeoffit)
 			case "Genetic":
 				if(GEN_setlimitsforGENcurvefit(coef, holdstring, paramdescription = moto_paramdescription(coef[0], mode)))
@@ -1211,14 +1279,13 @@ Static Function moto_updateholdstring()
 	Wave baselayerparams_selwave = root:packages:motofit:reflectivity:baselayerparams_selwave
 	Wave coef_theoretical_R = root:data:theoretical:coef_theoretical_R
 	
-	variable mode = str2num(getmotofitoption("mode")), numlayers, ii	
+	variable mode = str2num(getmotofitoption("mode")), numlayers, ii
 	string holdstring = "1"
-	
 	holdstring += selectstring(baselayerparams_selwave[1][2] & 0x10, "0", "1")
 	holdstring += selectstring(layerparams_selwave[0][4] & 0x10, "0", "1")
 
 	numlayers = coef_theoretical_R[0]
-
+	
 	if(!mode)
 		holdstring += selectstring(layerparams_selwave[dimsize(layerparams_selwave, 0) - 1][4] & 0x10, "0", "1")
 		holdstring += selectstring(baselayerparams_selwave[2][2] & 0x10, "0", "1")
@@ -1242,6 +1309,18 @@ Static Function moto_updateholdstring()
 			holdstring += selectstring(layerparams_selwave[ii + 1][8] & 0x10, "0", "1")
 		endfor
 	endif
+
+	if(str2num(getmotofitoption("multilayer")))
+		Wave multilayerparams_selwave =  root:packages:motofit:reflectivity:multilayerparams_selwave
+		for(ii = 0 ; ii < dimsize(multilayerparams_selwave, 0) ; ii+=1)
+			holdstring += selectstring(multilayerparams_selwave[ii][2] & 0x10, "0", "1")
+			holdstring += selectstring(multilayerparams_selwave[ii][4] & 0x10, "0", "1")
+			holdstring += selectstring(multilayerparams_selwave[ii][6] & 0x10, "0", "1")
+			holdstring += selectstring(multilayerparams_selwave[ii][8] & 0x10, "0", "1")
+
+		endfor
+	endif
+	
 	setmotofitoption("holdstring", holdstring)
 End
 
@@ -1333,26 +1412,28 @@ static Function Moto_FTreflectivity()
 End
 
 static Function moto_update_theoretical()
-	wave/z coef_theoretical_R = root:data:theoretical:coef_theoretical_R
-	wave/z theoretical_R = root:data:theoretical:theoretical_R
-	wave/z theoretical_q = root:data:theoretical:theoretical_q
-	wave/z SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
-	Wave/z originaldata = root:data:theoretical:originaldata
 	variable plotyp
-	
-	variable chi2 = 0;
-	Motofit(coef_theoretical_R, theoretical_R, theoretical_Q)
-	Moto_SLDplot(coef_theoretical_R, sld_theoretical_R)
-	chi2 = Moto_calcchi2()
-	setmotofitoption("V_chisq", num2str(chi2))
-	
-	plotyp = str2num(getmotofitoption("plotyp"))
-	duplicate/free theoretical_R, temp_R
-	moto_plotyp_to_lindata(plotyp, theoretical_q, temp_R)
-	originaldata[][1] = temp_R[p]
+	DFREF saveDFR = GetDataFolderDFR()	// Save
+	SetDataFolder root:data:theoretical
+	wave/z coef_theoretical_R, theoretical_R, theoretical_q, SLD_theoretical_R, originaldata
 
-	note/k coef_theoretical_R
-	note coef_theoretical_R, getMotofitOptionString()
+	try
+		variable chi2 = 0;
+		Motofit(coef_theoretical_R, theoretical_R, theoretical_Q)
+		Moto_SLDplot(coef_theoretical_R, sld_theoretical_R)
+		chi2 = Moto_calcchi2()
+		setmotofitoption("V_chisq", num2str(chi2))
+	
+		plotyp = str2num(getmotofitoption("plotyp"))
+		duplicate/free theoretical_R, temp_R
+		moto_plotyp_to_lindata(plotyp, theoretical_q, temp_R)
+		originaldata[][1] = temp_R[p]
+
+		note/k coef_theoretical_R
+		note coef_theoretical_R, getMotofitOptionString()
+	catch
+	endtry
+	setdatafolder saveDFR
 End
 
 //adding in functionality to change the way the layers are displayed.
@@ -1967,7 +2048,6 @@ Function Moto_SLDplot(w, sld)
 		Wave SLD_calcwav = SLDmodelcoefwav
 		SLD_calcwav = w
 	elseif(mode == 2)
-		mode = 1
 		redimension/n=(4 * w[0] + 8) SLDmodelcoefwav
 		Wave SLD_calcwav = SLDmodelcoefwav
 		SLD_calcwav = w
@@ -1975,7 +2055,7 @@ Function Moto_SLDplot(w, sld)
 
 	nlayers=w[0]
 	
-	if(4 * w[0] + 6 + 2 * mode != numpnts(w))
+	if(4 * w[0] + 6 + mode != numpnts(w))
 		ismultilayer = 1
 		NVAR/z Vmulrep, Vmullayers, Vappendlayer
 		if(!NVAR_exists(Vmulrep) || !NVAR_exists(Vmullayers) || !NVAR_exists(Vappendlayer))
@@ -2040,8 +2120,8 @@ Function/Wave moto_expandMultiToNormalModel(w, mode, Vmullayers, Vappendlayer, V
 			expandedSLDmodelwave[0] = w[0] + (Vmullayers  * Vmulrep)
 			muloffset = 4 * w[0] + 6
 			multilayeroffset = 0
-		break
-		case 1:
+			break
+		case 2:
 			make/n=(4 * (w[0] + Vmullayers) + 8)/d/free expandedSLDmodelwave
 			expandedSLDmodelwave[0, 7] = w
 			expandedSLDmodelwave[0] = w[0] + (Vmullayers  * Vmulrep)
@@ -2051,25 +2131,25 @@ Function/Wave moto_expandMultiToNormalModel(w, mode, Vmullayers, Vappendlayer, V
 	endswitch
 	
 	for(layerinsert = 0, layer = 0 ; layerinsert < expandedSLDmodelwave[0] ; )
-				if(layerinsert == Vappendlayer)
-					for(jj = 0 ; jj < Vmulrep ; jj += 1)
-						for(kk = 0 ; kk < Vmullayers ; kk += 1)
-							expandedSLDmodelwave[4 * layerinsert + 6 + multilayeroffset] = w[muloffset + (4 * kk) ]
-							expandedSLDmodelwave[4 * layerinsert + 7 + multilayeroffset] = w[muloffset + (4 * kk) + 1]
-							expandedSLDmodelwave[4 * layerinsert + 8 + multilayeroffset] = w[muloffset + (4 * kk) + 2]
-							expandedSLDmodelwave[4 * layerinsert + 9 + multilayeroffset] = w[muloffset + (4 * kk) + 3]			
-							layerinsert += 1
-						endfor
-					endfor				
-				else
-					expandedSLDmodelwave[4 * layerinsert + 6 + multilayeroffset] = w[4 * layer + 6 + multilayeroffset]
-					expandedSLDmodelwave[4 * layerinsert + 7 + multilayeroffset] = w[4 * layer + 7 + multilayeroffset]
-					expandedSLDmodelwave[4 * layerinsert + 8 + multilayeroffset] = w[4 * layer + 8 + multilayeroffset]
-					expandedSLDmodelwave[4 * layerinsert + 9 + multilayeroffset] = w[4 * layer + 9 + multilayeroffset]
-					layer += 1
-					layerinsert += 1		
-				endif
+		if(layerinsert == Vappendlayer && Vmulrep)
+			for(jj = 0 ; jj < Vmulrep ; jj += 1)
+				for(kk = 0 ; kk < Vmullayers ; kk += 1)
+					expandedSLDmodelwave[4 * layerinsert + 6 + multilayeroffset] = w[muloffset + (4 * kk) ]
+					expandedSLDmodelwave[4 * layerinsert + 7 + multilayeroffset] = w[muloffset + (4 * kk) + 1]
+					expandedSLDmodelwave[4 * layerinsert + 8 + multilayeroffset] = w[muloffset + (4 * kk) + 2]
+					expandedSLDmodelwave[4 * layerinsert + 9 + multilayeroffset] = w[muloffset + (4 * kk) + 3]			
+					layerinsert += 1
+				endfor
 			endfor
+		else
+			expandedSLDmodelwave[4 * layerinsert + 6 + multilayeroffset] = w[4 * layer + 6 + multilayeroffset]
+			expandedSLDmodelwave[4 * layerinsert + 7 + multilayeroffset] = w[4 * layer + 7 + multilayeroffset]
+			expandedSLDmodelwave[4 * layerinsert + 8 + multilayeroffset] = w[4 * layer + 8 + multilayeroffset]
+			expandedSLDmodelwave[4 * layerinsert + 9 + multilayeroffset] = w[4 * layer + 9 + multilayeroffset]
+			layer += 1
+			layerinsert += 1		
+		endif
+	endfor
 
 	return expandedSLDmodelwave
 End
@@ -2664,42 +2744,12 @@ static Function moto_GUI_setvariable(s) : SetVariableControl
 					setvariable fringe_tab2, win=reflectivitypanel, value = _NUM:numfringes * 2*Pi/(xwave[rightP] - xwave[leftP])
 				break	
 				case "Vmullayers_tab0":
-					Wave/t  multilayerparams = root:packages:motofit:reflectivity:multilayerparams
-					Wave multilayerparams_selwave = root:packages:motofit:reflectivity:multilayerparams_selwave
-					variable oldlayers = dimsize(multilayerparams, 0)
-					redimension/n=(s.dval, -1) multilayerparams, multilayerparams_selwave
-					
-					multilayerparams_selwave[][0] = 0
-					multilayerparams_selwave[][1] = multilayerparams_selwave[p][1] | 2
-					multilayerparams_selwave[][2] = multilayerparams_selwave[p][2] | 32
-					multilayerparams_selwave[][3] = multilayerparams_selwave[p][3] | 2
-					multilayerparams_selwave[][4] = multilayerparams_selwave[p][4] | 32
-					multilayerparams_selwave[][5] = multilayerparams_selwave[p][5] | 2
-					multilayerparams_selwave[][6] = multilayerparams_selwave[p][6] | 32
-					multilayerparams_selwave[][7] = multilayerparams_selwave[p][7] | 2
-					multilayerparams_selwave[][8] = multilayerparams_selwave[p][8] | 32
-					variable ii
-					if(oldlayers == 0)
-						oldlayers = 1
-					endif
-					for(ii = oldlayers - 1 ; ii < s.dval ; ii += 1)
-						multilayerparams[ii][1] = "0"
-						multilayerparams[ii][3] = "0"
-						multilayerparams[ii][5] = "0"
-						multilayerparams[ii][7] = "0"
-					endfor
-					multilayerparams[][0] = num2istr(p+1)
-					setmotofitoption("Vmullayers", num2istr(s.dval))
+					moto_changeMultilayerWave(s.dval, -1, -1)
 					note/k coef_theoretical_R
-					note coef_theoretical_R, getMotofitOptionString()	
-					NVAR/z Vmullayers = root:data:theoretical:Vmullayers
-					Vmullayers = s.dval
-					variable 	isImag = mod(numpnts(coef_theoretical_R) - 6, 4) 
-					if(!isImag)
-						redimension/n=(coef_theoretical_R[0] * 4 + 6 + 4*s.dval) coef_theoretical_R
-					else
-						redimension/n=(coef_theoretical_R[0] * 4 + 8 + 4*s.dval) coef_theoretical_R					
-					endif
+					note coef_theoretical_R, getMotofitOptionString()
+						
+					moto_layertabletocref(coef_theoretical_R)
+					moto_update_theoretical()
 				break
 				case "Vappendlayer_tab0":
 					variable numlayers = coef_theoretical_R[0]
@@ -2708,18 +2758,17 @@ static Function moto_GUI_setvariable(s) : SetVariableControl
 						setvariable Vappendlayer_tab0, win=multilayerreflectivitypanel, value=_NUM:numlayers
 						Vappendlayer = numlayers
 					else
-						setmotofitoption("Vappendlayer", num2istr(s.dval))
-						note/k coef_theoretical_R
-						note coef_theoretical_R, getMotofitOptionString()
-						Vappendlayer = s.dval
-					endif					
+						moto_changeMultilayerWave(-1, s.dval, -1)
+					endif
+					note/k coef_theoretical_R
+					note coef_theoretical_R, getMotofitOptionString()	
+					moto_update_theoretical()				
 				break
 				case "Vmulrep_tab0":
-						NVAR/z Vmulrep = root:data:theoretical:Vmulrep
-						setmotofitoption("Vmulrep", num2istr(s.dval))
-						note/k coef_theoretical_R
-						note coef_theoretical_R, getMotofitOptionString()
-						Vmulrep = s.dval
+					moto_changeMultilayerWave(-1, -1, s.dval)
+					note/k coef_theoretical_R
+					note coef_theoretical_R, getMotofitOptionString()
+					moto_update_theoretical()
 				break
 			endswitch
 			break
@@ -3137,8 +3186,8 @@ Function moto_initiateMultilayer(Vmullayers, Vappendlayer, Vmulrep)
 	
 	setMotofitOption("multilayer", "1")
 	setMotofitOption("Vmullayers", num2istr(Vmullayers))
-	setMotofitOption("Vappendlayer", num2istr(Vmullayers))
-	setMotofitOption("Vmulrep", num2istr(Vmullayers))	
+	setMotofitOption("Vappendlayer", num2istr(Vappendlayer))
+	setMotofitOption("Vmulrep", num2istr(Vmulrep))	
 	variable/g root:data:theoretical:Vmullayers = Vmullayers
 	variable/g root:data:theoretical:Vappendlayer = Vappendlayer	
 	variable/g root:data:theoretical:Vmulrep = Vmulrep
@@ -3172,6 +3221,64 @@ Function moto_initiateMultilayer(Vmullayers, Vappendlayer, Vmulrep)
 	
 	SetDataFolder saveDFR
 End
+
+Function moto_changeMultilayerWave(Vmullayers, Vappendlayer, Vmulrep)
+	variable Vmullayers, Vappendlayer, Vmulrep
+
+	DFREF saveDFR = GetDataFolderDFR()	// Save
+	SetDataFolder root:data:theoretical
+	
+	wave/z coef_theoretical_R = root:data:theoretical:coef_theoretical_R		
+	variable numlayers, isimag, ii
+	
+	if(str2num(getMotofitOption("multilayer")) != 1)
+		setdatafolder saveDFR
+		return 0
+	endif
+	
+	if(Vmullayers >= 0)
+		setMotofitOption("Vmullayers", num2istr(Vmullayers))
+		variable/g root:data:theoretical:Vmullayers = Vmullayers
+	
+		setdatafolder root:packages:motofit:reflectivity
+		Wave/t  multilayerparams = root:packages:motofit:reflectivity:multilayerparams
+		Wave multilayerparams_selwave = root:packages:motofit:reflectivity:multilayerparams_selwave
+		variable oldlayers = dimsize(multilayerparams, 0)
+		redimension/n=(Vmullayers, -1) multilayerparams, multilayerparams_selwave
+					
+		multilayerparams_selwave[][0] = 0
+		multilayerparams_selwave[][1] = multilayerparams_selwave[p][1] | 2
+		multilayerparams_selwave[][2] = multilayerparams_selwave[p][2] | 32
+		multilayerparams_selwave[][3] = multilayerparams_selwave[p][3] | 2
+		multilayerparams_selwave[][4] = multilayerparams_selwave[p][4] | 32
+		multilayerparams_selwave[][5] = multilayerparams_selwave[p][5] | 2
+		multilayerparams_selwave[][6] = multilayerparams_selwave[p][6] | 32
+		multilayerparams_selwave[][7] = multilayerparams_selwave[p][7] | 2
+		multilayerparams_selwave[][8] = multilayerparams_selwave[p][8] | 32
+
+		for(ii = oldlayers  ; ii < Vmullayers ; ii += 1)
+			multilayerparams[ii][1] = "0"
+			multilayerparams[ii][3] = "0"
+			multilayerparams[ii][5] = "0"
+			multilayerparams[ii][7] = "0"
+		endfor
+		multilayerparams[][0] = num2istr(p + 1)
+	
+	endif
+	
+	if(Vappendlayer>=0)
+		setMotofitOption("Vappendlayer", num2istr(Vappendlayer))
+		variable/g root:data:theoretical:Vappendlayer = Vappendlayer
+	endif
+	if(Vmulrep>=0)
+		setMotofitOption("Vmulrep", num2istr(Vmulrep))
+		variable/g root:data:theoretical:Vmulrep = Vmulrep
+	endif
+	
+	
+	SetDataFolder saveDFR
+End
+
 
 Function moto_createmultilayerpanel(Vmullayers, Vappendlayer, Vmulrep, isImag)
 	variable Vmullayers, Vappendlayer, Vmulrep, isImag
