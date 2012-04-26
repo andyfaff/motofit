@@ -1,7 +1,7 @@
 #pragma rtGlobals=3		// Use modern global access method.
 
 //Constant SLDcation = 
-Constant ANUMSLICES =10000//00
+Constant ANUMSLICES =150//00
 Constant CONVREDUCER = 1
 Constant VOLCAT = 263.5
 Constant VOLANION = 239.6
@@ -35,7 +35,7 @@ variable ii, volfracAu, volFracCat, volFracBulk, zed, volfracanion, NUMSLICES
 NUMSLICES = ANUMSLICES * 4 + 1
 
 //create a Heaviside wave for the Au and box wave for the layer and a gauss wave for the convolution
-make/n=(NUMSLICES)/o/d gau,heavi,cbox1,abox1
+make/n=(NUMSLICES)/free/d gau,heavi,cbox1,abox1
 
 //work out the thickness ofeach of the slices.  
 variable interfacialthickness = 2*(2*w[17] + 5*w[16]+3*w[4])
@@ -60,7 +60,6 @@ cbox1 = cbox1 * VOLCAT / (cbox1 * VOLCAT + (1-cbox1) * VOLANION)
 cbox1 = (x==0) ? 0.5 * cbox1 : cbox1
 
 abox1 = 1-cbox1-heavi
-
 //now smear the waves
 convolve/a gau, heavi, cbox1, abox1
 
