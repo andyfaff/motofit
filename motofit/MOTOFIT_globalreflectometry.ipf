@@ -1078,7 +1078,7 @@ static Function build_combined_dataset([fitcursors])
 		Wave/z sepee = $("root:data:" + datasets[ii] + ":" + datasets[ii] + "_E")
 		Wave/z  sepdx= $("root:data:" + datasets[ii] + ":" + datasets[ii] + "_dq")
 		for(jj = 0 ; jj < numpnts(sepxx) ; jj += 1)
-			if(sepxx[jj] > loQ && sepxx[jj] < hiQ)
+			if(sepxx[jj] >= loQ && sepxx[jj] <= hiQ)
 				entry = dimsize(xx, 0) 
 				redimension/n=(entry + 1) xx, yy, dy, dx
 				xx[entry] = sepxx[jj]
@@ -1251,12 +1251,13 @@ static Function evaluateGlobalFunction([fitCursors, usedqwave])
 	endif
 	
 	chi2 = yy - fityy
+	res_fityy = yy - fityy
 	if(waveexists(dy) && str2num(motofit#getmotofitoption("useerrors")))
 		chi2 /= dy
+		res_fityy /=dy
 	endif
 	chi2 = chi2^2
-	res_fityy = yy - fityy
-	
+		
 	//evaluate the fit waves for the model
 	for(ii = 0 ; ii < numpnts(datasets) ; ii+=1)
 		datasetname = datasets[ii]
@@ -1552,7 +1553,7 @@ Function processGlobalMonteCarlo(M_montecarlo)
 	Wave M_montecarlo
 
 	DFREF cDF = getdatafolderDFR()
-	variable numdatasets, ii, jj
+	variable numdatasets, ii, jj, chi2
 	Wave holdwave = root:Packages:motofit:reflectivity:globalfitting:holdwave
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
 	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
@@ -1608,14 +1609,15 @@ Function processGlobalMonteCarlo(M_montecarlo)
 		Waveclear M_Montecarlostats
 	endfor
 
-	plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+	chi2 = plotCombinedFitAndEvaluate(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
 	
 	//and make the SLD plots
 	for(ii = 0 ; ii < numdatasets ; ii+=1)
 		setdatafolder $("root:data:" + datasets[ii])
 		motofit#moto_montecarlo_SLDcurves(montecarlowaves[ii], 0.02, 500)
 		setdatafolder cDF
-	endfor	
+	endfor
+	return chi2	
 End
 
 Function setup_motoMPI()
@@ -1761,6 +1763,7 @@ Function parse_motoMPI([fileStr])
 	//each line is the fit result from a single fit.
 	//the first value on each line is a chi2 value.
 	
+	variable chi2
 	if(!paramisdefault(fileStr))
 		LoadWave/J/M/D/A=wave/K=0/V={"\t, "," $",0,0} fileStr
 	else
@@ -1773,7 +1776,7 @@ Function parse_motoMPI([fileStr])
 	deletepoints/M=1 0, 1, theMontecarlo
 	
 	//process the output
-	processGlobalMonteCarlo(themontecarlo)
+	chi2 = processGlobalMonteCarlo(themontecarlo)
 		
 	duplicate/o theMontecarlo, M_montecarlo
 	killwaves/z theMonteCarlo
@@ -1781,7 +1784,13 @@ Function parse_motoMPI([fileStr])
 	string holdstring = ""
 	holdstring = padstring(holdstring, Dimsize(M_Montecarlo, 1), 48)
 	make2DScatter_plot_matrix(M_monteCarlo, holdstring)
-
+	
+	//this coefs wave is updated when you processGlobalMonteCarlo
+	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
+	extract_combined_into_list(coefs)
+	
+	ValDisplay Chi2_tab1, win=globalreflectometrypanel, value = _NUM:(chi2)
+	
 End
 
 Function ingest_motoMPI_input([folderStr])
