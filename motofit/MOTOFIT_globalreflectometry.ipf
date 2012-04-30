@@ -1713,6 +1713,7 @@ Function setup_motoMPI()
 		
 		//now write a pilot file
 		txt = "stuff\nvalue hold lowlim hilim\n"
+		txt += "smearedabeles\nlog10chisquared\n"
 		fbinwrite pilotID, txt
 		
 		for(jj = 0 ; jj < numcoefs[ii] ; jj += 1)
