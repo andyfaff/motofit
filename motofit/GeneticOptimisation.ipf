@@ -1063,6 +1063,7 @@ Function gen_graphnowbutton(ba) : ButtonControl
 					endif
 				endfor
 			endif
+			endp = numpnts(chi2) - 1
 			if(!numtype(str2num(cursorfinish)))
 				endp = str2num(cursorfinish)
 			endif
