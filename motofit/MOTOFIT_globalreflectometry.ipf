@@ -1139,10 +1139,8 @@ static Function extract_combined_into_list(coefs)
 	endfor
 End
 
-static Function/wave decompose_into_individual_coefs(coefs)
-	Wave coefs
-	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
-	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
+static Function/wave decompose_into_individual_coefs(coefs, linkages, numcoefs)
+	Wave coefs, linkages, numcoefs
 	variable ii
 	string name
 	make/n=(dimsize(numcoefs, 0))/free/wave individualcoefs
@@ -1165,7 +1163,7 @@ Function motofit_globally(w, RR, qq):fitfunc
 	variable ii, offset = 0
 	make/n=(pnts_each_dataset[0])/d/free ytemp, xtemp
 	
-	Wave/wave individual_coefs = decompose_into_individual_coefs(w)
+	Wave/wave individual_coefs = decompose_into_individual_coefs(w, linkages, numcoefs)
 	for(ii = 0 ; ii < numpnts(numcoefs) ; ii+=1)
 		redimension/n=(pnts_each_dataset[ii]) xtemp, ytemp
 		xtemp = qq[offset + p]
@@ -1185,7 +1183,7 @@ Function motofit_smeared_globally(w, RR, qq, dq):fitfunc
 	variable ii, offset = 0
 	make/n=(pnts_each_dataset[0])/d/free ytemp, xtemp, dxtemp
 	
-	Wave/wave individual_coefs = decompose_into_individual_coefs(w)
+	Wave/wave individual_coefs = decompose_into_individual_coefs(w, linkages, numcoefs)
 	for(ii = 0 ; ii < numpnts(numcoefs) ; ii+=1)
 		redimension/n=(pnts_each_dataset[ii]) xtemp, ytemp, dxtemp
 		xtemp = qq[offset + p]
@@ -1211,8 +1209,11 @@ static Function evaluateGlobalFunction([fitCursors, usedqwave])
 	Wave/t datasets = root:Packages:motofit:reflectivity:globalfitting:datasets
 	Wave pnts_each_dataset = root:Packages:motofit:reflectivity:globalfitting:pnts_each_dataset
 	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
-	Wave/wave outputcoefs = decompose_into_individual_coefs(coefs)
-	
+	Wave linkages =  root:Packages:motofit:reflectivity:globalfitting:linkages
+	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
+
+	Wave/wave outputcoefs = decompose_into_individual_coefs(coefs, linkages, numcoefs)
+
 	string datasetname, alert
 	variable ii, offset = 0, resolution
 	
@@ -1502,9 +1503,9 @@ Function Do_a_global_fit()
 		extract_combined_into_list(coefs)
 		
 		//create fitted coefficient waves
-		Wave/wave outputcoefs = decompose_into_individual_coefs(coefs)
+		Wave/wave outputcoefs = decompose_into_individual_coefs(coefs, linkages, numcoefs)
 		Wave W_sigma
-		Wave/wave outputsigma = decompose_into_individual_coefs(W_sigma)
+		Wave/wave outputsigma = decompose_into_individual_coefs(W_sigma, linkages, numcoefs)
 		motofitstring = motofit#getmotofitoptionstring()
 		motofitstring = replacestringbykey("holdstring", motofitstring, "")
 		offset = 0
@@ -1589,7 +1590,7 @@ Function processGlobalMonteCarlo(M_montecarlo)
 	//fill in the individual M_montecarlo
 	for(ii = 0 ; ii < dimsize(M_montecarlo, 0) ; ii += 1)
 		tempcoefs = M_montecarlo[ii][p]
-		Wave/wave outputcoefs = decompose_into_individual_coefs(tempcoefs)
+		Wave/wave outputcoefs = decompose_into_individual_coefs(tempcoefs, linkages, numcoefs)
 		for(jj = 0 ; jj < numdatasets ; jj += 1)
 			Wave indy = outputcoefs[jj]
 			Wave indy3 = montecarlowaves[jj]
@@ -1622,7 +1623,7 @@ End
 
 Function setup_motoMPI()
 	//sets up input for the motoMPI program, for parallelized monte carlo fitting on a cluster.
-		
+	//setup is from moto corefinement for reflectometry (not IGOR inbuilt)
 	string holdstring = "", datasetname, txt = "", pilots = "", datas = "", info = ""
 	variable numdatasets, ii, fileID, pilotID, jj, loQ, hiQ, pnt, reso
 		
@@ -1749,6 +1750,152 @@ Function setup_motoMPI()
 		endfor
 		txt = removeending(txt, " ")
 		if(ii < dimsize(linkages, 0) - 1)
+			txt += "\n"
+		endif
+		fbinwrite pilotID, txt
+	endfor
+	close pilotID
+	
+	//TODO Write a PBS script.
+End
+
+Function setup_motoMPI2()
+	//sets up input for the motoMPI program, for parallelized monte carlo fitting on a cluster.
+	//setup is from IGOR's inbuilt globalfitting program (actually the motofit version).
+		
+	string holdstring = "", datasetname, txt = "", pilots = "", datas = "", info = ""
+	variable numdatasets, ii, fileID, pilotID, jj, loQ, hiQ, pnt, reso
+		
+	Wave NewGF_coefwave = root:packages:motofitgf:newglobalfit:NewGF_coefwave
+	Wave CoefDatasetlinkage = root:packages:motofitgf:newglobalfit:CoefDatasetlinkage
+	Wave/T NewGF_DataSetsList = root:packages:motofitgf:NewGlobalFit:NewGF_DataSetsList
+	Wave/t NewGF_FitFuncNames =  root:packages:motofitgf:NewGlobalFit:NewGF_FitFuncNames
+		
+	if(!waveexists(NewGF_coefwave))
+		abort "global refinement is not setup properly"
+	endif	
+	
+	numdatasets = dimsize(CoefDatasetlinkage, 0)
+	
+	//need a linkage matrix
+	duplicate/free	CoefDatasetlinkage, linkages
+	deletepoints/M=1 0, 4, linkages
+	redimension/I linkages
+	matrixtranspose linkages
+	make/n=(numdatasets)/free numcoefs
+	numcoefs[] = coefdatasetlinkage[p][3]
+	
+	//get the limits
+	duplicate/free NewGF_CoefWave, reducedCoefs,holdwave
+	redimension/n=(-1, 0) reducedcoefs
+	deletepoints/M=1 2, 1, holdwave
+	deletepoints/M=1 0, 1, holdwave
+	sockitwavetostring/txt="" holdwave, holdstring
+	
+	GEN_setlimitsforGENcurvefit(reducedcoefs, holdstring)
+	Wave limitswave = root:packages:motofit:old_genoptimise:GENcurvefitlimits
+				
+	Wave/wave individual_coefs = decompose_into_individual_coefs(NewGF_coefwave, linkages, numcoefs)
+	
+	newpath/M="Select/create a folder to put the motoMPI input"/o/q/z/c motoMPI
+	pathinfo motoMPI
+	if(!V_Flag)
+		return 1
+	endif
+
+	//make the datasets
+	for(ii = 0 ; ii < numdatasets ; ii += 1)
+		Wave yy = $(NewGF_DataSetsList[ii][0])
+		Wave xx = $(NewGF_DataSetsList[ii][1])
+		Wave/z ee = $(NewGF_DataSetsList[ii][2])
+		Wave coefs = individual_coefs[ii]
+			
+		if(!waveexists(ee))
+			abort "you have to have an error wave"
+		endif
+		duplicate/free yy, tempyy
+		duplicate/free ee, tempee
+		moto_plotyp_to_lindata(str2num(motofit#getmotofitoption("plotyp")), xx, tempyy, dr = tempee)
+
+		datasetname = removeending(nameofwave(yy), "_R")
+
+		make/n=(dimsize(yy, 0))/d/free dq
+		dq = xx * 0.05
+		
+		Wave sq = $("root:data:" + datasetname + ":" + datasetname + "_dq")
+		if(!waveexists(sq))
+			Doalert 0, "no resolution data for dataset " + datasetname + " assuming constant dq/q"
+			dq = xx * str2num(motofit#getmotofitoption("res"))/100
+		else
+			dq = sq
+		endif
+		
+		open/P=motoMPI fileID as datasetname + ".txt"
+		datas += datasetname + ".txt" + ";"
+		open/P=motoMPI pilotID as datasetname + "_pilot.txt"
+		pilots += datasetname + "_pilot.txt" + ";"		
+
+		make/n=(dimsize(yy, 0), 4)/t/free datatext
+		datatext = ""
+		datatext[][0] = num2str(xx[p])
+		datatext[][1] = num2str(tempyy[p])
+		datatext[][2] = num2str(tempee[p])
+		datatext[][3] = num2str(dq[p])
+				
+		insertpoints/M=1 4, 1, datatext
+		insertpoints/M=1 3, 1, datatext
+		insertpoints/M=1 2, 1, datatext
+		insertpoints/M=1 1, 1, datatext
+		datatext[][1] = "\t"
+		datatext[][3] = "\t"
+		datatext[][5] = "\t"
+		datatext[][7] = "\n"
+		datatext[dimsize(datatext, 0) - 1][7] = ""
+		matrixtranspose datatext
+		sockitwavetostring datatext, txt
+		
+		fbinwrite fileID, txt
+		close fileID
+		
+		//now write a pilot file
+		txt = "stuff\nvalue hold lowlim hilim\n"
+		txt += lowerStr(NewGF_FitFuncNames[CoefDatasetlinkage[ii][0]]) + "\n"
+		txt += "log10chisquared\n"
+		fbinwrite pilotID, txt
+		Wave uniqueparams = isUniqueParam(linkagematrix = linkages)
+		
+		for(jj = 0 ; jj < numcoefs[ii] ; jj += 1)
+			txt = ""
+			txt += num2str(coefs[jj]) + "\t"
+			txt += holdstring[linkages[jj][ii]] + "\t"
+			txt += num2str(limitswave[linkages[jj][ii]][0]) + "\t"
+			txt += num2str(limitswave[linkages[jj][ii]][1])
+
+			if(jj < numcoefs[ii] - 1)
+				txt += "\n"
+			endif
+
+			fbinwrite pilotID, txt
+		endfor		
+		close pilotID
+	endfor
+	
+	open/P=motoMPI pilotID as "global_pilot"
+	datas = replacestring(";", datas, " ")
+	datas = removeending(datas, " ") + "\n"
+	fbinwrite pilotID, datas
+	
+	pilots = replacestring(";", pilots, " ")
+	pilots = removeending(pilots, " ") + "\n"
+	fbinwrite pilotID, pilots
+	
+	for(ii = 4 ; ii < dimsize(CoefDatasetlinkage, 1)  ; ii += 1)
+		txt = ""
+		for(jj = 0 ; jj < numdatasets ; jj += 1)
+			txt += num2istr(CoefDatasetlinkage[jj][ii]) + " "
+		endfor
+		txt = removeending(txt, " ")
+		if(ii < dimsize(CoefDatasetlinkage, 1) - 1)
 			txt += "\n"
 		endif
 		fbinwrite pilotID, txt
