@@ -18,6 +18,8 @@
 #include "Pla_Xrayreduction"
 #include "Pla_streamer"
 #include "EP_errorPropagation"
+#include "Pla_reductionPOL"
+#include "Pla_reductionPOLCORRECT"
 
 //opening of the choppers, in radians
 	Constant O_C1 = 1.04719755
