@@ -2032,6 +2032,26 @@ static Function/s Moto_fittable_datasets([justfolders])
 	return validdatasets
 End
 
+Function Moto_newSLDplot(coefs, desiredsldwave, sldpts)
+	Wave coefs
+	string desiredsldwave
+	variable sldpts
+
+	string wavnameStr = ""
+	DFREF wavDF
+	DFREF saveDFR = GetDataFolderDFR()	// Save
+	
+	wavnameStr = nameofwave(coefs)
+	wavDF = getwavesdatafolderDFR(coefs)
+	setdatafolder wavDF
+	
+	make/n=(sldpts)/d/o $desiredsldwave
+	Wave sld = $desiredsldwave
+	Moto_SLDplot(coefs, sld)
+	SetDataFolder saveDFR
+
+End
+
 Function Moto_SLDplot(w, sld)
 	Wave w, sld
 	//
