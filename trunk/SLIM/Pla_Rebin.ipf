@@ -315,7 +315,9 @@ variable rebin, lowerQ, upperQ
 			continue
 		endif
 		 weight = 1 / (dR[ii]^2)
-		 
+		 if(numtype(weight))		//it's possible for dR to be 0.  If this is the case then R[binnum] is going to be INF. Let's prevent this from happening.
+		 	continue
+		 endif
 		W_R_rebin[binnum] += RR[ii] * weight
 		W_q_rebin[binnum] += qq[ii] * weight
 		W_dq_rebin[binnum] += dq[ii] * weight
