@@ -2081,7 +2081,7 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 				asdfghjkl2 += (imag(compSpliceFactor)/real(compSpliceFactor))^2
 				asdfghjkl2 = sqrt(asdfghjkl2)
 				asdfghjkl1 *= real(compSplicefactor)
-				asdfghjkl2 *= asdfghjkl1
+				asdfghjkl2 *= abs(asdfghjkl1)	//need to take the positive branch
 				
 				concatenate/NP {asdfghjkl1},tempRR
 				concatenate/NP {asdfghjkl0},tempQQ
