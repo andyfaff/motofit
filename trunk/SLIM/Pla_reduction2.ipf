@@ -190,10 +190,11 @@ Function createWaterNormalisationWave(waterrun, fileName)
 	return 0		
 End
 
-Function findSpecRidge(tynWave, searchIncrement , tolerance, expected_peak, retval)
+Function findSpecRidge(tynWave, searchIncrement , tolerance, expected_peak, binToStartFrom, retval)
 	Wave tynWave
 	variable searchIncrement, tolerance
 	variable/c   expected_peak
+	variable binToStartFrom
 	variable/c &retval 
 	retval =  cmplx(NaN,NaN)
 
@@ -219,10 +220,10 @@ Function findSpecRidge(tynWave, searchIncrement , tolerance, expected_peak, retv
 		make/o/d/n=(dimsize(M_sumplanes, 1))/free subSection = 0, subSectionX=p
 		make/o/d/n=(0)/free peakCentre,peakFWHM
 
-		for(ii=0 ; ii< floor(dimsize(M_sumplanes, 0) / searchIncrement) ; ii+=1)
-			redimension/n=(ii+1, -1) peakCentre, peakFWHM
+		for(ii = bintostartfrom, jj = 0 ; ii >= 0 ; ii -= searchIncrement, jj+=1)
+			redimension/n=(jj + 1, -1) peakCentre, peakFWHM
 			
-			Duplicate/o/free/r=[ dimsize(M_sumplanes, 0) - (ii + 1) * searchincrement, dimsize(M_sumplanes, 0) - 1][0, dimsize(M_sumplanes, 1) - 1] M_sumplanes, subimage
+			Duplicate/o/free/r=[ii, dimsize(M_sumplanes, 0) - 1][0, dimsize(M_sumplanes, 1) - 1] M_sumplanes, subimage
 			imagetransform sumallcols subimage
 			Wave W_sumcols
 			subsection = W_sumcols
@@ -230,14 +231,14 @@ Function findSpecRidge(tynWave, searchIncrement , tolerance, expected_peak, retv
 			Pla_findpeakdetails(subsection, subsectionX,expected_centre = real(expected_peak), expected_width = imag(expected_peak))
 			Wave W_peakInfo
 			if((2.35482 * W_peakInfo[7]/sqrt(2) < imag(expected_peak) && abs(W_peakInfo[6] - real(expected_peak)) <  2 * imag(expected_peak)))
-				peakCentre[ii] = W_peakInfo[6]
-				peakFWHM[ii] = 2.35482 * W_peakInfo[7]/sqrt(2)
+				peakCentre[jj] = W_peakInfo[6]
+				peakFWHM[jj] = 2.35482 * W_peakInfo[7]/sqrt(2)
 			else
-				peakCentre[ii] = NaN
-				peakFWHM[ii] = NaN
+				peakCentre[jj] = NaN
+				peakFWHM[jj] = NaN
 			endif	
 			
-			if(ii>0 && abs((peakCentre[ii]-peakCentre[ii-1])/peakCentre[ii]) < tolerance && abs((peakFWHM[ii]-peakFWHM[ii-1])/peakFWHM[ii]) < tolerance)
+			if(jj>0 && abs((peakCentre[jj]-peakCentre[jj -1])/peakCentre[jj]) < tolerance && abs((peakFWHM[jj]-peakFWHM[jj - 1])/peakFWHM[jj]) < tolerance)
 				retval = cmplx(W_peakInfo[6], 2.35482*W_peakInfo[7]/sqrt(2))
 				break
 			endif	
