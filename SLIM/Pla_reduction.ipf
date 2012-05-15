@@ -1155,34 +1155,6 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		M_specTOFHIST[][] = TOF[p][q]
 		M_lambdaHIST = 0
 		
-		//find out where the beam hits the detector
-		//this will be done on an average of the entire detector image
-		//work out what the total expected width of the beam is
-		//from De Haan1995
-		if(paramisdefault(actual_peak) || numtype(imag(actual_peak)) || numtype(real(actual_peak)))
-			calculated_width = 2 * (ss3vg[scanpoint]/2 + ((ss2vg[scanpoint] + ss3vg[scanpoint])*(detectorpos[scanpoint]+sample_distance[0]-slit3_distance[0])/(2*(slit3_distance[0]-slit2_distance[0])))) / Y_PIXEL_SPACING
-			expected_peak = cmplx(real(expected_peak), 2.5* calculated_width +2)
-			
-			if(manual || findspecridge(detector, 50, 0.01, expected_peak, actual_peak) || numtype(real(actual_peak)) || numtype(imag(actual_peak)))
-				//use the following procedure to find the specular ridge
-				userSpecifiedArea(detector, actual_peak, bkgloc)
-				Waveclear backgroundMask
-				make/d/free/n=(dimsize(detector, 1)) bkgregion = NaN
-				Wave backgroundMask = bkgregion
-				backgroundMask = (p > real(bkgloc) && p < (real(actual_peak) - INTEGRATEFACTOR * imag(actual_peak) - BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
-				backgroundMask = (p < imag(bkgloc) && p > (real(actual_peak) + INTEGRATEFACTOR * imag(actual_peak) + BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
-				
-				//			imagetransform sumallcols detector
-				//			duplicate/o W_sumcols, xx
-				//			xx = p
-				//			peak_params = cmplx(Pla_peakcentroid(xx,W_sumcols),expected_width)
-
-				//			peak_params = cmplx(expected_centre, calculated_width)
-				killwaves/z W_sumcols,xx
-			endif
-		endif
-		
-		//now iterate through each entry in the detector image and produce a spectrum
 		//TODO. FOR SOMEREASON THE PARAMETERS IN :instrument:parameters DO NOT GET SAVED IN ARRAY FORM
 		//THEREFORE TAKE SCANPOINT 0 AS THE VALUE.  WHEN THIS GETS FIXED GO BACK AND CHANGE IT.
 		for(ii = 0 ; ii < numspectra ; ii += 1)
@@ -1328,6 +1300,33 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		//convert TOF to lambda	
 		Multithread M_lambdaHIST[][] = TOFtoLambda(M_specTOFHIST[p][q], ChoD)
 		M_lambda[][] = 0.5* (M_lambdaHIST[p][q] + M_lambdaHIST[p + 1][q])
+		
+		//find out where the beam hits the detector
+		//this will be done on an average of the entire detector image
+		//work out what the total expected width of the beam is first
+		//from De Haan1995
+		if(paramisdefault(actual_peak) || numtype(imag(actual_peak)) || numtype(real(actual_peak)))
+			calculated_width = 2 * (ss3vg[scanpoint]/2 + ((ss2vg[scanpoint] + ss3vg[scanpoint])*(detectorpos[scanpoint]+sample_distance[0]-slit3_distance[0])/(2*(slit3_distance[0]-slit2_distance[0])))) / Y_PIXEL_SPACING
+			expected_peak = cmplx(real(expected_peak), 2.5* calculated_width +2)
+			
+			if(manual || findspecridge(detector, 50, 0.01, expected_peak, binarysearch(M_lambda, hilambda), actual_peak) || numtype(real(actual_peak)) || numtype(imag(actual_peak)))
+				//use the following procedure to find the specular ridge
+				userSpecifiedArea(detector, actual_peak, bkgloc)
+				Waveclear backgroundMask
+				make/d/free/n=(dimsize(detector, 1)) bkgregion = NaN
+				Wave backgroundMask = bkgregion
+				backgroundMask = (p > real(bkgloc) && p < (real(actual_peak) - INTEGRATEFACTOR * imag(actual_peak) - BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
+				backgroundMask = (p < imag(bkgloc) && p > (real(actual_peak) + INTEGRATEFACTOR * imag(actual_peak) + BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
+				
+				//			imagetransform sumallcols detector
+				//			duplicate/o W_sumcols, xx
+				//			xx = p
+				//			peak_params = cmplx(Pla_peakcentroid(xx,W_sumcols),expected_width)
+
+				//			peak_params = cmplx(expected_centre, calculated_width)
+				killwaves/z W_sumcols,xx
+			endif
+		endif
 					
 		//if you are a direct beam do a gravity correction, but have to recalculate centre.
 		if(isDirect)
@@ -1339,7 +1338,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			detectorSD[][][] = M_gravityCorrectedSD[p][q][r]
 
 			killwaves/z M_gravitycorrected, M_gravitycorrectedSD
-			if(findspecridge(detector, 50, 0.01, expected_peak, actual_peak) || numtype(real(actual_peak)) || numtype(imag(actual_peak)))
+			if(findspecridge(detector, 50, 0.01, expected_peak, dimsize(detector, 0), actual_peak) || numtype(real(actual_peak)) || numtype(imag(actual_peak)))
 				//use the following procedure to find the specular ridge
 				userSpecifiedArea(detector, actual_peak, bkgloc)
 				Waveclear backgroundMask
