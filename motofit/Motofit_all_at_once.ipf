@@ -1603,7 +1603,7 @@ Function Motofit(w, RR, qq) :Fitfunc
 		Variable gaussnum=13
 
 		Make/free/d/n=(gaussnum) gausswave
-		Setscale/I x, -resolution, resolution, gausswave
+		Setscale/I x, -1.7*resolution, 1.7*resolution, gausswave
 		Gausswave=gauss(x, 0, resolution/(2 * sqrt(2 * ln(2))))
 		Variable middle = gausswave[x2pnt(gausswave, 0)]
 		 Gausswave /= middle
@@ -1619,7 +1619,7 @@ Function Motofit(w, RR, qq) :Fitfunc
 		
 		Variable start=log(lowQ) - 6 * resolution / 2.35482
 		Variable finish=log(highQ * (1 + 6 * resolution / 2.35482))
-		Variable interpnum=round(abs(1 * (abs(start - finish)) / (resolution / 2.35482 / gaussgpoint)))
+		Variable interpnum=round(abs(1 * (abs(start - finish)) / (1.7*resolution / 2.35482 / gaussgpoint)))
 		variable val = (abs(start - finish)) / (interpnum)
 		make/free/d/n=(interpnum) ytemp, xtemp
 		multithread xtemp=(start) + p * val
