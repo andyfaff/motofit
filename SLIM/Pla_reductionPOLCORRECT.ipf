@@ -2,8 +2,9 @@
 #pragma IgorVersion = 6.2
 
 //Elements in polarization: Polarizer, Flipper1, Flipper2, Analyzer
-//R-- Pol + Flipper1 OFF + Flipper2 OFF + Ana
-//R++ Pol + Flipper1 ON + Flipper2 ON + Ana...
+
+//R-- =  (Pol) + (Flipper1 OFF) + (Flipper2 OFF) + (Ana)
+//R++ =  (Pol) + (Flipper1 ON) + (Flipper2 ON) + (Ana)
 
 //FUNCTIONS IN THIS FILE:
 //Function polcorr_FULL(I00, I01, I10, I11) //FULL polarization analysis INPUT: PLPR--, PLPR-+, PLPR+-, PLP++, 
@@ -13,12 +14,29 @@
 //Function polcorr_DB(I00, I01, I10, I11) //Direct beam case, scaling only 
 
 //ATTENTION: If the efficiencies of the elements in the polarzation setup change, these have to be entered in each of the functions above!!!
+//Some constants defining the efficiency of each element. Here, the polarizer and analyzer efficiency is wavelength dependent: a-b*c^(lambda)
+//The waves containing the efficiency to calculate the correction are: poleff, anaeff, flipper1, flipper2
+//ATTENTION:
+//If you need to change the function describing the wavlength dependence, you need to do so for each wave in each function separately!!! Search for poleff, anaeff, flipper1, flipper2
 
-Function polcorr_FULL(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11)
+//poleff = polarizer_efficiency_constant_a - polarizer_efficiency_constant_b * polarizer_efficiency_constant_c ^ ("lambda")
+Constant polarizer_efficiency_constant_a = 0.993 
+Constant polarizer_efficiency_constant_b = 0.57 
+Constant polarizer_efficiency_constant_c = 0.47
+//anaeff = analyzer_efficiency_constant_a - analyzer_efficiency_constant_b * analyzer_efficiency_constant_c ^ ("lambda")
+Constant analyzer_efficiency_constant_a = 0.993
+Constant analyzer_efficiency_constant_b = 0.57
+Constant analyzer_efficiency_constant_c = 0.51
+
+Constant flipper1_efficiency_constant_a = 0.997 //flipper1 = flipper1_efficiency_constant_a
+Constant flipper2_efficiency_constant_a = 0.997 //flipper2 = flipper2_efficiency_constant_a
+
+Function polcorr_FULL(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, [verbose])
  	//FULL polarization analysis, i.e. all elements have been in the beam and all four poalrization channels have been ,measured.
  	//The Function returns 0 if successfull, 1 if not
  	string I00, I01, I10, I11 //Name the files that should be polarization corrected. The filename has to be given in full.
  	variable scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11 //each channel has an individual scaling factor
+ 	variable verbose
  	// Additional variables to check the wave dimensions
  	variable nRows, nCols
  	variable nRows00, nCols00, nRowslambda00, nColslambda00
@@ -106,24 +124,23 @@ Function polcorr_FULL(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalef
 		//a, b, c are defined to describe the efficiency function
 		//The values in the comments are the original values until April2012. If the system changes, the new values have to be calculated and inserted here.
 		make/o/d/n=(nRows, nCols) poleff
-		a=0.993 //0.993 asymptote
-  		b=0.57 //0.57 response range yaxis
-  		c=0.47 //0.47rate
-  		poleff = a-b*c^(LI00)
+		//print polarizer_efficiency_constant_a //0.993 asymptote
+  		//print polarizer_efficiency_constant_b //0.57 response range yaxis
+  		//print polarizer_efficiency_constant_c //0.47rate
+  		poleff = polarizer_efficiency_constant_a-polarizer_efficiency_constant_b*polarizer_efficiency_constant_c^(LI00)
 		 
 		make/o/d/n=(nRows, nCols) anaeff
-	  	a=0.993 //a=0.993; 
-  		b=0.57 //b=0.57; 
-  		c=0.51 //c=0.51; 
-  		anaeff = a-b*c^(LI00)
-		
+	  	//print analyzer_efficiency_constant_a //a=0.993; 
+  		//print analyzer_efficiency_constant_b //b=0.57; 
+  		//print analyzer_efficiency_constant_c //c=0.47; 
+  		anaeff = analyzer_efficiency_constant_a-analyzer_efficiency_constant_b*analyzer_efficiency_constant_c^(LI00)
 		make/o/d/n=(nRows, nCols) flipper1
 	  	make/o/d/n=(nRows, nCols) flipper2
-	  	a=0.997 //a=0.997;
-	  	b=0.997 //b=0.997; 
+	  	//a=0.997 //a=0.997;
+	  	//b=0.997 //b=0.997; 
   		
-  		flipper1 = a
-  		flipper2 = b
+  		flipper1 = flipper1_efficiency_constant_a
+  		flipper2 = flipper2_efficiency_constant_a
   		 
   		/////////////////////////////
   		// FOR TESTING PURPOSES ONLY!!!, Here you can manually change the efficiencies to see what happens!
@@ -188,8 +205,9 @@ Function polcorr_FULL(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalef
 		 	RI00[ii][] = vecreftemp[3][0][ii]
 		endfor	
 		killwaves/z vecreftemp
-		print "(polcorr_FULL) executed successfully"
-		
+		if(verbose)
+		print "(polcorr_FULL) polarization correction executed successfully"
+		endif
 		//Put the corrected spectra back in the original datafolder to have it easier with Andys reduction
 		string I00path = "root:packages:platypus:data:Reducer:"+I00+":M_specPolCorr"
 		string I01path = "root:packages:platypus:data:Reducer:"+I01+":M_specPolCorr"
@@ -233,13 +251,14 @@ Function polcorr_FULL(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalef
 End
 
 
-Function polcorr_NSF(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11)
+Function polcorr_NSF(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, [verbose])
  	//ONLY R++ and R-- recorded, the calculation will assume that I01 = I10 = 0,  A = F2 = 1
  	//The I01 and I10 parts are just commented, so you can see what is actually different.
  	//The Function returns 0 if successfull, 1 if not
  	string I00, I01, I10, I11 //Name the files that should be polarization corrected. The filename has to be given in full.
  	//Files that have not been recorded can be input with any gibberish, but one should stick to "00"
  	variable scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11  //each channel has an individual scaling factor
+ 	variable verbose
  	// Additional varables to check the wave dimensions
  	variable nRows, nCols
  	variable nRows00, nCols00, nRowslambda00, nColslambda00
@@ -330,31 +349,25 @@ Function polcorr_NSF(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefa
 		//a, b, c are pre-defined to describe the efficiency function
 		//The values in the comments are the original values until April2012. If the system changes, the new values have to be calculated and inserted here.
 		make/o/d/n=(nRows, nCols) poleff
-		a=0.993 //0.993 asymptote
-  		b=0.57 //0.57 response range yaxis
-  		c=0.47 //0.47rate
-  		poleff = a-b*c^(LI00)
+		poleff = polarizer_efficiency_constant_a-polarizer_efficiency_constant_b*polarizer_efficiency_constant_c^(LI00)
 		 
 		//maken the wave for the analyzer efficiency, give it the right length and then calculate the efficiency as a function of wavelength
 		//a, b, c are pre-defined to describe the efficiency function
 		make/o/d/n=(nRows, nCols) anaeff
-	  	a=0.993 //a=0.993; 
-  		b=0.57 //b=0.57; 
-  		c=0.51 //c=0.51; 
 		anaeff =1 // a-b*c^(LI00) //The Analyzer has to be assumed to be 100% efficient, since SF is not distinguished. (Well, in principle it is, but we don't know how much there is, because it is not measured. Therefore, this measurement inherently makes a small mistake!!!)
 		
 		//maken the wave for the flipper1, flipper2 efficiency, give it the right length and then calculate the efficiency as a function of wavelength
 		make/o/d/n=(nRows, nCols) flipper1
 	  	make/o/d/n=(nRows, nCols) flipper2
-	  	a=0.997 //a=0.997;
-	  	b=1 //b=0.997; //the efficiency of flipper 1 has to be 100% in order to make a unity matrix F2 to transfer the intensity and efficiency. Otherwise only SF would exist. 		
-  		flipper1 = a
-  		flipper2 = b
+	  	
+	  	flipper1 = flipper1_efficiency_constant_a
+  		flipper2 = 1//the efficiency of flipper 1 has to be 100% in order to make a unity matrix F2 to transfer the intensity and efficiency. Otherwise only SF would exist. 		
  
   		/////////////////////////////
-  		//FOR TESTING PURPOSES ONLY!!! Here you can manually change the efficiencies to see what happens!
-  		//poleff = 1; 
-  		//anaeff = 1; 
+  		//print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXTESTXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  		//print "FOR TESTING PURPOSES ONLY!!! Here you can manually change the efficiencies to see what happens!"
+  		//poleff = 0.1; 
+  		//anaeff = 0.1; 
   		//flipper1 = 1; 
   		//flipper2 = 1;
   		/////////////////////////////
@@ -412,8 +425,9 @@ Function polcorr_NSF(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefa
 		 	RI00[ii] = vecreftemp[3][0][ii]
 		endfor	
 		killwaves/z vecreftemp
-		print "polcorr executed successfully (PolCorr_NSF)"
-
+		if(verbose)
+		print "(PolCorr_NSF) polarization correction executed successfully"
+		endif
 		//Put the corrected spectra back in the original datafolder to have it easier with Andys reduction
 		string I00path = "root:packages:platypus:data:Reducer:"+I00+":M_specPolCorr"
 		//string I01path = "root:packages:platypus:data:Reducer:"+I01+":M_specPolCorr"
@@ -454,12 +468,13 @@ Function polcorr_NSF(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefa
 End
 
 
-Function polcorr_R01(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11)
+Function polcorr_R01(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, [verbose])
  	//Only ONE spin-flip channel recorded, assuming I01 = I10  and vice versa
  	//The Function returns 0 if successfull, 1 if not
  	string I00, I01, I10, I11 //Name the files that should be polarization corrected. The filename has to be given in full.
  	//Files that have not been recorded can be input with any gibberish, but one should stick to "00"
  	variable scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11  //each channel has an individual scaling factor
+ 	variable verbose
  	// Additional varables to check the wave dimensions
  	variable nRows, nCols
  	variable nRows00, nCols00, nRowslambda00, nColslambda00
@@ -482,8 +497,10 @@ Function polcorr_R01(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefa
 			abort
 		endif
 		if(!DataFolderExists("root:packages:platypus:data:Reducer:"+I01))
+			if(verbose)
 			print "I01 folder or wave M_Spec not found (polcorr_R01)"; 
 			print "Checking for the I10 instensity...  (polcorr_R01)"; 
+			endif
 			if(!DataFolderExists("root:packages:platypus:data:Reducer:"+I10))
 			 	print "ERROR, I10 folder or wave M_Spec not found (polcorr_R01)";
 			 	print "ERROR, I01 folder or wave M_Spec not found (polcorr_R01)"; 
@@ -523,7 +540,9 @@ Function polcorr_R01(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefa
 			Wave nI10SD = NnI10SD
 			x = 1 //x=1 means nI10 does not exist 
 			y = 2 //y=2 means nI10 does not exist
+			if(verbose)
 			print "nI10 does not exist"
+			endif
 		endif
 		if( !WaveExists(nI01) )
 			//Make the missing I01 and I10 Waves and set them equal to the existing I01 or I10 wave
@@ -535,7 +554,9 @@ Function polcorr_R01(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefa
 			Wave nI01SD = NnI01SD
 			x = 2 //x=2 means nI01 does not exist
 			y = 1 //y=1 means nI01 does not exist
+			if(verbose)
 			print "nI01 does not exist"
+			endif
 		endif
 		nRows01 = DimSize(nI01,0); nCols00 = DimSize(nI01,1);
 		nRowslambda01 = DimSize(LI01,0)
@@ -566,27 +587,18 @@ Function polcorr_R01(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefa
 		//a, b, c are pre-defined to describe the efficiency function
 		//The values in the comments are the original values until April2012. If the system changes, the new values have to be calculated and inserted here.
 		make/o/d/n=(nRows, nCols) poleff
-		a=0.993 //0.993 asymptote
-  		b=0.57 //0.57 response range yaxis
-  		c=0.47 //0.47rate
-		poleff = a-b*c^(LI00)
+		poleff = polarizer_efficiency_constant_a-polarizer_efficiency_constant_b*polarizer_efficiency_constant_c^(LI00)
 		 
 		//maken the wave for the analyzer efficiency, give it the right length and then calculate the efficiency as a function of wavelength
 		//a, b, c are pre-defined to describe the efficiency function
-		make/o/d/n=(nRows, nCols) anaeff
-	  	a=0.993 //a=0.993; 
-  		b=0.57 //b=0.57; 
-  		c=0.51 //c=0.51; 
-		anaeff =a-b*c^(LI00)
+		make/o/d/n=(nRows, nCols) anaeff 
+		anaeff = analyzer_efficiency_constant_a-analyzer_efficiency_constant_b*analyzer_efficiency_constant_c^(LI00)
 		
 		//maken the wave for the flipper1, flipper2 efficiency, give it the right length and then calculate the efficiency as a function of wavelength
 		make/o/d/n=(nRows, nCols) flipper1
 	  	make/o/d/n=(nRows, nCols) flipper2
-	  	a=0.997 //a=0.997;
-	  	b=0.997; 
-  		
-  		flipper1 = a
-  		flipper2 = b
+		flipper1 = flipper1_efficiency_constant_a
+		flipper2 = flipper2_efficiency_constant_a
   		 
   		/////////////////////////////
   		//FOR TESTING PURPOSES ONLY!!! Here you can manually change the efficiencies to see what happens!
@@ -649,7 +661,9 @@ Function polcorr_R01(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefa
 		 	RI00[ii] = vecreftemp[3][0][ii]
 		endfor	
 		killwaves/z vecreftemp
-		print "polcorr fully executed successfully"
+		if(verbose)
+		print "(PolCorr_R01) polarization correction executed successfully"
+		endif
 		//Put the corrected spectra back in the original datafolder to have it easier with Andys reduction
 		string I00path = "root:packages:platypus:data:Reducer:"+I00+":M_specPolCorr"
 		string I01path = "root:packages:platypus:data:Reducer:"+I01+":M_specPolCorr"
@@ -698,12 +712,13 @@ Function polcorr_R01(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefa
 		return 0
 End
 
-Function polcorr_R0R1(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11)
+Function polcorr_R0R1(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, [verbose])
 	//Only POLARIZER and FLIPPER1 used, assuming ANA = 1, F2=0, I01=I10=0 
  	//The Function returns 0 if successfull, 1 if not
  	string I00, I01, I10, I11 //Name the files that should be polarization corrected. The filename has to be given in full.
  	//Files that have not been recorded can be input with any gibberish, but one should stick to "0"
  	variable scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11  //each channel has an individual scaling factor
+ 	variable verbose
  	// Additional varables to check the wave dimensions
  	variable nRows, nCols
  	variable nRows00, nCols00, nRowslambda00, nColslambda00
@@ -778,26 +793,18 @@ Function polcorr_R0R1(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalef
 		//a, b, c are pre-defined to describe the efficiency function
 		//The values in the comments are the original values until April2012. If the system changes, the new values have to be calculated and inserted here.
 		make/o/d/n=(nRows, nCols) poleff
-		a=0.993 //0.993 asymptote
-  		b=0.57 //0.57 response range yaxis
-  		c=0.47 //0.47rate
-		poleff = a-b*c^(LI00)
+		poleff = polarizer_efficiency_constant_a-polarizer_efficiency_constant_b*polarizer_efficiency_constant_c^(LI00)
 		 
 		//maken the wave for the analyzer efficiency, give it the right length and then calculate the efficiency as a function of wavelength
 		//a, b, c are pre-defined to describe the efficiency function
 		make/o/d/n=(nRows, nCols) anaeff
-	  	//a=0.993 //a=0.993; 
-  		//b=0.57 //b=0.57; 
-  		//c=0.51 //c=0.51; 
 		anaeff =1 // a-b*c^(LI00)  //The Analyzer has to be assumed to be 100% efficient, since SF is not distinguished. 
 		
 		//maken the wave for the flipper1, flipper2 efficiency, give it the right length and then calculate the efficiency as a function of wavelength
 		make/o/d/n=(nRows, nCols) flipper1
 	  	make/o/d/n=(nRows, nCols) flipper2
-	  	a=0.997 //a=0.997;
-	  	b=1 //b=0.997; //the efficiency of flipper 1 has to be 100% in order to make a unity matrix F2 to transfer the intensity and efficiency. 
-  		flipper1 = a
-  		flipper2 = b
+  		flipper1 = flipper1_efficiency_constant_a
+  		flipper2 = 1 //the efficiency of flipper 1 has to be 100% in order to make a unity matrix F2 to transfer the intensity and efficiency. 
   		 
   		/////////////////////////////
   		//FOR TESTING PURPOSES ONLY!!! Here you can manually change the efficiencies to see what happens!
@@ -861,8 +868,9 @@ Function polcorr_R0R1(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalef
 		 	RI00[ii] = vecreftemp[3][0][ii]
 		endfor	
 		killwaves/z vecreftemp
-		print "polcorr_R0R1 executed successfully"
-		
+		if(verbose)
+		print "(PolCorr_R0R1) polarization correction executed successfully"
+		endif
 		//Put the corrected spectra back in the original datafolder to have it easier with Andys reduction
 		string I00path = "root:packages:platypus:data:Reducer:"+I00+":M_specPolCorr"
 		string I11path = "root:packages:platypus:data:Reducer:"+I11+":M_specPolCorr"
@@ -892,12 +900,13 @@ Function polcorr_R0R1(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalef
 		return 0
 End
 
-Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11)
+Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, [verbose])
 	//This case is only for the direct beam, for the case that only ONE channel has been measured. the correction is essentially just a scaling of the intensity towards the efficiency of the device.
  	//The Function returns 0 if successfull, 1 if not
  	string I00, I01, I10, I11 //Name the files that should be polarization corrected. The filename has to be given in full.
  	//Files that have not been recorded can be input with any gibberish, but one should stick to "00"
  	variable scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11  //each channel has an individual scaling factor
+ 	variable verbose
  	// Additional varables to check the wave dimensions
  	variable nRows, nCols
  	variable nRows00, nCols00, nRowslambda00, nColslambda00
@@ -912,10 +921,12 @@ Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefac
   	cDF = getdatafolder(1) //returns the string containing the full path to the datafolder
 	try	
 		if(!DataFolderExists("root:packages:platypus:data:Reducer:"+I00))
+			if(verbose)
 			print "ERROR, I00 folder or wave M_Spec not found (PolCorr_DB)";
 			print "Checking if I11 exists (PolCorr_DB)";
+			endif
 			if(!DataFolderExists("root:packages:platypus:data:Reducer:"+I11))
-			print "ERROR, I11 folder or wave M_Spec not found (PolCorr_DB)"; 
+			print "ERROR, I00 AND I11 folder or wave M_Spec not found (PolCorr_DB)"; 
 			print "ERROR, You need either I00 or I11 to do this correction (PolCorr_DB)"
 			print "If you do not a division of the spectra to be performed, the input should either be 00 or blank (PolCorr_DB)";
 			print "If you do not want to correct the DB, give the same entry on I11 and I00 (PolCorr_DB)"
@@ -983,7 +994,9 @@ Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefac
 			Wave nI00SD = NnI00SD
 			Wave LI00 = LLI11
 			w = 1 //x=1 means nI00 does not exist 
+			if(verbose)
 			print "nI00 does not exist (PolCorr_DB)"
+			endif
 		else 
 			w=2
 		endif
@@ -999,7 +1012,9 @@ Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefac
 			Wave nI11SD = NnI11SD
 			Wave LI11 = LLI11
 			x = 1 //x=2 means nI11 does not exist 
+			if(verbose)
 			print "nI11 does not exist (PolCorr_DB)"
+			endif
 		else 
 			x=2
 		endif
@@ -1012,7 +1027,9 @@ Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefac
 			Wave nI01 = NnI01
 			Wave nI01SD = NnI01SD
 			y = 1 //x=3 means nI01 does not exist 
+			if(verbose)
 			print "nI01 does not exist (PolCorr_DB)"
+			endif
 		else 
 			y=2	
 		endif
@@ -1025,7 +1042,9 @@ Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefac
 			Wave nI10 = NnI10
 			Wave nI10SD = NnI10SD
 			z = 1 //x=4 means nI10 does not exist 
+			if(verbose)
 			print "nI10 does not exist (PolCorr_DB)"
+			endif
 		else 
 			z=2	
 		endif
@@ -1050,26 +1069,18 @@ Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefac
 		//a, b, c are pre-defined to describe the efficiency function
 		//The values in the comments are the original values until April2012. If the system changes, the new values have to be calculated and inserted here.
 		make/o/d/n=(nRows, nCols) poleff
-		a=0.993 //0.993 asymptote
-  		b=0.57 //0.57 response range yaxis
-  		c=0.47 //0.47rate
-		poleff = a-b*c^(LI00)
+		poleff = polarizer_efficiency_constant_a-polarizer_efficiency_constant_b*polarizer_efficiency_constant_c^(LI00)
 		 
 		//maken the wave for the analyzer efficiency, give it the right length and then calculate the efficiency as a function of wavelength
 		//a, b, c are pre-defined to describe the efficiency function
-		make/o/d/n=(nRows, nCols) anaeff
-	  	//a=0.993 //a=0.993; 
-  		//b=0.57 //b=0.57; 
-  		//c=0.51 //c=0.51; 
+		make/o/d/n=(nRows, nCols) anaeff 
 		anaeff =1 // a-b*c^(LI00)
 		
 		//maken the wave for the flipper1, flipper2 efficiency, give it the right length and then calculate the efficiency as a function of wavelength
 		make/o/d/n=(nRows, nCols) flipper1
 	  	make/o/d/n=(nRows, nCols) flipper2
-	  	a=1 //a=0.997;
-	  	b=1 //b=0.997; //the efficiency of flipper 1 has to be 100% in order to make a unity matrix F2 to transfer the intensity and efficiency. Otherwise only SF would exist.
-  		flipper1 = a
-  		flipper2 = b
+  		flipper1 = 1
+  		flipper2 = 1
   		/////////////////////////////
   		//FOR TESTING PURPOSES ONLY!!! Here you can manually change the efficiencies to see what happens!
   		//poleff = 1; 
@@ -1123,7 +1134,7 @@ Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefac
 		killwaves/z finals, finaltemp
 		//make a vector for the intensities and the reflectivities
 		make/o/d/n=(4,1,nRows) vecintensities
-			vecintensities[0][0][] = nI00[r]; vecintensities[1][0][] = nI01[r]; vecintensities[2][0][] = nI10[r]; vecintensities[3][0][] = nI11[r]
+			vecintensities[0][0][] = nI00[r]/scalefactorI00; vecintensities[1][0][] = nI01[r]/scalefactorI01; vecintensities[2][0][] = nI10[r]/scalefactorI10; vecintensities[3][0][] = nI11[r]/scalefactorI11
 		MatrixOp vecreftemp = final x vecintensities
 		for(ii=0; ii<nRows; ii+=1) 	 
 		 	RI11[ii] = vecreftemp[0][0][ii]
@@ -1132,8 +1143,9 @@ Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefac
 		 	RI00[ii] = vecreftemp[3][0][ii]
 		endfor	
 		killwaves/z vecreftemp
-		print "polcorr fully executed successfully"
-		
+		if(verbose)
+		print " (polcorr_DB) polarization correction executed successfully for the direct beams given"
+		endif
 		//Put the corrected spectra back in the original datafolder to have it easier with Andys reduction
 		string I00path = "root:packages:platypus:data:Reducer:"+I00+":M_specPolCorr"
 		string I01path = "root:packages:platypus:data:Reducer:"+I01+":M_specPolCorr"
@@ -1146,7 +1158,7 @@ Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefac
 		string I11SDpath = "root:packages:platypus:data:Reducer:"+I11+":M_specPolCorrSD"
 		
 		if(w==1 && x==1)
-			print "Neither 11 nor 00 found"; abort
+			print "ERROR: Neither 11 nor 00 found (polcorr_DB)"; abort
 		elseif(w==2) 
 			make/o/d/n=(nRows, nCols) $I00path 
 			WAVE CI00 =  $I00path
@@ -1167,182 +1179,18 @@ Function polcorr_DB(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefac
 			print "THESE WAVES SHOULD NOT EXIST!! (PolCorr_DB)"; 
 			print "ERROR: Something went wron in correting a direct beam (PolCorr_DB)"; abort
 		else
+			if(verbose)
 			print "OK, the direct beam was corrected for the inefficiency of the polarizer (PolCorr_DB)"
+			endif
 		endif
 		killwaves/z polefftemp, anaefftemp, flipper1temp, flipper2temp, final, matfliptwo, matflipone, matana, matpol, NnI00, LLI00, NnI11, LLI11, NnI01, NnI10
 		catch
-			Print "ERROR: an abort was encountered in (POLCORR)"
+			Print "ERROR: an abort was encountered in (polcorr_DB)"
 			setdatafolder $cDF
 			return 1
 		endtry
 		return 0
 End
-
-
-//Function/s LoadAndProcess(inputPathStr, outputPathStr, scalefactor, RunFileNumber, lowlambda, highlambda, rebin [, water, background, expected_peak, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
-//	//inputPathStr, outputPathStr, scalefactor,runfilename, lowlambda, highlambda, rebin, [scanpointrange, timeslices, water, background, expected_peak, actual_peak, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose]
-//	//This function must load the data using leadNexusFile, then call processNexusFile for each member of the list you specified
-//	//processNexusFile then produces datafolders containing (W_spec, W_specSD, W_lambda, W_lambdaSD,W_specTOFHIST,W_specTOF,W_LambdaHIST)
-//	
-//	//INPUT PARAMETER
-//	string inputPathStr, outputPathStr
-//	variable scalefactor
-//	string RunFileNumber //RunFileNumber = runfilename
-//	variable lowLambda,highLambda, rebin
-////	string scanpointrange
-////	Wave/z timeslices
-//	string water
-//	variable background
-//	variable/c expected_peak //,actual_peak
-//	variable manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose	
-//	
-//	//ADDITIONAL PARAMETER
-//	string cDF, runnumber, cmd = "", reductionCmd
-//	variable isDirect
-//	string fname
-//	//string tempStr,cDF,directDF,, alreadyLoaded="", toSplice="", direct = "", angle0="", reductionCmd, cmd = "", fname,ofname
-//	//variable ii,D_S2, D_S3, D_SAMPLE,domega, spliceFactor,temp, isDirect, aa,bb,cc,dd,jj,kk, numspectra, fileID
-//	
-//	cDF = getdatafolder(1)
-//	//setup the datafolders
-//	Newdatafolder/o root:packages
-//	Newdatafolder /o root:packages:platypus
-//	Newdatafolder /o root:packages:platypus:data
-//	//directory for the reduction package
-//	Newdatafolder /o root:packages:platypus:data:Reducer
-//
-//	
-////	//set up the default parameters
-//	if(paramisdefault(water))
-//		water = ""
-//	endif
-//	//if(paramisdefault(scanpointrange))
-//	//	scanpointrange = ""
-//	//else
-//	//	scanpointrange = replacestring(" ", scanpointrange, "")
-//	//endif
-//	if(paramisdefault(background))
-//		background = 1
-//	endif
-//	if(paramisdefault(expected_peak))
-//		expected_peak = cmplx(ROUGH_BEAM_POSITION, NaN)
-//	endif
-//	if(paramisdefault(manual))
-//		manual = 0
-//	endif
-//	if(paramisdefault(dontoverwrite))
-//		dontoverwrite = 1
-//	endif
-//	if(paramisdefault(normalise))
-//		normalise = 1
-//	endif
-//	if(paramisdefault(saveSpectrum))
-//		saveSpectrum = 0
-//	endif
-//	if(paramisdefault(saveoffspec))
-//		saveoffspec = 0
-//	endif
-//	if(paramisdefault(water))
-//		water = ""
-//	endif
-//	if(paramisdefault(verbose))
-//		verbose = 1
-//	endif
-//	
-//	//create the reduction string for this particular operation.  THis is going to be saved in the datafile.
-//	//cmd = "reduceASingleFile(\"%s\",\"%s\",%g,\"%s\",%g,%g,%g,background = %g, scanpointrange=\"%s\", eventstreaming=%s,water=\"%s\", expected_peak=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
-//	//sprintf reductionCmd, cmd, inputPathStr, outputPathStr, scalefactor, runnumber, lowLambda, highLambda, rebin, background, water, real(expected_peak), imag(expected_peak), manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
-//	//if(verbose)
-//	//	print reductionCmd
-//	//endif
-//		
-//	try	
-//		//set the datafolder you want to work in in IGOR
-//		setdatafolder "root:packages:platypus:data:Reducer"
-//		
-//		//set the data to load
-//		GetFileFolderInfo/q/z inputPathStr
-//		if(V_flag)//path doesn't exist
-//			print "ERROR please give valid input path (reduce)";abort
-//		endif		
-//		GetFileFolderInfo/q/z outputPathStr
-//		if(V_flag)//path doesn't exist
-//			print "ERROR please give valid output path (reduce)";abort
-//		endif
-//		
-//		//check the scalefactor is reasonable
-//		if(numtype(scalefactor) || scalefactor==0)
-//			print "ERROR a non sensible scale factor was entered (reduce) - setting scalefactor to 1";	
-//			scalefactor = 1 
-//		endif
-//		//check that low lambda, high lambda + rebin are reasonable
-//		if(lowlambda < 0 || lowlambda>highlambda || lowlambda >20 || numtype(lowlambda))
-//			print "ERROR set a reasonable value for low lambda cutoff";	abort
-//		endif
-//		if(highlambda < 0 || highlambda >30|| numtype(highlambda))
-//			print "ERROR set a reasonable value for high lambda cutoff";	abort
-//		endif
-//		if(rebin <0 || rebin >15 || numtype(rebin))
-//			print "ERROR rebin should be 0<rebin<15 (reduce)"; 
-//			print "defaulting to 1%"
-//			rebin = 1
-//		endif
-//		
-//		//iterate through the runnames and check they're valid
-//		if(itemsinlist(RunFileNumber) == 0)
-//			print "ERROR no runs will be reduced if you don't give any (LoadAndProcess)";abort
-//		endif
-//		
-//		//try to load the waterrun file 'water', if it exists
-//		if(!paramisdefault(water) && strlen(water)>0)
-//			if(loadNexusFile(inputPathStr, water, outputPathStr = outputpathStr))
-//				print "Error loading water run (reduce)"
-//				abort
-//			endif
-//		endif
-//		
-//		//make the rebin wave, to rebin both direct and reflected data
-//		if(rebin)
-//			Wave W_rebinboundaries = Pla_gen_binboundaries(lowlambda, highlambda, rebin)
-//		endif
-//		//now reduce the data, figure out the direct and reflected run names.
-//		runnumber = RunFileNumber
-//		print "the runfilename is "+runnumber+" (LoadAndProcess)"	
-//		if(strlen(runnumber)==0 ) //|| strlen(direct)==0   it currently doesnt matter if the beam is direct or not
-//			print "ERROR parsing the runfilenamestring (LoadAndProcess)"; abort
-//		endif
-////		//start off by processing the direct beam run
-////		
-////		//Thomas: from here on it gets interesting.... rebin boundaries have been created just above, which contain the wavelength
-//		
-//		//isDirect = 0
-//		
-//		if(rebin)
-//			if(processNeXUSfile(inputPathStr, outputPathStr, runnumber, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_peak = expected_peak, rebinning = W_rebinboundaries, manual = manual, normalise=normalise, saveSpectrum = saveSpectrum))
-//	
-//				print "ERROR while processing a direct beam run (LoadAndProcess)" ; abort
-//			endif
-//		else
-//			if(processNeXUSfile(inputPathStr, outputPathStr, runnumber, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_peak = expected_peak, manual = manual, normalise = normalise, saveSpectrum = saveSpectrum))
-//				print "ERROR could not find a W_rebinboundaries (LoadAndProcess)" 
-//				print "ERROR while processing a direct beam run (LoadAndProcess)" ; abort
-//			endif				
-//		endif
-//		
-//	catch		
-//		Print "ERROR: an abort was encountered in (LoadAndProcess)"
-//		setdatafolder $cDF
-//		return ""
-//	endtry
-//	
-//	
-//	
-//	fname = cutfilename(runnumber)
-//	print "(LoadAndProcess) finished successfully "+ fname
-//	return fname
-//
-//	
-//End
 
 
 
