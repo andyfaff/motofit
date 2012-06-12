@@ -436,10 +436,10 @@ Function Pla_linbkg(image, imageSD, loPx, hiPx, backgroundwidth, [backgroundMask
 	string tempStr=""
 	variable temp
 	
-	y0 = round( loPx - backgroundwidth - BACKGROUNDOFFSET -1)
+	y0 = round( loPx - backgroundwidth - BACKGROUNDOFFSET  - 1)
 	y1 = round(loPx - BACKGROUNDOFFSET - 1)
-	y2 = round(hiPx + BACKGROUNDOFFSET+1)
-	y3 = round(hiPx + BACKGROUNDOFFSET +1 + backgroundwidth)
+	y2 = round(hiPx + BACKGROUNDOFFSET + 1)
+	y3 = round(hiPx + BACKGROUNDOFFSET + 1 + backgroundwidth)
 	
 	//fits a linear background to an image
 	//linear fits are along vertical y direction.

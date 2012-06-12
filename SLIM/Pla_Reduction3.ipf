@@ -1746,8 +1746,8 @@ Function myAOI(s):setvariablecontrol
 	
 		xlhs = floor(W_coef[2] - INTEGRATEFACTOR * actual_width/2)
 		xrhs = ceil(W_coef[2] +  INTEGRATEFACTOR * actual_width/2)
-		xlhs_bkg = xlhs - actual_width*INTEGRATEFACTOR
-		xrhs_bkg = xrhs + actual_width*INTEGRATEFACTOR
+		xlhs_bkg = xlhs - actual_width*INTEGRATEFACTOR - BACKGROUNDOFFSET
+		xrhs_bkg = xrhs + actual_width*INTEGRATEFACTOR + BACKGROUNDOFFSET
 		
 		ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs)={0,0}, offset(rhs) = {0,0}
 		ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs_bkg)={0,0}, offset(rhs_bkg) = {0,0}
@@ -1813,8 +1813,8 @@ Function adjustAOI(s):setvariablecontrol
 	
 		xlhs = floor(W_coef[2] - INTEGRATEFACTOR * actual_width/2)
 		xrhs = ceil(W_coef[2] +  INTEGRATEFACTOR * actual_width/2)
-		xlhs_bkg = xlhs - actual_width*INTEGRATEFACTOR
-		xrhs_bkg = xrhs + actual_width*INTEGRATEFACTOR
+		xlhs_bkg = xlhs - actual_width*INTEGRATEFACTOR - BACKGROUNDOFFSET - 1
+		xrhs_bkg = xrhs + actual_width*INTEGRATEFACTOR + BACKGROUNDOFFSET + 1
 
 		ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs)={0,0}, offset(rhs) = {0,0}
 		ModifyGraph/W=specBeamAdjustmentPanel#Detectoradd offset(lhs_bkg)={0,0}, offset(rhs_bkg) = {0,0}
