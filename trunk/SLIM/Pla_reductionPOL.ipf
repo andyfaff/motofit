@@ -1,7 +1,8 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma IgorVersion = 6.2
 
-//This procedure contains the reduction procedure copied mainly from the existing SLIM code. The additional polarization correction of the recorded spectra is contained in the procedure "Polcorr-thomas" 
+//This procedure contains the reduction functions copied mainly from the existing SLIM code for unpolarized reduction. 
+//The additional polarization correction of the recorded spectra is contained in the procedure "Pla_reductionPOLCORRECT" 
 //FUNCTIONS IN THIS FILE:
 //Function testPolReductionProcedure(cases)
 //Function PolarizedReduction(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, runfilenames, lowLambda, highLambda, rebin, [water, background, expected_peak, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
@@ -15,39 +16,51 @@
 //Function button_SLIM_PLOTPolCorr(ba) : ButtonControl
 
 //GENERAL COMMENTS
-// NSF means non-spin-flip
+// NSF means non-spin-flip (00 = downdown, 11 =upup)
 // SF means spin-flip
 // I00, I01, I10, I11 are the measured reflected intensities, i.e. reflected spectra or reflectivities
 // DB00, DB01, DB10, DB11 are the direct beams
-// The order of FUNCTION INPUT has to be 00,01,10,11 - as above, otherwise, the channels can be mixed up, which will lead to wrong results.
+// I00 means OFF OFF = R--
+// I01 means OFF ON = R-+
+// I10 means ON OFF = R+-
+// I11 means ON ON = R++
+// There need to be 8 entries to fully specify a measurement at ONE angle in FOUR polarization channels with four direct beams
+// Missing files, polarization channels of relected spectra or direct beams that have not beam measured are replaced with "00" (measurement with analyzer) or "0" (measurment without analyzer)
+// The order of FUNCTION INPUT of the runfilenames has to be 00,01,10,11, otherwise, the channels can be mixed up, which will lead to wrong results.
 // See the below test function for a typical FUNCTION INPUT structure
 
-//Handling COMMENTS 
+// Handling COMMENTS 
 // The code relies on accurate input parameters (00,01,10,11) in order to figure out which mode the reflected spectra and direct beam spectra are measured in. 
-// The input of the filenumbers has to be in full, i.e. PLP6640 without the leading 0's is not allowed.
-// The runfilenames input to function PolarizedReduction contains multiples of 8 entries, each for a different angle measured.
+// The input of the filenumbers has to be in full, i.e. PLP0006640. Omitting of the leading 0's is NOT allowed.
+// The runfilenames input to function PolarizedReduction contains MULTIPLES of 8 entries, each for a different angle measured. 
+// Structure is OFFOFF;OFFON;ONOFF;ONON;DBOFFOFF;DBOFFON;DBONOFF;DBONON : OFFOFF;OFFON;ONOFF;ONON;DBOFFOFF;DBOFFON;DBONOFF;DBONON : OFFOFF;OFFON;ONOFF;ONON;DBOFFOFF;DBOFFON;DBONOFF;DBONON
+// NOTE THE ":" separating the different angles measured 
 // You cannot process more than 1 measurement at the time, i.e. you cannot give the same anlges.  
-// The runfilneames input to function reducepol has to contain 8 entries, specifying the four reflected polarization channels and the four direct beam channels of each polarization. 
-// In case a particular channel has not been recorded, the filenumber is to be replaced with "00" (if the measurement involved both, polarizer and analyzer) or "0" (measurement without the analyzer)
+// In case a particular channel has not been recorded, the filenumber is to be replaced with "00" (measurement with analyzer and polarizer) or "0" (measurement without the analyzer)
 //	A) REFLECTIVITY MODES: 
-//	1) All four reflectivity channels have been recorded. 
-// 	2) ONLY NSF channels have been recorded with Polarizer and Analyzer being used. ("00" for missing entries)
-//	3) ONLY ONE of the SF channels has been recorded, you can decide which one in the testPolRed below. ("00" for missing entries)
-//	4) No Analyzer in the beam, ONLY I0 and I1 are recorded ("0" for missing entries)
-//	5) No Reflectivity is calculated, only reduced and polarization corrected spectra are given out ("00" for missing entries, or you can leave the DB blank)
+//	1) All four reflectivity channels have been recorded. = "FULL"
+// 	2) ONLY NSF channels have been recorded with Polarizer and Analyzer being used. ("00" for missing entries) = "NSF"
+//	3) ONLY ONE of the SF channels has been recorded, you can decide which one in the testPolRed below. ("00" for missing entries).  = "R01" or "R10"
+//	4) No Analyzer in the beam, ONLY I0 and I1 are recorded ("0" for missing entries) = "R0R1"
+//	5) No Reflectivity is calculated, only reduced and polarization corrected spectra are given out ("00" for missing entries, or you can leave the DB blank) = "Spectra"
 
 //     B) DIRECT BEAMS: 
 //     1) The spin flipper, either ON or OFF, do NOT change the shape of the spectrum, therefore it is up to the user to provide only DB00 or DB11 or both.	
-//	 2) If all four DB channels are provided, a full polarization correction of DB is performed -- I00 and I01 will be divided by DB00 -- I11 and I10 will be divided by DB11 ("00" for missing entries)
-//	 3) If three DB channels (i.e. the two NSF and one SF) are provided, the reduced form of polarization correction is performed -- I00 and I01 will be divided by DB00 -- I11 and I10 will be divided by DB11 ("00" for missing entries)
-// 	 4) If only one DB has been recorded, the polarization correction will only be a scaling with the efficiency function ("00" for missing entries)
-//	 5) If you do not want to make a polarization correction on the direct beams (for whatever reason), give the same entry for DB00 and DB11 (here only one DB file is possible) ("00" for missing entries)
+//	 2) If all four DB channels are provided, a full polarization correction of DB is performed -- I00 and I01 will be divided by DB00 -- I11 and I10 will be divided by DB11 
+//	 3) As one can see in 2), the convention is taken to divide the spectra by the corresponding direct beam with the same INCIDENT POLARIZATION. 
+//	 4) If three DB channels (i.e. the two NSF and one SF) are provided, the reduced form of polarization correction is performed -- I00 and I01 will be divided by DB00 -- I11 and I10 will be divided by DB11 ("00" for missing entries)
+// 	 5) If only one DB has been recorded, the polarization correction will only be a scaling with the efficiency function ("00" for missing entries)
+//	 6) If you do not want to make a polarization correction on the direct beams (for whatever reason), give the same entry for DB00 and DB11 (here only one DB file is possible) ("00" for missing entries)
+//	 7) If you do not want to produce a reflectivity, but are merely interested in the pectra, either provide "00" on all entries of the DB, or leave them ALL blank
 
  
 Function testPolRed(cases)
-	//This function performs an example redution of polarized data on the example of the polarized reflectivity from Cr(20Å)/Ni80Fe20(300Å)/Si. NOTE: The measurement has been recorded using all four elements. The old flipper settings etc.!!!  
+	//This function performs an example redution of polarized data on the example of the polarized reflectivity from Cr(20Å)/Ni80Fe20(300Å)/Si.
+	// NOTE: The measurement has been recorded using all four elements. The old flipper settings etc.!!!  
 	//The options are: cases = "Full" ; "NSF" ; "R01" ; "R10" ; "R0R1" ; "Spectra"
-	//The files you need are:"PLP0006737;PLP0006743;PLP0006740;PLP0006734;PLP0006640;PLP0006726;PLP0006717;PLP0006675:PLP0006738;PLP0006744;PLP0006741;PLP0006735;PLP0006641;PLP0006727;PLP0006718;PLP0006676:PLP0006739;PLP0006745;PLP0006742;PLP0006736;PLP0006642;PLP0006728;PLP0006719;PLP0006677"
+	//The data is recorded in three angles: 0.4°, 1.0°, 2.5°
+	//The files you need are:
+	//"PLP0006737;PLP0006743;PLP0006740;PLP0006734;PLP0006640;PLP0006726;PLP0006717;PLP0006675:PLP0006738;PLP0006744;PLP0006741;PLP0006735;PLP0006641;PLP0006727;PLP0006718;PLP0006676:PLP0006739;PLP0006745;PLP0006742;PLP0006736;PLP0006642;PLP0006728;PLP0006719;PLP0006677"
 	//AND the waterrun:  PLP0006319
 	string cases
 	//Additional variables needed for function execution
@@ -86,22 +99,27 @@ Function testPolRed(cases)
 
 end
 
-
+Menu "Platypus"
+	Submenu "SLIM"
+		"Polarized Reduction", reducerpanelPOL()
+	End
+End
 
 Function PolarizedReduction(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, runfilenames, lowLambda, highLambda, rebin, [water, background, expected_peak, manual, dontoverwrite, normalise, saveSpectrum, saveoffspec, verbose])
 	// This Function should be called from the Graphical user interface
-	// it takes the functionality of the original function "reduce" in unpolarized reduction
+	// It takes the functionality of the original function "reduce" in unpolarized reduction
 	// FIRST "reducepol" is called for each set of angles
-	// The output of reducepol is a list of the polarization corrected and reduced filenames, these are also written to the outputpathstring
+	// The output of reducepol is a list of the polarization corrected and reduced filenames (i.e. they are now a reflectivity), these are also written to the outputpathstring
 	// SECOND: spliceFilesPolCorr is called to stitch all the angles given in runfilenames together.
-	string inputPathStr, outputPathStr //specify where the input files can be found or the output shall be written e.g. "C:platypus:My Documents:Desktop:data", "C:platypus:My Documents:Desktop:data:output"
-	variable scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11 //data is divided by this variable
-	//Each input reflected spectra has to be given its own scaling. The reason being that in if the scaling of the R00 and R11, i.e. the two NSF channels, from the measurement is different (for example at the critical edge), this would give a wrong polarization correction. 
-	// For ease of data manipulation, the two SF channels can also be individually scaled. In general, the R01 channel should have the scaling of R00. R10 should have the scaling of R11.  
+	string inputPathStr, outputPathStr //specify where the input files can be found or the output shall be written 
+	//e.g. "C:platypus:My Documents:Desktop:data:", "C:platypus:My Documents:Desktop:data:output:"
+	variable scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11 //Data is divided by this variable
+	//Each input reflected spectra has to be given its own scaling. The reason being that in if the scaling of the R00 and R11, i.e. the two NSF channels, is different (for example at the critical edge), this would give a wrong polarization correction. 
+	// For ease of data manipulation, the two SF channels can also be individually scaled. In general, the R01 channel should have the scaling of R00. R10 should have the scaling of R11. (Scaled on incident polarization)  
 	string runfilenames //runfilenames contains blocks of 8, the first four entries are full filenames of the reflected spectra, the next four are the full filenames of the direct beams
-	//different polarization channels are separated by ";" different angles of incidence are separated by ":" 
+	//different polarization channels are separated by ";" (Semicolon) different angles of incidence are separated by ":" (Colon)
 	// firstI00;firstI01;firstI10;firstI11;firstDB00;firstDB01;firstDB10;firstDB11:secondI00;secondI01;secondI10;secondI11;secondDB00;secondDB01;secondDB10;secondDB11
-	variable lowLambda,highLambda, rebin //variables specifying the low wavelength cutoff, the high wavelength cutoff and the rebin persentage, e.g. 3 for 3% dq/q rebinning
+	variable lowLambda,highLambda, rebin //variables specifying the low wavelength cutoff, the high wavelength cutoff and the rebin percentage, e.g. 3 for 3% dq/q rebinning
 	//OPTIONAL:	
 	string water // string containing the water runfile for detector normalisation
 	variable background //variable specifying whether you want to subtract background (1=true, 0 = false), 1 is default.
@@ -112,31 +130,57 @@ Function PolarizedReduction(inputPathStr, outputPathStr, scalefactorI00, scalefa
 	//	normalise - variable specifying whether you want to normalise by beam monitor counts (default == 1)
 	//	saveSpectrum - variable specifying whether you want to normalise by beam monitor counts (default == 0)
 	//	saveoffspec - variable specifying whether you want to save the offspecular reflectivity map (default == 0), this is only non-polarization corrected data
-	//	verbose - variable specifying if you want verbose output (default == 1)
 	
+	NVAR expectedcentre=root:packages:platypus:data:Reducer:expected_centre
+	if(expectedcentre<20)
+		expectedcentre = 144
+		//root:packages:platypus:data:Reducer:expected_centre = 144
+	endif
+	if(verbose)
+		print "Executing function with extended explanations"
+	endif	
 	string cDF, toSplice=""
-	string  fname, cmd = "", thePair, ifname, newfnameI00, newfnameI01, newfnameI10, newfnameI11, Tfname, PolChannelsfname="" 
-	variable ii, spliceFactor, numpairs
+	string  fname, cmd = "", thePair, ifname, newfnameI00, newfnameI01, newfnameI10, newfnameI11, newfnameI00PolCorr, newfnameI01PolCorr, newfnameI10PolCorr, newfnameI11PolCorr, Tfname , Ffname, PolChannelsfname="" 
+	variable ii, spliceFactor, numpairs, spectras, numfiles
+	spectras = 1
 	cDF = getdatafolder(1)	
 	try
 		numpairs = itemsinlist(runfilenames, ":")
-		print "(PolarizedReduction) This is the number of Angles that will be processed: numpairs = ", numpairs //This is the number of Angles that will be processed
+		if(paramisdefault(verbose))
+			verbose = 1
+		endif
+		if(verbose)
+			print "(PolarizedReduction) This is the number of Angles that will be processed: numpairs = ", numpairs //This is the number of Angles that will be processed
+		endif
+		if(numpairs==0)
+			print "ERROR: No filenames given, no reduction taking place (PolarizedReduction)!"; abort
+		endif
 		for(ii = 0 ; ii < numpairs ; ii += 1)
 			thePair = stringfromlist(ii, runfilenames, ":") 
-			print "(PolarizedReduction) this is the input to reducepol, being executed hereafter: thepair = ", thePair
+			print "(PolarizedReduction) this is the input to reducepol (", thepair ," ) for angle ", ii
 			ifname = reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, thePair, lowLambda, highLambda, rebin, water = water, background=background, expected_peak=expected_peak, manual=manual, dontoverwrite=dontoverwrite, normalise=normalise, saveSpectrum=saveSpectrum, saveoffspec=saveoffspec, verbose=verbose)
 			if(strlen(ifname) == 0)
 				print "ERROR whilst calling reducepol (PolarizedReduction)"
 				abort
+			elseif(stringmatch(ifname, "spectra"))
+				print "NO DIRECT BEAMS WERE ENTERED to reducepol. NO REFLCETIVITY is produced.(PolarizedReduction)"
+				spectras  = 0
 			else
 			//The output of reducepol is gathered in tosplice with a structure similar to runfilenames, i.e. datasets are separated by ";" and angles separated by ":"
 				toSplice += ifname + ":"
 			
 			endif
 		endfor
+		if(!spectras)
+			print "The outputs are the polarization corrected spectra only.(PolarizedReduction)"
+			setdatafolder $cDF
+			return 0
+		endif
 		toSplice = RemoveEnding(toSplice, ":")
-		print "(Polarized Reduction) This is what comes out of reducepol (toSplice = )", toSplice
-		
+		if(verbose)
+			print "(Polarized Reduction) This is what comes out of reducepol (toSplice = )", toSplice
+		endif
+		print dontoverwrite
 		if(dontoverwrite)
 			
 			Tfname = stringfromlist(0, toSplice, ":") //Takes the first angle of the files that comes out of reducepol for loop
@@ -144,29 +188,199 @@ Function PolarizedReduction(inputPathStr, outputPathStr, scalefactorI00, scalefa
 			newfnameI01 =  uniqueFileName(outputPathStr, "c_" + stringfromlist(1, Tfname, ";"), ".xml")
 			newfnameI10 =  uniqueFileName(outputPathStr, "c_" + stringfromlist(2, Tfname, ";"), ".xml")
 			newfnameI11 =  uniqueFileName(outputPathStr, "c_" + stringfromlist(3, Tfname, ";"), ".xml")
-			
+			newfnameI00PolCorr =  uniqueFileName(outputPathStr, "c_" + stringfromlist(0, Tfname, ";")+"PolCorr", ".xml")
+			newfnameI01PolCorr =  uniqueFileName(outputPathStr, "c_" + stringfromlist(1, Tfname, ";")+"PolCorr", ".xml")
+			newfnameI10PolCorr =  uniqueFileName(outputPathStr, "c_" + stringfromlist(2, Tfname, ";")+"PolCorr", ".xml")
+			newfnameI11PolCorr =  uniqueFileName(outputPathStr, "c_" + stringfromlist(3, Tfname, ";")+"PolCorr", ".xml")
 		else
 			Tfname = stringfromlist(0, toSplice, ":")
 			newfnameI00 =  "c_" +stringfromlist(0, Tfname, ";")
 			newfnameI01 =  "c_" +stringfromlist(1, Tfname, ";")
 			newfnameI10 =  "c_" +stringfromlist(2, Tfname, ";")
 			newfnameI11 =  "c_" +stringfromlist(3, Tfname, ";")
-			
+			newfnameI00PolCorr =  "c_" +stringfromlist(0, Tfname, ";")+"PolCorr"
+			newfnameI01PolCorr =  "c_" +stringfromlist(1, Tfname, ";")+"PolCorr"
+			newfnameI10PolCorr =  "c_" +stringfromlist(2, Tfname, ";")+"PolCorr"
+			newfnameI11PolCorr =  "c_" +stringfromlist(3, Tfname, ";")+"PolCorr"
 		endif
 		//PolChannelsfname contains the new names of the datasets which is passed to spliceFilesPolCorr
+		//tosplice = filesToSplice contains a list of the polarization corrected spectra, 4 individual channels are separated by ";" while angles are separated by ":" (as many angles as measured)
 		PolChannelsfname = 	newfnameI00 + ";" + newfnameI01 + ";" + newfnameI10 + ";" + newfnameI11
-		
+		string filenameoutputI00="", filenameoutputI01="", filenameoutputI10="", filenameoutputI11=""
+		string filenameoutputI00polcorr="", filenameoutputI01polcorr="", filenameoutputI10polcorr="", filenameoutputI11polcorr=""  
 		if(itemsinlist(toSplice, ":") > 1)
-			sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, PolChannelsfname, toSplice, rebin
-			print cmd
-		
-			if(spliceFilesPolCorr(outputPathStr, PolChannelsfname, toSplice, rebin = rebin))
-				print "ERROR while splicing (reduce)";abort
+			numfiles = itemsinlist(toSplice, ":")
+			for(ii = 0 ; ii < itemsinlist(toSplice, ":") ; ii += 1)
+				//if(verbose)
+				//	print "(PolarizedReduction) This is the first step of the for loop (it will be repeated): All files to be spliced", toSplice
+				//endif
+				Ffname = stringfromlist(ii, toSplice, ":")
+				if(verbose)
+					print "(Polarized Reduction) These are the datasets in angle "ii": Ffname = ", Ffname
+				endif
+				if(stringmatch(stringfromlist(0, Ffname), "00")||stringmatch(stringfromlist(0, Ffname), "0"))
+					if(verbose)
+						print "The File for REF I00 was not given in (loop ii, Ffname) pos 0 (spliceFilesPolCorr)", ii, Ffname
+					endif
+				else
+					filenameoutputI00 += stringfromlist(0, Ffname) + ";"
+					filenameoutputI00polcorr += stringfromlist(0, Ffname) + "PolCorr" + ";"
+				endif
+				if(stringmatch(stringfromlist(1, Ffname), "00")||stringmatch(stringfromlist(1, Ffname), "0"))
+					if(verbose)
+						print "The File for REF I01 was not given in (loop ii, Ffname) pos 1 (spliceFilesPolCorr)", ii, Ffname
+					endif
+				else
+					filenameoutputI01 += stringfromlist(1, Ffname) + ";"
+					filenameoutputI01polcorr += stringfromlist(1, Ffname) + "PolCorr" + ";"
+				endif
+				if(stringmatch(stringfromlist(2, Ffname), "00")||stringmatch(stringfromlist(2, Ffname), "0"))
+					if(verbose)
+						print "The File for REF I10 was not given in (loop ii, Ffname) pos 2 (spliceFilesPolCorr)", ii, Ffname
+					endif
+				else
+					filenameoutputI10 += stringfromlist(2, Ffname) + ";"
+					filenameoutputI10polcorr += stringfromlist(2, Ffname) + "PolCorr" + ";"
+				endif
+				if(stringmatch(stringfromlist(3, Ffname), "00")||stringmatch(stringfromlist(3, Ffname), "0"))
+					if(verbose)
+						print "The File for REF I11 was not given in (loop ii, Ffname) pos 3 (spliceFilesPolCorr)", ii, Ffname
+					endif
+				else
+					filenameoutputI11 += stringfromlist(3, Ffname) + ";"
+					filenameoutputI11polcorr += stringfromlist(3, Ffname) + "PolCorr" + ";"
+				endif
+
+			endfor			
+			filenameoutputI00 = RemoveEnding(filenameoutputI00, ";")
+			filenameoutputI01 = RemoveEnding(filenameoutputI01, ";")
+			filenameoutputI10 = RemoveEnding(filenameoutputI10, ";")
+			filenameoutputI11 = RemoveEnding(filenameoutputI11, ";")
+			if(strlen(filenameoutputI00)>1)
+				if(verbose)
+					print "Splicing I00 = " + filenameoutputI00
+				endif
+				sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, newfnameI00, filenameoutputI00, rebin
+				print cmd
+				if(spliceFiles(outputPathStr, newfnameI00, filenameoutputI00, rebin = rebin))
+					print "ERROR while splicing I00 (polarization uncorrected) (PolarizedReduction)";abort
+				endif
+			else
+				if(verbose)
+				print "NO I00 found for splicing"
+				endif
 			endif
+			if(strlen(filenameoutputI01)>1)
+				if(verbose)
+					print "Splicing I01 = " + filenameoutputI01
+				endif
+				sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, newfnameI01, filenameoutputI01, rebin
+				print cmd
+				if(spliceFiles(outputPathStr, newfnameI01, filenameoutputI01, rebin = rebin))
+					print "ERROR while splicing I01 (polarization uncorrected) (PolarizedReduction)";abort
+				endif
+			else
+				if(verbose)
+				print "NO I01 found for splicing"
+				endif
+			endif
+			if(strlen(filenameoutputI10)>1)
+				if(verbose)
+					print "Splicing I10 = " + filenameoutputI10
+				endif
+				sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, newfnameI10, filenameoutputI10, rebin
+				print cmd
+				if(spliceFiles(outputPathStr, newfnameI10, filenameoutputI10, rebin = rebin))
+					print "ERROR while splicing I10 (polarization uncorrected) (PolarizedReduction)";abort
+				endif
+			else
+				if(verbose)
+					print "NO I10 found for splicing"
+				endif
+			endif
+			if(strlen(filenameoutputI11)>1)
+				if(verbose)
+				print "Splicing I11 = " + filenameoutputI11
+				endif
+				sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, newfnameI11, filenameoutputI11, rebin
+				print cmd
+				if(spliceFiles(outputPathStr, newfnameI11, filenameoutputI11, rebin = rebin))
+					print "ERROR while splicing I11 (polarization uncorrected) (PolarizedReduction)";abort
+				endif
+			else
+				if(verbose)
+				print "NO I11 found for splicing"
+				endif
+			endif
+			filenameoutputI00polcorr = RemoveEnding(filenameoutputI00polcorr, ";")
+			filenameoutputI01polcorr = RemoveEnding(filenameoutputI01polcorr, ";")
+			filenameoutputI10polcorr = RemoveEnding(filenameoutputI10polcorr, ";")
+			filenameoutputI11polcorr = RemoveEnding(filenameoutputI11polcorr, ";")
+			if(strlen(filenameoutputI00polcorr)>1)
+				if(verbose)
+				print "Splicing I00polcorr = " + filenameoutputI00polcorr				
+				endif
+				sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, newfnameI00PolCorr, filenameoutputI00polcorr, rebin
+				print cmd
+				if(spliceFiles(outputPathStr, newfnameI00PolCorr, filenameoutputI00polcorr, rebin = rebin))
+					print "ERROR while splicing Polarization Corrected I00 (PolarizedReduction)";abort
+				endif
+			else
+				if(verbose)
+				print "NO I00polcorr found for splicing"
+				endif
+			endif
+			if(strlen(filenameoutputI01polcorr)>1)
+				if(verbose)
+				print "Splicing I01polcorr = " + filenameoutputI01polcorr
+				endif
+				sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, newfnameI01PolCorr, filenameoutputI01polcorr, rebin
+				print cmd
+				if(spliceFiles(outputPathStr, newfnameI01PolCorr, filenameoutputI01polcorr, rebin = rebin))
+					print "ERROR while splicing Polarization Corrected I01 (PolarizedReduction)";abort
+				endif
+			else
+				if(verbose)
+				print "NO I01polcorr found for splicing"
+				endif
+			endif
+			if(strlen(filenameoutputI10polcorr)>1)
+				if(verbose)
+				print "Splicing I10polcorr = " + filenameoutputI10polcorr
+				endif
+				sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, newfnameI10PolCorr, filenameoutputI10polcorr, rebin
+				print cmd
+				if(spliceFiles(outputPathStr, newfnameI10PolCorr, filenameoutputI10polcorr, rebin = rebin))
+					print "ERROR while splicing Polarization Corrected I10 (PolarizedReduction)";abort
+				endif
+			else
+				if(verbose)
+				print "NO I10polcorr found for splicing"
+				endif
+			endif
+			if(strlen(filenameoutputI11polcorr)>1)
+				if(verbose)
+				print "Splicing I11polcorr = " + filenameoutputI11polcorr
+				endif
+				sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, newfnameI11PolCorr, filenameoutputI11polcorr, rebin
+				print cmd
+				if(spliceFiles(outputPathStr, newfnameI11PolCorr, filenameoutputI11polcorr, rebin = rebin))
+					print "ERROR while splicing Polarization Corrected I11 (PolarizedReduction)";abort
+				endif
+			else
+				if(verbose)
+				print "NO I11polcorr found for splicing"
+				endif
+			endif
+			//sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, PolChannelsfname, toSplice, rebin
+			//print cmd
+			//if(spliceFilesPolCorr(outputPathStr, PolChannelsfname, toSplice, rebin = rebin, verbose = verbose))
+			//	print "ERROR while splicing (PolarizedReduction)";abort
+			//endif
 		endif		
 	catch
 		
-		Print "ERROR: an abort was encountered in (reduce)"
+		Print "ERROR: an abort was encountered in (PolarizedReduction)"
 		setdatafolder $cDF
 		return 1
 	endtry
@@ -182,8 +396,8 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 	//First, ProcessNexusFile is called for each file in the list runfilenames
 	//Second, PolCorr is called (the mode depends on the input, see example)
 	//Third, direct beam divisions are performed within the flow of the function 
-	//Forth, the reduced files are written to the disc as ACII.dat (polarization corrected), 1D.xml (Polarization corrected), 2D.xml (NOT polarization corrected)
-	//The function RETURNS a LIST of polarization corrected reduced reflected spectra filenames --outputname
+	//Fourth, the reduced files are written to the disk as ASCII.dat (polarization corrected), 1D.xml (Polarization corrected), 2D.xml (NOT polarization corrected)
+	//The function RETURNS a LIST of polarization corrected reduced reflected file filenames --outputname
 	string inputPathStr, outputPathStr
 	variable scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11
 	string runfilenames //runfilenames contains 8 entries separated by ";" First 4 reflected intensities (I00, I01, I10, I11) and then 4 direct beams (DB00, DB01, DB10, DB11)
@@ -195,9 +409,12 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 	//ADDITIONAL parameter
 	string cDF, runnumberDF, runnumber, reductionCmd
 	variable isDirect
-	string fname, cmd="", theFile, ifname  //theFile = thePair
+	string fname, fnamepolcorr, cmd="", theFile, ifname  //theFile = thePair
 	variable ii, iii, jj, aa, splicefactor, numpairs, numspectra, D_S2, D_S3, D_SAMPLE, domega, fileID, scalefactors
 	string processedruns, I00, I01, I10, I11, D00, D01, D10, D11,  DBSpectra, thedirectDF, theangleDF, RefSpectra, theAngle = "", theDB = "", ofname, outputname=""
+	string writetempDF, proccmdp, cmdp 
+	string temprunfilenames, tempdirectDF  //Delete if Andys issue with rebinboundaries is solved and W_newrebinboundaries needs to be replaced with W_rebinboundaries
+	variable omegas, two_thetas, numprocessedfiles
 	processedruns = ""
 	
 	cDF = getdatafolder(1) //returns the string containing the full path to the datafolder
@@ -215,7 +432,7 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 				water = ""
 			endif
 			if(paramisdefault(background))
-				background = 1
+				background = 0
 			endif
 			if(paramisdefault(expected_peak))
 				expected_peak = cmplx(ROUGH_BEAM_POSITION, NaN)
@@ -238,10 +455,13 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 			if(paramisdefault(verbose))
 				verbose = 1
 			endif
-			if(numtype(scalefactorI00) || scalefactorI00==0 || numtype(scalefactorI01) || scalefactorI01==0 || numtype(scalefactorI10) || scalefactorI10==0 || numtype(scalefactorI11) || scalefactorI11==0)
+			if(numtype(scalefactorI00) || numtype(scalefactorI01) || numtype(scalefactorI10) || numtype(scalefactorI11) )
 				print "ERROR a non sensible scale factor was entered (reducePol) - setting ALL scalefactor to 1";	
 				scalefactorI00 = 1; scalefactorI01 = 1; scalefactorI10 = 1; scalefactorI11 = 1;  
 			endif
+			//if(scalefactorI00==0||scalefactorI01==0||scalefactorI10==0||scalefactorI11==0)
+			//	print "WARNING WARNING: ONE OF THE SCALEFACTORS APPEARS TO BE 0"
+			//endif
 			//create the reduction string for this particular operation.  This is going to be saved in the datafile.
 			cmd = "reducepol(\"%s\",\"%s\",%g,%g,%g,%g,\"%s\",%g,%g,%g,water =\"%s\",background = %g, expected_peak=cmplx(%g,%g), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g)"
 			sprintf reductionCmd, cmd, inputPathStr, outputPathStr, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, runfilenames, lowLambda, highLambda, rebin, water, background, real(expected_peak), imag(expected_peak), manual, dontoverwrite, normalise, saveSpectrum,saveoffspec
@@ -279,22 +499,27 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 						abort
 					endif
 				endif
-				//make the rebin wave, to rebin both direct and reflected data
+				//make the rebin wave, to rebin both direct and reflected data 
 				if(rebin)
 					Wave W_rebinboundaries = Pla_gen_binboundaries(lowlambda, highlambda, rebin)
 				endif
+				make/n=(dimsize(W_rebinboundaries, 0))/free/d W_newrebinboundaries //Andys issue  //Delete if Andys issue with rebinboundaries is solved and W_newrebinboundaries needs to be replaced with W_rebinboundaries
+				 
 			//Figure out how many items are given in the list of datafiles to be reduced
 			//This has to be either 8 (which includes direct beams) or 4, in which case no reflectivity is produced, but the spectra given are only polarization corrected (i.e. no direct beam division)
 			//If specific channels have not been recorded and are missing, the runfilenames for these have to be set to "00" or "0"
 			//Here "00" is reserved for a general measurement with both polarizer and analyzer
 			// "0" is reserved for a measurement using only the polarizer
 			numpairs = itemsinlist(runfilenames, ";")	
-			print "(reducepol) number of items in list runfilenames:", numpairs
+			if(verbose)
+				print "(reducepol) number of items in list runfilenames:", numpairs
+			endif
 			if(numpairs != 4 && numpairs != 8)
 				printf "ERROR: Encountered unexpected number of files, you have to give either 8 or 4 filenames in the form PLP0006737; 00; 00; PLP0006734;PLP6640;00;00;00\r"
 			endif
 			isDirect = 0	
-		for(ii = 0 ; ii < numpairs ; ii += 1)
+		for(ii = numpairs-1 ; ii >= 0; ii -= 1)//(ii = 0 ; ii < numpairs ; ii += 1)
+		//the for loop runs in reverse in order to first process the direct beam runs and create M_lambdaHIST in order to make the same mistake as ANDY does in his reduction in processnexusfile and reduceasinglefile where the angle is rebinned to M_lambdaHIST instead of W_rebinboundaries
 			//extract the filename from the runfilenames list
 			theFile = stringfromlist(ii, runfilenames, ";")
 			//Execute ProcessNexusfile for each item in the list
@@ -303,24 +528,49 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 				//After the loop, processedruns contains the updated list of filenames
 				iii = ii+1 
 				processedruns += theFile+";"
+				if(verbose)
 				printf "item %g not processed in ProcessNexusFile since no runnumber given (ReducePol)\r", iii
+				endif
+				
 			else
 				runnumber = theFile	
 				if(strlen(runnumber)==0 ) //|| strlen(direct)==0   it currently doesnt matter if the beam is direct or not
 					print "ERROR parsing the runfilenamestring (reducePol)"; abort
 				endif
 				if(ii>3)
-					print "(reducepol) NOW PROCESSING A DIRECT BEAM in ProcessNexusFile with runfilename: " + theFile
+					if(verbose)
+						print "(reducepol) NOW PROCESSING A DIRECT BEAM in ProcessNexusFile with runfilename: " + theFile
+					endif
+					W_newrebinboundaries = W_rebinboundaries //Delete if Andys issue with rebinboundaries is solved
 					isDirect = 0 //THIS SHOULD BE isDirect = 1, but the SF channels screw up!!!
 				else
-					print "(reducepol)  the reflected runfilename currently processed in ProcessNexusFile is: "+runnumber
+					if(verbose)
+						print "(reducepol)  the reflected runfilename currently processed in ProcessNexusFile is: "+runnumber
+					endif
+					//need to figure out which direct beam has been processed and how I can handle it. //Delete if Andys issue with rebinboundaries is solved
+					if(!stringmatch(stringfromlist(4, runfilenames, ";"), "00")&&!stringmatch(stringfromlist(4, runfilenames, ";"), "0")) //Delete if Andys issue with rebinboundaries is solved
+						tempdirectDF = "root:packages:platypus:data:Reducer:"+ stringfromlist(4, runfilenames, ";") //Delete if Andys issue with rebinboundaries is solved
+						Wave M_lambdaHISTDtemp = $(tempdirectDF+":M_lambdaHIST"); AbortOnRTE //Delete if Andys issue with rebinboundaries is solved
+						make/n=(dimsize(M_lambdaHISTDtemp, 0))/free/d/o W_lambdaHISTDtemp //Delete if Andys issue with rebinboundaries is solved
+						W_newrebinboundaries[] = M_lambdaHISTDtemp[p][0] //Delete if Andys issue with rebinboundaries is solved
+					elseif(!stringmatch(stringfromlist(7, runfilenames, ";"), "00")&&!stringmatch(stringfromlist(7, runfilenames, ";"), "0")) //Delete if Andys issue with rebinboundaries is solved
+						tempdirectDF = "root:packages:platypus:data:Reducer:"+ stringfromlist(7, runfilenames, ";") //Delete if Andys issue with rebinboundaries is solved
+						print tempdirectDF //Delete if Andys issue with rebinboundaries is solved
+						Wave M_lambdaHISTDtemp = $(tempdirectDF+":M_lambdaHIST"); AbortOnRTE //Delete if Andys issue with rebinboundaries is solved
+						make/n=(dimsize(M_lambdaHISTDtemp, 0))/free/d/o W_lambdaHISTDtemp //Delete if Andys issue with rebinboundaries is solved
+						W_newrebinboundaries[] = M_lambdaHISTDtemp[p][0] //Delete if Andys issue with rebinboundaries is solved
+					else //Delete if Andys issue with rebinboundaries is solved
+						W_newrebinboundaries[] = W_rebinboundaries //Delete if Andys issue with rebinboundaries is solved
+					endif		 //Delete if Andys issue with rebinboundaries is solved
 				endif
 				if(rebin)
-					if(processNeXUSfile(inputPathStr, outputPathStr, runnumber, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_peak = expected_peak, rebinning = W_rebinboundaries, manual = manual, normalise=normalise, saveSpectrum = saveSpectrum))
-						print "ERROR while processing a direct beam run (ReducePol[processNexusfile])" ; abort
+					if(processNeXUSfile(inputPathStr, outputPathStr, runnumber, background, lowLambda, highLambda, water = water, isDirect = isDirect, expected_peak = expected_peak, rebinning = W_newrebinboundaries, manual = manual, normalise=normalise, saveSpectrum = saveSpectrum))
+						print "ERROR while processing a spectrum (ReducePol[processNexusfile])" ; abort
 					else
 					 	fname = cutfilename(runnumber)
-						print "(ProcessNexusfile) finished successfully for file"+ fname
+						if(verbose)
+							print "(ProcessNexusfile) finished successfully for file"+ fname
+						endif
 						ifname = fname
 					endif
 				else
@@ -329,11 +579,12 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 						print "ERROR while processing a direct beam run (ReducePol[processNexusfile])" ; abort
 					else 
 						fname = cutfilename(runnumber)
-						print "(processNexusfile) finished successfully for file"+ fname + "(ReducePol)"
+						if(verbose)
+							print "(processNexusfile) finished successfully for file"+ fname + "(ReducePol)"
+						endif
 						ifname = fname
 					endif				
 				endif
-
 				//from here the processNexusFile has been called and a single processed spectrum M_Spec exists.
 				if(strlen(ifname) == 0)
 					print "ERROR whilst calling ProcessNexusFile ", thefile, " (reducepol)"
@@ -344,7 +595,20 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 			endif	
 		endfor
 		runfilenames = RemoveEnding(processedruns, ";")
-		print "(ReducePol) List of files after ProcessNexusFile: " + runfilenames
+		//Start insert of correcting the reverse loop
+		//Since I did the processnexusfiles in reverse order, I need to reorder the output in runfilenames 
+		numprocessedfiles = itemsinlist(runfilenames)
+		temprunfilenames = ""
+		for(ii=numprocessedfiles-1; ii>=0; ii-=1)
+			temprunfilenames += stringfromlist(ii, runfilenames, ";") + ";"
+		endfor
+		//print runfilenames, temprunfilenames
+		runfilenames = RemoveEnding(temprunfilenames, ";")
+		//print runfilenames
+		//end insert of correcting the reverse loop
+		if(verbose)
+			print "(ReducePol) List of files after ProcessNexusFile: " + runfilenames
+		endif	
 	catch
 		Print "ERROR: an abort was encountered in (reducePol after ProcessNexusfile)"
 		setdatafolder $cDF
@@ -361,29 +625,45 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 		I01 = stringfromlist(1, runfilenames, ";") //I01 means OFF ON = R-+
 		I10 = stringfromlist(2, runfilenames, ";") //I10 means ON OFF = R+-
 		I11 = stringfromlist(3, runfilenames, ";") //I11 means ON ON = R++
-	print "RUNNING POLARIZATION CORRECTION ON REFLECTED SPECTRA" + I00 + ";" + I01 + ";" + I10 + ";" + I11
+	if(verbose)
+	print "RUNNING POLARIZATION CORRECTION ON REFLECTED SPECTRA: " + I00 + ";" + I01 + ";" + I10 + ";" + I11
+	endif
 	//Figure out how many input files there are and which ones are to be processed with which polarization correction 
 	if(stringmatch(I00, "00") || stringmatch(I11, "00"))
 		//This would mean a mistake has been made, you need at least the I00 and I11 files for a polarization correction to make sense		
-		printf "No I00 or I11 found, cannot run PolCorr (ReducePol)\r"
+		printf "ERROR: No I00 or I11 found, cannot run Polarization Correction (ReducePol)\r"; printf "Please reduce in unpolarized mode if you only have measured one polarization channel (ReducePol)\r"; return ""
 	elseif(stringmatch(I01, "00") && stringmatch(I10, "00")) //Note the "00" condition in comparison to the next one
-		printf "Only I00 and I11 given (polcorr_NSF), a correction without the information of the SF channels is made\r ASSUMING I01 = I10 = 0, ANA = F2 = 1 (ReducePol)\r"
-		if(!polcorr_NSF(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11))
-			print I00 +", "+ I01 +", "+ I10 +", "+ I11+ " NSF PolCorr successfull (ReducePol)" 
+		if(verbose)
+			printf "Only I00 and I11 given (polcorr_NSF), a correction without the information of the SF channels is made\r ASSUMING I01 = I10 = 0, ANA = F2 = 1 (ReducePol)\r"
+		endif
+		if(!polcorr_NSF(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, verbose = verbose))
+			if(verbose)
+				print I00 +", "+ I01 +", "+ I10 +", "+ I11+ " NSF PolCorr successfull (ReducePol)" 
+			endif
 		endif
 	elseif(stringmatch(I01, "0") && stringmatch(I10, "0")) //Note the "0" condition
-		printf "Only I0 and I1 given (polcorr_R0R1), ONLY polarizer used in measurement???!!!\r ASSUMING I01=I10=0, ANA = 1, F2=0, (ReducePol)\r"
-		if(!polcorr_R0R1(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11))
-			print I00 +", "+ I01 +", "+ I10 +", "+ I11+ " Polarizer ONLY polcorr successfull (ReducePol)" 
+		if(verbose)
+			printf "Only I0 and I1 given (polcorr_R0R1), ONLY polarizer used in measurement???!!!\r ASSUMING I01=I10=0, ANA = 1, F2=0, (ReducePol)\r"
+		endif
+		if(!polcorr_R0R1(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, verbose = verbose))
+			if(verbose)
+				print I00 +", "+ I01 +", "+ I10 +", "+ I11+ " Polarizer ONLY polcorr successfull (ReducePol)" 
+			endif	
 		endif	
 	elseif(stringmatch(I01, "00") || stringmatch(I10, "00"))
-		printf "Only I00 and I11 and ONE SF channel given (polcorr_R01),\r ASSUMING I01 = I10 and vice versa, Efficiencies are taken in full (ReducePol)\r"
-		if(!polcorr_R01(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11))
-			print I00 +", "+ I01 +", "+ I10 +", "+ I11+ " R01 polcorr successfull (ReducePol)" 
+		if(verbose)
+			printf "Only I00 and I11 and ONE SF channel given (polcorr_R01),\r ASSUMING I01 = I10 and vice versa, Efficiencies are taken in full (ReducePol)\r"
+		endif
+		if(!polcorr_R01(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11, verbose = verbose))
+			if(verbose)
+				print I00 +", "+ I01 +", "+ I10 +", "+ I11+ " R01 polcorr successfull (ReducePol)" 
+			endif
 		endif	
 	else
-		printf "FULL CORRECTION OF FOUR REFLECTIVITY CHANNELS (polcorr_FULL)\r All channels and efficiencies are taken into account\r"
-		if(!polcorr_FULL(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11))
+		if(verbose)
+			printf "FULL CORRECTION OF FOUR REFLECTIVITY CHANNELS (polcorr_FULL)\r All channels and efficiencies are taken into account\r"
+		endif
+		if(!polcorr_FULL(I00, I01, I10, I11, scalefactorI00, scalefactorI01, scalefactorI10, scalefactorI11,verbose=verbose))
 			print I00 +", "+ I01 +", "+ I10 +", "+ I11+ " FULL polcorr successfull (ReducePol)" 
 		endif	
 	endif
@@ -435,88 +715,158 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 	//Here I need to consider which DB file might belong to which Reflectivity.
 	//In general, the DB polarization correction has the same form as the reflectivity polarization correction above, with the exception that only one file can be processed as well.
 	if(numpairs<=4)
-		printf "No direct beams given, \r the correction ends here, giving only the corrected spectra (ReducePol)"
+		if(verbose)
+			printf "No direct beams given, \r the correction ends here, giving only the corrected spectra (ReducePol)"
+		endif
 		setdatafolder $cDF
-	
+		if(verbose)
 		Print "(ReducePol) finished successfully without direct beams and direct beam division"
-		return ""
-		
+		endif
+		return "spectra"
 	elseif(numpairs>4)
 		//What if the direct beams for one spin channel are different to the others? One might vary the resolution for an SF measurement... The wavelength resolution should not be varied, as that might affect the plarization correction
-		print "The numbers after the first four entries are considered as the direct beams (ReducePol)"
+		if(verbose)
+			print "The numbers after the first four entries are considered as the direct beams (ReducePol)"
+		endif
 		D00 = stringfromlist(4, runfilenames, ";")
 		D01 = stringfromlist(5, runfilenames, ";")
 		D10 = stringfromlist(6, runfilenames, ";")
 		D11 = stringfromlist(7, runfilenames, ";")
-		
-		
 		if(stringmatch(D00, D11)&& !stringmatch(D00, "00")&& !stringmatch(D00, "0"))	
 		//CASE: For some reason someone does not want to make a polarization correction of the direct beams. To invoke this case, give the same filenames for DB00 and DB11.
-			print "the files for the DB00 and DB11 are equal (" + D00 +" and "+ D11+ "). A polarization correction of direct beams will not take place (ReducePol)"
+			if(verbose)
+				print "The files for the DB00 and DB11 are equal (" + D00 +" and "+ D11+ "). A polarization correction of direct beams will not take place (ReducePol)"
+			endif
 			//need to create M_SpecPolCorr and set it equal to M_Spec
 			if(!stringmatch(D00, "00")|| !stringmatch(D00, "0"))
 				Wave DI00spec = $("root:packages:platypus:data:Reducer:"+D00+":M_Spec") 
-				//Wave DI11spec = $("root:packages:platypus:data:Reducer:"+D11+":M_Spec")
+				Wave DI00SDspec = $("root:packages:platypus:data:Reducer:"+D00+":M_SpecSD") 
 				string DB00path = "root:packages:platypus:data:Reducer:"+D00+":M_specPolCorr"
-				//string DB11path = "root:packages:platypus:data:Reducer:"+D11+":M_specPolCorr"
+				string DB00SDpath = "root:packages:platypus:data:Reducer:"+D00+":M_specPolCorrSD"
 				make/o/d/n=(DimSize(DI00spec,0), DimSize(DI00spec,1)) $DB00path
 				WAVE DBI00 =  $DB00path
+				make/o/d/n=(DimSize(DI00SDspec,0), DimSize(DI00SDspec,1)) $DB00SDpath
+				WAVE DBI00SD =  $DB00SDpath
 				DBI00 = DI00spec
+				DBI00SD = DI00SDspec
 			endif				
 		else
 			if(stringmatch(D01, D00)||stringmatch(D10, D00)||stringmatch(D01, D11)||stringmatch(D10, D11))	
 			//Case: If one of the SF DirectBeam filenames is equal to a NSF channel, the correction will disregard this and treat it as "not measured" 
-				print "the DB given for one of the SF channels is equal to one NSF channel, will set them to 00 (ReducePol)"	
-				if(stringmatch(D01,D00)||stringmatch(D01,D11))
-					D01 = "00"
+				if(verbose)
+					print "The DB given for one of the SF channels is equal to one NSF channel! (ReducePol)"	
 				endif
-				if(stringmatch(D10,D00)||stringmatch(D10,D11))
-					D10 = "00"
+				if(stringmatch(D00,"00")||stringmatch(D11,"00"))
+					if(verbose)
+						print "The DB given for one of the SF channels is equal to one NSF channel, will set them to 00 (ReducePol)"	
+					endif
+					if(stringmatch(D01,D00)||stringmatch(D01,D11))
+						D01 = "00"
+					endif
+					if(stringmatch(D10,D00)||stringmatch(D10,D11))
+						D10 = "00"
+					endif
+				elseif(stringmatch(D00,"0")||stringmatch(D11,"0"))
+					if(verbose)
+						print "The DB given for one of the SF channels is equal to one NSF channel, will set them to 0 (ReducePol)"	
+					endif
+					if(stringmatch(D01,D00)||stringmatch(D01,D11))
+						D01 = "0"
+					endif
+					if(stringmatch(D10,D00)||stringmatch(D10,D11))
+						D10 = "0"
+					endif
 				endif
 			endif
 			if(stringmatch(D00, "00") && stringmatch(D11, "00"))
 			// CASE: Both DB00 and DB11 received "00" as input. This means that no direct beam is given and therefore no reflectivity will be produced. 
 			// The output is the polarization correted reflected spectrum of the first four entries only.
-					printf "No DB00 and DB11 found, cannot process DB (ReducePol)\r"
+					if(verbose)
+						printf "No DB00 and DB11 found, cannot process DB (ReducePol)\r"
+					endif
 					setdatafolder $cDF
+					if(verbose)
 					Print "(ReducePol) finished successfully without direct beams and direct beam division"
-					return ""
+					endif
+					return "spectra"
 			elseif(stringmatch(D00, "0") && stringmatch(D11, "0"))
 			// CASE: Both DB00 and DB11 received "0" as input. This means that no direct beam is given and therefore no reflectivity will be produced. 
 			// The output is the polarization correted reflected spectrum. 
-				printf "No DB00 and DB11 found, cannot process DB (ReducePol)\r"
+				if(verbose)
+					printf "No DB00 and DB11 found, cannot process DB (ReducePol)\r"
+				endif
 				setdatafolder $cDF
+				if(verbose)
 				Print "(ReducePol) finished successfully without direct beams and direct beam division"
-				return ""
+				endif
+				return "spectra"
 			elseif(!stringmatch(D00, "00") && stringmatch(D01, "00") && stringmatch(D10, "00")&& stringmatch(D11, "00"))
+				if(verbose)
 				printf "ONLY DB00 direct beam given, the correction is just a scaling (ReducePol)\r"
-				if(!polcorr_DB(D00, D01, D10, D11, 1, 1, 1, 1))
+				endif
+				if(!polcorr_DB(D00, D01, D10, D11, 1, 1, 1, 1,verbose=verbose))
 					print D00 + " DB polcorr successfull (ReducePol)" 
 				endif
 			elseif(!stringmatch(D11, "00") && stringmatch(D01, "00") && stringmatch(D10, "00")&&stringmatch(D00, "00") )
+				if(verbose)
 				printf  "ONLY DB11 direct beam given, the correction is just a scaling (ReducePol)\r"
-				if(!polcorr_DB(D00, D01, D10, D11, 1, 1, 1, 1))
-					print D11 + " DB polcorr successfull (ReducePol)" 
 				endif
-			elseif(stringmatch(D01, "00") && stringmatch(D10, "00")&&!stringmatch(D11, "00")&&!stringmatch(D00, "00"))
-				printf "Only DB00 and DB11 given, no full correction (ReducePol)\r"
-				if(!polcorr_NSF(D00, D01, D10, D11, 1, 1, 1, 1))
-					print D00 +", "+ D01 +", "+ D10 +", "+ D11+ " NSF polcorr successfull (ReducePol)" 
+				if(!polcorr_DB(D00, D01, D10, D11, 1, 1, 1, 1,verbose=verbose))
+					if(verbose)
+					print D11 + " DB polcorr successfull (ReducePol)"
+					endif 
 				endif
-			elseif(stringmatch(D01, "0") && stringmatch(D10, "0")&&!stringmatch(D11, "00")&&!stringmatch(D00, "00"))
-				printf "Only DB0 and DB1 given, no full correction (ReducePol)\r"
-				if(!polcorr_R0R1(D00, D01, D10, D11, 1, 1, 1, 1))
-						print D00 +", "+ D01 +", "+ D10 +", "+ D11+ " Polarizer ONLY polcorr successfull (ReducePol)" 
+			elseif(!stringmatch(D00, "0") && stringmatch(D01, "0") && stringmatch(D10, "0")&& stringmatch(D11, "0"))
+				if(verbose)
+				printf "ONLY DB0 direct beam given, the correction is just a scaling (ReducePol)\r"
+				endif
+				if(!polcorr_DB(D00, D01, D10, D11, 1, 1, 1, 1,verbose=verbose))
+					print D00 + " DB polcorr successfull (ReducePol)" 
+				endif
+			elseif(!stringmatch(D11, "0") && stringmatch(D01, "0") && stringmatch(D10, "0")&&stringmatch(D00, "0") )
+				if(verbose)
+				printf  "ONLY DB1 direct beam given, the correction is just a scaling (ReducePol)\r"
+				endif
+				if(!polcorr_DB(D00, D01, D10, D11, 1, 1, 1, 1,verbose=verbose))
+					if(verbose)
+					print D11 + " DB polcorr successfull (ReducePol)"
+					endif 
 				endif	
-			elseif(stringmatch(D01, "00") || stringmatch(D10, "00")&&!stringmatch(D11, "00")&&!stringmatch(D00, "00"))
+			elseif(stringmatch(D01, "00") && stringmatch(D10, "00")&&!stringmatch(D11, "00")&&!stringmatch(D00, "00"))
+				if(verbose)
+				printf "Only DB00 and DB11 given, no full correction (ReducePol)\r"
+				endif
+				if(!polcorr_NSF(D00, D01, D10, D11, 1, 1, 1, 1,verbose=verbose))
+					if(verbose)
+					print D00 +", "+ D01 +", "+ D10 +", "+ D11+ " NSF polcorr successfull (ReducePol)" 
+					endif
+				endif
+			elseif(stringmatch(D01, "0") && stringmatch(D10, "0")&&!stringmatch(D11, "0")&&!stringmatch(D00, "0"))
+				if(verbose)
+				printf "Only DB0 and DB1 given, no full correction (ReducePol)\r"
+				endif
+				if(!polcorr_R0R1(D00, D01, D10, D11, 1, 1, 1, 1,verbose=verbose))
+						if(verbose)
+						print D00 +", "+ D01 +", "+ D10 +", "+ D11+ " Polarizer ONLY polcorr successfull (ReducePol)" 
+						endif
+				endif	
+			elseif(stringmatch(D01, "00") && stringmatch(D10, "00")&&!stringmatch(D11, "00")&&!stringmatch(D00, "00"))
+				if(verbose)
 				printf "Only DB00 and DB11 and one SF channel given, no full correction\r"
-				if(!polcorr_R01(D00, D01, D10, D11, 1, 1, 1, 1))
+				endif
+				if(!polcorr_R01(D00, D01, D10, D11, 1, 1, 1, 1,verbose=verbose))
+						if(verbose)
 						print D00 +", "+ D01 +", "+ D10 +", "+ D11+ " NSF polcorr successfull (ReducePol)" 
+						endif
 				endif	
 			else
+				if(verbose)
 				printf "FULL CORRECTION OF FOUR DirectBeam CHANNELS (ReducePol)\r"
-				if(!polcorr_FULL(D00, D01, D10, D11, 1, 1, 1, 1))
+				endif
+				if(!polcorr_FULL(D00, D01, D10, D11, 1, 1, 1, 1,verbose=verbose))
+						if(verbose)
 						print D00 +", "+ D01 +", "+ D10 +", "+ D11+ " FULL polcorr successfull (ReducePol)" 
+						endif
 				endif	
 		
 			endif
@@ -562,33 +912,75 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 			endif
 		endif
 	endif
+	
 	processedruns = I00 + ";" + I01 + ";" + I10 + ";" + I11 + ";" + D00 + ";" + D01 + ";" + D10 + ";" + D11 
+	//you may want to save the spectrum to file
+	variable numprocessedruns = itemsinlist(processedruns)
+	string polcorrrunfiles
+	for(ii=0; ii<numprocessedruns; ii+=1)
+		polcorrrunfiles = stringfromlist(ii, processedruns, ";") 
+		if(!stringmatch(polcorrrunfiles, "00") && !stringmatch(polcorrrunfiles, "0"))
+		if(!paramisdefault(saveSpectrum) && saveSpectrum)
+			writetempDF = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(polcorrrunfiles,".nx.hdf"),0)
+			//Wave PolCorr_spectrumsave, PolCorrSD_spectrumsave, M_lambdaPolCorr, M_lambdaPolCorrSD, W_omegas, W_two_thetas
+			Wave PolCorr_spectrumsave = $(writetempDF+":M_specPolCorr")
+			Wave PolCorrSD_spectrumsave = $(writetempDF+":M_specPolCorrSD")
+			Wave M_lambdaPolCorr = $(writetempDF+":M_lambda")
+			Wave M_lambdaPolCorrSD = $(writetempDF+":M_lambdaSD")
+			Wave W_omegas = $(writetempDF+":instrument:parameters:omega")
+			omegas = W_omegas[0]
+			Wave W_two_thetas = $(writetempDF+":instrument:parameters:twotheta")
+			two_thetas = W_two_thetas[0]
+		
+			cmdp = "processNeXUSfile(\"%s\", \"%s\", \"%s\", %d, %g, %g, water=\"%s\",isdirect=%d,  expected_peak=cmplx(%g,%g), omega=%g,two_theta=%g,manual=%d, savespectrum=%d, normalise=%d,verbose=%d)"
+			sprintf proccmdp, cmdp, inputPathStr, outputPathStr, polcorrrunfiles, background, lowLambda, highLambda, water, isDirect,real(expected_peak), imag(expected_peak), omegas, two_thetas,manual, saveSpectrum, normalise,verbose
+					
+			if(writeSpectrum(outputPathStr, polcorrrunfiles+"PolCorr", polcorrrunfiles, PolCorr_spectrumsave, PolCorrSD_spectrumsave, M_lambdaPolCorr, M_lambdaPolCorrSD, proccmdp, dontoverwrite=dontoverwrite))
+				print "ERROR whilst writing spectrum to file (processNexusfile)"
+			else
+			 	if(verbose)
+			 		print "writing polarization corrected spectrum: " + polcorrrunfiles  
+			 	endif
+			endif
+			
+		endif
+		endif
+	endfor
 	runfilenames = RemoveEnding(processedruns, ";")
+	if(verbose)
 	Print "List of polarization corrected spectra (ReducePol[PolCorr]): " + runfilenames
+	endif
 	catch
 		Print "ERROR: an abort was encountered in (reducepol[Polcorr])"
 		setdatafolder $cDF
 		return ""
 	endtry
-	
-	Print "(POLCORR) finished successfully (ReducePol)"
-	Print "Now executing direct beam divisions (ReducePol)"
+	if(verbose)
+		Print "(POLCORR) finished successfully (ReducePol)"
+		Print "Now executing direct beam divisions (ReducePol)"
+	endif
 	//NOW DIRECT BEAM DIVISIONS
 	//figure out which datasets belong together and process them together
 	try
 		if(numpairs>4)
+			if(verbose)
 			print "The positions 5, 6, 7, 8 in the list runfilenames are considered as direct beams for division (ReducePol)"
+			endif
 			numpairs = 4
 		endif					
 		//Change the datalist in order to have the correct DB at the correct position
 		//might be that D00 or D11 are 00  and D01 and D10 need to be changed anyway
 		if(stringmatch(D00, "00")|| stringmatch(D00, "0"))
 			D00 = D11
+			if(verbose)
 			print "D00 was not given, setting DB to D11 (ReducePol)"
+			endif
 		endif
 		if(stringmatch(D11, "00")|| stringmatch(D11, "0"))
 			D11 = D00
+			if(verbose)
 			print "D11 was not given, setting DB to D00 (ReducePol)"
+			endif
 		endif
 		RefSpectra  = I00 + ";" + I01 + ";" + I10 + ";" + I11
 		DBSpectra = D00 + ";" + D00 + ";" + D11 + ";" + D11
@@ -614,10 +1006,14 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 				//After the loop, 'processedruns' contains the updated list of filenames
 				iii = ii+1
 				processedruns += theAngle+":"+theDB+";"
+				if(verbose)
 				printf "Item %g not processed since no runnumber given (ReducePol)\r", iii
+				endif
 				outputname = outputname + stringfromlist(ii, RefSpectra, ";") + ";"
 			else
+				if(verbose)
 				print "(ReducePol) Advice which files belong together? Reflectivities: ", RefSpectra, "Direct beams: ", DBSpectra
+				endif
 				//recheck that the files have been loaded and the folders exist
 				thedirectDF = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(theDB,".nx.hdf"),0)
 				theAngleDF = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(theAngle,".nx.hdf"),0)
@@ -916,15 +1312,32 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 					if(dontoverwrite)
 						fname = uniqueFileName(outputPathStr, fname, ".dat")
 					else
+						if(verbose)
 						print "NO UNIQUE FILENAME, files overwritten (ASCII.dat) (ReducePol)"
+						endif
 					endif
-					
+					fnamepolcorr = fname + "PolCorr"
 					newpath/o/q/z pla_temppath_write, outputpathStr
+//					This writes a .dat for a combined PolCorr and normal file
+//					open/P=pla_temppath_write fileID as fname + ".dat"
+//			
+//					if(V_flag == 0)
+//						fprintf fileID, "Q (1/A)\t Ref\t dRef (SD)\t RefPolCorr\t DRefPolCorr\t dq(FWHM, 1/A)\n"
+//						wfprintf fileID, "%g\t %g\t %g\t %g\t %g\t %g\n" qq, RR, dR, RRpolCorr, DRpolCorr, dQ
+//						close fileID
+//					endif
 					open/P=pla_temppath_write fileID as fname + ".dat"
 			
 					if(V_flag == 0)
-						fprintf fileID, "Q (1/A)\t Ref\t dRef (SD)\t RefPolCorr\t DRefPolCorr\t dq(FWHM, 1/A)\n"
-						wfprintf fileID, "%g\t %g\t %g\t %g\t %g\t %g\n" qq, RR, dR, RRpolCorr, DRpolCorr, dQ
+						fprintf fileID, "Q (1/A)\t Ref\t dRef (SD)\t dq(FWHM, 1/A)\n"
+						wfprintf fileID, "%g\t %g\t %g\t %g\n" qq, RR, dR, dQ
+						close fileID
+					endif
+					open/P=pla_temppath_write fileID as fnamepolcorr + ".dat"
+			
+					if(V_flag == 0)
+						fprintf fileID, "Q (1/A)\t RefPolCorr\t DRefPolCorr\t dq(FWHM, 1/A)\n"
+						wfprintf fileID, "%g\t %g\t %g\t %g\n" qq, RRpolCorr, DRpolCorr, dQ
 						close fileID
 					endif
 			
@@ -933,12 +1346,19 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 					if(dontoverwrite)
 						fname = uniqueFileName(outputPathStr, fname, ".xml")
 					else
+						if(verbose)
 						print "NO UNIQUE FILENAME, files overwritten (1D.XML) (ReducePol)"
+						endif
 					endif
 					Wave/t user = $(theAngleDF + ":user:name")
 					Wave/t samplename = $(theAngleDF + ":sample:name")			
 					//The code to write an xml file has been adjusted to incorporate the new polarization corrected channels
-					writeSpecRefXML1DPolCorr(outputPathStr, fname, qq, RR, dR, RRPolCorr, dRPolCorr, dQ, "", user[0], samplename[0], theAngle, reductionCmd)
+					
+					
+					//writeSpecRefXML1DPolCorr(outputPathStr, fname, qq, RR, dR, RRPolCorr, dRPolCorr, dQ, "", user[0], samplename[0], theAngle, reductionCmd)
+					writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, "", user[0], samplename[0], theAngle, reductionCmd)
+					fnamepolcorr = fname + "PolCorr"
+					writeSpecRefXML1D(outputPathStr, fnamepolcorr, qq, RRPolCorr, dRPolCorr, dQ, "", user[0], samplename[0], theAngle, reductionCmd)
 						
 					//write a 2D XMLfile for the offspecular data
 					if(saveoffspec)
@@ -951,7 +1371,9 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 						if(dontoverwrite)
 							ofname = uniqueFileName(outputPathStr, ofname, ".xml")
 						else
+							if(verbose)
 							print "NO UNIQUE FILENAME, files overwritten (2D.XML) (ReducePol)"	
+							endif
 						endif
 						//Since the 2D data is not polarization corrected, this file stays the same as in unpolarized mode
 						write2DXML(outputPathStr, ofname, qz2D, qy2D, RR2d, EE2d, "", user[0], samplename[0], theAngle, reductionCmd)
@@ -962,1356 +1384,1043 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 				outputname = outputname + fname + ";"
 			endif
 		endfor	
+		if(verbose)
 		print "(ReducePol) The runs processed in reducePol are", processedruns
-
-			
+		endif
 	catch
 		Print "ERROR: an abort was encountered in (DB division part)"
 		setdatafolder $cDF
 		return ""
 	endtry	
-	
-	
 	setdatafolder $cDF
 	outputname = RemoveEnding(outputname, ";")
+	if(verbose)
 	Print "(ReducePol) finished successfully", outputname
+	endif
 	return outputname
-	
 End
 
-Function writeSpecRefXML1DPolCorr(outputPathStr, fname, qq, RR, dR, RRpolCorr, DRpolCorr, dQ, exptitle, user, samplename, runnumbers, rednnote)
-	String outputPathStr, fname
-	wave qq, RR, dR, RRpolCorr, DRpolCorr, dQ
-	String exptitle, user, samplename, runnumbers, rednnote	//a function to write an XML description of the reduced dataset.
-	//pathname is a folder path, e.g. faffmatic:Users:andrew:Desktop: 	REQUIRED
-	//fname is the filename of the file you want to write					REQUIRED
-	//qq, RR, dR, RRpolCorr, DRpolCorr, dQ are the waves you want to write to the file			REQUIRED	
-	//exptitle is the experiment title, e.g. "polymer films.				OPTIONAL
-	//user is the user name												OPTIONAL
-	//samplename is the name of the sample, duh						OPTIONAL
-	//runnumbers is a semicolon separated list of the runnumbers making up this file, e.g. PLP0001000;PLP0001001;PLP0001002	OPTIONAL
-	//rednnote is the command that was used to do the reduction			OPTIONAL
+Function  reducerpanelPOL() : Panel  //reducerpanel
+	PauseUpdate; Silent 1		// building window...
+	Dowindow/k POLSLIM
+	NewPanel/W=(100,0,1021,230)/N=POLSLIM/k=1 as "POLSLIM - (C) Andrew Nelson 2009 + Thomas Saerbeck 2012"
+	///W=(384,163,1085,607)
 	
-	variable fileID,ii,jj
-	string qqStr="",RRstr="",dRStr="",RRPolCorrstr="",dRPolCorrStr="",  dqStr = "", prefix = ""
-	
-	GetFileFolderInfo/q/z outputPathStr
-	if(V_flag)//path doesn't exist
-		print "ERROR please give valid path (writeSpecRefXML1D)"
-		return 1	
-	endif
+	Newdatafolder/o root:packages
+	Newdatafolder /o root:packages:platypus
+	Newdatafolder /o root:packages:platypus:data
+	//directory for the reduction package
+	Newdatafolder /o root:packages:platypus:data:Reducer
+	//492
+	make/b/u/n=(4,9,2)/o root:packages:platypus:data:Reducer:angledata_selPOL
+	make/n=(4,9)/o/t root:packages:platypus:data:Reducer:angledata_listPOL
+	make/o/w/u/n=(4,3)/o root:packages:platypus:data:Reducer:angledata_colorPOL
+	string/g root:packages:platypus:data:Reducer:inputpathStr
+	string/g root:packages:platypus:data:Reducer:outputpathStr
+	string/g root:packages:platypus:data:Reducer:waterrunfile
+
+	variable/g root:packages:platypus:data:Reducer:lowLambda=2.5
+	variable/g root:packages:platypus:data:Reducer:highLambda=12.5
+	variable/g root:packages:platypus:data:Reducer:expected_centre=144
+	variable/g root:packages:platypus:data:Reducer:rebinpercent=3
+	variable/g root:packages:platypus:data:Reducer:backgroundsbn=1
+	variable/g root:packages:platypus:data:Reducer:manualbeamfind=1
+	variable/g root:packages:platypus:data:Reducer:normalisebymonitor=1
+	variable/g root:packages:platypus:data:Reducer:saveSpectrum=0
+	variable/g root:packages:platypus:data:Reducer:saveoffspec=0
+	variable/g root:packages:platypus:data:Reducer:measwithanalyzer=1
+	variable/g root:packages:platypus:data:Reducer:verbosevar=1
+	variable/g root:packages:platypus:data:Reducer:donotoverwrite=0
+	variable/g root:packages:platypus:data:Reducer:streamedReduction= 0
 		
-	//create the XMLfile
-	fileID = XMLcreatefile(outputPathStr + fname + ".xml", "REFroot", "", "")
-	if(fileID < 1)
-		print "ERROR couldn't create XML file (writeSpecRefXML1D)"
-	endif
-
-	xmladdnode(fileID,"//REFroot","","REFentry","",1)
-	XMLsetattr(fileID,"//REFroot/REFentry[1]","","time",Secs2Date(DateTime,0) + " "+Secs2Time(DateTime,3))
-
-	xmladdnode(fileID,"//REFroot/REFentry[1]","","Title","",1)
+	SVAR inputpathStr = root:packages:platypus:data:Reducer:inputpathStr
+	SVAR outputpathStr = root:packages:platypus:data:Reducer:outputpathStr
+	SVAR waterrunfile = root:packages:platypus:data:Reducer:waterrunfile
 	
-	//username
-	xmladdnode(fileID,"//REFroot/REFentry[1]","","User",user,1)
-
-	//sample names
-	xmladdnode(fileID,"//REFroot/REFentry[1]","","REFsample","",1)
-	xmladdnode(fileID,"//REFroot/REFentry[1]/REFsample","","ID", samplename,1)
-
-	xmladdnode(fileID,"//REFroot/REFentry[1]","","REFdata","",1)
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","axes","Qz")
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","rank","1")
-
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","type","POINT")
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","spin","UNPOLARISED")
+	Wave/t angledata_listPOL = root:packages:platypus:data:Reducer:angledata_listPOL
+	Wave angledata_selPOL= root:packages:platypus:data:Reducer:angledata_selPOL
+	Wave angledata_colorPOL= root:packages:platypus:data:Reducer:angledata_colorPOL
+	setdimlabel 1,1,Include,angledata_listPOL
+	//setdimlabel 1,2,Dontoverwrite,angledata_listPOL
+	setdimlabel 1,2,Scalefactor,angledata_listPOL
+	setdimlabel 1,3,Reflectangle1,angledata_listPOL
+	setdimlabel 1,4,Reflectangle2,angledata_listPOL
+	setdimlabel 1,5,Reflectangle3,angledata_listPOL
+	setdimlabel 1,6,Directangle1,angledata_listPOL
+	setdimlabel 1,7,Directangle2,angledata_listPOL
+	setdimlabel 1,8,Directangle3,angledata_listPOL
 	
-	for(ii=0;ii<itemsinlist(runnumbers);ii+=1)
-		xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Run","",1)
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","filename",stringfromlist(ii,runnumbers)+".nx.hdf")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","preset","")
-		XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(ii+1)+"]","","size","")
-	endfor
+	setdimlabel 0,0,IntensityI00,angledata_listPOL
+	setdimlabel 0,1,IntensityI01,angledata_listPOL
+	setdimlabel 0,2,IntensityI10,angledata_listPOL
+	setdimlabel 0,3,IntensityI11,angledata_listPOL
 	
-	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]","","reductionnote",rednnote,1)
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]/reductionnote[1]","","software","SLIM")
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Run["+num2istr(1)+"]/reductionnote[1]","","version", num2istr(Pla_getVersion()))
+	//setdimlabel 1,9,waterrun,angledata_list
+	angledata_listPOL=""
+	angledata_listPOL[0][0] = "I00: OFF/OFF = R--"
+	angledata_listPOL[1][0] = "I01: OFF/ON = R-+"
+	angledata_listPOL[2][0] = "I10: ON/OFF = R+-"
+	angledata_listPOL[3][0] = "I11: ON/ON = R++"
+	//angledata_selPOL[][0] = 0x01
+	angledata_selPOL[][1] = 0x20//2^5
+	angledata_selPOL[][2] = 0x02////2^5
+	angledata_selPOL[][3]=0x02
+	angledata_selPOL[][4]=0x02
+	angledata_selPOL[][5]=0x02
+	angledata_selPOL[][6]=0x02
+	angledata_selPOL[][7]=0x02
+	angledata_selPOL[][8]=0x02
+	//65535
+	angledata_colorPOL[][0] = 30000
+	angledata_colorPOL[][1] = 40000
+	angledata_colorPOL[][2] = 65535
 	
-	//create ASCII representation of data
-	sockitWaveToString/TXT qq, qqStr
-	sockitWaveToString/TXT RR, RRStr
-	sockitWaveToString/TXT dR, dRStr
-	sockitWaveToString/TXT RRPolCorr, RRPolCorrStr
-	sockitWaveToString/TXT dRPolCorr, dRPolCorrStr
-	sockitWaveToString/TXT dQ, dqStr
-
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata","","dim",num2istr(itemsinlist(RRstr," ")))
-
-	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","R",RRStr,1)
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/R","","uncertainty","dR")
-
-	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","RPolCorr",RRPolCorrStr,1)
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/RPolCorr","","uncertainty","dRPolCorr")
+	angledata_selPOL[][][1]= 1
+	SetDimLabel 2,1,backColors,angledata_selPOL				// define plane 1 as background colors
+	//SetDimLabel 2,1,foreColors,angledata_selPOL	  			// redefine plane 1 s foreground colors
+	//size={677,353}, widths = {12,12,100}
+	ListBox whichangles,pos={13,103},size={895,99}, widths = {125, 40,66, 78}
+	ListBox whichangles,listWave=root:packages:platypus:data:Reducer:angledata_listPOL
+	ListBox whichangles,selWave=root:packages:platypus:data:Reducer:angledata_selPOL,colorwave=root:packages:platypus:data:Reducer:angledata_colorPOL 
+	ListBox whichangles userColumnResize=1
+	ListBox whichangles,mode= 6, editStyle= 2,fstyle = 1,fsize = 12,frame = 4, proc=POLSLIM_listproc
+	ListBox whichangles, help={"Please enter the filenames of the datafiles that you wish to reduce."}
 	
-	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","Qz",qqStr,1)
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qz","","uncertainty","dQz")
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/Qz","","units","1/A")
-
-	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dR",dRStr,1)
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dR","","type","SD")
+	Button reduce_tab0,pos={14,10},size={260,22},proc=SLIMPOL_buttonprocpol,title="Reduce"
+	Button reduce_tab0,labelBack=(1,52428,26586),font="Arial",fstyle = 1,fColor=(65535,0,0)//(1,4,52428)
+	Button plot_tab0,pos={14,43},size={260,22},proc=SLIMPOL_buttonprocpol,title="Plot"
+	Button plot_tab0,labelBack=(1,52428,26586),font="Arial",fstyle = 1,fColor=(0,65535,0)
 	
-	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dRPolCorr",dRPolCorrStr,1)
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dRPolCorr","","type","SD")
-
-	xmladdnode(fileID,"//REFroot/REFentry[1]/REFdata","","dQz",dqStr,1)
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dQz","","type","FWHM")
-	XMLsetattr(fileID,"//REFroot/REFentry[1]/REFdata/dQz","","units","1/A")
-
-	xmlclosefile(fileID,1)
-End
-
-
-Function spliceFilesPolCorr(outputPathStr, fname, filesToSplice, [factors, rebin])
-	//Returns 0 if successfull, 1 if not (err)
-	string outputPathStr, fname, filesToSplice, factors 
-	//fname contains the output names of the spliced datasets "c_..." as list separated by ";" (4 entries)
-	//filesToSplice contains a list of the polarization corrected spectra, 4 individual channels are separated by ";" while angles are separated by ":" (as many angles as measured)
-	variable rebin
-	//This function splices different reduced files together. It is very similar to the original without polarization corrected data, as are the functions called within.
-	//The main difference is that the new polcorr spectra are processed as well. The different pol-channels are processed after each other.
-	//Functions called within: Pla_GetWeightScOPolCorr, Pla_rebin_afterwardsPolCorr, writeSpecRefXML1DPolCorr
-
-
-	string cDF
-	cDF = getdatafolder(1)
-	string df = "root:packages:platypus:data:Reducer:"
-	string qqStr="",RRstr="",dRStr="",RRPolCorrstr="",dRPolCorrStr="",dqStr="",filename,prefix=""
-	string user = "", samplename = "", rednnote = ""
-	string newfnameI00, newfnameI01, newfnameI10, newfnameI11, Tfname, Ffname, tempfilenameoutput
+	SetVariable waterrunfile_tab0,pos={13,79},size={155,16},title="Waterrun",fstyle = 1
+	SetVariable waterrunfile_tab0,fSize=10
+	SetVariable waterrunfile_tab0,value= root:packages:platypus:data:Reducer:waterrunfile,noedit= 0
 	
-	variable fileID, R00fileID, R01fileID,R10fileID,R11fileID, ii,fileIDcomb, err=0, jj, numfiles
-	string compSplicefactors, temporarystring
-	variable/c compSplicefactor, compSplicefactorpolcorr
-	variable compSplicefactorreal, compSplicefactorimag, compSplicefactorpolcorrreal, compSplicefactorpolcorrimag
-
-	try
-		err=0
-		newdatafolder/o root:packages
-		newdatafolder/o root:packages:platypus
-		newdatafolder/o root:packages:platypus:data
-		newdatafolder/o root:packages:platypus:data:reducer
-		newdatafolder/o/s root:packages:platypus:data:reducer:temp
-	 
-		GetFileFolderInfo/q/z outputPathStr
-		if(V_flag)//path doesn't exist
-			print "ERROR please give valid path (spliceFilesPolCorr)"
-			return 1	
-		endif
-					
-		//load in each of the files
-		//fname (=PolchannelsFname) contains the output filenames C_...
-		//filestosplice (=toSplice) contains a list of files in chunks of 4. the channels are separated by ";", while the angles are separated by ":"
-		Tfname = stringfromlist(0, fname, ":")		
-		newfnameI00 =  stringfromlist(0, Tfname, ";") 
-		if(stringmatch(newfnameI00, "c_00") || stringmatch(newfnameI00, "c_0") )
-				newfnameI00 = ""
-		endif
-		newfnameI01 =  stringfromlist(1, Tfname, ";")
-		if(stringmatch(newfnameI01, "c_00") || stringmatch(newfnameI01, "c_0"))
-				newfnameI01 = ""
-		endif
-		newfnameI10 =  stringfromlist(2, Tfname, ";") 
-		if(stringmatch(newfnameI10, "c_00") || stringmatch(newfnameI10, "c_0"))
-				newfnameI10 = ""
-		endif
-		newfnameI11 =  stringfromlist(3, Tfname, ";") 
-		if(stringmatch(newfnameI11, "c_00") || stringmatch(newfnameI11, "c_0"))
-				newfnameI11 = ""
-		endif
-		print "(spliceFilesPolCorr) First angle of files to be spliced: Tfname = ", Tfname
-		numfiles = itemsinlist(filesToSplice, ":")
-		for(ii = 0 ; ii < itemsinlist(filesToSplice, ":") ; ii += 1)
-			print "(spliceFilesPolCorr) This is the first step of the for loop (it will be repeated): All files to be spliced", filesToSplice
-			Ffname = stringfromlist(ii, filesToSplice, ":")
-			print "(spliceFilesPolCorr) THIS SHOULD GO FORWARD in the steps of the loop): Ffname = ", Ffname
-			//////////////////////////
-			//NEED TO REPEAT FOR EACH CHANNEL FROM HERE
-			//FIRST THE R00 channel
-			///////////////////////////////////////////////
-			if(stringmatch(stringfromlist(0, Ffname), "00")||stringmatch(stringfromlist(0, Ffname), "0"))
-				print "The File for REF I00 was not given in (loop ii, Ffname) pos 0 (spliceFilesPolCorr)", ii, Ffname
-			else
-				tempfilenameoutput = stringfromlist(0, Ffname)
-				print "R00 file to be processed in run ", ii, " of for loop (spliceFilesPolCorr)", tempfilenameoutput
-				R00fileID = xmlopenfile(outputPathStr + stringfromlist(0, Ffname) + ".xml")
-				if(R00fileID < 1)
-					print "ERROR couldn't open individual file (spliceFilesPolCorr)";abort
-				endif
-			
-				xmlwavefmXPATH(R00fileID,"//REFdata[1]/Qz","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontQzR00
-				xmlfilecontQzR00 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R00fileID,"//REFdata[1]/R","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontRR00
-				xmlfilecontRR00 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R00fileID,"//REFdata[1]/RPolCorr","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontRPolCorrR00
-				xmlfilecontRPolCorrR00 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R00fileID,"//REFdata[1]/dR","","")
-    	 			Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdRR00
-				xmlfilecontdRR00 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R00fileID,"//REFdata[1]/dRPolCorr","","")
-    	 			Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdRPolCorrR00
-				xmlfilecontdRPolCorrR00 = str2num(M_xmlcontent[p][0])
-
-				xmlwavefmXPATH(R00fileID,"//REFdata[1]/dQz","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdQzR00
-				xmlfilecontdQzR00 = str2num(M_xmlcontent[p][0])
-			
-//				sort asdfghjkl0,asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3 
-				sort xmlfilecontQzR00, xmlfilecontQzR00, xmlfilecontRR00, xmlfilecontRPolCorrR00, xmlfilecontdRR00, xmlfilecontdRPolCorrR00, xmlfilecontdQzR00
-				if(ii == 0)
-					make/o/d/n=(numpnts(xmlfilecontQzR00)) tempQQR00, tempRRR00, tempDRR00,tempRRPolCorrR00, tempDRPolCorrR00, tempDQR00
-					Wave tempQQR00, tempRRR00, tempDRR00, tempDQR00, tempRRPolCorrR00, tempDRPolCorrR00
-					tempQQR00=xmlfilecontQzR00
-					tempRRR00=xmlfilecontRR00
-					tempRRPolCorrR00=xmlfilecontRPolCorrR00
-					tempDRR00=xmlfilecontdRR00
-					tempDRPolCorrR00=xmlfilecontdRPolCorrR00
-					tempDQR00=xmlfilecontdQzR00
-				
-					samplename = xmlstrfmXpath(R00fileID, "//REFsample/ID", "", "")
-					user = xmlstrfmXpath(R00fileID, "//REFentry[1]/User", "", "")
-					rednnote = xmlstrfmXpath(R00fileID,"//REFroot/REFentry[1]/REFdata[1]/Run[1]/reductionnote","","")
-					compsplicefactor = cmplx(1., 1.)
-					print "(spliceFilesPolCorr) The compSplicefactor is", compSplicefactor, "since loop", ii			 
-				else
-					//splice with propagated error in the splice factor
-					if(paramisdefault(factors))
-				
-					
-						compSplicefactors = Pla_GetWeightScOPolCorr(tempQQR00, tempRRR00, tempDRR00, tempRRPolCorrR00, tempDRPolCorrR00, xmlfilecontQzR00, xmlfilecontRR00, xmlfilecontdRR00, xmlfilecontRPolCorrR00, xmlfilecontdRPolCorrR00) 		
-						                               //Pla_GetWeightScOPolCorr(wave1q,wave1R, wave1dR,wave1RPolCorr, wave1dRPolCorr, wave2q,wave2R, wave2dR, wave2RPolCorr, wave2dRPolCorr)
-						//print compSplicefactors
-						temporarystring = stringfromlist(0, compSplicefactors, ";")
-						compSplicefactorreal  = str2num(temporarystring)
-						temporarystring = stringfromlist(1, compSplicefactors, ";")
-						compSplicefactorimag = str2num(temporarystring)
-						temporarystring = stringfromlist(2, compSplicefactors, ";")
-						compSplicefactorpolcorrreal  = str2num(temporarystring)
-					 	temporarystring = stringfromlist(3, compSplicefactors, ";")
-						compSplicefactorpolcorrimag = str2num(temporarystring)
-					
-						compSplicefactor = cmplx(compSplicefactorreal, compSplicefactorimag)
-						compSplicefactorPolCorr = cmplx(compSplicefactorpolcorrreal, compSplicefactorpolcorrimag)
-						print "These are the SpliceFactors compSplicefactor and compSplicefactorpolcorr for R00 (spliceFilesPolCorr)",compSplicefactor, compSplicefactorpolcorr 
-					else
-						if(itemsinlist(factors) <= ii)
-							compSplicefactor = cmplx(str2num(stringfromlist(ii-1, factors)), 0)
-						else
-							compSplicefactors = Pla_GetWeightScOPolCorr(tempQQR00, tempRRR00, tempDRR00, tempRRPolCorrR00, tempDRPolCorrR00, xmlfilecontQzR00, xmlfilecontRR00, xmlfilecontdRR00, xmlfilecontRPolCorrR00, xmlfilecontdRPolCorrR00)							
-							temporarystring = stringfromlist(0, compSplicefactors, ";")
-							compSplicefactorreal  = str2num(temporarystring)
-							temporarystring = stringfromlist(1, compSplicefactors, ";")
-							compSplicefactorimag = str2num(temporarystring)
-							temporarystring = stringfromlist(2, compSplicefactors, ";")
-							compSplicefactorpolcorrreal  = str2num(temporarystring)
-					 		temporarystring = stringfromlist(3, compSplicefactors, ";")
-							compSplicefactorpolcorrimag = str2num(temporarystring)
-					
-							compSplicefactor = cmplx(compSplicefactorreal, compSplicefactorimag)
-							compSplicefactorPolCorr = cmplx(compSplicefactorpolcorrreal, compSplicefactorpolcorrimag)
-							print "These are the SpliceFactors compSplicefactor and compSplicefactorpolcorr for R00 (spliceFilesPolCorr)",compSplicefactor, compSplicefactorpolcorr 
-						endif
-						
-					endif
-					if(numtype(REAL(compspliceFactor)))
-						print "ERROR while splicing into combineddataset (spliceFilesPolCorr)";abort
-						
-					endif
-					if(numtype(REAL(compspliceFactorpolcorr)))
-						print "ERROR while splicing into combineddataset (spliceFilesPolCorr)";abort
-						
-					endif
-					//xmlfilecontQzR00, xmlfilecontRR00, xmlfilecontRPolCorrR00, xmlfilecontdRR00, xmlfilecontdRPolCorrR00, xmlfilecontdQzR00
-					
-					//(Comment from Andy:) think the following is wrong! No need to errors in quadrature if scalefactor does not depend on wavelength
-					xmlfilecontdRR00 = (xmlfilecontdRR00/xmlfilecontRR00)^2
-					xmlfilecontdRR00 += (imag(compSpliceFactor)/real(compSpliceFactor))^2
-					xmlfilecontdRR00 = sqrt(xmlfilecontdRR00)
-					xmlfilecontRR00 *= real(compSplicefactor)
-					xmlfilecontdRR00 *= xmlfilecontRR00
-					
-					xmlfilecontdRPolCorrR00 = (xmlfilecontdRPolCorrR00/xmlfilecontRPolCorrR00)^2
-					xmlfilecontdRPolCorrR00 += (imag(compspliceFactorpolcorr)/real(compspliceFactorpolcorr))^2
-					xmlfilecontdRPolCorrR00 = sqrt(xmlfilecontdRPolCorrR00)
-					xmlfilecontRPolCorrR00 *= real(compspliceFactorpolcorr)
-					xmlfilecontdRPolCorrR00 *= xmlfilecontRPolCorrR00
-				
-					concatenate/NP {xmlfilecontRR00},tempRRR00
-					concatenate/NP {xmlfilecontRPolCorrR00},tempRRPolCorrR00
-					concatenate/NP {xmlfilecontQzR00},tempQQR00
-					concatenate/NP {xmlfilecontdQzR00},tempDQR00
-					concatenate/NP {xmlfilecontdRR00},tempDRR00
-					concatenate/NP {xmlfilecontdRPolCorrR00},tempDRPolCorrR00
-				
-					sort tempQQR00,tempQQR00,tempRRR00,tempDRR00, tempRRPolCorrR00,tempDRPolCorrR00, tempDQR00 
-				endif
-				//close the XML file
-				xmlsetattr(R00fileID, "//REFroot/REFentry[1]/REFdata/Run", "", "scale", num2str(real(compsplicefactor)))
-				xmlsetattr(R00fileID, "//REFroot/REFentry[1]/REFdata/Run", "", "scalePolCorr", num2str(real(compsplicefactorpolcorr)))
-				xmlclosefile(fileID, 1)
-				R00fileID=0
-			endif
-			
-			//////////////////////////
-			//NOW THE R01 CHANNEL
-			///////////////////////////////////////////////
-			if(stringmatch(stringfromlist(1, Ffname), "00")||stringmatch(stringfromlist(1, Ffname), "0"))
-				print "The File for REF I01 was not given in (loop ii, Ffname) pos 1  (spliceFilesPolCorr)", ii, Ffname
-			else
-				tempfilenameoutput = stringfromlist(1, Ffname)
-				print "R01 file to be processed in run ", ii, " of for loop (splicefilespolcorr)", tempfilenameoutput
-				R01fileID = xmlopenfile(outputPathStr + stringfromlist(1, Ffname) + ".xml")
-				if(R01fileID < 1)
-					print "ERROR couldn't open individual file (spliceFilesPolCorr)";abort
-				endif
-			
-				xmlwavefmXPATH(R01fileID,"//REFdata[1]/Qz","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontQzR01
-				xmlfilecontQzR01 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R01fileID,"//REFdata[1]/R","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontRR01
-				xmlfilecontRR01 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R01fileID,"//REFdata[1]/RPolCorr","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontRPolCorrR01
-				xmlfilecontRPolCorrR01 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R01fileID,"//REFdata[1]/dR","","")
-    	 			Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdRR01
-				xmlfilecontdRR01 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R01fileID,"//REFdata[1]/dRPolCorr","","")
-    	 			Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdRPolCorrR01
-				xmlfilecontdRPolCorrR01 = str2num(M_xmlcontent[p][0])
-
-				xmlwavefmXPATH(R01fileID,"//REFdata[1]/dQz","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdQzR01
-				xmlfilecontdQzR01 = str2num(M_xmlcontent[p][0])
-			
-//				sort asdfghjkl0,asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3 
-				sort xmlfilecontQzR01, xmlfilecontQzR01, xmlfilecontRR01, xmlfilecontRPolCorrR01, xmlfilecontdRR01, xmlfilecontdRPolCorrR01, xmlfilecontdQzR01
-				if(ii == 0)
-					make/o/d/n=(numpnts(xmlfilecontQzR01)) tempQQR01, tempRRR01, tempDRR01,tempRRPolCorrR01, tempDRPolCorrR01, tempDQR01
-					Wave tempQQR01, tempRRR01, tempDRR01, tempDQR01, tempRRPolCorrR01, tempDRPolCorrR01
-					tempQQR01=xmlfilecontQzR01
-					tempRRR01=xmlfilecontRR01
-					tempRRPolCorrR01=xmlfilecontRPolCorrR01
-					tempDRR01=xmlfilecontdRR01
-					tempDRPolCorrR01=xmlfilecontdRPolCorrR01
-					tempDQR01=xmlfilecontdQzR01
-				
-					samplename = xmlstrfmXpath(R01fileID, "//REFsample/ID", "", "")
-					user = xmlstrfmXpath(R01fileID, "//REFentry[1]/User", "", "")
-					rednnote = xmlstrfmXpath(R01fileID,"//REFroot/REFentry[1]/REFdata[1]/Run[1]/reductionnote","","")
-					compsplicefactor = cmplx(1., 1.)			 
-				else
-					//splice with propagated error in the splice factor
-					if(paramisdefault(factors))
-				
-					
-						compSplicefactors = Pla_GetWeightScOPolCorr(tempQQR01, tempRRR01, tempDRR01, tempRRPolCorrR01, tempDRPolCorrR01, xmlfilecontQzR01, xmlfilecontRR01, xmlfilecontdRR01, xmlfilecontRPolCorrR01, xmlfilecontdRPolCorrR01) 		
-						                               //Pla_GetWeightScOPolCorr(wave1q,wave1R, wave1dR,wave1RPolCorr, wave1dRPolCorr, wave2q,wave2R, wave2dR, wave2RPolCorr, wave2dRPolCorr)
-						//print compSplicefactors
-						temporarystring = stringfromlist(0, compSplicefactors, ";")
-						compSplicefactorreal  = str2num(temporarystring)
-						temporarystring = stringfromlist(1, compSplicefactors, ";")
-						compSplicefactorimag = str2num(temporarystring)
-						temporarystring = stringfromlist(2, compSplicefactors, ";")
-						compSplicefactorpolcorrreal  = str2num(temporarystring)
-					 	temporarystring = stringfromlist(3, compSplicefactors, ";")
-						compSplicefactorpolcorrimag = str2num(temporarystring)
-					
-						compSplicefactor = cmplx(compSplicefactorreal, compSplicefactorimag)
-						compSplicefactorPolCorr = cmplx(compSplicefactorpolcorrreal, compSplicefactorpolcorrimag)
-						print "These are the SpliceFactors compSplicefactor and compSplicefactorpolcorr for R01 (spliceFilesPolCorr)",compSplicefactor, compSplicefactorpolcorr 
-					else
-						if(itemsinlist(factors) <= ii)
-							compSplicefactor = cmplx(str2num(stringfromlist(ii-1, factors)), 0)
-						else
-							compSplicefactors = Pla_GetWeightScOPolCorr(tempQQR01, tempRRR01, tempDRR01, tempRRPolCorrR01, tempDRPolCorrR01, xmlfilecontQzR01, xmlfilecontRR01, xmlfilecontdRR01, xmlfilecontRPolCorrR01, xmlfilecontdRPolCorrR01)							
-							temporarystring = stringfromlist(0, compSplicefactors, ";")
-							compSplicefactorreal  = str2num(temporarystring)
-							temporarystring = stringfromlist(1, compSplicefactors, ";")
-							compSplicefactorimag = str2num(temporarystring)
-							temporarystring = stringfromlist(2, compSplicefactors, ";")
-							compSplicefactorpolcorrreal  = str2num(temporarystring)
-					 		temporarystring = stringfromlist(3, compSplicefactors, ";")
-							compSplicefactorpolcorrimag = str2num(temporarystring)
-					
-							compSplicefactor = cmplx(compSplicefactorreal, compSplicefactorimag)
-							compSplicefactorPolCorr = cmplx(compSplicefactorpolcorrreal, compSplicefactorpolcorrimag)
-							print "These are the SpliceFactors compSplicefactor and compSplicefactorpolcorr for R01 (spliceFilesPolCorr)",compSplicefactor, compSplicefactorpolcorr 
-						endif
-						
-					endif
-					if(numtype(REAL(compspliceFactor)))
-						print "ERROR while splicing into combineddataset (spliceFilesPolCorr)";abort
-						
-					endif
-					if(numtype(REAL(compspliceFactorpolcorr)))
-						print "ERROR while splicing into combineddataset (spliceFilesPolCorr)";abort
-						
-					endif
-					//xmlfilecontQzR01, xmlfilecontRR01, xmlfilecontRPolCorrR01, xmlfilecontdRR01, xmlfilecontdRPolCorrR01, xmlfilecontdQzR01
-					
-					//(Comment from Andy:) think the following is wrong! No need to errors in quadrature if scalefactor does not depend on wavelength
-					xmlfilecontdRR01 = (xmlfilecontdRR01/xmlfilecontRR01)^2
-					xmlfilecontdRR01 += (imag(compSpliceFactor)/real(compSpliceFactor))^2
-					xmlfilecontdRR01 = sqrt(xmlfilecontdRR01)
-					xmlfilecontRR01 *= real(compSplicefactor)
-					xmlfilecontdRR01 *= xmlfilecontRR01
-					
-					xmlfilecontdRPolCorrR01 = (xmlfilecontdRPolCorrR01/xmlfilecontRPolCorrR01)^2
-					xmlfilecontdRPolCorrR01 += (imag(compspliceFactorpolcorr)/real(compspliceFactorpolcorr))^2
-					xmlfilecontdRPolCorrR01 = sqrt(xmlfilecontdRPolCorrR01)
-					xmlfilecontRPolCorrR01 *= real(compspliceFactorpolcorr)
-					xmlfilecontdRPolCorrR01 *= xmlfilecontRPolCorrR01
-				
-					concatenate/NP {xmlfilecontRR01},tempRRR01
-					concatenate/NP {xmlfilecontRPolCorrR01},tempRRPolCorrR01
-					concatenate/NP {xmlfilecontQzR01},tempQQR01
-					concatenate/NP { xmlfilecontdQzR01},tempDQR01
-					concatenate/NP {xmlfilecontdRR01},tempDRR01
-					concatenate/NP {xmlfilecontdRPolCorrR01},tempDRPolCorrR01
-				
-					sort tempQQR01,tempQQR01,tempRRR01,tempDRR01, tempRRPolCorrR01,tempDRPolCorrR01, tempDQR01 
-				endif
-				//close the XML file
-				xmlsetattr(R01fileID, "//REFroot/REFentry[1]/REFdata/Run", "", "scale", num2str(real(compsplicefactor)))
-				xmlsetattr(R01fileID, "//REFroot/REFentry[1]/REFdata/Run", "", "scalePolCorr", num2str(real(compsplicefactorpolcorr)))
-				xmlclosefile(fileID, 1)
-				R01fileID=0				
-			endif
-			
-			//////////////////////////
-			//NOW THE R10 CHANNEL
-			///////////////////////////////////////////////
-				if(stringmatch(stringfromlist(2, Ffname), "00")||stringmatch(stringfromlist(2, Ffname), "0"))
-					print "The File for REF I10 was not given in (loop ii, Ffname) pos 2 (spliceFilesPolCorr)", ii, Ffname
-				else
-				tempfilenameoutput = stringfromlist(2, Ffname)
-				print "R10 file to be processed in run ", ii, " of for loop (spliceFilesPolCorr)", tempfilenameoutput
-				R10fileID = xmlopenfile(outputPathStr + stringfromlist(2, Ffname) + ".xml")
-				if(R10fileID < 1)
-					print "ERROR couldn't open individual file (spliceFilesPolCorr)";abort
-				endif
-			
-				xmlwavefmXPATH(R10fileID,"//REFdata[1]/Qz","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontQzR10
-				xmlfilecontQzR10 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R10fileID,"//REFdata[1]/R","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontRR10
-				xmlfilecontRR10 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R10fileID,"//REFdata[1]/RPolCorr","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontRPolCorrR10
-				xmlfilecontRPolCorrR10 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R10fileID,"//REFdata[1]/dR","","")
-    	 			Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdRR10
-				xmlfilecontdRR10 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R10fileID,"//REFdata[1]/dRPolCorr","","")
-    	 			Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdRPolCorrR10
-				xmlfilecontdRPolCorrR10 = str2num(M_xmlcontent[p][0])
-
-				xmlwavefmXPATH(R10fileID,"//REFdata[1]/dQz","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdQzR10
-				xmlfilecontdQzR10 = str2num(M_xmlcontent[p][0])
-			
-//				sort asdfghjkl0,asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3 
-				sort xmlfilecontQzR10, xmlfilecontQzR10, xmlfilecontRR10, xmlfilecontRPolCorrR10, xmlfilecontdRR10, xmlfilecontdRPolCorrR10, xmlfilecontdQzR10
-				if(ii == 0)
-					make/o/d/n=(numpnts(xmlfilecontQzR10)) tempQQR10, tempRRR10, tempDRR10,tempRRPolCorrR10, tempDRPolCorrR10, tempDQR10
-					Wave tempQQR10, tempRRR10, tempDRR10, tempDQR10, tempRRPolCorrR10, tempDRPolCorrR10
-					tempQQR10=xmlfilecontQzR10
-					tempRRR10=xmlfilecontRR10
-					tempRRPolCorrR10=xmlfilecontRPolCorrR10
-					tempDRR10=xmlfilecontdRR10
-					tempDRPolCorrR10=xmlfilecontdRPolCorrR10
-					tempDQR10=xmlfilecontdQzR10
-				
-					samplename = xmlstrfmXpath(R10fileID, "//REFsample/ID", "", "")
-					user = xmlstrfmXpath(R10fileID, "//REFentry[1]/User", "", "")
-					rednnote = xmlstrfmXpath(R10fileID,"//REFroot/REFentry[1]/REFdata[1]/Run[1]/reductionnote","","")
-					compsplicefactor = cmplx(1., 1.)			 
-				else
-					//splice with propagated error in the splice factor
-					if(paramisdefault(factors))
-				
-					
-						compSplicefactors = Pla_GetWeightScOPolCorr(tempQQR10, tempRRR10, tempDRR10, tempRRPolCorrR10, tempDRPolCorrR10, xmlfilecontQzR10, xmlfilecontRR10, xmlfilecontdRR10, xmlfilecontRPolCorrR10, xmlfilecontdRPolCorrR10) 		
-						                               //Pla_GetWeightScOPolCorr(wave1q,wave1R, wave1dR,wave1RPolCorr, wave1dRPolCorr, wave2q,wave2R, wave2dR, wave2RPolCorr, wave2dRPolCorr)
-						//print compSplicefactors
-						temporarystring = stringfromlist(0, compSplicefactors, ";")
-						compSplicefactorreal  = str2num(temporarystring)
-						temporarystring = stringfromlist(1, compSplicefactors, ";")
-						compSplicefactorimag = str2num(temporarystring)
-						temporarystring = stringfromlist(2, compSplicefactors, ";")
-						compSplicefactorpolcorrreal  = str2num(temporarystring)
-					 	temporarystring = stringfromlist(3, compSplicefactors, ";")
-						compSplicefactorpolcorrimag = str2num(temporarystring)
-					
-						compSplicefactor = cmplx(compSplicefactorreal, compSplicefactorimag)
-						compSplicefactorPolCorr = cmplx(compSplicefactorpolcorrreal, compSplicefactorpolcorrimag)
-						print "These are the SpliceFactors compSplicefactor and compSplicefactorpolcorr for R10 (spliceFilesPolCorr)",compSplicefactor, compSplicefactorpolcorr 
-					else
-						if(itemsinlist(factors) <= ii)
-							compSplicefactor = cmplx(str2num(stringfromlist(ii-1, factors)), 0)
-						else
-							compSplicefactors = Pla_GetWeightScOPolCorr(tempQQR10, tempRRR10, tempDRR10, tempRRPolCorrR10, tempDRPolCorrR10, xmlfilecontQzR10, xmlfilecontRR10, xmlfilecontdRR10, xmlfilecontRPolCorrR10, xmlfilecontdRPolCorrR10)							
-							temporarystring = stringfromlist(0, compSplicefactors, ";")
-							compSplicefactorreal  = str2num(temporarystring)
-							temporarystring = stringfromlist(1, compSplicefactors, ";")
-							compSplicefactorimag = str2num(temporarystring)
-							temporarystring = stringfromlist(2, compSplicefactors, ";")
-							compSplicefactorpolcorrreal  = str2num(temporarystring)
-					 		temporarystring = stringfromlist(3, compSplicefactors, ";")
-							compSplicefactorpolcorrimag = str2num(temporarystring)
-					
-							compSplicefactor = cmplx(compSplicefactorreal, compSplicefactorimag)
-							compSplicefactorPolCorr = cmplx(compSplicefactorpolcorrreal, compSplicefactorpolcorrimag)
-							print "These are the SpliceFactors compSplicefactor and compSplicefactorpolcorr for R10 (spliceFilesPolCorr)",compSplicefactor, compSplicefactorpolcorr 
-						endif
-						
-					endif
-					if(numtype(REAL(compspliceFactor)))
-						print "ERROR while splicing into combineddataset (spliceFilesPolCorr)";abort
-						
-					endif
-					if(numtype(REAL(compspliceFactorpolcorr)))
-						print "ERROR while splicing into combineddataset (spliceFilesPolCorr)";abort
-						
-					endif
-					//xmlfilecontQzR10, xmlfilecontRR10, xmlfilecontRPolCorrR10, xmlfilecontdRR10, xmlfilecontdRPolCorrR10, xmlfilecontdQzR10
-					
-					//(Comment from Andy:) think the following is wrong! No need to errors in quadrature if scalefactor does not depend on wavelength
-					xmlfilecontdRR10 = (xmlfilecontdRR10/xmlfilecontRR10)^2
-					xmlfilecontdRR10 += (imag(compSpliceFactor)/real(compSpliceFactor))^2
-					xmlfilecontdRR10 = sqrt(xmlfilecontdRR10)
-					xmlfilecontRR10 *= real(compSplicefactor)
-					xmlfilecontdRR10 *= xmlfilecontRR10
-					
-					xmlfilecontdRPolCorrR10 = (xmlfilecontdRPolCorrR10/xmlfilecontRPolCorrR10)^2
-					xmlfilecontdRPolCorrR10 += (imag(compspliceFactorpolcorr)/real(compspliceFactorpolcorr))^2
-					xmlfilecontdRPolCorrR10 = sqrt(xmlfilecontdRPolCorrR10)
-					xmlfilecontRPolCorrR10 *= real(compspliceFactorpolcorr)
-					xmlfilecontdRPolCorrR10 *= xmlfilecontRPolCorrR10
-				
-					concatenate/NP {xmlfilecontRR10},tempRRR10
-					concatenate/NP {xmlfilecontRPolCorrR10},tempRRPolCorrR10
-					concatenate/NP {xmlfilecontQzR10},tempQQR10
-					concatenate/NP {xmlfilecontdQzR10},tempDQR10
-					concatenate/NP {xmlfilecontdRR10},tempDRR10
-					concatenate/NP {xmlfilecontdRPolCorrR10},tempDRPolCorrR10
-				
-					sort tempQQR10,tempQQR10,tempRRR10,tempDRR10, tempRRPolCorrR10,tempDRPolCorrR10, tempDQR10 
-				endif
-				//close the XML file
-				xmlsetattr(R10fileID, "//REFroot/REFentry[1]/REFdata/Run", "", "scale", num2str(real(compsplicefactor)))
-				xmlsetattr(R10fileID, "//REFroot/REFentry[1]/REFdata/Run", "", "scalePolCorr", num2str(real(compsplicefactorpolcorr)))
-				xmlclosefile(fileID, 1)
-				R10fileID=0
-			endif
-			
-			//////////////////////////
-			//NOW THE R11 CHANNEL
-			///////////////////////////////////////////////
-			if(stringmatch(stringfromlist(3, Ffname), "00")||stringmatch(stringfromlist(3, Ffname), "0"))
-				print "The File for REF I11 was not given in (loop ii, Ffname) pos 3 (spliceFilesPolCorr)", ii, Ffname
-			else
-				tempfilenameoutput = stringfromlist(3, Ffname)
-				print "R11 file to be processed in run ", ii, " of for loop (splicefilespolcorr)", tempfilenameoutput
-				R11fileID = xmlopenfile(outputPathStr + stringfromlist(3, Ffname) + ".xml")
-				if(R11fileID < 1)
-					print "ERROR couldn't open individual file (spliceFilesPolCorr)";abort
-				endif
-			
-				xmlwavefmXPATH(R11fileID,"//REFdata[1]/Qz","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontQzR11
-				xmlfilecontQzR11 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R11fileID,"//REFdata[1]/R","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontRR11
-				xmlfilecontRR11 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R11fileID,"//REFdata[1]/RPolCorr","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontRPolCorrR11
-				xmlfilecontRPolCorrR11 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R11fileID,"//REFdata[1]/dR","","")
-    	 			Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdRR11
-				xmlfilecontdRR11 = str2num(M_xmlcontent[p][0])
-				
-				xmlwavefmXPATH(R11fileID,"//REFdata[1]/dRPolCorr","","")
-    	 			Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdRPolCorrR11
-				xmlfilecontdRPolCorrR11 = str2num(M_xmlcontent[p][0])
-
-				xmlwavefmXPATH(R11fileID,"//REFdata[1]/dQz","","")
-				Wave/t M_xmlcontent
-				make/o/d/n=(dimsize(M_xmlcontent,0)) xmlfilecontdQzR11
-				xmlfilecontdQzR11 = str2num(M_xmlcontent[p][0])
-			
-//				sort asdfghjkl0,asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3 
-				sort xmlfilecontQzR11, xmlfilecontQzR11, xmlfilecontRR11, xmlfilecontRPolCorrR11, xmlfilecontdRR11, xmlfilecontdRPolCorrR11, xmlfilecontdQzR11
-				if(ii == 0)
-					make/o/d/n=(numpnts(xmlfilecontQzR11)) tempQQR11, tempRRR11, tempDRR11,tempRRPolCorrR11, tempDRPolCorrR11, tempDQR11
-					Wave tempQQR11, tempRRR11, tempDRR11, tempDQR11, tempRRPolCorrR11, tempDRPolCorrR11
-					tempQQR11=xmlfilecontQzR11
-					tempRRR11=xmlfilecontRR11
-					tempRRPolCorrR11=xmlfilecontRPolCorrR11
-					tempDRR11=xmlfilecontdRR11
-					tempDRPolCorrR11=xmlfilecontdRPolCorrR11
-					tempDQR11=xmlfilecontdQzR11
-				
-					samplename = xmlstrfmXpath(R11fileID, "//REFsample/ID", "", "")
-					user = xmlstrfmXpath(R11fileID, "//REFentry[1]/User", "", "")
-					rednnote = xmlstrfmXpath(R11fileID,"//REFroot/REFentry[1]/REFdata[1]/Run[1]/reductionnote","","")
-					compsplicefactor = cmplx(1., 1.)			 
-				else
-					//splice with propagated error in the splice factor
-					if(paramisdefault(factors))
-				
-					
-						compSplicefactors = Pla_GetWeightScOPolCorr(tempQQR11, tempRRR11, tempDRR11, tempRRPolCorrR11, tempDRPolCorrR11, xmlfilecontQzR11, xmlfilecontRR11, xmlfilecontdRR11, xmlfilecontRPolCorrR11, xmlfilecontdRPolCorrR11) 		
-						                               //Pla_GetWeightScOPolCorr(wave1q,wave1R, wave1dR,wave1RPolCorr, wave1dRPolCorr, wave2q,wave2R, wave2dR, wave2RPolCorr, wave2dRPolCorr)
-						//print compSplicefactors
-						temporarystring = stringfromlist(0, compSplicefactors, ";")
-						compSplicefactorreal  = str2num(temporarystring)
-						temporarystring = stringfromlist(1, compSplicefactors, ";")
-						compSplicefactorimag = str2num(temporarystring)
-						temporarystring = stringfromlist(2, compSplicefactors, ";")
-						compSplicefactorpolcorrreal  = str2num(temporarystring)
-					 	temporarystring = stringfromlist(3, compSplicefactors, ";")
-						compSplicefactorpolcorrimag = str2num(temporarystring)
-					
-						compSplicefactor = cmplx(compSplicefactorreal, compSplicefactorimag)
-						compSplicefactorPolCorr = cmplx(compSplicefactorpolcorrreal, compSplicefactorpolcorrimag)
-						print "These are the SpliceFactors compSplicefactor and compSplicefactorpolcorr for R11 (spliceFilesPolCorr)",compSplicefactor, compSplicefactorpolcorr 
-					else
-						if(itemsinlist(factors) <= ii)
-							compSplicefactor = cmplx(str2num(stringfromlist(ii-1, factors)), 0)
-						else
-							compSplicefactors = Pla_GetWeightScOPolCorr(tempQQR11, tempRRR11, tempDRR11, tempRRPolCorrR11, tempDRPolCorrR11, xmlfilecontQzR11, xmlfilecontRR11, xmlfilecontdRR11, xmlfilecontRPolCorrR11, xmlfilecontdRPolCorrR11)							
-							temporarystring = stringfromlist(0, compSplicefactors, ";")
-							compSplicefactorreal  = str2num(temporarystring)
-							temporarystring = stringfromlist(1, compSplicefactors, ";")
-							compSplicefactorimag = str2num(temporarystring)
-							temporarystring = stringfromlist(2, compSplicefactors, ";")
-							compSplicefactorpolcorrreal  = str2num(temporarystring)
-					 		temporarystring = stringfromlist(3, compSplicefactors, ";")
-							compSplicefactorpolcorrimag = str2num(temporarystring)
-					
-							compSplicefactor = cmplx(compSplicefactorreal, compSplicefactorimag)
-							compSplicefactorPolCorr = cmplx(compSplicefactorpolcorrreal, compSplicefactorpolcorrimag)
-							print "These are the SpliceFactors compSplicefactor and compSplicefactorpolcorr for R11 (spliceFilesPolCorr)",compSplicefactor, compSplicefactorpolcorr 
-						endif
-						
-					endif
-					if(numtype(REAL(compspliceFactor)))
-						print "ERROR while splicing into combineddataset (spliceFilesPolCorr)";abort
-						
-					endif
-					if(numtype(REAL(compspliceFactorpolcorr)))
-						print "ERROR while splicing into combineddataset (spliceFilesPolCorr)";abort
-						
-					endif
-					//xmlfilecontQzR11, xmlfilecontRR11, xmlfilecontRPolCorrR11, xmlfilecontdRR11, xmlfilecontdRPolCorrR11, xmlfilecontdQzR11
-					
-					//(Comment from Andy:) think the following is wrong! No need to errors in quadrature if scalefactor does not depend on wavelength
-					xmlfilecontdRR11 = (xmlfilecontdRR11/xmlfilecontRR11)^2
-					xmlfilecontdRR11 += (imag(compSpliceFactor)/real(compSpliceFactor))^2
-					xmlfilecontdRR11 = sqrt(xmlfilecontdRR11)
-					xmlfilecontRR11 *= real(compSplicefactor)
-					xmlfilecontdRR11 *= xmlfilecontRR11
-					
-					xmlfilecontdRPolCorrR11 = (xmlfilecontdRPolCorrR11/xmlfilecontRPolCorrR11)^2
-					xmlfilecontdRPolCorrR11 += (imag(compspliceFactorpolcorr)/real(compspliceFactorpolcorr))^2
-					xmlfilecontdRPolCorrR11 = sqrt(xmlfilecontdRPolCorrR11)
-					xmlfilecontRPolCorrR11 *= real(compspliceFactorpolcorr)
-					xmlfilecontdRPolCorrR11 *= xmlfilecontRPolCorrR11
-				
-					concatenate/NP {xmlfilecontRR11},tempRRR11
-					concatenate/NP {xmlfilecontRPolCorrR11},tempRRPolCorrR11
-					concatenate/NP {xmlfilecontQzR11},tempQQR11
-					concatenate/NP {xmlfilecontdQzR11},tempDQR11
-					concatenate/NP {xmlfilecontdRR11},tempDRR11
-					concatenate/NP {xmlfilecontdRPolCorrR11},tempDRPolCorrR11
-				
-					sort tempQQR11,tempQQR11,tempRRR11,tempDRR11, tempRRPolCorrR11,tempDRPolCorrR11, tempDQR11 
-				endif
-				//close the XML file
-				xmlsetattr(R11fileID, "//REFroot/REFentry[1]/REFdata/Run", "", "scale", num2str(real(compsplicefactor)))
-				xmlsetattr(R11fileID, "//REFroot/REFentry[1]/REFdata/Run", "", "scalePolCorr", num2str(real(compsplicefactorpolcorr)))
-				xmlclosefile(fileID, 1)
-				R11fileID=0
-			endif
-			
-		endfor
-		
-		if(!paramisdefault(rebin) && rebin > 0 && rebin < 15)
-			print "(SpliceFilesPolCorr) List of all files after the for loop: filestosplice = ", filesToSplice
-			Ffname = stringfromlist(0, filesToSplice, ":")
-			print "(SpliceFilesPolCorr) List of first angle filenames: Ffname= ", Ffname
-			if(stringmatch(stringfromlist(0, Ffname), "00")||stringmatch(stringfromlist(0, Ffname), "0"))
-				print "(SpliceFilesPolCorr) The File for REF I00 was not given to rebin_afterwards after the loop", Ffname
-			else
-				Pla_rebin_afterwardsPolCorr(tempQQR00, tempRRR00, tempDRR00, tempRRPolCorrR00, tempDRPolCorrR00, tempDQR00, rebin, tempQQR00[0] - 0.00005, tempQQR00[numpnts(tempQQR00) - 1]+0.00005)
-				Wave W_Q_rebin, W_R_rebin, W_E_rebin, W_R_rebinpolcorr, W_E_rebinpolcorr, W_dq_rebin
-				duplicate/o W_Q_rebin, tempQQR00
-				duplicate/o W_R_rebin, tempRRR00
-				duplicate/o W_E_rebin, tempDRR00
-				duplicate/o W_R_rebinpolcorr, tempRRPolCorrR00
-				duplicate/o W_E_rebinpolcorr, tempDRPolCorrR00
-				duplicate/o W_dq_rebin, tempDQR00
-			endif
-			if(stringmatch(stringfromlist(1, Ffname), "00")||stringmatch(stringfromlist(1, Ffname), "0"))
-				print "(SpliceFilesPolCorr) The File for REF I01 was not given to rebin_afterwards after the loop", Ffname
-			else
-				Pla_rebin_afterwardsPolCorr(tempQQR01, tempRRR01, tempDRR01, tempRRPolCorrR01, tempDRPolCorrR01, tempDQR01, rebin, tempQQR01[0] - 0.00005, tempQQR01[numpnts(tempQQR01) - 1]+0.00005)
-				Wave W_Q_rebin, W_R_rebin, W_E_rebin, W_R_rebinpolcorr, W_E_rebinpolcorr, W_dq_rebin
-				duplicate/o W_Q_rebin, tempQQR01
-				duplicate/o W_R_rebin, tempRRR01
-				duplicate/o W_E_rebin, tempDRR01
-				duplicate/o W_R_rebinpolcorr, tempRRPolCorrR01
-				duplicate/o W_E_rebinpolcorr, tempDRPolCorrR01
-				duplicate/o W_dq_rebin, tempDQR01
-			endif	
-			if(stringmatch(stringfromlist(2, Ffname), "00")||stringmatch(stringfromlist(2, Ffname), "0"))
-				print "(SpliceFilesPolCorr) The File for REF I10 was not given to rebin_afterwards after the loop", Ffname
-			else
-				Pla_rebin_afterwardsPolCorr(tempQQR10, tempRRR10, tempDRR10, tempRRPolCorrR10, tempDRPolCorrR10, tempDQR10, rebin, tempQQR10[0] - 0.00005, tempQQR10[numpnts(tempQQR10) - 1]+0.00005)
-				Wave W_Q_rebin, W_R_rebin, W_E_rebin, W_R_rebinpolcorr, W_E_rebinpolcorr, W_dq_rebin
-				duplicate/o W_Q_rebin, tempQQR10
-				duplicate/o W_R_rebin, tempRRR10
-				duplicate/o W_E_rebin, tempDRR10
-				duplicate/o W_R_rebinpolcorr, tempRRPolCorrR10
-				duplicate/o W_E_rebinpolcorr, tempDRPolCorrR10
-				duplicate/o W_dq_rebin, tempDQR10
-			endif	
-			if(stringmatch(stringfromlist(3, Ffname), "00")||stringmatch(stringfromlist(3, Ffname), "0"))
-				print "(SpliceFilesPolCorr) The File for REF I11 was not given to rebin_afterwards after the loop", Ffname
-			else
-				Pla_rebin_afterwardsPolCorr(tempQQR11, tempRRR11, tempDRR11, tempRRPolCorrR11, tempDRPolCorrR11, tempDQR11, rebin, tempQQR11[0] - 0.00005, tempQQR11[numpnts(tempQQR11) - 1]+0.00005)
-				Wave W_Q_rebin, W_R_rebin, W_E_rebin, W_R_rebinpolcorr, W_E_rebinpolcorr, W_dq_rebin
-				duplicate/o W_Q_rebin, tempQQR11
-				duplicate/o W_R_rebin, tempRRR11
-				duplicate/o W_E_rebin, tempDRR11
-				duplicate/o W_R_rebinpolcorr, tempRRPolCorrR11
-				duplicate/o W_E_rebinpolcorr, tempDRPolCorrR11
-				duplicate/o W_dq_rebin, tempDQR11
-			endif	
-		endif
-		
-		//write the Ref00.dat ascii file and xml file
-		if(stringmatch(stringfromlist(0, Ffname), "00")||stringmatch(stringfromlist(0, Ffname), "0"))
-				print "(SpliceFilesPolCorr) The File for REF I00 was not given in", Ffname, "to write a file"
-		else
-			newpath/z/o/q pla_temppath_write, outputpathStr
-			open/P=PLA_temppath_write/z=1 fileIDcomb as  newfnameI00 + ".dat"
-			killpath/z pla_temppath_write
-		
-			if(V_flag)
-				print "ERROR writing combined file R00 (splicefilesPolCorr)";	 abort
-			endif
-		
-			fprintf fileIDcomb, "Q (1/A)\t Ref\t dRef (SD)\t RefPolCorr\t dRefPolCorr (SD)\t dq(FWHM, 1/A)\r"
-			wfprintf fileIDcomb, "%g\t %g\t %g\t %g\t %g\t %g\r", tempQQR00, tempRRR00, tempDRR00, tempRRPolCorrR00, tempDRPolCorrR00, tempDQR00
-			close fileIDcomb
-			//now write a spliced XML file
-			writeSpecRefXML1DPolCorr(outputPathStr, NewfnameI00, tempQQR00, tempRRR00, tempDRR00, tempRRPolCorrR00, tempDRPolCorrR00, tempDQR00, "", user, samplename, filestosplice, rednnote)
-		
-		endif
-		//write the Ref01.dat ascii file and xml.file
-		if(stringmatch(stringfromlist(1, Ffname), "00")||stringmatch(stringfromlist(1, Ffname), "0"))
-				print "(SpliceFilesPolCorr) The File for REF I01 was not given in", Ffname, "to write a file"
-		else
-			newpath/z/o/q pla_temppath_write, outputpathStr
-			open/P=PLA_temppath_write/z=1 fileIDcomb as  newfnameI01 + ".dat"
-			killpath/z pla_temppath_write
-		
-			if(V_flag)
-				print "ERROR writing combined file R01 (splicefilesPolCorr)";	 abort
-			endif
-		
-			fprintf fileIDcomb, "Q (1/A)\t Ref\t dRef (SD)\t RefPolCorr\t dRefPolCorr (SD)\t dq(FWHM, 1/A)\r"
-			wfprintf fileIDcomb, "%g\t %g\t %g\t %g\t %g\t %g\r", tempQQR01, tempRRR01, tempDRR01, tempRRPolCorrR01, tempDRPolCorrR01, tempDQR01
-			close fileIDcomb
-			//now write a spliced XML file
-			writeSpecRefXML1DPolCorr(outputPathStr, NewfnameI01, tempQQR01, tempRRR01, tempDRR01, tempRRPolCorrR01, tempDRPolCorrR01, tempDQR01, "", user, samplename, filestosplice, rednnote)
-		
-		endif
-		//write the Ref10.dat ascii file
-		if(stringmatch(stringfromlist(2, Ffname), "00")||stringmatch(stringfromlist(2, Ffname), "0"))
-				print "(SpliceFilesPolCorr) The File for REF I10 was not given in", Ffname, "to write a file"
-		else
-			newpath/z/o/q pla_temppath_write, outputpathStr
-			open/P=PLA_temppath_write/z=1 fileIDcomb as  newfnameI10 + ".dat"
-			killpath/z pla_temppath_write
-		
-			if(V_flag)
-				print "ERROR writing combined file R10 (splicefilesPolCorr)";	 abort
-			endif
-		
-			fprintf fileIDcomb, "Q (1/A)\t Ref\t dRef (SD)\t RefPolCorr\t dRefPolCorr (SD)\t dq(FWHM, 1/A)\r"
-			wfprintf fileIDcomb, "%g\t %g\t %g\t %g\t %g\t %g\r", tempQQR10, tempRRR10, tempDRR10, tempRRPolCorrR10, tempDRPolCorrR10, tempDQR10
-			close fileIDcomb
-			//now write a spliced XML file
-			writeSpecRefXML1DPolCorr(outputPathStr, NewfnameI10, tempQQR10, tempRRR10, tempDRR10, tempRRPolCorrR10, tempDRPolCorrR10, tempDQR10, "", user, samplename, filestosplice, rednnote)
-		
-		endif
-		//write the Ref11.dat ascii file
-		if(stringmatch(stringfromlist(3, Ffname), "00")||stringmatch(stringfromlist(3, Ffname), "0"))
-				print "(SpliceFilesPolCorr) The File for REF I11 was not given in", Ffname, "to write a file"
-		else
-			newpath/z/o/q pla_temppath_write, outputpathStr
-			open/P=PLA_temppath_write/z=1 fileIDcomb as  newfnameI11 + ".dat"
-			killpath/z pla_temppath_write
-		
-			if(V_flag)
-				print "ERROR writing combined file R11 (splicefilesPolCorr)";	 abort
-			endif
-		
-			fprintf fileIDcomb, "Q (1/A)\t Ref\t dRef (SD)\t RefPolCorr\t dRefPolCorr (SD)\t dq(FWHM, 1/A)\r"
-			wfprintf fileIDcomb, "%g\t %g\t %g\t %g\t %g\t %g\r", tempQQR11, tempRRR11, tempDRR11, tempRRPolCorrR11, tempDRPolCorrR11, tempDQR11
-			close fileIDcomb
-			//now write a spliced XML file
-			writeSpecRefXML1DPolCorr(outputPathStr, NewfnameI11, tempQQR11, tempRRR11, tempDRR11, tempRRPolCorrR11, tempDRPolCorrR11, tempDQR11, "", user, samplename, filestosplice, rednnote)
-		
-		endif
-
-	catch
-		if(R00fileID)
-			xmlclosefile(R00fileID,0)
-		endif
-		if(R01fileID)
-			xmlclosefile(R01fileID,0)
-		endif
-		if(R10fileID)
-			xmlclosefile(R10fileID,0)
-		endif
-		if(R11fileID)
-			xmlclosefile(R11fileID,0)
-		endif
-		if(r00fileID)
-			close R00fileID
-		endif
-		if(R01fileID)
-			close R01fileID
-		endif
-		if(R10fileID)
-			close R10fileID
-		endif
-		if(R11fileID)
-			close R11fileID
-		endif
-		err=1
-		print "ERROR: something went wrong in (spliceFilesPolCorr)"
-	endtry
-	print "(SpliceFilesPolCorr) reached the end of the function"
-	setdatafolder $cDF
-	killdatafolder/z 	root:packages:platypus:data:reducer:temp
-	return err
-End
-
-Function/t Pla_GetWeightScOPolCorr(wave1q,wave1R, wave1dR,wave1RPolCorr, wave1dRPolCorr, wave2q,wave2R, wave2dR, wave2RPolCorr, wave2dRPolCorr)
-	Wave wave1q,wave1R, wave1dR,wave1RPolCorr, wave1dRPolCorr, wave2q,wave2R, wave2dR, wave2RPolCorr, wave2dRPolCorr	//1 = first dataset, 2= second dataset
-
-	variable ii, npnts1, npnts2, num2
-	string compSplicefactor
-	sort wave1q,wave1q,wave1R, wave1dR,wave1RPolCorr, wave1dRPolCorr
-	sort wave2q,wave2q,wave2R, wave2dR, wave2RPolCorr, wave2dRPolCorr
+	checkbox measwithanalyzer_tab0,pos={193,79},size={178,14},proc=POLSLIM_analyzercheckbox,title="Measurement with analyzer?",fsize=12,fstyle=1,side=1
+	checkbox measwithanalyzer_tab0,variable= root:packages:platypus:data:Reducer:measwithanalyzer
+	checkbox verbosevar_tab0,pos={410,79},size={178,14},proc=POLSLIM_verbosecheckbox,title="Run with extended description?",fsize=12,fstyle=1,side=1
+	checkbox verbosevar_tab0,variable= root:packages:platypus:data:Reducer:verbosevar
+	checkbox donotoverwrite_tab0,pos={540,79},size={178,14},proc=POLSLIM_donotoverwritecheckbox,title="Do not overwrite",fsize=12,fstyle=1,side=1
+	checkbox donotoverwrite_tab0,variable= root:packages:platypus:data:Reducer:donotoverwrite	
 	
-	npnts1 = dimsize(wave1q, 0)
-	npnts2 = dimsize(wave2q, 0)
+	SetVariable dataSource_tab0,pos={288,10},size={367,16},title="Data directory"
+	SetVariable dataSource_tab0,fSize=10
+	SetVariable dataSource_tab0,value= root:packages:platypus:data:Reducer:inputpathStr,noedit= 0
+	SetVariable dataOut_tab0,pos={288,30},size={367,16},title="Output directory"
+	SetVariable dataOut_tab0,fSize=10
+	SetVariable dataOut_tab0,value= root:packages:platypus:data:Reducer:outputpathStr,noedit= 0
 	
-	if(wave2q[0] > wave1q[npnts1 - 1])
-		print  "ERROR there are no data points in the overlap region. Either reduce the number of deleted points or use manual scaling. (Pla_GetWeightScOPolCorr)"
-		compsplicefactor = "NaN; NaN; NaN; NaN"
-		return compSplicefactor //cmplx(NaN, NaN)
-	endif
+	Button storeangleslist_tab0,pos={734,9},size={152,16},proc=SLIMPOL_buttonprocpol,title="store data list"
+	Button storeangleslist_tab0,fSize=9
 	
-	make/u/I/free/n=0 overlapPoints
+	Button loadangleslist_tab0,pos={734,32},size={152,16},proc=SLIMPOL_buttonprocpol,title="load data list"
+	Button loadangleslist_tab0,fSize=9
+	
+	Button showreducervariables_tab0,pos={348,53},size={152,16},proc=SLIMPOL_buttonprocpol,title="show reducer variables"
+	Button showreducervariables_tab0,fSize=9
 
-	for(ii = 0 ;  ii < dimsize(wave2q, 0) && wave2q[ii] < wave1q[npnts1 - 1] ; ii+=1)
-		if(wave2q[ii] > wave1q[0] && wave2q[ii] < wave1q[npnts1 - 1])
-			redimension/n=(numpnts(overlapPoints) + 1) overlapPoints
-			overlapPoints[numpnts(overlapPoints) - 1] = ii
-		endif
-	endfor
+	Button changedatasource_tab0,pos={671,10},size={44,16},proc=SLIMPOL_buttonprocpol,title="change"
+	Button changedatasource_tab0,fSize=9
 	
-	num2 = numpnts(overlapPoints)
-	if(!num2)
-		print  "ERROR there are no data points in the overlap region. Either reduce the number of deleted points or use manual scaling. (Pla_GetWeightScOPolCorr)"
-		compsplicefactor = "NaN; NaN; NaN; NaN"
-		return compSplicefactor //cmplx(NaN, NaN)
-	endif	
-	////////////////////////////////////
-	
-	Variable ival1, newi, newdi, ratio, dratio, newpolcorri, newdpolcorri, ratiopolcorr, dratiopolcorr, qval2
-	make/n=(num2)/d/free W_scalefactor, W_dScalefactor, W_scalefactorPolCorr, W_dScalefactorPolCorr
-		
-	for(ii = 0 ; ii < num2 ; ii += 1)
-		//get scaling factor at each point of wave 2 in the overlap region
-		qval2 = wave2q[overlapPoints[ii]]
-		newi = interp(qval2, wave1q, wave1R)	//get the intensity of wave1 at an overlap point
-		newpolcorri = interp(qval2, wave1q, wave1RPolCorr)		
-		newdi = interp(qval2, wave1q, wave1dR)
-		newdpolcorri = interp(qval2, wave1q, wave1dRPolCorr)
-		
-		if(!numtype(wave2R[ii]) && !numtype(newi) && !numtype(newdi) && !numtype(wave2RPolCorr[ii]) && !numtype(newPolCorri) && !numtype(newdPolCorri)&& wave2R[ii] != 0&& wave2RPolCorr[ii] != 0)
-			W_scalefactor[ii] = newi/wave2R[ii]
-			W_dScalefactor[ii] = W_scalefactor[ii]* sqrt((newdi/newi)^2 + (wave2dr[ii]/wave2r[ii])^2)
-			W_scalefactorPolCorr[ii] = newPolCorri/wave2RPolCorr[ii]
-			W_dScalefactorPolCorr[ii] = W_scalefactorPolCorr[ii]* sqrt((newdPolCorri/newPolCorri)^2 + (wave2drPolCorr[ii]/wave2rPolCorr[ii])^2)
-		endif
-		
-	endfor
-	
-	W_dScalefactor = 1/(W_dScalefactor^2)
-	W_dScalefactorPolCorr = 1/(W_dScalefactorPolCorr^2)
-	
-	variable normal, num = 0, den=0, dnormal, normalpolcorr, numpolcorr = 0, denpolcorr=0, dnormalpolcorr
-	for(ii=0 ; ii < num2 ; ii += 1)
-		if(!numtype(W_scalefactor[ii]) && !numtype(W_dscalefactor[ii]))
-			num += W_scalefactor[ii] * W_dscalefactor[ii] 
-			den += W_dscalefactor[ii]
-		endif
-		if(!numtype(W_scalefactorPolCorr[ii]) && !numtype(W_dscalefactorPolCorr[ii]))
-			numpolcorr += W_scalefactorPolCorr[ii] * W_dscalefactorPolCorr[ii] 
-			denpolcorr += W_dscalefactorPolCorr[ii]
-		endif
-	endfor
-	
-	normal = num/den
-	dnormal = sqrt(1/den)
-	normalpolcorr = numpolcorr/denpolcorr
-	dnormalpolcorr = sqrt(1/denpolcorr)
-	
-	if(numtype(normal))
-		print "ERROR while splicing (Pla_GetWeightScOPolCorr)"
-	endif
-	if(numtype(normalpolcorr))
-		print "ERROR while splicing (Pla_GetWeightScOPolCorr)"
-	endif
-	sprintf compSplicefactor, "%g; %g; %g; %g;", normal, dnormal, normalpolcorr, dnormalpolcorr
-	
-	Return compSplicefactor //cmplx(normal, dnormal)
-End
+	Button changedataout_tab0,pos={671,30},size={44,16},proc=SLIMPOL_buttonprocpol,title="change"
+	Button changedataout_tab0,fSize=9
 
-Function Pla_rebin_afterwardsPolCorr(qq,rr, dr,rrpolcorr, drpolcorr, dq, rebin, lowerQ,upperQ)
-Wave qq,rr,dr, rrpolcorr, drpolcorr, dq
-variable rebin, lowerQ, upperQ
-//this function rebins a set of R vs Q data given a rebin percentage.
-//it is designed to replace rebinning the wavelength spectrum which can result in twice as many points in the overlap region.
-//However, the background subtraction is currently done on rebinned data. So if you don't rebin at the start the  subtraction
-//isn't as good.
-	variable stepsize, numsteps, ii, binnum, weight, weightpolcorr
+	Button downloadPlatdata_tab0,pos={518,53},size={152,16},proc=SLIMPOL_buttonprocpol,title="Download Platypus data"
+	Button downloadPlatdata_tab0,fSize=9
 
-	rebin =  1 + (rebin/100)
-	stepsize = log(rebin)
-	numsteps = log(upperQ / lowerQ) / stepsize
-
-	make/n=(numsteps + 1)/o/d W_q_rebin, W_R_rebin, W_E_rebin, W_R_rebinPolCorr, W_E_rebinPolCorr, W_dq_rebin
-	W_q_rebin = 0
-	W_R_rebin = 0
-	W_E_rebin = 0
-	W_R_rebinPolCorr = 0
-	W_E_rebinPolCorr = 0
-	W_dq_rebin = 0
-
-	make/n=(numsteps + 2)/free/d W_q_rebinHIST
-	make/n=(numsteps + 1)/d/free Q_sw, I_sw, E_sw, I_swPolCorr, E_swPolCorr
-
-	W_q_rebinHIST[] = alog( log(lowerQ) + (p-0.5) * stepsize)
-
-	for(ii = 0 ; ii < numpnts(qq) ; ii += 1)
-		binnum = binarysearch(W_q_rebinHIST, qq[ii])
-		if(binnum < 0)
-			continue
-		endif
-		 weight = 1 / (dR[ii]^2)
-		 weightpolcorr = 1 / (dRpolcorr[ii]^2)
-		 
-		W_R_rebin[binnum] += RR[ii] * weight
-		W_R_rebinPolCorr[binnum] += RRPolCorr[ii] * weightpolcorr
-		W_q_rebin[binnum] += qq[ii] * weightpolcorr
-		W_dq_rebin[binnum] += dq[ii] * weightpolcorr
-		Q_sw[binnum] += weightpolcorr
-		I_sw[binnum] += weight
-		I_swpolcorr[binnum] += weightpolcorr
-	endfor
-	W_R_rebin[] /= I_sw[p]
-	W_R_rebinpolcorr[] /= I_swpolcorr[p]
-	W_q_rebin[] /= Q_sw[p]
-	W_E_rebin[] = sqrt(1/I_sw[p])
-	W_E_rebinpolcorr[] = sqrt(1/I_swpolcorr[p])
-	W_dq_rebin[] /= Q_sw[p]
-	
-	for(ii = numpnts(W_q_rebin) - 1 ; ii >= 0 ; ii -= 1)
-		if(numtype(W_q_Rebin[ii]))
-			deletepoints ii, 1, W_q_rebin, W_R_rebin, W_E_rebin, W_R_rebinPolCorr, W_E_rebinPolCorr, W_dq_rebin
-		endif
-	endfor
-	//In the output this should appear for each additional angle 
-	print "(Pla_rebin_afterwardsPolCorr) is finished"
-	
+	Button clear_tab0,pos={772,55},size={86,17},proc=SLIMPOL_buttonprocpol,title="clear"
+	string titlestring = "Hold down \"ctrl\" + left click on item for a help printed in the MAIN IGOR CommandWindow."
+	titlebox/z helpfield,pos={13,205},size={520,23}, fixedSize =1,title=titlestring 
+	titlebox/z helpfield,fstyle = 1, frame=3, fsize =12
+	//Killstrings/z titlestring
 End
 
 
-Function SLIM_plot_reducedPolCorr(inputPathStr, filenames)
-	string inputPathStr, filenames
-	variable ii,numwaves,jj
-	string loadedWavenames, slimplotstring
-	string cDF = getdatafolder(1)
+Function POLSLIM_listproc(lba) : ListBoxControl //behind the : is the subtype, telling igor, that this is called when something happens, e.g. button tick
+	STRUCT WMListboxAction &lba
 
-	newdatafolder/o root:packages
-	newdatafolder/o root:packages:platypus
-	newdatafolder/o root:packages:platypus:data
-	newdatafolder/o root:packages:platypus:data:Reducer
-	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
+	Variable row = lba.row
+	Variable col = lba.col //Selection column
+	WAVE/T/Z listWave = lba.listWave //List wave specified by ListBox command
+	WAVE/Z selWave = lba.selWave //Selection wave specified by ListBox command
+	string filenames = ""
+	SVAR inputpathStr = root:packages:platypus:data:Reducer:inputpathStr
 
-	GetFileFolderInfo/q/z inputpathStr
-	if(V_flag)//path doesn't exist
-		print "ERROR please give valid path (SLIM_plot_reducedPolCorr)"
-		return 1
-	endif
-	
-	try
-		dowindow/k SLIM_PLOTwin
-		display/K=1 as "SLIM plot PolCorr (C) Andrew Nelson + ANSTO 2008 + Thomas Saerbeck 2012"
-		dowindow/c SLIM_PLOTwin
-		controlbar/W=SLIM_PLOTwin 30
-		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOTPolCorr,title="Refresher",size={100,20}, fColor=(0,52224,26368)
-	
-		sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\", 0, 0, 0)", inputpathStr, inputpathStr, fileNames
-		setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
-		setwindow SLIM_PLOTwin, userdata(filenames) = filenames
-		setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr		
+	switch( lba.eventCode )
+		case -1: // control being killed
+			break
 
-		for(ii = 0 ; ii < itemsinlist(filenames) ; ii += 1)
-			string fname = stringfromlist(ii, filenames)
-
-			variable fileID = xmlopenfile(inputPathStr + fname)
-			if(fileID < 1)
-				print "ERROR opening xml file (SLIM_PLOT_reduced)"
-				abort
-			endif
-			fname = removeending(fname,".xml")
-			
-			xmlwavefmXPATH(fileID,"//Qz","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) $cleanupname(fname+"_q",0)
-			Wave qq = $cleanupname(fname+"_q",0)
-			qq = str2num(M_xmlcontent[p][0])
-			
-			xmlwavefmXPATH(fileID,"//R","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) $cleanupname(fname+"_R",0)
-			Wave RR = $cleanupname(fname+"_R",0)
-			RR = str2num(M_xmlcontent[p][0])
-			
-			xmlwavefmXPATH(fileID,"//RPolCorr","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) $cleanupname(fname+"_RPolCorr",0)
-			Wave RRPolCorr = $cleanupname(fname+"_RPolCorr",0)
-			RRPolCorr = str2num(M_xmlcontent[p][0])
-
-			xmlwavefmXPATH(fileID,"//dR","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) $cleanupname(fname+"_E",0)
-			Wave EE = $cleanupname(fname+"_E",0)
-			EE = str2num(M_xmlcontent[p][0])
-			
-			xmlwavefmXPATH(fileID,"//dRPolCorr","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) $cleanupname(fname+"_EPolCorr",0)
-			Wave EEPolCorr = $cleanupname(fname+"_EPolCorr",0)
-			EEPolCorr = str2num(M_xmlcontent[p][0])
+		case 4://Cell Selection
+			if(lba.eventmod==16 && col > 0)	//eventmod changes whether alt or ctrl are pressed 
+			//5 BITS (4 3 2 1 0) which can be filled. x0 = enter, x1 = left click, x2 = shift, x4 = ALT, x8 = ctrl, right = 16  Therefore crtl+left=9, shift+right=18
+				GetFileFolderInfo/q/z inputpathStr
+				if(V_flag)//path doesn't exist
+					Doalert 0, "Please enter a valid filepath for the data source"
+					return 0	
+				endif
 				
-			xmlwavefmXPATH(fileID,"//dQz","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) $cleanupname(fname+"_dq",0)
-			Wave dq = $cleanupname(fname+"_dq",0)
-			dq = str2num(M_xmlcontent[p][0])
-			
-			sort qq,qq,RR,RRPolCorr,EE,EEPolCorr,dQ
-			xmlclosefile(fileID,0)
-			
-			//			LoadWave/J/D/A/W/P=path_to_data/K=0 stringfromlist(ii,filenames)
-			//			loadedWavenames = S_wavenames
-			//			duplicate/o $(stringfromlist(0,loadedWavenames)),$("root:packages:platypus:data:Reducer:SLIM_plot:"+cleanupname(stringfromlist(ii,filenames),0)+"_q")
-			//			duplicate/o $(stringfromlist(1,loadedWavenames)),$("root:packages:platypus:data:Reducer:SLIM_plot:"+cleanupname(stringfromlist(ii,filenames),0)+"_R")
-			//			duplicate/o $(stringfromlist(2,loadedWavenames)),$("root:packages:platypus:data:Reducer:SLIM_plot:"+cleanupname(stringfromlist(ii,filenames),0)+"_E")
-			//			duplicate/o $(stringfromlist(3,loadedWavenames)),$("root:packages:platypus:data:Reducer:SLIM_plot:"+cleanupname(stringfromlist(ii,filenames),0)+"_dq")
-			//			Wave qq = $("root:packages:platypus:data:Reducer:SLIM_plot:"+cleanupname(stringfromlist(ii,filenames),0)+"_q")
-			//			Wave RR = $("root:packages:platypus:data:Reducer:SLIM_plot:"+cleanupname(stringfromlist(ii,filenames),0)+"_R")
-			//			Wave EE = $("root:packages:platypus:data:Reducer:SLIM_plot:"+cleanupname(stringfromlist(ii,filenames),0)+"_E")
-			//			Wave dq = $("root:packages:platypus:data:Reducer:SLIM_plot:"+cleanupname(stringfromlist(ii,filenames),0)+"_dq")
-			appendtograph/w=SLIM_PLOTwin RR vs qq
-			ErrorBars/T=0 $nameofwave(RR) Y,wave=(EE,EE)
-			appendtograph/w=SLIM_PLOTwin RRPolCorr vs qq
-			ErrorBars/T=0 $nameofwave(RRPoLCorr) Y,wave=(EEPolCorr,EEPolCorr)
-			ModifyGraph log(left)=1 //1
-			SetAxis left, 0.0000001, 3 // -0.1, 0.1  //
-			Variable n = 72*15/2.54
-			Variable m =  72*25/2.54
-			ModifyGraph width=m, height = n
-			//ModifyGraph expand=2
-			killwaves/z M_xmlcontent,W_xmlcontentnodes
-			//			for(jj=0 ; jj<itemsinlist(loadedWavenames);jj+=1)
-			//				killwaves/z $(stringfromlist(jj,loadedwavenames))
-			//			endfor
-		endfor
-		CommonColors("SLIM_PLOTwin")
-		Legend/C/N=text0/A=RT
-		cursor/A=1/W=SLIM_PLOTwin/H=1/F/P A $(stringfromlist(0,tracenamelist("SLIM_PLOTwin",";",1))) 0.5,0.5
-		showinfo
-		setdatafolder $cDF
-		return 0
-	catch
-		setdatafolder $cDF
-		return 0
-	endtry
-End
-
-Function SLIM_plotPolCorr(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, [expected_peak, rebinning, manual, normalise, saveSpectrum])
-	String inputpathStr, outputPathStr, fileNames
-	variable lowlambda, highlambda, background, rebinning, manual, normalise, saveSpectrum
-	variable/c expected_peak
-	inputpathStr = outputPathStr
-	string slimplotstring = ""
-	if(paramisdefault(expected_peak))
-		expected_peak = cmplx(ROUGH_BEAM_POSITION, NaN)
-	endif
-			
-	if(paramisdefault(manual))
-		manual = 0
-	endif
-	if(paramisdefault(normalise))
-		normalise = 0
-	endif
-	if(paramisdefault(saveSpectrum))
-		saveSpectrum = 0
-	endif
-
-	GetFileFolderInfo/q/z inputPathStr
-	if(V_flag)//path doesn't exist
-		print "ERROR please give valid input path (SLIM_plotPolCorr)"
-		return 1	
-	endif
-
-	variable ii
-	string tempDF,tempFileNameStr
-	
-	for(ii=0 ; ii<itemsinlist(filenames) ; ii += 1)
-		tempFileNameStr = stringfromlist(ii, fileNames)
-		
-		//trying to plot reduced data
-		if(stringmatch(".xml",tempfilenamestr[strlen(tempfilenamestr)-4,strlen(tempfilenamestr)-1]))
-			if(SLIM_plot_reducedPolCorr(inputPathStr, filenames))
-				print "ERROR while trying to plot reduced data (SLIM_plotPolCorr)"
-				return 1
+				newpath/o/q/z pla_temppath_SLIM_listproc, inputpathStr	
+				filenames = indexedfile(pla_temppath_SLIM_listproc, -1, ".hdf")	
+				filenames = sortlist(filenames,";",17)
+				killpath/z pla_temppath_SLIM_listproc
+				popupcontextualmenu "-Filldown-;"+filenames
+				switch(V_Flag)
+					case 1:
+						variable ii
+						for(ii=row+1 ; ii<dimsize(listWave,0) && strlen(listWave[ii][col])==0 ; ii+=1)
+							listwave[ii][col] = listwave[ii-1][col]
+						endfor
+						break
+					default:
+						lba.listwave[row][col]=removeending(S_Selection,".nx.hdf")
+						break
+				endswitch
 			endif
-			return 0
-		endif
-		
-		if(stringmatch(".itx",tempfilenamestr[strlen(tempfilenamestr)-4,strlen(tempfilenamestr)-1]))
-			if(SLIM_plot_scans(inputPathStr, filenames))
-				print "ERROR while trying to plot reduced data (SLIM_plotPolCorr)"
-				return 1
+			if(lba.eventmod==9 && col > 0)
+				//printf "NOTE: Please note the entry help for the direct beams by \"ctrl+left click\" on the three right most columns.\r\r"
+				if(col==1)
+					printf "With the Include button, you can specify whether a specific polarization channel has been measured\r"
+					printf " and should be included in the reduction and polarization correction." 
+					printf "This should be at least the I00=R-- and I11=R++ channels.\r\r" 
+				elseif(col==2)
+					printf "Please enter the scalefactor of the measured reflectivities.\r"
+					printf "You can choose different scalings for each channel, but note that this will affect the polarization correction.\r\r"
+				elseif(col>2 && col<6)
+					printf "Please insert the number of the reflected-spectrum datafile you want to reduce:\r" 
+					printf "You can enter either the full file name, e.g. PLP0001111, or just the number, i.e. without the leading PLP and zeros.\r"
+					printf "The first three COLUMNS contain the measured angles, in incremental order.\r"
+					printf "RIGHT click to obtain a list of files contained in your input folder.\r"
+					printf "If you have not measured all three angles, leave missing fields blank.\r"
+					printf "The ROWS contain the different polarization state, as defined by the spin flipper setting used in the experiment.\r"
+					printf "In case not all channels have been measured, leave the respective fields blank\r"
+					printf "BUT you need to provide AT LEAST one I00=R-- and one I11=R++ channel for the reduction to work.\r\r"
+				elseif(col>5 && col<9)
+					printf "Please insert the direct beam (DB) filenames to normalize the recorded reflectivity spectra.\r"
+					printf "NOTE: You only have to provide a single direct beam for all channels to make a reduction (leave other fields blank).\r"
+					printf "Case 0: No direct beam provided. The output of the reduction will only be the polarization corrected and reduced spectra, not the reflectivity.\r"
+					printf "Case 1: Only DB for OFF/OFF or ON/ON is provided: All channels are divided by the same DB The polarization correction is just a scaling with the efficiency.\r"
+					printf "Case 2: The DB for OFF/OFF and ON/ON are the same: NO polarization correction is performed.\r"
+					printf "Case 3: The DB for OFF/OFF and ON/ON are provided and DIFFERENT: The I00 and I01 are divided by DB OFF/OFF; the I11 and I10 are divided by DB ON/ON\r"
+					printf "Case 4: In the case you also provide DB for the SF channels ON/OFF and OFF/ON, a more complete polarization correction of the direct beams will be performed.\r"
+					printf "The DB division is the same as for Case 3.\r\r"
+				endif
 			endif
-			return 0
-		endif
-
-		if(stringmatch(".spectrum", tempfilenamestr[strlen(tempfilenamestr) - 9, strlen(tempfilenamestr) - 1]))	
-			if(SLIM_plot_spectrum(inputPathStr, filenames))
-				print "ERROR while trying to plot spectrum data (SLIM_plotPolCorr)"
-				return 1
-			endif
-			return 0
-		endif
-				
-		if(stringmatch(".xrdml",tempfilenamestr[strlen(tempfilenamestr)-6,strlen(tempfilenamestr)-1]))	
-			if(SLIM_plot_xrdml(inputPathStr, filenames))
-				print "ERROR while trying to plot XRDML data (SLIM_plotPolCorr)"
-				return 1
-			endif
-			return 0
-		endif
-		
-		//now try to plot NeXUS data
-		if(!stringmatch(".nx.hdf", tempfilenamestr[strlen(tempfilenamestr)-7,strlen(tempfilenamestr)-1]))
-			Doalert 0, "ERROR: this isn't a NeXUS file (SLIM_plotPolCorr)"
-			return 1
-		endif
-		tempFileNameStr = removeending(stringfromlist(ii,fileNames),".nx.hdf")
-		
-		GetFileFolderInfo/q/z outputPathStr
-		if(V_flag)//path doesn't exist
-			print "ERROR please give valid output path as well (SLIM_plotPolCorr)"
-			return 1	
-		endif
-	
-		if(paramisdefault(rebinning) || rebinning <= 0)
-			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_peak=expected_peak, manual=manual, normalise = normalise, savespectrum = saveSpectrum))
-				print "ERROR: problem with one of the files you are trying to open (SLIM_plotPolCorr)"
-				return 1
-			endif
-		else
-			Wave W_rebinboundaries = Pla_gen_binboundaries(lowlambda, highlambda, rebinning)
-			if(processNeXUSfile(inputPathStr, outputPathStr, tempFileNameStr, background, lowLambda, highLambda, expected_peak=expected_peak, rebinning=W_rebinboundaries,manual=manual, normalise = normalise, savespectrum = saveSpectrum))
-				print "ERROR: problem with one of the files you are trying to open (SLIM_plotPolCorr)"
-				return 1
-			endif		
-		endif
-	endfor
-
-	//tempDF = "root:packages:platypus:data:Reducer:"+cleanupname(removeending(filename,".nx.hdf"),0)
-	//this datafolder should have:
-	//1) M_topAndTail
-	//2) M_topandtailSD
-	//3) W_spec
-	//4) W_specSD
-	//5) W_specTOF
-	//6) W_specTOFHIST
-	//7) W_lambda
-	//8) W_lambdaSD
-	//9) W_lambdaHIST
-	//and (optionally)
-	//10) W_ref
-	//11) W_refSD
-	//12) W_q
-	//13) W_qSD
-
-	killwaves/z W_rebinboundaries
-	//make a graph called SLIM_PLOT
-	dowindow/k SLIM_PLOTwin
-	display/K=1/W=(30,0,600,350) as "SLIM plot (C) Andrew Nelson + ANSTO 2008 + Thomas Saerbeck 2012"
-	dowindow/c SLIM_PLOTwin
-	setwindow SLIM_PLOTwin, userdata(filenames) = filenames
-	setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr
-	
-	sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\",%g, %g, %d, expected_peak = cmplx(%g, %g), rebinning=%g, manual=%d, normalise=%d, saveSpectrum=%d)", inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, background, real(expected_peak), imag(expected_peak), rebinning, manual, normalise, saveSpectrum
-	setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
-	
-	controlbar/W=SLIM_PLOTwin 30
-	popupmenu/z graphtype,win=SLIM_PLOTwin, bodyWidth=160,proc=popup_SLIM_PLOT
-	popupmenu/z graphtype,win=SLIM_PLOTwin, value="SPEC vs Lambda;SPEC vs TOF;Detector vs Lambda;Detector vs TOF;Ref vs Q;Ref vs Lambda;Ref vs TOF"
-	checkbox/z isLog,win=SLIM_PLOTwin, title="LOG?",pos={169,5},proc=checkBox_SLIM_PLOT
-	button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOTPolCorr,title="Refresh",pos = {228,3},size={100,20}, fColor=(0,52224,26368)
-	//	button getimagelineprofile,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Line Profile",pos = {340,3},size={100,20} 
-	if(SLIM_redisplay(0,0))
-		print "ERROR while trying to redisplay (SLIM_plotPolCorr)"
-		return 1
-	endif
-End
-
-
-Function button_SLIM_PLOTPolCorr(ba) : ButtonControl
-	STRUCT WMButtonAction &ba
-
-	NVAR lowLambda = root:packages:platypus:data:Reducer:lowLambda
-	NVAR highLambda = root:packages:platypus:data:Reducer:highLambda
-	Wave/t angledata_list = root:packages:platypus:data:Reducer:angledata_list
-	NVAR rebinpercent = root:packages:platypus:data:Reducer:rebinpercent
-	SVAR inputPathStr = root:packages:platypus:data:Reducer:inputPathStr
-	SVAR outputPathStr = root:packages:platypus:data:Reducer:outputPathStr
-	NVAR backgroundsbn =  root:packages:platypus:data:Reducer:backgroundsbn
-	NVAR manualbeamfind =  root:packages:platypus:data:Reducer:manualbeamfind
-	NVAR normalisebymonitor = root:packages:platypus:data:Reducer:normalisebymonitor
-	NVAR saveSpectrum =  root:packages:platypus:data:Reducer:saveSpectrum
-	
-	variable background,isLOG,type, rebinning
-	string fileNames = "", pathStr = "", slimplotstring = ""
-
-	switch( ba.eventCode )
-		case 2: // mouse up
-			strswitch(ba.ctrlname)
-				case "refresh":
-					filenames = GetUserData("SLIM_PLOTwin","","filenames")
-					print filenames, "here should be the filenames (button_SLIM_PLOTPolCorr(ba))"
-					pathStr = GetUserData("SLIM_PLOTwin","","pathStr")
-					slimplotstring = GetUserData("SLIM_PLOTwin","","slimplotstring")
-					print slimplotstring
-					controlinfo/w=SLIM_PLOTwin isLog
-					isLog = V_Value
-					controlinfo graphtype
-					type = V_Value-1			
-					rebinning = rebinpercent
-
-					//	execute/q slimplotstring
-					SLIM_plotPolCorr(pathStr, pathStr, fileNames,lowLambda,highLambda, backgroundsbn, rebinning = rebinning, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, manual = manualbeamfind)
-					if(!stringmatch(stringfromlist(0,filenames),"*.xml") && !stringmatch(stringfromlist(0,filenames),"*.xrdml") && !stringmatch(stringfromlist(0,filenames),"*.spectrum"))
-						SLIM_redisplay(type,isLog)
-					endif
-					break
-				case "getimagelineprofile":
-					WMCreateImageLineProfileGraph();
-					break
-			endswitch
+			break		
+		case 3: // double click
+			break
+		//case 4: // cell selection
+		case 5: // cell selection plus shift key
+			break
+		case 6: // begin edit
+			break
+		case 7: // finish edit
 			break
 	endswitch
+
 	return 0
 End
 
 
 
+Function  reducerVariablesPanelPOL() : Panel
+	PauseUpdate; Silent 1		// building window...
+	Dowindow/k SLIMvarpanel
+	NewPanel /K=1 /W=(385,164,588,390)
+	Dowindow/c SLIMvarpanel
+	
+	Newdatafolder/o root:packages
+	Newdatafolder /o root:packages:platypus
+	Newdatafolder /o root:packages:platypus:data
+	//directory for the reduction package
+	Newdatafolder /o root:packages:platypus:data:Reducer
+	
+	NVAR backgroundsbn = root:packages:platypus:data:Reducer:backgroundsbn
+	NVAR manualbeamfind =  root:packages:platypus:data:Reducer:manualbeamfind
+	NVAR normalisebymonitor = root:packages:platypus:data:Reducer:normalisebymonitor
+	NVAR saveSpectrum = root:packages:platypus:data:Reducer:saveSpectrum
+	NVAR saveoffspec = root:packages:platypus:data:Reducer:saveoffspec
+	NVAR streamedReduction = root:packages:platypus:data:Reducer:streamedReduction
+	 
+	SetVariable lowLambda_tab0,pos={10,10},size={177,16},title="lowWavelength", win=SLIMvarpanel
+	SetVariable lowLambda_tab0,fSize=10, win=SLIMvarpanel
+	SetVariable lowLambda_tab0,limits={0.5,30,0.1},value= root:packages:platypus:data:Reducer:lowLambda, win=SLIMvarpanel
+	SetVariable highLambda_tab0,pos={10,30},size={178,16},title="highWavelength", win=SLIMvarpanel
+	SetVariable highLambda_tab0,fSize=10, win=SLIMvarpanel
+	SetVariable highLambda_tab0,limits={0.5,30,0.1},value= root:packages:platypus:data:Reducer:highLambda, win=SLIMvarpanel
+	SetVariable rebinpercent_tab0,pos={10,51},size={177,16},title="Rebin %tage ", win=SLIMvarpanel
+	SetVariable rebinpercent_tab0,fSize=10, win=SLIMvarpanel
+	SetVariable rebinpercent_tab0,limits={-1,11,1},value= root:packages:platypus:data:Reducer:rebinpercent, win=SLIMvarpanel
+	SetVariable expected_centre_tab0,pos={8,72},size={178,16},title="expected centre", win=SLIMvarpanel
+	SetVariable expected_centre_tab0,fSize=10, win=SLIMvarpanel
+	SetVariable expected_centre_tab0,limits={-220,220,1},value= root:packages:platypus:data:Reducer:expected_centre, win=SLIMvarpanel
+	CheckBox background_tab0,pos={9,94},size={138,14},title="background subtraction?", win=SLIMvarpanel
+	CheckBox background_tab0,fSize=10,variable= root:packages:platypus:data:Reducer:backgroundsbn, win=SLIMvarpanel, value = backgroundsbn
+	CheckBox manual_tab0,pos={9,115},size={109,14},title="manual beam find?", win=SLIMvarpanel, value = manualbeamfind
+	CheckBox manual_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:manualbeamfind
+	CheckBox normalise_tab0,pos={9,136},size={155,14},title="normalise by beam monitor?", win=SLIMvarpanel
+	CheckBox normalise_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:normalisebymonitor, value = normalisebymonitor
+	CheckBox saveSpectrum_tab0,pos={9,157},size={94,14},title="save spectrum?", win=SLIMvarpanel
+	CheckBox saveSpectrum_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:saveSpectrum, value = saveSpectrum
+	CheckBox saveoffspec_tab0,pos={9,178},size={94,14},title="save offspecular map?", win=SLIMvarpanel
+	CheckBox saveoffspec_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:saveoffspec, value =  saveoffspec
+	CheckBox streamedreduction_tab0,pos={9,199},size={94,14},title="do streamed reduction?", win=SLIMvarpanel
+	CheckBox streamedreduction_tab0,fSize=10, win=SLIMvarpanel, variable = root:packages:platypus:data:Reducer:streamedReduction, value =  streamedReduction, disable=2
+End
+
+Function SLIMPOL_buttonprocpol(ba) : ButtonControl //SLIM_buttonproc
+	STRUCT WMButtonAction &ba
+	//this button handler deals with all button press events in the SLIM button window
+	string cDF = getdatafolder(1)
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+			
+			// click code here
+			NVAR lowLambda = root:packages:platypus:data:Reducer:lowLambda
+			NVAR highLambda = root:packages:platypus:data:Reducer:highLambda
+			Wave/t angledata_listPOL = root:packages:platypus:data:Reducer:angledata_listPOL
+			Wave angledata_selPOL= root:packages:platypus:data:Reducer:angledata_selPOL
+			Wave angledata_colorPOL= root:packages:platypus:data:Reducer:angledata_colorPOL
+			SVAR inputpathStr = root:packages:platypus:data:Reducer:inputpathStr
+			SVAR outputpathStr = root:packages:platypus:data:Reducer:outputpathStr
+			SVAR waterrunfile = root:packages:platypus:data:Reducer:waterrunfile
+			 
+			NVAR expected_centre = root:packages:platypus:data:Reducer:expected_centre
+			NVAR rebinpercent = root:packages:platypus:data:Reducer:rebinpercent
+			NVAR backgroundsbn =  root:packages:platypus:data:Reducer:backgroundsbn
+			NVAR manualbeamfind =  root:packages:platypus:data:Reducer:manualbeamfind
+			NVAR normalisebymonitor = root:packages:platypus:data:Reducer:normalisebymonitor
+			NVAR saveSpectrum =  root:packages:platypus:data:Reducer:saveSpectrum
+			NVAR saveoffspec =  root:packages:platypus:data:Reducer:saveoffspec
+			NVAR/z streamedReduction = root:packages:platypus:data:Reducer:streamedReduction
+			NVAR measwithanalyzer=root:packages:platypus:data:Reducer:measwithanalyzer
+			NVAR verbosevar=root:packages:platypus:data:Reducer:verbosevar
+			NVAR donotoverwrite=root:packages:platypus:data:Reducer:donotoverwrite
+			
+			variable rebinning,ii,jj, dontoverwrite = 0, temp, maxtime, mintime
+			variable rr, storefilelist
+			string tempDF,filenames, water = "", tempangledata_listPOL
+			string fileNameList="", righteousFileName = "", fileFilterStr = ""
+			string cmd, template
+			string storestringlist,storestringlisttemp, loadstringlist, loadstringsel, tempdeststring, thepolpath,polfilenamelists
+			strswitch(ba.ctrlname)
+				
+				case "reduce_tab0":
+					if(ba.eventmod==9)
+						printf "Reduce (with polarization correction) datafiles specified in the table below.\r"
+						printf "You need to provide at least one OFF/OFF and one ON/ON spectrum in order to perform a reduction.\r\r"
+						break
+					endif 
+					GetFileFolderInfo/q/z inputpathStr
+					if(V_flag)//path doesn't exist
+						Doalert 0, "Please enter a valid filepath for the data source"
+						return 0	
+					endif
+					GetFileFolderInfo/q/z outputpathStr
+					if(V_flag)//path doesn't exist
+						Doalert 0, "Please enter a valid filepath for the output files"
+						return 0	
+					endif
+					//currently, a streamed reduction is not possible.
+					streamedReduction = 0
+					if(streamedReduction)
+//							prompt temp, "time each bin (s)"
+//							prompt maxtime, "ending time (s)"
+//							prompt mintime, "starting time (s)"
+//							maxtime = 3600
+//							mintime = 0
+//							temp = 60
+//							Doprompt "What timescales did you want for the streamed reduction?", mintime, maxtime, temp
+//							if(V_flag)
+//								abort
+//							endif
+//							streamedReduction = temp
+//							
+//							make/n=(ceil((maxtime - mintime) / temp) + 1)/free/d timeslices
+//							timeslices = temp * p + mintime
+//							if(timeslices[numpnts(timeslices) - 1] > maxtime)
+//								timeslices[numpnts(timeslices) - 1] = maxtime
+//							endif
+//							
+//							dontoverwrite = 1
+						Doalert 0, "A streamed reduction of polarized data is not possible at this stage!"
+						return 0	
+					endif
+					
+					//did you want to rebin?
+					rebinning = rebinpercent
+					if(strlen(waterrunfile)>0)
+						//ask if first three are PLP, otherwise change something...
+						string testwaterrunfilestring 
+						if(stringmatch(waterrunfile,"PLP*"))
+							if(stringmatch(waterrunfile,"PLP"))
+								print "ERROR - file name is incomplete (SLIMPOL_buttonprocpol)",  waterrunfile;	return 1
+							else
+								waterrunfile= replacestring("PLP", waterrunfile, "")
+							endif
+						endif
+						if(numtype(str2num(waterrunfile)) == 2)	
+							print "ERROR - file name is incorrect (no PLP + number format) (SLIMPOL_buttonprocpol)",  waterrunfile;	return 1	
+						endif
+						if(expandStrIntoPossibleFileName(waterrunfile, righteousFileName)) //add in the reflected beam run
+							print "ERROR - file name is incorrect (no number format) (SLIMPOL_buttonprocpol)",  waterrunfile;	return 1
+						endif
+						waterrunfile = righteousfileName
+					endif					
+					for(ii=0 ; ii < dimsize(angledata_listPOL, 0) ; ii+=1) //go through the table of angledata_list, ii=rows
+						if(!(angledata_selPOL[ii][1] & 2^4)) //if the include button of the row is not ticked, continue: 2^4=48=selected button otherwise 32 //strlen(angledata_listPOL[ii][4]) == 0 || 
+							continue
+						endif
+						if(numtype(str2num(angledata_listPOL[ii][2])))
+							angledata_listPOL[ii][2] = "1"
+							print "Warning setting scale factor to 1 ", angledata_listPOL[ii][2]
+						endif
+						
+						fileNameList = ""
+						for(jj = 3 ;  jj <=8  ; jj+=1) //strlen(angledata_listPOL[ii][jj])>0 && ,,jj=cols
+							//print ii, jj, angledata_listPOL[ii][jj]
+							if(stringmatch(angledata_listPOL[ii][jj],"PLP*"))
+								if(stringmatch(angledata_listPOL[ii][jj],"PLP"))
+									print "ERROR - file name is incomplete (SLIMPOL_buttonprocpol)",  angledata_listPOL[ii][jj];	return 1
+								else		
+									angledata_listPOL[ii][jj]= replacestring("PLP", angledata_listPOL[ii][jj], "")
+								endif
+							endif
+							if(numtype(str2num(angledata_listPOL[ii][jj])) == 2&&strlen(angledata_listPOL[ii][jj])>0)	
+								print "ERROR - file name is incorrect 1 (SLIMPOL_buttonprocpol)",  angledata_listPOL[ii][jj];	return 1	
+							endif
+							if(measwithanalyzer==1)
+								if(strlen(angledata_listPOL[ii][jj])<=0)
+									angledata_listPOL[ii][jj] = "00"
+								elseif(stringmatch(angledata_listPOL[ii][jj],"0"))
+									angledata_listPOL[ii][jj] = "00"
+								elseif(stringmatch(angledata_listPOL[ii][jj],"00"))
+									angledata_listPOL[ii][jj] = "00"
+								else
+									if(expandStrIntoPossibleFileName(angledata_listPOL[ii][jj], righteousFileName)) //add in the reflected beam run
+										print "ERROR - file name is incorrect 2 (SLIMPOL_buttonprocpol)",  angledata_listPOL[ii][jj];	return 1
+									endif
+									angledata_listPOL[ii][jj] = righteousFileName	
+								endif
+							elseif(measwithanalyzer==0)
+								if(strlen(angledata_listPOL[ii][jj])<=0)
+									angledata_listPOL[ii][jj] = "0"
+								elseif(stringmatch(angledata_listPOL[ii][jj],"00"))
+									angledata_listPOL[ii][jj] = "0"
+								elseif(stringmatch(angledata_listPOL[ii][jj],"0"))
+									angledata_listPOL[ii][jj] = "0"
+								elseif(ii==1)
+									angledata_listPOL[ii][jj]= "0"
+								elseif(ii==2)
+									angledata_listPOL[ii][jj]= "0"
+								else
+									if(expandStrIntoPossibleFileName(angledata_listPOL[ii][jj], righteousFileName)) //add in the reflected beam run
+										print "ERROR - file name is incorrect (SLIMPOL_buttonprocpol)",  angledata_listPOL[ii][jj];	return 1
+									endif
+									angledata_listPOL[ii][jj] = righteousFileName	
+								endif
+							else
+								print "Something is wrong with the analyzer included setting (SLIMPOL_buttonprocpol)",  angledata_listPOL[ii][jj];	return 1
+							endif
+						endfor 
+					
+					endfor
+					//Gather the filenames in the list and put the in the right order to be fed into runfilenames
+					for(jj = 3;  jj <6  ; jj+=1)
+						if(jj>3)
+						if(stringmatch(angledata_listPOL[0][jj],"00") || stringmatch(angledata_listPOL[0][jj], "0")) //if reflectangle1 is 0, disregard row 2^4=48=selected button otherwise 32
+							continue
+						endif
+						endif
+						for(ii = 0;  ii <4  ; ii+=1)	
+						 	if(measwithanalyzer==1)
+								if(strlen(angledata_listPOL[ii][jj])<=0|| !(angledata_selPOL[ii][1] & 2^4))
+									tempangledata_listPOL = "00"
+								else 
+									tempangledata_listPOL = 	angledata_listPOL[ii][jj]
+								endif
+							elseif(measwithanalyzer==0)
+								if(strlen(angledata_listPOL[ii][jj])<=0|| !(angledata_selPOL[ii][1] & 2^4))
+									tempangledata_listPOL = "0"
+								else 
+									tempangledata_listPOL = 	angledata_listPOL[ii][jj]
+								endif
+							else
+								print "ERROR - Could not sort out the filename order (SLIMPOL_buttonprocpol)",  angledata_listPOL[ii][jj];	return 1
+							endif	
+							fileNameList += tempangledata_listPOL+";"
+						endfor
+						for(ii = 0;  ii <4  ; ii+=1)
+							rr=jj+3 //in order to cover the direct beams
+						 	if(measwithanalyzer==1)
+								if(strlen(angledata_listPOL[ii][rr])<=0|| !(angledata_selPOL[ii][1] & 2^4))
+									tempangledata_listPOL = "00"
+								else 
+									tempangledata_listPOL = 	angledata_listPOL[ii][rr]
+								endif
+							elseif(measwithanalyzer==0)
+								if(strlen(angledata_listPOL[ii][rr])<=0|| !(angledata_selPOL[ii][1] & 2^4))
+									tempangledata_listPOL = "0"
+								else 
+									tempangledata_listPOL = 	angledata_listPOL[ii][rr]
+								endif
+							else
+								print "ERROR - Could not sort out the filename order (SLIMPOL_buttonprocpol)",  angledata_listPOL[ii][rr];	return 1
+							endif
+							
+							//we might assume, that if no first direct beam is given, only a spectrum output will be given
+							//if the first direct beam but no second direct beam is given, we might replace it with the first.
+							if(!stringmatch(angledata_listPOL[ii][6],"00") && !stringmatch(angledata_listPOL[ii][6], "0"))
+								if(stringmatch(angledata_listPOL[ii][rr],"00") || stringmatch(angledata_listPOL[ii][rr], "0"))
+										tempangledata_listPOL=angledata_listPOL[ii][6]
+								endif
+							endif
+							fileNameList += tempangledata_listPOL+";"
+						endfor
+						fileNameList = removeending(fileNameList,";")
+						fileNameList += ":"		
+					endfor
+						fileNameList = removeending(fileNameList,":")	
+						
+						//some of the scalefactors might yet not be given, but we need them...
+						variable sc1,sc2,sc3,sc4
+						sc1 = str2num(angledata_listPOL[0][2]);sc2=str2num(angledata_listPOL[1][2]);sc3=str2num(angledata_listPOL[2][2]);sc4=str2num(angledata_listPOL[3][2])
+						if(numtype(sc1))
+								sc1 = 1
+							if((angledata_selPOL[0][1] & 2^4))
+								print "Warning setting scale factor I00 to 1 "
+							endif
+						endif
+						if(numtype(sc2))
+							 sc2 = 1
+							if((angledata_selPOL[1][1] & 2^4))
+							print "Warning setting scale factor I01 to 1 "
+						endif
+						endif
+						if(numtype(sc3))
+							 sc3 = 1
+							if((angledata_selPOL[2][1] & 2^4))
+							print "Warning setting scale factor I10 to 1 "
+						endif
+						endif
+						if(numtype(sc4))
+							 sc4 = 1
+							if((angledata_selPOL[3][1] & 2^4))
+							print "Warning setting scale factor I11 to 1 "
+						endif
+						endif
+						if(stringmatch(stringfromlist(0,filenamelist),"00")&&stringmatch(stringfromlist(3,filenamelist),"00"))
+							print "ERROR, you need to give at least the first angles of I00=R-- (or I0=R-) and I11=R++ (or I1=R+) for this to work!"
+							printf "Aborting the reduction\r\r"
+							break
+						elseif(stringmatch(stringfromlist(0,filenamelist),"0")&&stringmatch(stringfromlist(3,filenamelist),"0"))
+							print "ERROR, you need to give at least the first angles of I00=R-- (or I0=R-) and I11=R++ (or I1=R+) for this to work!"
+							printf "Aborting the reduction\r\r"
+							break
+						endif
+						
+						if(!streamedReduction)
+							template =  " Polarized Reduction(\"%s\",\"%s\",scale I00 = %g,scale I01 = %g,scale I10 = %g,scale I11 = %g,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_peak=cmplx(%g, NaN), manual = %g, dontoverwrite = %g, normalise = %g, saveSpectrum = %g, saveoffspec=%g, verbose=%g)"
+							sprintf cmd, template,inputpathStr,outputPathStr,sc1,sc2,sc3,sc4, fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,waterrunfile, expected_centre, manualbeamfind, donotoverwrite, normalisebymonitor, saveSpectrum, saveoffspec, verbosevar
+							cmdToHistory(cmd)
+							if(PolarizedReduction(inputpathStr, outputPathStr, sc1, sc2,sc3,sc4,fileNameList, lowlambda, highlambda, rebinning, water=waterrunfile, background=backgroundsbn, expected_peak= cmplx(expected_centre, NaN), manual=manualbeamfind, dontoverwrite=donotoverwrite, normalise=normalisebymonitor, saveSpectrum=saveSpectrum, saveoffspec=saveoffspec, verbose=verbosevar))
+								print "ERROR something went wrong when calling Polarized Reduction reduce (SLIMPOL_buttonprocpol)";  return 1
+							endif
+						else
+							print "streamed reductionshould not happen!"
+							//template =  "reduceasinglefile(\"%s\",\"%s\",%s,\"%s\",%g,%g,%g,background = %g,water=\"%s\", expected_peak=cmplx(%g, NaN), manual = %g, dontoverwrite = 1, normalise = %g, saveSpectrum = %g, saveoffspec=%g, timeslices = ??wave??)"
+							//sprintf cmd, template, replacestring("\\", inputpathStr, "\\\\"), replacestring("\\", outputpathStr, "\\\\"), angledata_list[ii][2], fileNameList,lowLambda,highLambda, rebinning,  backgroundsbn,water, expected_centre, manualbeamfind, normalisebymonitor, saveSpectrum, saveoffspec
+							//cmdToHistory(cmd)								
+							//if(!strlen(reduceASingleFile(inputpathStr, outputPathStr, str2num(angledata_list[ii][2]), fileNameList,lowLambda,highLambda, rebinning, background = backgroundsbn, water = water, expected_peak = cmplx(expected_centre, NaN), manual=manualbeamfind, dontoverwrite = 1, normalise = normalisebymonitor, saveSpectrum = saveSpectrum, saveoffspec=saveoffspec)))//, timeslices=timeslices
+							//	print "ERROR something went wrong when calling reduce (SLIM_buttonproc)";  return 1
+							//endif
+						endif
+					break
+				case "showreducervariables_tab0":
+					if(ba.eventmod==9)
+						printf "--Click to open a new panel in which the reducer variables are specified.--\r"
+						printf "Careful, the values change if you open a panel for unpolarized reduction.\r\r"
+						break
+					endif 
+					reducerVariablesPanelPOL() 
+					break
+				case "downloadPlatdata_tab0":
+					if(ba.eventmod==9)
+						printf "--Click to download PLATYPUS data from the server (Internet connection required).--\r\r"
+						break
+					endif 
+					GetFileFolderInfo/q/z inputpathStr
+					if(V_flag)//path doesn't exist
+						Doalert 0, "Please enter a valid filepath to place the downloaded files"
+						return 0	
+					endif
+					downloadplatypusdata(inputPathStr = inputPathStr)
+					break
+				case "plot_tab0":
+					if(ba.eventmod==9)
+						printf "--Plot raw and reduced PLATYPUS data.--\r\r"
+						break
+					endif 
+					Doalert 1, "Are the files you want to view in the input directory (YES) or the output directory (NO)?"
+					string thePathstring = ""
+					if(V_flag == 1)
+						thePathstring = inputpathStr
+						fileFilterStr = ".hdf;.xml;.itx;.xrdml;.spectrum;"
+					elseif(V_flag == 2)
+						thePathstring = outputpathStr
+						fileFilterStr = ".xml;.itx;.xrdml;.spectrum;.hdf;"
+					endif
+					
+					GetFileFolderInfo/q/z thePathstring
+					if(V_flag)//path doesn't exist
+						Doalert 0, "Please enter a valid filepath for the data source"
+						return 0	
+					endif
+					//did you want to rebin?
+					rebinning = rebinpercent
+									
+					//find the files with the new multiopenfiles XOP
+					Newpath/o/q/z pla_temppath_read, thePathstring
+					multiopenfiles/P=pla_temppath_read/M="Select the files you wish to view"/F=fileFilterStr
+					killpath/z pla_temppath_read
+					if(V_Flag!=0)
+						return 0
+					endif
+
+					string pathSep
+					strswitch(UpperStr(IgorInfo(2)))
+						case "MACINTOSH":
+							pathSep = ":"
+							break
+						case "WINDOWS":
+							pathSep = "\\"
+							break
+					endswitch
+										
+					thePathstring = Parsefilepath(1, Stringfromlist(0, S_filename), pathSep, 1, 0)					
+					filenames = ""
+
+					for(ii=0 ; ii<itemsinlist(S_filename) ; ii+=1)
+						filenames += ParseFilePath(0, stringfromlist(ii, S_filename), pathSep, 1, 0)+";"
+					endfor
+					
+					if(itemsinlist(filenames)==0)
+						return 0
+					endif
+					
+					sprintf cmd, "slim_plot(\"%s\",\"%s\",\"%s\",%g,%g,%g,expected_peak=cmplx(%g, %g), rebinning=%g, manual=%g, normalise=%g, saveSpectrum = %g)",inputPathStr, outputPathStr, filenames, lowLambda,highLambda, backgroundsbn,expected_centre, NaN, rebinpercent, manualbeamfind, normalisebymonitor, saveSpectrum
+					cmdToHistory(cmd)
+						
+					if(slim_plot(thePathstring, outputPathStr, fileNames,lowLambda,highLambda,backgroundsbn, expected_peak = cmplx(expected_centre, NaN), rebinning = rebinpercent, manual = manualbeamfind, normalise = normalisebymonitor, saveSpectrum = saveSpectrum))
+						print "ERROR while trying to plot (SLIM_buttonproc)"
+						return 0
+					endif
+					break
+				case "clear_tab0":
+					if(ba.eventmod==9)
+						printf "--Clear all data entered in the datafiles table. The parameters specified in the reducer variables and the waterrun remain.--\r\r"
+						break
+					endif 
+					angledata_listPOL=""
+					angledata_listPOL[0][0] = "I00: OFF/OFF = R--"
+					angledata_listPOL[1][0] = "I01: OFF/ON = R-+"
+					angledata_listPOL[2][0] = "I10: ON/OFF = R+-"
+					angledata_listPOL[3][0] = "I11: ON/ON = R++"
+					//angledata_selPOL[][0] = 0x01
+					angledata_selPOL[][1] = 0x20//2^5
+					angledata_selPOL[][2]=0x02
+					angledata_selPOL[][3]=0x02
+					angledata_selPOL[][4]=0x02
+					angledata_selPOL[][5]=0x02
+					angledata_selPOL[][6]=0x02
+					angledata_selPOL[][7]=0x02
+					angledata_selPOL[][8]=0x02
+					angledata_selPOL[][][1]= 1
+								
+				break
+				case "storeangleslist_tab0":
+					if(ba.eventmod==9)
+						printf "--Store the list of angles to IGOR in order to recall the table at a later state. --\r"
+						break
+					endif 
+						string dest, destination, selectfile
+						Prompt dest, "Please enter a name for the list to be stored (no special characters, no spaces)."
+						Prompt destination, "Do you want to store the list to hard drive? Type in a destination file name"
+						Prompt selectfile, "Or select file from disk below to overwrite an existing file.", popup, "New file;Select file from disk to overwrite"
+						string helper="No special characters or spaces allowed.\r The ending _StoredAnglelist will be added to the string.\r If a name is given in second line, file will be saved to hard drive.\r The path given in the reducer panel will be used."
+						DoPrompt/HELP=helper "Enter destination", dest, destination, selectfile
+						if(V_Flag)
+							break
+						elseif(strlen(dest)>0)
+						storestringlist = "root:packages:platypus:data:Reducer:" + dest + "_StoredAnglelist"
+						make/n=(23,9)/o/t $(storestringlist) //list
+						wave/t storelist = $(storestringlist)
+						storelist = ""
+						storelist[0][] = angledata_listPOL[0][q]						
+						storelist[1][] = angledata_listPOL[1][q]
+						storelist[2][] = angledata_listPOL[2][q]
+						storelist[3][] = angledata_listPOL[3][q]
+						storelist[4][] = num2str(angledata_selPOL[0][q])						
+						storelist[5][] = num2str(angledata_selPOL[1][q])
+						storelist[6][] = num2str(angledata_selPOL[2][q])
+						storelist[7][] = num2str(angledata_selPOL[3][q])
+						storelist[8][0] = "Input Path"; storelist[8][1] = inputpathStr; 
+						storelist[9][0] = "Output Path"; storelist[9][1] = outputpathStr;
+						storelist[10][0] = "Waterrun"; storelist[10][1] = waterrunfile;
+						storelist[11][0] = "Low Wavelength"; storelist[11][1] = num2str(lowLambda);
+						storelist[12][0] = "High Wavelength"; storelist[12][1] = num2str(highLambda);
+						storelist[13][0] = "Rebin %tage"; storelist[13][1] = num2str(rebinpercent);
+						storelist[14][0] = "expected centre"; storelist[14][1] = num2str(expected_centre);
+						storelist[15][0] = "Background Subtraction"; storelist[15][1] = num2str(backgroundsbn);
+						storelist[16][0] = "Manual Beam Find"; storelist[16][1] = num2str(manualbeamfind);
+						storelist[17][0] = "Normalize By Monitor"; storelist[17][1] = num2str(normalisebymonitor);
+						storelist[18][0] = "Save Spectrum"; storelist[18][1] = num2str(saveSpectrum);
+						storelist[19][0] = "Save Offspecular Map"; storelist[19][1] = num2str(saveoffspec);
+						storelist[20][0] = "Meas with Ana"; storelist[20][1] = num2str(measwithanalyzer);
+						storelist[21][0] = "Dont Overwrite"; storelist[21][1] = num2str(donotoverwrite);
+						storelist[22][0] = "Verbose"; storelist[22][1] = num2str(verbosevar);
+						else
+							print "Nothing written to internal IGOR storage."
+						endif
+						
+						
+						if(V_Flag)
+							break
+						elseif(stringmatch(selectfile,"Select file from disk to overwrite"))
+							GetFileFolderInfo/q/z outputpathStr
+							if(V_flag)//path doesn't exist
+								Doalert 0, "Please enter a valid filepath to place the downloaded files"
+								return 0	
+							endif
+						 	thepolPath = outputpathStr
+							Newpath/o/q/z pla_temppath_read, thepolPath
+							Variable refNum
+							String fileFilters = "Data Files (*.dat):.dat;"
+							fileFilters += "All Files:.*;"
+
+							Open /D /R /F=fileFilters /P=pla_temppath_read /M="Select a file" refNum
+							if(strlen(S_fileName)>0)
+								storefilelist = itemsinlist(S_fileName, ":")
+								S_filename = stringfromlist(storefilelist-1,S_fileName, ":")
+								destination =  replacestring("_StoredAnglelist.dat", S_fileName, "")
+							else
+								destination = ""
+							endif	
+							killpath/z pla_temppath_read
+							endif
+						if(strlen(destination)>0)
+							storestringlisttemp = "root:packages:platypus:data:Reducer:" + destination + "_StoredAnglelist"
+						make/n=(23,9)/o/t $(storestringlisttemp) //list
+						wave/t storelisttemp = $(storestringlisttemp)
+						storelisttemp = ""
+						storelisttemp[0][] = angledata_listPOL[0][q]						
+						storelisttemp[1][] = angledata_listPOL[1][q]
+						storelisttemp[2][] = angledata_listPOL[2][q]
+						storelisttemp[3][] = angledata_listPOL[3][q]
+						storelisttemp[4][] = num2str(angledata_selPOL[0][q])						
+						storelisttemp[5][] = num2str(angledata_selPOL[1][q])
+						storelisttemp[6][] = num2str(angledata_selPOL[2][q])
+						storelisttemp[7][] = num2str(angledata_selPOL[3][q])
+						storelisttemp[8][0] = "Input Path"; storelisttemp[8][1] = inputpathStr; 
+						storelisttemp[9][0] = "Output Path"; storelisttemp[9][1] = outputpathStr;
+						storelisttemp[10][0] = "Waterrun"; storelisttemp[10][1] = waterrunfile;
+						storelisttemp[11][0] = "Low Wavelength"; storelisttemp[11][1] = num2str(lowLambda);
+						storelisttemp[12][0] = "High Wavelength"; storelisttemp[12][1] = num2str(highLambda);
+						storelisttemp[13][0] = "Rebin %tage"; storelisttemp[13][1] = num2str(rebinpercent);
+						storelisttemp[14][0] = "expected centre"; storelisttemp[14][1] = num2str(expected_centre);
+						storelisttemp[15][0] = "Background Subtraction"; storelisttemp[15][1] = num2str(backgroundsbn);
+						storelisttemp[16][0] = "Manual Beam Find"; storelisttemp[16][1] = num2str(manualbeamfind);
+						storelisttemp[17][0] = "Normalize By Monitor"; storelisttemp[17][1] = num2str(normalisebymonitor);
+						storelisttemp[18][0] = "Save Spectrum"; storelisttemp[18][1] = num2str(saveSpectrum);
+						storelisttemp[19][0] = "Save Offspecular Map"; storelisttemp[19][1] = num2str(saveoffspec);
+						storelisttemp[20][0] = "Meas with Ana"; storelisttemp[20][1] = num2str(measwithanalyzer);
+						storelisttemp[21][0] = "Dont Overwrite"; storelisttemp[21][1] = num2str(donotoverwrite);
+						storelisttemp[22][0] = "Verbose"; storelisttemp[22][1] = num2str(verbosevar);
+						
+						GetFileFolderInfo/q/z outputpathStr
+						if(V_flag)//path doesn't exist
+							Doalert 0, "Please enter a valid filepath to place the downloaded files"
+							return 0	
+						endif
+						thepolPath = outputpathStr
+						Newpath/o/q/z pla_temppath_read, thepolPath
+						tempdeststring = destination +  "_StoredAnglelist"+".dat"
+						open/P=pla_temppath_read storefilelist as tempdeststring						
+						if(V_flag)
+							print "ERROR writing combined file R11 (splicefilesPolCorr)";	 abort
+						endif
+						storestringlisttemp = "root:packages:platypus:data:Reducer:"
+						make/n=(23,1)/o/t $(storestringlisttemp+"temp1") //list
+						wave/t storelisttemp1 = $(storestringlisttemp+"temp1")
+						storelisttemp1[][] = storelisttemp[p][0]
+						make/n=(23,1)/o/t $(storestringlisttemp+"temp2") //list
+						wave/t storelisttemp2 = $(storestringlisttemp+"temp2")
+						storelisttemp2[][] = storelisttemp[p][1]
+						make/n=(23,1)/o/t $(storestringlisttemp+"temp3") //list
+						wave/t storelisttemp3 = $(storestringlisttemp+"temp3")
+						storelisttemp3[][] = storelisttemp[p][2]
+						make/n=(23,1)/o/t $(storestringlisttemp+"temp4") //list
+						wave/t storelisttemp4 = $(storestringlisttemp+"temp4")
+						storelisttemp4[][] = storelisttemp[p][3]
+						make/n=(23,1)/o/t $(storestringlisttemp+"temp5") //list
+						wave/t storelisttemp5 = $(storestringlisttemp+"temp5")
+						storelisttemp5[][] = storelisttemp[p][4]
+						make/n=(23,1)/o/t $(storestringlisttemp+"temp6") //list
+						wave/t storelisttemp6 = $(storestringlisttemp+"temp6")
+						storelisttemp6[][] = storelisttemp[p][5]
+						make/n=(23,1)/o/t $(storestringlisttemp+"temp7") //list
+						wave/t storelisttemp7 = $(storestringlisttemp+"temp7")
+						storelisttemp7[][] = storelisttemp[p][6]
+						make/n=(23,1)/o/t $(storestringlisttemp+"temp8") //list
+						wave/t storelisttemp8 = $(storestringlisttemp+"temp8")
+						storelisttemp8[][] = storelisttemp[p][7]
+						make/n=(23,1)/o/t $(storestringlisttemp+"temp9") //list
+						wave/t storelisttemp9 = $(storestringlisttemp+"temp9")
+						storelisttemp9[][] = storelisttemp[p][8]
+						wfprintf storefilelist, "", storelisttemp1, storelisttemp2, storelisttemp3, storelisttemp4, storelisttemp5, storelisttemp6, storelisttemp7, storelisttemp8, storelisttemp9  //storelisttemp[1][q], storelisttemp[2][q], storelisttemp[3][q], storelisttemp[4][q], storelisttemp[5][q], storelisttemp[6][q], storelisttemp[7][q], storelisttemp[7][q], storelisttemp[8][q],  
+						close storefilelist
+						//Save/O/J/P=pla_temppath_read $(storestringlisttemp) as tempdeststring
+						killwaves/z storelisttemp, storelisttemp1 , storelisttemp2, storelisttemp3, storelisttemp4, storelisttemp5, storelisttemp6, storelisttemp7, storelisttemp8, storelisttemp9 
+						print "File \"" + destination + "_StoredAnglelist"+ ".dat\" written to disk:" + outputpathStr
+						else 
+							print "No name specified, nothing written to hard drive."
+						endif
+						killpath/z pla_temppath_read
+					break	
+				case "loadangleslist_tab0":
+					if(ba.eventmod==9)
+						printf "--Choose from a list of stored angle list to fill the table.\r\r"
+						printf "--The list will be empty if there are no stored data lists.\r\r"
+						break
+					endif 
+					string listofwaves
+					setdatafolder root:packages:platypus:data:Reducer:
+					listofwaves = wavelist("*_StoredAnglelist",";","")
+					popupcontextualmenu "-Load from disk-;"+listofwaves
+					if(V_Flag<=0)
+						V_Flag = 0
+					endif
+					switch(V_Flag)
+					case 0: 
+						print "No item selected"
+						break
+					case 1:
+						GetFileFolderInfo/q/z outputpathStr
+						if(V_flag)//path doesn't exist
+							Doalert 0, "Please enter a valid filepath for the data source"
+							return 0	
+						endif
+						thepolPath = outputpathStr
+						Newpath/o/q/z pla_temppath_read, thepolPath
+						LoadWave/A=temploadwave/o/H/k=2/J/p=pla_temppath_read/L={0,0,0,0,0}/m
+		
+						if(V_Flag>0)					
+						wave/t storelist = $("root:packages:platypus:data:Reducer:temploadwave0")
+						waterrunfile = storelist[7][1] 
+						angledata_listPOL[0][] = storelist[0][q]
+						angledata_listPOL[1][] = storelist[1][q]
+						angledata_listPOL[2][] = storelist[2][q]
+						angledata_listPOL[3][] = storelist[3][q]
+						angledata_selPOL[0][][0] = str2num(storelist[4][q])
+						angledata_selPOL[1][][0] = str2num(storelist[5][q])
+						angledata_selPOL[2][][0] = str2num(storelist[6][q])
+						angledata_selPOL[3][][0] = str2num(storelist[7][q])
+						angledata_selPOL[][][1] = 1
+						inputpathStr = storelist[8][1] 
+						outputpathStr= storelist[9][1]
+						waterrunfile= storelist[10][1]
+						lowLambda= str2num(storelist[11][1])
+						highLambda= str2num(storelist[12][1])
+						rebinpercent= str2num(storelist[13][1])
+						expected_centre= str2num(storelist[14][1])
+						backgroundsbn= str2num(storelist[15][1] )
+						manualbeamfind= str2num(storelist[16][1])
+						normalisebymonitor= str2num(storelist[17][1] )
+						saveSpectrum= str2num(storelist[18][1] )
+						saveoffspec= str2num(storelist[19][1])
+						measwithanalyzer =str2num(storelist[20][1])
+						donotoverwrite= str2num(storelist[21][1])
+						verbosevar= str2num(storelist[22][1])
+						killpath/z pla_temppath_read
+						killwaves/z storelist
+						print "File Loaded, the wave is not assigned in IGOR."
+						print "Store IGOR internally to recall."
+						else
+						 print "No file specified!"
+						endif
+						
+						break
+					default:
+						string templist = removeending(S_selection, "_StoredAnglelist")
+						loadstringlist = "root:packages:platypus:data:Reducer:" + S_selection
+						wave/t storelist = $(loadstringlist)
+						waterrunfile = storelist[7][1] 
+						angledata_listPOL[0][] = storelist[0][q]
+						angledata_listPOL[1][] = storelist[1][q]
+						angledata_listPOL[2][] = storelist[2][q]
+						angledata_listPOL[3][] = storelist[3][q]
+						angledata_selPOL[0][][0] = str2num(storelist[4][q])
+						angledata_selPOL[1][][0] = str2num(storelist[5][q])
+						angledata_selPOL[2][][0] = str2num(storelist[6][q])
+						angledata_selPOL[3][][0] = str2num(storelist[7][q])
+						angledata_selPOL[][][1] = 1
+						inputpathStr = storelist[8][1] 
+						outputpathStr= storelist[9][1]
+						waterrunfile= storelist[10][1]
+						lowLambda= str2num(storelist[11][1])
+						highLambda= str2num(storelist[12][1])
+						rebinpercent= str2num(storelist[13][1])
+						expected_centre= str2num(storelist[14][1])
+						backgroundsbn= str2num(storelist[15][1] )
+						manualbeamfind= str2num(storelist[16][1])
+						normalisebymonitor= str2num(storelist[17][1] )
+						saveSpectrum= str2num(storelist[18][1] )
+						saveoffspec= str2num(storelist[19][1])
+						measwithanalyzer =str2num(storelist[20][1])
+						donotoverwrite= str2num(storelist[21][1])
+						verbosevar= str2num(storelist[22][1])
+					endswitch
+					
+	
+					setdatafolder $cdf
+					break	
+				case "changedatasource_tab0":
+					if(ba.eventmod==9)
+						printf "--Click to insert a path to the folder where the data can be found.\r\r"
+						printf "All files you want to reduce need to be in the same folder.--\r\r"
+						break
+					endif 
+					getfilefolderinfo/q/z=2/d ""
+					if(V_flag == 0)
+						inputpathStr = S_path
+					endif
+					break
+				case "changedataout_tab0":
+					if(ba.eventmod==9)
+						printf "--Specify a path to a folder where the output of the reduction can be stored.--\r\r"
+						break
+					endif 
+					getfilefolderinfo/q/z=2/d ""
+					if(V_flag == 0)
+						outputpathStr = S_path
+					endif
+					break
+			endswitch	
+			break
+			
+	endswitch
+	setdatafolder $cDF
+	return 0
+End
+Function POLSLIM_analyzercheckbox(bana) : CheckBoxControl
+	STRUCT WMCheckboxAction &bana
+	NVAR measwithanalyzer= root:packages:platypus:data:Reducer:measwithanalyzer	
+	variable ii,jj
+	Wave/t angledata_listPOL = root:packages:platypus:data:Reducer:angledata_listPOL
+	Wave angledata_selPOL= root:packages:platypus:data:Reducer:angledata_selPOL
+
+	switch(measwithanalyzer)
+		case 1://"measwithanalyzer_tab0":
+			if(bana.eventmod==9)
+				printf "Toggle between a measurement performed with or without analyser to separate the neutron spin state after reflection \r"
+				printf "i.e. the neutron spin before and after the sample is distinguished (with analyzer):"
+				printf "R--, R-+, R+-, R++\r"
+				printf "or not (without analyzer):\r"
+				printf "R-, R+\r\r"
+				break
+			endif
+			for(ii=0 ; ii < dimsize(angledata_listPOL, 0) ; ii+=1) 
+				if(strlen(angledata_listPOL[ii][3]) == 0 || !(angledata_selPOL[ii][1] & 2^4)) //if reflectangle1 is 0, disregard row 2^4=48=selected button otherwise 32
+					continue
+				endif
+				for(jj = 3; jj <= 8 ; jj+=1)
+						if(strlen(angledata_listPOL[ii][jj])<=0)
+							angledata_listPOL[ii][jj] = "00"
+						endif
+						if(stringmatch(angledata_listPOL[ii][jj],"0"))
+							angledata_listPOL[ii][jj] = "00"
+						endif
+				endfor
+			endfor
+			angledata_listPOL[0][0] = "I00: OFF/OFF = R--"
+			angledata_listPOL[1][0] = "I01: OFF/ON = R-+"
+			angledata_listPOL[2][0] = "I10: ON/OFF = R+-"
+			angledata_listPOL[3][0] = "I11: ON/ON = R++"
+		break
+		case 0:
+			if(bana.eventmod==9)
+				printf "Toggle between a measurement performed with or without analyser to separate the neutron spin state after reflection \r"
+				printf " i.e. the neutron spin before and after the sample is distinguished (with analyzer):"
+				printf "R--, R-+, R+-, R++\r"
+				printf " or not (without analyzer):\r"
+				printf "R-, R+ (leave other fields blank)\r\r"
+				break
+			endif
+			for(ii=0 ; ii < dimsize(angledata_listPOL, 0) ; ii+=1) 
+				if(strlen(angledata_listPOL[ii][3]) == 0 || !(angledata_selPOL[ii][1] & 2^4)) //if reflectangle1 is 0, disregard row 2^4=48=selected button otherwise 32
+							continue
+				endif
+				for(jj = 3; jj <= 8 ; jj+=1)
+						if(strlen(angledata_listPOL[ii][jj])<=0)
+							angledata_listPOL[ii][jj] = "0"
+						endif
+						if(stringmatch(angledata_listPOL[ii][jj],"00"))
+							angledata_listPOL[ii][jj] = "0"
+						endif
+				endfor
+			endfor
+			angledata_listPOL[0][0] = "I0: Flipper OFF = R-"
+			angledata_listPOL[1][0] = "Not available: disregarded"
+			angledata_listPOL[2][0] = "Not available: disregarded"
+			angledata_listPOL[3][0] = "I1: Flipper ON = R+"
+			ListBox whichangles userColumnResize=1
+			break
+		endswitch
+End
+
+Function POLSLIM_verbosecheckbox(verb) : CheckBoxControl
+	STRUCT WMCheckboxAction &verb
+	NVAR donotoverwrite= root:packages:platypus:data:Reducer:verbosevar
+	switch(donotoverwrite)
+	case 1://"measwithanalyzer_tab0":
+		if(verb.eventmod==9)
+			printf "Execute the reduction with an extended description of the process printed in the IGOR Command Window.\r"
+			printf "This is more to for programmers to understand the code flow.\r\r"
+			break
+		endif
+	break
+	case 0:
+		if(verb.eventmod==9)
+			printf "Execute the reduction with an extended description of the process printed in the IGOR Command Window.\r"
+			printf "This is more to for programmers to understand the code flow.\r\r"
+			break
+		endif
+	break
+	endswitch
+End
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+Function POLSLIM_donotoverwritecheckbox(donoov) : CheckBoxControl
+	STRUCT WMCheckboxAction &donoov
+	NVAR donotoverwrite= root:packages:platypus:data:Reducer:donotoverwrite
+	switch(donotoverwrite)
+		case 1://"measwithanalyzer_tab0":
+			if(donoov.eventmod==9)
+				printf "If \"Do not overwrite is ticked, previous reductions will not be overwritten.\r"
+				printf "The new reduced data will be appended with an incremental _0, _1, ... after the filename.\r"
+				printf "If the box is NOT active, old data will be overwritten.\r\r"
+				break
+			endif
+		break
+		case 0:
+			if(donoov.eventmod==9)
+				printf "If \"Do not overwrite is ticked, previous reductions will not be overwritten.\r"
+				printf "The new reduced data will be appended with an incremental _0, _1, ... after the filename.\r"
+				printf "If the box is NOT active, old data will be overwritten.\r\r"
+				break
+			endif
+		break
+		endswitch
+End
 
 
 
