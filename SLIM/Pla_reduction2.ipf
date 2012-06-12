@@ -523,13 +523,10 @@ Function Pla_linbkg(image, imageSD, loPx, hiPx, backgroundwidth, [backgroundMask
 		endfor
 		killwaves/z dfw 
 	endfor
-
-	Multithread	M_imagebkg *= -1
-	Multithread	M_imagebkg += image
-	Multithread	M_imagebkgSD *= M_imagebkgSD
-	Multithread	M_imagebkgSD += imageSD^2
-	Multithread	M_imagebkgSD = sqrt(M_imagebkgSD)
-
+	
+	//do the background subtraction.
+	EP_sub(image, imageSD, M_imagebkg, M_imagebkgSD, M_imagebkg, M_imagebkgSD)
+	
 	killwaves/z W_extractedrow,W_Coef,W_mask,W_sigma,W_templine,W_templineSD,M_Covar,W_paramconfidenceinterval
 	killwaves/z UC_W_templine, LC_W_templine, UP_W_templine, LP_W_templine
 	return 0 
