@@ -1315,8 +1315,8 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				Waveclear backgroundMask
 				make/d/free/n=(dimsize(detector, 1)) bkgregion = NaN
 				Wave backgroundMask = bkgregion
-				backgroundMask = (p > real(bkgloc) && p < (real(actual_peak) - INTEGRATEFACTOR * imag(actual_peak) - BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
-				backgroundMask = (p < imag(bkgloc) && p > (real(actual_peak) + INTEGRATEFACTOR * imag(actual_peak) + BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
+				backgroundMask = (p > real(bkgloc) && p < (real(actual_peak) - 0.5 * (INTEGRATEFACTOR * imag(actual_peak)) - BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
+				backgroundMask = (p < imag(bkgloc) && p > (real(actual_peak) + 0.5 * (INTEGRATEFACTOR * imag(actual_peak)) + BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
 				
 				//			imagetransform sumallcols detector
 				//			duplicate/o W_sumcols, xx
@@ -1344,8 +1344,8 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				Waveclear backgroundMask
 				make/d/free/n=(dimsize(detector, 1)) bkgregion = NaN
 				Wave backgroundMask = bkgregion
-				backgroundMask = (p > real(bkgloc) && p < (real(actual_peak) - INTEGRATEFACTOR * imag(actual_peak) - BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
-				backgroundMask = (p < imag(bkgloc) && p > (real(actual_peak) + INTEGRATEFACTOR * imag(actual_peak) + BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
+				backgroundMask = (p > real(bkgloc) && p < (real(actual_peak) - 0.5 * (INTEGRATEFACTOR * imag(actual_peak)) - BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
+				backgroundMask = (p < imag(bkgloc) && p > (real(actual_peak) + 0.5 * (INTEGRATEFACTOR * imag(actual_peak)) + BACKGROUNDOFFSET)) ? 1: backgroundMask[p]
 			endif	
 		endif
 
