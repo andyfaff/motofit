@@ -124,7 +124,7 @@ Threadsafe Function EP_div(a, da, b, db, c, dc, [covar])
 	multithread dc = sqrt(((tempda / tempb)^2 + (tempa^2 / (tempb^4)) * tempdb^2) - (2 * covar * tempa / (tempb^3)))
 End
 
-Threadsafe Function/C EP_divV(a, da, b, db, c, dc, [covar])
+Threadsafe Function/C EP_divV(a, da, b, db, [covar])
 	variable a, da, b, db, covar
 	//C =  A / B
 	if(paramisdefault(covar))
@@ -152,7 +152,7 @@ Threadsafe Function EP_pow(a, da, c, dc, k, [n])
 	multithread dc = abs(n * k * tempda * tempa^(k -1))
 End
  
- Threadsafe Function EP_powV(a, da, k, [n])
+ Threadsafe Function/c EP_powV(a, da, k, [n])
 	variable a, da, k, n
 	//C = n * (A ^ k)
  
@@ -205,7 +205,7 @@ Threadsafe Function EP_ln(a, da, c, dc, [k, n])
 	multithread dc = abs(n * tempda / tempa)
 End
  
-Threadsafe Function EP_lnV(a, da,  [k, n])
+Threadsafe Function/c EP_lnV(a, da,  [k, n])
 	variable a, da,  k, n
 	//C = n * ln(k * A)
 	if(paramisdefault(k))
@@ -275,7 +275,7 @@ Threadsafe Function/C EP_expV(a, da,  [k, n])
 	if(paramisdefault(n))
 		n = 1
 	endif
- 	return cmplx( n * exp(k * a), abs(k * da * c))
+ 	return cmplx( n * exp(k * a), abs(k * da * n * exp(k * a)))
 End
 
  
@@ -312,5 +312,5 @@ End
 Threadsafe Function/c EP_cosV(a, da)
 	variable a, da
 	//C = cos(A)
-	return cmplx(cos(a), abs(-sin(A) * da)
+	return cmplx(cos(a), abs(-sin(A) * da))
 End

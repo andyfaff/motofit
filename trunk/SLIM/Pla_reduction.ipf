@@ -363,16 +363,20 @@ Function/s reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		
 		//now normalise the counts in the reflected beam by the direct beam spectrum
 		//this gives a reflectivity
-		//and propagate the errors, leaving the fractional variance (dr/r)^2
+		//and propagate the errors
 		//this step probably produces negative reflectivities, or NaN if M_specD is 0.
 		//ALSO, 
 		//M_refSD has the potential to be NaN is M_topandtailA0 or M_specD is 0.
-		multithread M_ref[][][] = M_topandtailA0[p][q][r] / M_specD[p][0]
-		//			M_refSD[][] =   (M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2 +(W_specDSD[p] / W_specD[p])^2 
 		M_refSD = 0	
-		multithread M_refSD[][][] += numtype((M_topandtailA0SD[p][q][r] / M_topandtailA0[p][q][r])^2) ? 0 : (M_topandtailA0SD[p][q][r] / M_topandtailA0[p][q][r])^2
-		multithread M_refSD[][][] += numtype((M_specDSD[p][0] / M_specD[p][0])^2) ? 0 : (M_specDSD[p][0] / M_specD[p][0])^2						
-		
+		M_ref = 0
+		multithread M_refSD[][][] = sqrt(((M_topandtailA0SD[p][q][r] / M_specD[p][0])^2 + (M_topandtailA0[p][q][r]^2 / (M_specD[p][0]^4)) * M_specDSD[p][0]^2))
+		multithread M_ref[][][] = M_topandtailA0[p][q][r] / M_specD[p][0]
+				
+		//scale reflectivity by scale factor
+		// because refSD is stil fractional variance (dr/r)^2 have to divide by scale factor squared.
+		multithread M_ref /= scalefactor
+		multithread M_refSD /= (scalefactor)
+
 		//now calculate the Q values for the detector pixels.  Each pixel has different 2theta and different wavelength, ASSUME that they have the same angle of incidence
 		multithread M_qz[][][]  = 2 * Pi * (1 / M_lambda[p][r]) * (sin(M_twotheta[p][q][r] - omega[p][r]) + sin(M_omega[p][q][r]))
 		multithread M_qy[][][] = 2 * Pi * (1 / M_lambda[p][r]) * (cos(M_twotheta[p][q][r] - omega[p][r]) - cos(M_omega[p][q][r]))
@@ -396,35 +400,8 @@ Function/s reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		multithread M_qzSD[][][] += (domega/omega[p][r])^2
 		multithread M_qzSD = sqrt(M_qzSD)
 		multithread M_qzSD *= M_qz
-		
-		//correct for the beam monitor one counts.  This assumes that the direct beam was measured with the same
-		//slit characteristics as the reflected beam.  This assumption is normally ok for the first angle.  One can only hope that everyone
-		//have done this for the following angles.
-		//multiply by bmon1_direct/bmon1_angle0
-		
-		//			//there should exist a global variable by the name of angle0DF + BM1counts, which is the summed BM1 count.
-		//			//this normalisation can be done in processNexus file
-		//			NVAR/z bmon1_counts_direct = $(directDF) + ":bm1counts"
-		//			NVAR/z bmon1_counts_angle0 = $(angle0DF) + ":bm1counts"
-		//			
-		//			if(nvar_exists(bmon1_counts_direct) && nvar_exists(bmon1_counts_angle0))
-		//				if(bmon1_counts_direct != 0 && bmon1_counts_angle0 != 0)
-		//					temp =  ((sqrt(bmon1_counts_direct)/bmon1_counts_direct)^2 + (sqrt(bmon1_counts_angle0)/bmon1_counts_angle0)^2) //(dratio/ratio)^2
-		//					
-		//					multithread M_refSD += temp		//M_refSD is still fractional variance at this point.
-		//					multithread M_ref *= bmon1_counts_direct/bmon1_counts_angle0
-		//				endif
-		//			endif
-
-		//M_refSD is still (dr/r)^2
-		multithread M_refSD = sqrt(M_refSD)
-		multithread M_refSD *= M_ref
-		
-		//scale reflectivity by scale factor
-		// because refSD is stil fractional variance (dr/r)^2 have to divide by scale factor squared.
-		multithread M_ref /= scalefactor
-		multithread M_refSD /= (scalefactor)
-		
+				
+			
 			
 		//now cut out the pixels that aren't in the reflected beam
 		//			deletepoints/M=1 hiPx+1, dimsize(M_ref,1), M_ref,M_refSD, M_qz, M_qzSD, M_omega, M_twotheta
@@ -1033,7 +1010,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 					multithread detector[][][] += hmm[ii][p][q][r]
 					BM1counts[0] += BM1_counts[ii]
 				endfor
-				make/o/d/n=(1) dBM1counts = sqrt(BM1counts)
+				make/o/d/n=(1) dBM1counts = sqrt(BM1counts + 1)
 
 				//Take ntyx and convert to tyn, averaging over x	
 				imagetransform sumplanes, detector
@@ -1041,7 +1018,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				duplicate/o M_sumplanes, detector
 				redimension/n=(-1, -1, 1) detector
 				duplicate/o detector, detectorSD
-				multithread detectorSD = sqrt(detectorSD)
+				multithread detectorSD = sqrt(detector + 1)
 				killwaves/z M_sumplanes, hmm
 				numSpectra = 1
 			
@@ -1080,7 +1057,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				make/o/d/n=(numTimeSlices) BM1counts
 				BM1counts = bm1_counts[scanpoint] * fractionofTotalTime[p]
 //				BM1counts[numtimeslices - 1] = bm1_counts[scanpoint] * (fractionalTimeSlices - (ceil(fractionalTimeSlices) - 1)) / fractionalTimeSlices 
-				make/o/d/n=(numTimeSlices) dBM1counts = sqrt(BM1counts)
+				make/o/d/n=(numTimeSlices) dBM1counts = sqrt(BM1counts + 1)
 			
 				make/o/d/n=(dimsize(tbins, 0) - 1, dimsize(ybins, 0) - 1, numTimeSlices) detector = 0
 				for(ii = 0 ; ii < dimsize(streamedDetector, 3) ; ii += 1)
@@ -1088,7 +1065,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 					multithread detector[][][] += streamedDetector[r][p][q][ii]
 				endfor
 				duplicate/o detector, detectorSD
-				multithread detectorSD = sqrt(detectorSD)	
+				multithread detectorSD = sqrt(detector + 1)	
 				killdatafolder /z $("root:packages:platypus:data:Reducer:streamer")
 				numSpectra = numTimeSlices
 				killwaves/z hmm
@@ -1096,13 +1073,13 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			case 2:
 				make/o/d/n=(dimsize(hmm, 1),dimsize(hmm, 2), dimsize(hmm, 0)) detector = 0
 				make/o/d/n=(dimsize(hmm, 0)) BM1counts = BM1_counts
-				make/o/d/n=(dimsize(hmm, 0)) dBM1counts = sqrt(BM1counts)
+				make/o/d/n=(dimsize(hmm, 0)) dBM1counts = sqrt(BM1counts + 1)
 				//Take ntyx and convert to tyn, averaging over x			
 				for(ii = 0 ; ii < dimsize(hmm, 3) ; ii += 1)
 					multithread detector[][][] += hmm[r][p][q][ii]
 				endfor
 				duplicate/o detector, detectorSD
-				multithread detectorSD = sqrt(detectorSD)	
+				multithread detectorSD = sqrt(detector + 1)	
 				numSpectra = dimsize(hmm, 0)	
 				scanpoint = 0
 				killwaves/z hmm
@@ -1133,16 +1110,13 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				print "ERROR: water normalisation run doesn't have the same number of y pixels as the data it is trying to normalise (processNexusfile)"
 				abort
 			endif
-			
+			//divide through by the water normalisation
 			for(jj = 0 ; jj < dimsize(detector, 2) ; jj += 1)
 				for(ii = 0 ; ii < dimsize(detector, 0) ; ii += 1)
-					multithread detectorSD[ii][][jj] = (detectorSD[ii][q][jj]/detector[ii][q][jj])^2+(W_waternormSD[q]/W_waternorm[q])^2
-					multithread detector[ii][][jj] /= W_waternorm[q]
-					multithread detectorSD[ii][][jj] = abs(sqrt(detectorSD[ii][q][jj]) * (detector[ii][q][jj]))
+					multithread detectorSD[ii][][jj] = sqrt(((detectorSD[ii][q][jj] / W_waternorm[q])^2 + (detector[ii][q][jj]^2 / (W_waternorm[q]^4)) * W_waternormSD[q]^2))
+					multithread detector[ii][][jj] /= W_waternorm[q]					
 				endfor
 			endfor
-			//this step could've created INFs and NaN, as there are divide by 0 when you divide by detector[ii][q]
-			multithread detectorSD = numtype(detectorSD[p][q][r]) ? 0 : detectorSD[p][q][r]
 		endif
 		
 		
@@ -1481,21 +1455,14 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		//if you want to normalise by monitor counts do so here.
 		//propagate the errors.
 		if(!paramisdefault(normalise) && normalise)
-			multithread M_topandtailSD[][][] = numtype((M_topandtailSD[p][q][r] / M_topandtail[p][q][r])^2) ? 0 : (M_topandtailSD[p][q][r] / M_topandtail[p][q][r])^2
-			multithread M_topandtailSD[][][] += numtype((dBM1counts[r]/BM1counts[r])^2) ? 0 : (dBM1counts[r]/BM1counts[r])^2		
-			multithread M_topandtailSD = sqrt(M_topandtailSD)
+			multithread M_specSD[][] = sqrt(((M_specSD[p][q] / BM1counts[q])^2 + (M_spec[p][q]^2 / (BM1counts[q]^4)) * dBM1counts[q]^2))
+			multithread M_spec[][] /= BM1counts[q]
 			
-			multithread M_specSD[][] = numtype((M_specSD[p][q] / M_spec[p][q])^2) ? 0 : (M_specSD[p][q] / M_spec[p][q])^2
-			multithread M_specSD[][] += numtype((dBM1counts[q]/BM1counts[q])^2) ? 0 : (dBM1counts[q]/BM1counts[q])^2		
-			multithread M_specSD = sqrt(M_specSD)
-			
-			Multithread M_spec[][] /= BM1counts[q]
-			Multithread M_specSD *= M_spec
-			Multithread M_specSD = abs(M_specSD)
-			Multithread M_topandtail[][][] /= BM1counts[r]
-			multithread M_topandtailSD *= M_topandtail
-			Multithread M_topandtailSD = abs(M_topandtailSD)	
+			multithread M_topandtailSD[][][] = sqrt(((M_topandtailSD[p][q][r] / BM1counts[r])^2 + (M_topandtail[p][q][r]^2 / (BM1counts[r]^4)) * dBM1counts[r]^2))
+			multithread M_topandtail[][][] = M_topandtail[p][q][r] / BM1counts[r]
 		endif
+		
+		
 		
 		//now work out dlambda/lambda, the resolution contribution from wavelength.
 		//vanWell, Physica B,  357(2005) pp204-207), eqn 4.
@@ -2097,11 +2064,8 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 				endif
 
 				//think the following is wrong! No need to errors in quadrature if scalefactor does not depend on wavelength
-				asdfghjkl2 = (asdfghjkl2/asdfghjkl1)^2
-				asdfghjkl2 += (imag(compSpliceFactor)/real(compSpliceFactor))^2
-				asdfghjkl2 = sqrt(asdfghjkl2)
+				asdfghjkl2 = sqrt((real(compSplicefactor) * asdfghjkl2)^2 + (asdfghjkl1 * imag(compSplicefactor))^2)
 				asdfghjkl1 *= real(compSplicefactor)
-				asdfghjkl2 *= abs(asdfghjkl1)	//need to take the positive branch
 				
 				concatenate/NP {asdfghjkl1},tempRR
 				concatenate/NP {asdfghjkl0},tempQQ
