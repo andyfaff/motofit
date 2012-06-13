@@ -52,7 +52,7 @@ variable covar
 	endif
  
 	multithread c = tempa * tempb
-	multithread dc = abs(c) * sqrt((tempda / tempa)^2 + (tempdb / tempb) ^ 2 + 2 * tempda * tempdb / (tempa * tempb) * covar)	
+	multithread dc = sqrt((tempb * tempda)^2 + (tempa * tempdb)^2 + 2 * tempa * tempb * covar)
 End
  
 Function EP_mulK(a, da, c, dc, k)
@@ -83,7 +83,7 @@ variable covar
 	endif
  
 	multithread c = tempa / tempb
-	multithread dc = abs(c) * sqrt((tempda / tempa) ^ 2 + (tempdb / tempb) ^ 2 - 2 * tempda * tempdb / (tempa * tempb) * covar)	
+	multithread dc = sqrt(((tempda / tempb)^2 + (tempa^2 / (tempb^4)) * tempdb^2) - (2 * covar * tempa / (tempb^3)))
 End
  
 Function EP_pow(a, da, c, dc, k, [n])
@@ -100,7 +100,7 @@ variable k, n
 	endif
  
 	multithread c = n * (tempa ^ k)
-	multithread dc = abs(c * k * tempda / tempa)
+	multithread dc = abs(n * k * tempda * tempa^(k -1))
 End
  
 Function EP_powK(a, da, c, dc, k, [n])
@@ -116,7 +116,7 @@ variable k, n
 	endif
  
 	multithread c = k ^ (tempA * n)
-	multithread dc = abs(c * n * tempda * ln(k))
+	multithread dc = abs(n * ln(k) * tempda * k^(tempA * n))
 End
  
 Function EP_ln(a, da, c, dc, [k, n])
