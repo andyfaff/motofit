@@ -1138,7 +1138,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				for(ii = 0 ; ii < dimsize(detector, 0) ; ii += 1)
 					multithread detectorSD[ii][][jj] = (detectorSD[ii][q][jj]/detector[ii][q][jj])^2+(W_waternormSD[q]/W_waternorm[q])^2
 					multithread detector[ii][][jj] /= W_waternorm[q]
-					multithread detectorSD[ii][][jj] = sqrt(detectorSD[ii][q][jj]) * (detector[ii][q][jj])
+					multithread detectorSD[ii][][jj] = abs(sqrt(detectorSD[ii][q][jj]) * (detector[ii][q][jj]))
 				endfor
 			endfor
 			//this step could've created INFs and NaN, as there are divide by 0 when you divide by detector[ii][q]
@@ -1459,6 +1459,25 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		Wave M_topAndTail = $(tempDF+":M_topandtail")
 		Wave M_topAndTailSD = $(tempDF+":M_topandtailSD")
 	
+		//assert that in the background subtracted specta + SD matrices there are no NaN or SD < 0
+		wavestats/q/z M_spec
+		if(V_numNans || V_numINFs)
+			abort "Error, found NaNs or INFs in M_spec (processNexusFile)"
+		endif
+		wavestats/q/z M_specSD
+		if(V_numNans || V_numINFs || V_min < 0)
+			abort "Error, found NaNs or INFs, or there was a negative value in M_specSD (processNexusFile)"
+		endif
+		wavestats/q/z M_topandtail
+		if(V_numNans || V_numINFs)
+			abort "Error, found NaNs or INFs, or there was a negative value in M_topandtail (processNexusFile)"
+		endif
+		wavestats/q/z M_topandtailSD
+		if(V_numNans || V_numINFs || V_min < 0)
+			abort "Error, found NaNs or INFs, or there was a negative value in M_topandtailSD (processNexusFile)"
+		endif
+
+		
 		//if you want to normalise by monitor counts do so here.
 		//propagate the errors.
 		if(!paramisdefault(normalise) && normalise)
@@ -1470,10 +1489,12 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			multithread M_specSD[][] += numtype((dBM1counts[q]/BM1counts[q])^2) ? 0 : (dBM1counts[q]/BM1counts[q])^2		
 			multithread M_specSD = sqrt(M_specSD)
 			
-			Multithread	 M_spec[][] /= BM1counts[q]
-			Multithread	 M_specSD *= M_spec
+			Multithread M_spec[][] /= BM1counts[q]
+			Multithread M_specSD *= M_spec
+			Multithread M_specSD = abs(M_specSD)
 			Multithread M_topandtail[][][] /= BM1counts[r]
 			multithread M_topandtailSD *= M_topandtail
+			Multithread M_topandtailSD = abs(M_topandtailSD)	
 		endif
 		
 		//now work out dlambda/lambda, the resolution contribution from wavelength.
