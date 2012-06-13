@@ -74,16 +74,16 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 			endif
 			wave M_imagebkg, M_imagebkgSD
 		else
-			duplicate/o M_topandtail,M_imagebkg
-			duplicate/o M_topandtailSD,M_imagebkgSD		
+			duplicate/free M_topandtail,M_imagebkg
+			duplicate/free M_topandtailSD,M_imagebkgSD		
 		endif
 
 		//now we have M_imagebkg and M_imagebkgSD, copy those back into M_topAndTail
 		Multithread M_topandtail = M_imagebkg
 		Multithread M_topandtailSD = M_imagebkgSD
 	 	
-		duplicate/o M_imagebkg, temp
-		duplicate/o M_imagebkgSD, tempSD
+		duplicate/free M_imagebkg, temp
+		duplicate/free M_imagebkgSD, tempSD
 
 		//now lets produce the background subtracted, integrated spectrum
 		deletepoints/M=1 hiPx+1, dimsize(temp, 1), temp, tempSD
@@ -850,7 +850,7 @@ Threadsafe Function/DF Pla_centre_wavelengthworker(xdata, data, pp, loBin, hiBin
 End
 
 
-Function Pla_beam_width(w, zz, d1, d2): fitfunc
+Function Pla_beam_width( w, zz, d1, d2): fitfunc
 	wave w, zz, d1, d2
 
 	variable L12,  L2D, detcloud, scalefactor, ii
