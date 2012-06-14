@@ -730,7 +730,7 @@ End
 //all the fitting is done here:
 static Function Moto_do_a_fit()	
 	string typeoffit, datasetname, df = "", holdstring = "", fitfunc = "", traces = "", lci = "", rci = "", tracecolour
-	variable useerrors, usedqwave, usecursors, leftP, rightP, useconstraint, mode, ii, jj, iters, lVmullayers, lVappendlayer, lVmulrep
+	variable useerrors, usedqwave, usecursors, leftP, rightP, useconstraint, mode, ii, jj, iters, lVmullayers, lVappendlayer, lVmulrep, resolution
 	dfref savDF = getdatafolderDFR()
 
 	controlinfo/W=reflectivitypanel typeoffit_tab0
@@ -762,6 +762,7 @@ static Function Moto_do_a_fit()
 	lVmulrep = str2num(getmotofitoption("Vmulrep"))
 	lVappendlayer = str2num(getmotofitoption("Vappendlayer"))
 	lVmullayers = str2num(getmotofitoption("Vmullayers"))
+	resolution = str2num(getmotofitoption("res"))
 	
 	try
 		Moto_backupModel()
@@ -898,6 +899,16 @@ static Function Moto_do_a_fit()
 					iters = ceil(iters)
 				endif
 				
+				if(dimsize(inputQQ, 1) == 2)
+					fitfunc = "Motofit_smeared_log"
+				elseif(resolution > 0.5)
+					fitfunc = "Motofit_smeared_log"
+					redimension/n=(-1, 2) inputQQ
+					inputQQ[][1] = inputQQ[p][0] * resolution * 0.01
+				else
+					fitfunc = "motofit_log"
+				endif
+		
 				if(Moto_montecarlo(fitfunc, coef, RR, inputQQ, dR, holdstring, iters,cursA=leftP, cursB=rightP, fakeweight = !useerrors))
 					abort
 				endif
@@ -1562,6 +1573,21 @@ Function Motofit_smeared(w, RR, qq, dq) :Fitfunc
 
 	//how are you fitting the data?
 	moto_lindata_to_plotyp(plotyp, qq, RR)
+End
+
+Threadsafe Function Motofit_smeared_log(w, RR, qq, dq):fitfunc
+	Wave w, RR, qq, dq
+	duplicate/free qq, tempqq
+	redimension/n=(-1, 2) tempqq
+	tempqq[][1] = dq[p]
+	AbelesAll(w, RR, tempqq)
+	RR = log(RR)
+End
+
+Threadsafe Function Motofit_log(w, RR, qq):fitfunc
+	Wave w, RR, qq
+	AbelesAll(w, RR, qq)
+	RR = log(RR)
 End
 
 Function Motofit(w, RR, qq) :Fitfunc
