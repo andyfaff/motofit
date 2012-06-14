@@ -1848,7 +1848,52 @@ Function GCF_dialogProc(ba) : ButtonControl
 	return 0
 End
 
+ThreadSafe Function motoMCWorkerFunc1()
+	do
+		do
+			DFRef tdf  =ThreadGroupGetDFR(0,1000)	
+			if(!Datafolderrefstatus(tdf))
+				if( GetRTError(2) )	// New in 6.2 to allow this distinction:
+					Print "worker closing down due to group release"
+				else
+					Print "worker thread still waiting for input queue"
+				endif
+			else
+				break
+			endif
+		while(1)
+		SetDataFolder tdf
 
+		Wave/z wtemp, yytemp, xxtemp, eetemp, holdwavetemp, limitstemp
+		SVAR fntemp
+		NVAR iterstemp
+		NVAR popsizetemp  
+		NVAR recombtemp  
+		NVAR k_mtemp  
+		NVAR fittoltemp 
+		NVAR fakeweighttemp
+		NVAR cursorA
+		NVAR cursorB
+		variable/g V_Fiterror
+		if(fakeweighttemp)
+			yytemp = yytemp + gnoise(eetemp)
+			Gencurvefit/q/n/hold=holdwavetemp/X=xxtemp/K={iterstemp, popsizetemp, k_mtemp, recombtemp}/TOL=(fittoltemp) $fntemp, yytemp, wtemp, "", limitstemp
+		else
+			Gencurvefit/MC/q/n/hold=holdwavetemp/X=xxtemp/I=1/W=eetemp/K={iterstemp, popsizetemp, k_mtemp, recombtemp}/TOL=(fittoltemp) $fntemp, yytemp, wtemp, "", limitstemp
+		endif		
+//		print V_chisq,V_fitIters, V_fiterror
+		Setdatafolder ::
+		NewDataFolder/S outDF
+		
+		make/n=(dimsize(wtemp, 0))/d W_output
+		W_output = wtemp
+		Waveclear wtemp, yytemp, xxtemp, eetemp, holdwavetemp, limitstemp, W_output
+		ThreadGroupPutDF 0,:		
+		KillDataFolder tdf		// We are done with the input data folder
+	while(1)
+
+	return 0
+End
 
 Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, outf, fakeweight])
 	String fn
@@ -1858,15 +1903,15 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 	string outf
 	variable fakeweight //fake weight means that you know the weights, but aren't prepared to weight the data as well.
 
-	//the first fit is always on the pristine data
 	string cDF = getdatafolder(1)
-	variable ii,jj,kk, summ, err = 0, fileID
+	string allwaves, alltilewaves = ""
+	variable ii,jj,kk, summ, err = 0, fileID, nthreads= ThreadProcessorCount
+	variable timed = datetime
 
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:motofit
 	newdatafolder/o root:packages:motofit:old_genoptimise
 	newdatafolder/o root:packages:WMScatterPlotMatrixPackage
-	
 	try
 		//get limits wave, also sets default parameters.
 		GEN_setlimitsforGENcurvefit(w,holdstring)
@@ -1878,18 +1923,8 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 		NVAR k_m =  root:packages:motofit:old_genoptimise:k_m
 		NVAR fittol = root:packages:motofit:old_genoptimise:fittol
 	
-		//make the montecarlo waves that you will actually fit
-		duplicate/o yy, root:packages:motofit:old_genoptimise:y_montecarlo
-		duplicate/o xx, root:packages:motofit:old_genoptimise:x_montecarlo
-		duplicate/o ee, root:packages:motofit:old_genoptimise:e_montecarlo
-		Wave y_montecarlo = root:packages:motofit:old_genoptimise:y_montecarlo
-		Wave x_montecarlo = root:packages:motofit:old_genoptimise:x_montecarlo
-		Wave e_montecarlo = root:packages:motofit:old_genoptimise:e_montecarlo
-		duplicate/free y_montecarlo, tempdump
-		
-		//make a wave to put the montecarlo iterations in
-		make/o/d/n=(0, dimsize(w, 0)) M_montecarlo = 0
-		make/o/d/n=(0) W_chisq
+		make/n=(strlen(holdstring))/I/U/free holdwave
+		holdwave[] = str2num(holdstring[p])
 		
 		//take care of cursors
 		if(paramisdefault(cursA))
@@ -1898,28 +1933,66 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 		if(paramisdefault(cursB))
 			cursB = dimsize(yy, 0)-1
 		endif
-
-		//now lets do the montecarlo fitting
-		variable timed = datetime
-		for(ii=0 ; ii<Iters ; ii+=1)
-			if(fakeweight)
-				y_montecarlo = yy + gnoise(ee)
-				Gencurvefit/q/n/X=x_montecarlo/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
-			else
-				Gencurvefit/MC/D=tempdump/q/n/X=x_montecarlo/I=1/W=e_montecarlo/K={iterations,popsize, k_m, recomb}/TOL=(fittol) $fn, y_montecarlo[cursA,cursB], w, holdstring, limits
-			endif		
-			redimension/n=(ii + 1, -1) M_montecarlo
-			redimension/n=(ii + 1) W_chisq
-			
-			M_montecarlo[ii][] = w[q]
-			W_chisq[ii] = V_chisq
-			if(strlen(outf))
-				Save/J/O/M="\r\n" M_montecarlo as outf
-			endif
-			print "montecarlo ", ii, " done - total time = ", datetime-timed
+		
+		make/n=(iters, dimsize(w, 0))/o/d M_Montecarlo = NaN
+		allwaves = make2DScatter_plot_matrix(M_monteCarlo, holdstring)
+		for(ii = 0 ; ii < itemsinlist(allwaves) ; ii+=1)
+			alltilewaves += stringfromlist(ii, allwaves) + "_HIST;"
 		endfor
-		print "overall time took: ", datetime - timed , " seconds"
-	
+		maketileplot(alltilewaves)
+		
+		variable/G tgID= ThreadGroupCreate(nthreads)
+		for(ii =0 ; ii < nthreads ; ii += 1)
+			ThreadStart tgID, ii, motoMCWorkerFunc1()
+		endfor
+		
+		for(ii = 0 ; ii < iters ; ii += 1)
+			NewDataFolder/S $(cdf + "forThread")
+			duplicate w, wtemp
+			duplicate yy, yytemp
+			duplicate xx, xxtemp
+			duplicate ee, eetemp
+			duplicate holdwave, holdwavetemp
+			duplicate limits, limitstemp
+			string/g fntemp = fn
+			variable/g iterstemp = iterations
+			variable/g popsizetemp = popsize
+			variable/g recombtemp = recomb
+			variable/g k_mtemp = k_m
+			variable/g fittoltemp = fittol
+			variable/g fakeweighttemp = fakeweight
+			variable/g cursorA = cursA
+			variable/g cursorB = cursB
+			
+			waveclear wtemp, yytemp, xxtemp, eetemp, holdwavetemp, limitstemp
+			ThreadGroupPutDF tgID, :
+		endfor
+
+		for(ii = 0 ; ii < iters ; ii += 1)
+			do
+				DFREF dfr= ThreadGroupGetDFR(tgID,1000)	// Get results in free data folder
+				if ( DatafolderRefStatus(dfr) == 0 )
+					//Print "Main still waiting for worker thread results"
+				else
+					break
+				endif
+			while(1)
+			Wave/sdfr=dfr W_output
+			print "Completed", ii, "iterations, time taken is:", datetime - timed, "."			
+			M_Montecarlo[ii][] = W_output[q]
+			
+			// The next two statements are not really needed as the same action
+			// will happen the next time through the loop or, for the last iteration,
+			// when this function returns.
+			WAVEClear W_output
+			KillDataFolder dfr
+			
+			//update the montecarlo scatterplot
+			allwaves = make2DScatter_plot_matrix(M_monteCarlo, holdstring)
+
+			Doupdate
+		endfor
+
 		//now work out correlation matrix and errors.
 		//see Heinrich et al., Langmuir, 25(7), 4219-4229
 		make/n=(dimsize(w, 0))/d/o W_sigma, means, stdevs
@@ -1954,15 +2027,23 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 				M_correlation[jj][ii] = M_correlation[ii][jj]
 			endfor
 		endfor
-		//make a 2D scatter plot of all the parameters.
-		make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 	catch
 		err = 1	
 	endtry
 
+	// This terminates the MyWorkerFunc by setting an abort flag
+	Variable tstatus= ThreadGroupRelease(tgID)
+	if( tstatus == -2 )
+		Print "Thread would not quit normally, had to force kill it. Restart Igor."
+	endif
+		
+	if(!err)
+		SPM_FreeAxisPlotMatrix(allWaves, 21, 2, 1, MarkerSize=1)
+	endif
+	
 	killwaves/z M_wavestats, goes, means, stdevs, fit_y_montecarlo
 	
-	setdatafolder $cDF
+	setdatafolder cDF
 	return err
 End
 
@@ -1981,7 +2062,23 @@ Function/wave M_montecarloStatistics(M_monteCarlo)
 	return M_Montecarlostats
 End
 
-Function make2DScatter_plot_matrix(M_monteCarlo, holdstring)
+Static Function maketileplot(listofwaves)
+	string listofwaves
+	Display /K=1/W=(35,44,535,435)
+	variable ii, frac, fracgrout
+	frac = 1/itemsinlist(listofwaves)
+	fracgrout = frac * 0.95
+	for(ii = 0 ; ii < itemsinlist(listofwaves) ; ii+=1)
+		appendtograph /B=$("B" + num2istr(ii))/L=$("L"+num2istr(ii)) $(stringfromlist(ii, listofwaves))
+		modifygraph nolabel($("L"+num2istr(ii))) = 2
+		ModifyGraph standoff($("L"+num2istr(ii)))=0, standoff($("B"+num2istr(ii)))=0
+		ModifyGraph freePos($("B" + num2istr(ii)))={0,$("L" + num2istr(ii))}
+		ModifyGraph axisEnab($("L" + num2istr(ii)))={ii * frac,(ii+1) * fracgrout}
+		ModifyGraph freePos($("L"+num2istr(ii)))={0,$("B" + num2istr(ii))}
+	endfor
+ENd
+
+Function/t make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 	Wave M_montecarlo
 	string holdstring
 
@@ -1998,18 +2095,21 @@ Function make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 	try
 		for(ii = 0 ; ii < dimsize(M_montecarlo, 1) ; ii += 1)
 			if(stringmatch(holdstring[ii], "0"))
-				make/n=(dimsize(M_montecarlo, 0))/o/y=(wavetype(M_montecarlo)) $("MC_" + num2istr(ii))
+				make/n=(dimsize(M_montecarlo, 0))/o/y=(wavetype(M_montecarlo)) $("MC_" + num2istr(ii)), $("MC_" + num2istr(ii) + "_HIST")
 				Wave M_montecarloI = $("MC_" + num2istr(ii))
+				Wave M_montecarloHIST = $("MC_" + num2istr(ii) + "_HIST")
 				M_montecarloI[] = M_montecarlo[p][ii]
 				allWaves += "root:packages:Motofit:gencurvefit:MC_" + num2istr(ii) + ";"
+				Histogram/P/C/B=3 $("MC_" + num2istr(ii)), $("MC_" + num2istr(ii) + "_HIST")
 			endif
 		endfor
-		SPM_FreeAxisPlotMatrix(allWaves, 21, 2, 1, MarkerSize=1)
 	catch
+		setdatafolder $cDF
 		abort
 	endtry
 
 	setdatafolder $cDF
+	return allwaves
 End
 
 Function gen_synthMCfmCovar(coefs, M_covar, holdstring, howmany)

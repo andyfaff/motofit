@@ -20,7 +20,7 @@ OutFile "./motofitInstaller.exe"
 !insertmacro MUI_PAGE_WELCOME
 
 ;!define MUI_DIRECTORYPAGE_VARIABLE $INSTDIR
-;!define MUI_DIRECTORYPAGE_TEXT_TOP "Where would you like to install Motofit? I suggest you put it into C:\Program Files\Wavemetrics\Igor Pro Folder\User Procedures\ but it's up to you."
+;!define MUI_DIRECTORYPAGE_TEXT_TOP "Where would you like to install Motofit? I suggest you put it into Documents\User Procedures\ but it's up to you."
 ;!insertmacro MUI_PAGE_DIRECTORY
 
 !insertmacro MUI_PAGE_INSTFILES
@@ -81,14 +81,11 @@ ${EndIf}
 	File "../../../XOP Toolkit 6/IgorXOPs6/XMLutils/trunk/win/XMLutils.xop"
 	File "../../../XOP Toolkit 6/IgorXOPs6/XMLutils/trunk/win/XMLutils Help.ihf"
 	
-	File "../../../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP.xop"
-	File "../../../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP Help.ihf"
+	File "../../../XOP Toolkit 6/IgorXOPs6/ZIP/trunk/win/ZIP.xop"
+	File "../../../XOP Toolkit 6/IgorXOPs6/ZIP/trunk/win/ZIP Help.ihf"
 	
     CreateShortCut "Shortcut to HDF5.lnk" "$1\More Extensions\File Loaders\HDF5.xop"
 
-	ReadRegStr $1 HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Igor.exe" "Path"
-	
-	SetOutPath $1
 	File "../../../XOP Toolkit 6/IgorXOPs6/pthreads_win/lib/pthreadVC2.dll"
 	File "../../../XOP Toolkit 6/IgorXOPs6/pthreads_win/lib/COPYING.txt"
 	File "../../../XOP Toolkit 6/IgorXOPs6/pthreads_win/lib/COPYING.lib"

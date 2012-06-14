@@ -71,26 +71,25 @@ ${EndIf}
 	File "../../../XOP Toolkit 5/IgorXOPs5/multiopenfiles/trunk/win/multiopenfiles.xop"
 	File "../../../XOP Toolkit 5/IgorXOPs5/multiopenfiles/trunk/win/multiopenfiles Help.ihf"
 		
-	File "../../../XOP Toolkit 5/IgorXOPs5/SOCKIT/trunk/win/SOCKIT.xop"
-	File "../../../XOP Toolkit 5/IgorXOPs5/SOCKIT/trunk/win/SOCKIT Help.ihf"
+	File "../../../XOP Toolkit 6/IgorXOPs6/SOCKIT/trunk/win/SOCKIT.xop"
+	File "../../../XOP Toolkit 6/IgorXOPs6/SOCKIT/trunk/win/SOCKIT Help.ihf"
 	
-	File "../../../XOP Toolkit 5/IgorXOPs5/XMLutils/trunk/win/XMLutils.xop"
-	File "../../../XOP Toolkit 5/IgorXOPs5/XMLutils/trunk/win/XMLutils Help.ihf"
+	File "../../../XOP Toolkit 6/IgorXOPs6/XMLutils/trunk/win/XMLutils.xop"
+	File "../../../XOP Toolkit 6/IgorXOPs6/XMLutils/trunk/win/XMLutils Help.ihf"
 	
 	File "../../../XOP Toolkit 6/IgorXOPs6/neutronunpacker/trunk/win/neutronunpacker.xop"
 	
-	File "../../../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP.xop"
-	File "../../../XOP Toolkit 5/IgorXOPs5/ZIP/trunk/win/ZIP Help.ihf"
+	File "../../../XOP Toolkit 6/IgorXOPs6/ZIP/trunk/win/ZIP.xop"
+	File "../../../XOP Toolkit 6/IgorXOPs6/ZIP/trunk/win/ZIP Help.ihf"
 	
     CreateShortCut "Shortcut to HDF5.lnk" "$1\More Extensions\File Loaders\HDF5.xop"
 
 	ReadRegStr $1 HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Igor.exe" "Path"
 	
-	SetOutPath $1
-	File "../../../XOP Toolkit 5/IgorXOPs5/pthreads-w32-2-8-0-release/pthreadVC2.dll"
-	File "../../../XOP Toolkit 5/IgorXOPs5/pthreads-w32-2-8-0-release/COPYING.txt"
-	File "../../../XOP Toolkit 5/IgorXOPs5/pthreads-w32-2-8-0-release/COPYING.lib"
-	
+	File "../../../XOP Toolkit 6/IgorXOPs6/pthreads_win/lib/pthreadVC2.dll"
+	File "../../../XOP Toolkit 6/IgorXOPs6/pthreads_win/lib/COPYING.txt"
+	File "../../../XOP Toolkit 6/IgorXOPs6/pthreads_win/lib/COPYING.lib"
+
 	
 SectionEnd
 
