@@ -180,7 +180,6 @@ Function PolarizedReduction(inputPathStr, outputPathStr, scalefactorI00, scalefa
 		if(verbose)
 			print "(Polarized Reduction) This is what comes out of reducepol (toSplice = )", toSplice
 		endif
-		print dontoverwrite
 		if(dontoverwrite)
 			
 			Tfname = stringfromlist(0, toSplice, ":") //Takes the first angle of the files that comes out of reducepol for loop
@@ -1125,25 +1124,34 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 				
 				//now normalise the counts in the reflected beam by the direct beam spectrum
 				//this gives a reflectivity
-				//and propagate the errors, leaving the fractional variance (dr/r)^2
+				//and propagate the errors
 				//this step probably produces negative reflectivities, or NaN if M_specD is 0.
 				//ALSO, 
 				//M_refSD has the potential to be NaN is M_topandtailA0 or M_specD is 0.
 				
 				//ATTENTION: For the polarization corrected data, no complete error propagation through the polarization correction is performed.
 				//Currently the error is simply taken from the intensity in the corrected spectra.
-				//A complete error propagation is to be implemented in the future.				
-				multithread M_ref[][][] = M_topandtailA0[p][q][r] / M_specD[p][0]
-				multithread M_refPolCorr[] = M_specA0PolCorr[p] / M_specDPolCorr[p]
-				//M_refSD[][] =   (M_topandtailA0SD[p][q] / M_topandtailA0[p][q])^2 +(W_specDSD[p] / W_specD[p])^2 
+				//A complete error propagation is to be implemented in the future.
+				//The simplified error propagation is implemented in this code				
 				M_refSD = 0
 				M_refPolCorrSD = 0	
+				M_ref = 0
+				M_refPolCorr = 0
 				
-				multithread M_refSD[][][] += numtype((M_topandtailA0SD[p][q][r] / M_topandtailA0[p][q][r])^2) ? 0 : (M_topandtailA0SD[p][q][r] / M_topandtailA0[p][q][r])^2
-				multithread M_refSD[][][] += numtype((M_specDSD[p][0] / M_specD[p][0])^2) ? 0 : (M_specDSD[p][0] / M_specD[p][0])^2	
+				multithread M_refSD[][][] = sqrt(((M_topandtailA0SD[p][q][r] / M_specD[p][0])^2 + (M_topandtailA0[p][q][r]^2 / (M_specD[p][0]^4)) * M_specDSD[p][0]^2))
+				multithread M_refPolCorrSD[] = sqrt(((M_specA0PolCorrSD[p] / M_specDPolCorr[p])^2 + (M_specA0PolCorr[p]^2 / (M_specDPolCorr[p]^4)) * M_specDPolCorrSD[p]^2))
+				multithread M_ref[][][] = M_topandtailA0[p][q][r] / M_specD[p][0]
+				multithread M_refPolCorr[] = M_specA0PolCorr[p] / M_specDPolCorr[p]
 				
-				multithread M_refPolCorrSD[] += numtype((M_specA0PolCorrSD[p] / M_specA0PolCorr[p])^2) ? 0 : (M_specA0PolCorrSD[p] / M_specA0PolCorr[p])^2
-				multithread M_refPolCorrSD[] += numtype((M_specDPolCorrSD[p] / M_specDPolCorr[p])^2) ? 0 : (M_specDPolCorrSD[p] / M_specDPolCorr[p])^2	
+				//scale reflectivity by scale factor
+ 	                   // because refSD is stil fractional variance (dr/r)^2 have to divide by scale factor squared.
+				multithread M_ref /= scalefactors
+				multithread M_refSD /= (scalefactors)
+				////A division of the polarization corrected spectra by the scalefactor is not performed, since the spectra are scaled before the polarization correction. 
+				////This might lead to slight differences in scaling, although I have not yet encountered such a case. 
+				////If the scaling is different after the polarization correction, NEW scalefactors have to be provided! Otherwise, here new scalefactors would need to be provided, which complicates the whole reduction considerably.
+				//multithread M_refPolCorr /= scalefactors
+				//multithread M_refPolCorrSD /= (scalefactors)
 				
 				//now calculate the Q values for the detector pixels.  Each pixel has different 2theta and different wavelength, ASSUME that they have the same angle of incidence
 				multithread M_qz[][][]  = 2 * Pi * (1 / M_lambda[p][r]) * (sin(M_twotheta[p][q][r] - omega[p][r]) + sin(M_omega[p][q][r]))
@@ -1168,42 +1176,6 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 				multithread M_qzSD[][][] += (domega/omega[p][r])^2
 				multithread M_qzSD = sqrt(M_qzSD)
 				multithread M_qzSD *= M_qz
-				
-				//correct for the beam monitor one counts.  This assumes that the direct beam was measured with the same
-				//slit characteristics as the reflected beam.  This assumption is normally ok for the first angle.  One can only hope that everyone
-				//have done this for the following angles.
-				//multiply by bmon1_direct/bmon1_angle0
-		
-				//			//there should exist a global variable by the name of angle0DF + BM1counts, which is the summed BM1 count.
-				//			//this normalisation can be done in processNexus file
-				//			NVAR/z bmon1_counts_direct = $(directDF) + ":bm1counts"
-				//			NVAR/z bmon1_counts_angle0 = $(angle0DF) + ":bm1counts"
-				//			
-				//			if(nvar_exists(bmon1_counts_direct) && nvar_exists(bmon1_counts_angle0))
-				//				if(bmon1_counts_direct != 0 && bmon1_counts_angle0 != 0)
-				//					temp =  ((sqrt(bmon1_counts_direct)/bmon1_counts_direct)^2 + (sqrt(bmon1_counts_angle0)/bmon1_counts_angle0)^2) //(dratio/ratio)^2
-				//					
-				//					multithread M_refSD += temp		//M_refSD is still fractional variance at this point.
-				//					multithread M_ref *= bmon1_counts_direct/bmon1_counts_angle0
-				//				endif
-				//			endif
-
-				//M_refSD is still (dr/r)^2
-				multithread M_refPolCorrSD = sqrt(M_refPolCorrSD)
-				multithread M_refPolCorrSD *= M_refPolCorr
-				
-				multithread M_refSD = sqrt(M_refSD)
-				multithread M_refSD *= M_ref
-						
-				//scale reflectivity by scale factor
-				// because refSD is stil fractional variance (dr/r)^2 have to divide by scale factor squared.
-				multithread M_ref /= scalefactors
-				//A division of the polarization corrected spectra by the scalefactor is not performed, since the spectra are scaled before the polarization correction. 
-				//This might lead to slight differences in scaling, although I have not yet encountered such a case. 
-				//If the scaling is different after the polarization correction, NEW scalefactors have to be provided! Otherwise, here new scalefactors would need to be provided, which complicates the whole reduction considerably.
-				//multithread M_refPolCorr /= scalefactors
-				multithread M_refSD /= (scalefactors)
-				//multithread M_refPolCorrSD /= (scalefactors)
 				
 				//now cut out the pixels that aren't in the reflected beam
 				//			deletepoints/M=1 hiPx+1, dimsize(M_ref,1), M_ref,M_refSD, M_qz, M_qzSD, M_omega, M_twotheta
@@ -1415,6 +1387,8 @@ Function  reducerpanelPOL() : Panel  //reducerpanel
 	make/b/u/n=(4,9,2)/o root:packages:platypus:data:Reducer:angledata_selPOL
 	make/n=(4,9)/o/t root:packages:platypus:data:Reducer:angledata_listPOL
 	make/o/w/u/n=(4,3)/o root:packages:platypus:data:Reducer:angledata_colorPOL
+	make/b/u/n=(4,9,2)/o root:packages:platypus:data:Reducer:angledata_sel
+	make/n=(4,9)/o/t root:packages:platypus:data:Reducer:angledata_list
 	string/g root:packages:platypus:data:Reducer:inputpathStr
 	string/g root:packages:platypus:data:Reducer:outputpathStr
 	string/g root:packages:platypus:data:Reducer:waterrunfile
@@ -1528,8 +1502,8 @@ Function  reducerpanelPOL() : Panel  //reducerpanel
 	Button downloadPlatdata_tab0,fSize=9
 
 	Button clear_tab0,pos={772,55},size={86,17},proc=SLIMPOL_buttonprocpol,title="clear"
-	string titlestring = "Hold down \"ctrl\" + left click on item for a help printed in the MAIN IGOR CommandWindow."
-	titlebox/z helpfield,pos={13,205},size={520,23}, fixedSize =1,title=titlestring 
+	string titlestring = "Hold down \"ctrl\" + left click on item for a help printed in the MAIN IGOR CommandWindow. 	 "
+	titlebox/z helpfield,pos={13,205},size={520,23}, fixedSize =0,title=titlestring 
 	titlebox/z helpfield,fstyle = 1, frame=3, fsize =12
 	//Killstrings/z titlestring
 End
@@ -1701,7 +1675,7 @@ Function SLIMPOL_buttonprocpol(ba) : ButtonControl //SLIM_buttonproc
 			string tempDF,filenames, water = "", tempangledata_listPOL
 			string fileNameList="", righteousFileName = "", fileFilterStr = ""
 			string cmd, template
-			string storestringlist,storestringlisttemp, loadstringlist, loadstringsel, tempdeststring, thepolpath,polfilenamelists
+			string storestringlist,storestringlisttemp, loadstringlist, loadstringsel, tempdeststring, thepolpath,polfilenamelists, tempoutputpathStr
 			strswitch(ba.ctrlname)
 				
 				case "reduce_tab0":
@@ -2043,6 +2017,7 @@ Function SLIMPOL_buttonprocpol(ba) : ButtonControl //SLIM_buttonproc
 						break
 					endif 
 						string dest, destination, selectfile
+						tempoutputpathStr = ""
 						Prompt dest, "Please enter a name for the list to be stored (no special characters, no spaces)."
 						Prompt destination, "Do you want to store the list to hard drive? Type in a destination file name"
 						Prompt selectfile, "Or select file from disk below to overwrite an existing file.", popup, "New file;Select file from disk to overwrite"
@@ -2099,14 +2074,16 @@ Function SLIMPOL_buttonprocpol(ba) : ButtonControl //SLIM_buttonproc
 
 							Open /D /R /F=fileFilters /P=pla_temppath_read /M="Select a file" refNum
 							if(strlen(S_fileName)>0)
+								tempoutputpathStr = S_fileName
 								storefilelist = itemsinlist(S_fileName, ":")
 								S_filename = stringfromlist(storefilelist-1,S_fileName, ":")
 								destination =  replacestring("_StoredAnglelist.dat", S_fileName, "")
 							else
 								destination = ""
+								tempoutputpathstr = ""
 							endif	
 							killpath/z pla_temppath_read
-							endif
+						endif
 						if(strlen(destination)>0)
 							storestringlisttemp = "root:packages:platypus:data:Reducer:" + destination + "_StoredAnglelist"
 						make/n=(23,9)/o/t $(storestringlisttemp) //list
@@ -2135,18 +2112,28 @@ Function SLIMPOL_buttonprocpol(ba) : ButtonControl //SLIM_buttonproc
 						storelisttemp[20][0] = "Meas with Ana"; storelisttemp[20][1] = num2str(measwithanalyzer);
 						storelisttemp[21][0] = "Dont Overwrite"; storelisttemp[21][1] = num2str(donotoverwrite);
 						storelisttemp[22][0] = "Verbose"; storelisttemp[22][1] = num2str(verbosevar);
-						
-						GetFileFolderInfo/q/z outputpathStr
+						if(strlen(tempoutputpathStr)>0)
+							tempoutputpathStr = removeending(tempoutputpathStr, destination + "_StoredAnglelist.dat") 
+						else 
+							tempoutputpathStr = outputpathstr
+							print "Output set to the OUTPUTPATH specified!!"
+						endif	
+							GetFileFolderInfo/q/z tempoutputpathStr
 						if(V_flag)//path doesn't exist
-							Doalert 0, "Please enter a valid filepath to place the downloaded files"
+							Doalert 0, "Error, Could not open the specified file."
 							return 0	
 						endif
-						thepolPath = outputpathStr
+						if(strlen(tempoutputpathStr)>0)
+							thepolPath = tempoutputpathStr
+							tempdeststring = destination +  "_StoredAnglelist"+".dat"
+						else
+							print "ERROR, Could not open the specified file.  (SLIMPOL_buttonprocpol(ba))"
+							return 0	
+						endif
 						Newpath/o/q/z pla_temppath_read, thepolPath
-						tempdeststring = destination +  "_StoredAnglelist"+".dat"
 						open/P=pla_temppath_read storefilelist as tempdeststring						
 						if(V_flag)
-							print "ERROR writing combined file R11 (splicefilesPolCorr)";	 abort
+							print "ERROR writing reducer parameters to disk (SLIMPOL_buttonprocpol(ba))";	 abort
 						endif
 						storestringlisttemp = "root:packages:platypus:data:Reducer:"
 						make/n=(23,1)/o/t $(storestringlisttemp+"temp1") //list
@@ -2180,7 +2167,9 @@ Function SLIMPOL_buttonprocpol(ba) : ButtonControl //SLIM_buttonproc
 						close storefilelist
 						//Save/O/J/P=pla_temppath_read $(storestringlisttemp) as tempdeststring
 						killwaves/z storelisttemp, storelisttemp1 , storelisttemp2, storelisttemp3, storelisttemp4, storelisttemp5, storelisttemp6, storelisttemp7, storelisttemp8, storelisttemp9 
-						print "File \"" + destination + "_StoredAnglelist"+ ".dat\" written to disk:" + outputpathStr
+						if(strlen(tempoutputpathStr)>0)
+							print "File \"" + destination + "_StoredAnglelist"+ ".dat\" written to disk:" + tempoutputpathStr
+						endif
 						else 
 							print "No name specified, nothing written to hard drive."
 						endif
@@ -2205,11 +2194,13 @@ Function SLIMPOL_buttonprocpol(ba) : ButtonControl //SLIM_buttonproc
 						break
 					case 1:
 						GetFileFolderInfo/q/z outputpathStr
+						tempoutputpathStr = outputpathStr
 						if(V_flag)//path doesn't exist
-							Doalert 0, "Please enter a valid filepath for the data source"
-							return 0	
+							Doalert 0, "The path given in the output directory is not valid.\r Will open default folder."
+							//return 0
+							tempoutputpathStr = ""	
 						endif
-						thepolPath = outputpathStr
+						thepolPath = tempoutputpathStr
 						Newpath/o/q/z pla_temppath_read, thepolPath
 						LoadWave/A=temploadwave/o/H/k=2/J/p=pla_temppath_read/L={0,0,0,0,0}/m
 		
