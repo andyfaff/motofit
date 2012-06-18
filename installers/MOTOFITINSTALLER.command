@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #set your proxy server
-export ALL_PROXY="http://proxy-dr.ansto.gov.au:3128"
+#export ALL_PROXY="http://proxy-dr.ansto.gov.au:3128"
 
 #set your proxypassword.
 #this should be of the form "-U username:password"
