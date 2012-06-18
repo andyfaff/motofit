@@ -18,7 +18,7 @@
 Menu "Motofit"
 	//this function sets up the user menus at the top of the main IGOR window.
 	"Fit Reflectivity data",plotCalcref()
-	"Load experimental data",Moto_Plotreflectivity()()
+	"Load experimental data",Moto_Plotreflectivity()
 	"Co-refine Reflectometry Data", Motofit_GR#init_fitting()
 	"SLD calculator", Moto_SLDdatabase()
 	"create local chi2map for requested parameter",motofit#Moto_localchi2()
