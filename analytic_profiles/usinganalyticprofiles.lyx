@@ -1,0 +1,778 @@
+#LyX 1.5.4 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass article
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Some general instructions for analytic profiles.
+ 
+\end_layout
+
+\begin_layout Standard
+These are some general instructions for using analytic profile code with
+ Motofit.
+ The reason for using analytic profiles is that you can encode specific
+ knowledge about your system into the fitting process.
+ For example, you may want to use a parabolic volume fraction profile for
+ a grafted polymer layer, in which case you may want to use parameters such
+ as grafting density and a power law exponent as fitting parameters.
+\end_layout
+
+\begin_layout Standard
+Another example is the analysis of adsorbed lipid layers.
+ You may want to parameterise the model in terms of area per molecule, and
+ thickness of tail and head group regions.
+ Doing so reduces the number of parameters normally used in a 'slab' fit,
+ and also encodes the knowledge that there must be head/tail group equivalence.
+\end_layout
+
+\begin_layout Standard
+Such analytic profiles normally reduce the number of free parameters, which
+ greatly strengthens the fitting process.
+ In addition the parameterisation usually provides relevant physical parameters
+ that normally would have to be back calculated - such as area per molecule
+ in the example given above, or the exponent in the parabolic volume fraction
+ profile.
+\end_layout
+
+\begin_layout Standard
+The main caveat is that, in general, you have to have a specific fitting
+ function for each model structure.
+ In otherwords, small changes to the model you wish to use normally entails
+ a small amount of code changes.
+ However, don't be put off, it's not difficult.
+\end_layout
+
+\begin_layout Section
+If you need help
+\end_layout
+
+\begin_layout Standard
+If you need help email me and we can collaborate (I usually ask for co-authorshi
+p for a significant piece of work).
+ andyfaff@gmail.com or anz@ansto.gov.au.
+\end_layout
+
+\begin_layout Section
+General Design of fitting function
+\end_layout
+
+\begin_layout Standard
+We will discuss this in terms of the bilayer example (
+\begin_inset LatexCommand ref
+reference "sec:Bilayer-example"
+
+\end_inset
+
+).
+ The 
+\noun on
+lipid 
+\noun default
+function is referred to as the 
+\noun on
+fit function
+\noun default
+.
+ The 
+\noun on
+lipidtoref
+\noun default
+ function is referred to as the 
+\noun on
+helper function.
+
+\noun default
+ Lets consider the 
+\noun on
+lipid
+\noun default
+ function first.
+ We need to supply various arrays, or 
+\emph on
+waves
+\emph default
+, to this function.
+ The first, 
+\noun on
+coefs, 
+\noun default
+contains the parameters for the fit.
+ For this specific case inspection of the comments in the 
+\noun on
+lipidtoRef
+\noun default
+ function says that this array needs to be 20 rows long.
+ The exact meaning of each of the parameters in 
+\noun on
+coefs
+\noun default
+ is outlined in the comments at the start of the 
+\noun on
+lipidtoref
+\noun default
+ function.
+ The second and third waves are the reflectivity and Q values for the points
+ that have to be calculated.
+\end_layout
+
+\begin_layout Standard
+The 
+\noun on
+lipid
+\noun default
+ function is called by the fitting engine.
+ 
+\noun on
+Lipid
+\noun default
+ calls the 
+\noun on
+lipidtoref
+\noun default
+ function with the coefficients.
+ The purpose of the 
+\noun on
+lipidtoref
+\noun default
+ function is to convert the input parameters into a wave that can be used
+ by the reflectometry kernel to calculate reflectivity.
+ In this example the wave that the 
+\noun on
+lipidtoref
+\noun default
+ function creates is called 
+\noun on
+W_forreflectivity (
+\begin_inset LatexCommand ref
+reference "sec:parameterisation-of-W_forreflectivity"
+
+\end_inset
+
+).
+
+\noun default
+ This wave is then used by the 
+\noun on
+motofit
+\noun default
+ function to calculate the reflectivity.
+ You do not have to worry about the RR and QQ waves, the fitting engine
+ provides those.
+\end_layout
+
+\begin_layout Standard
+Simple examples might just use several layers, the 
+\noun on
+lipid
+\noun default
+ example given here has 5.
+ However, a parabolic function may have several hundred layers.
+ These layers represent the SLD of the parabolic function at a given distance
+ from the surface.
+\end_layout
+
+\begin_layout Section
+Using the analytic function in practice
+\end_layout
+
+\begin_layout Enumerate
+start Motofit (
+\emph on
+motofit->fit reflectivity data
+\emph default
+)
+\end_layout
+
+\begin_layout Enumerate
+In the reflectivity panel select the correct dq/q resolution smearing for
+ the datasets you want to fit.
+\end_layout
+
+\begin_layout Enumerate
+Load the data in using the 
+\emph on
+load data
+\emph default
+ button.
+\end_layout
+
+\begin_layout Enumerate
+Bring up the genetic optimisation curvefitting panel.
+ You can do this by pressing Cmd-1 (OSX) or Ctrl-1 (windows).
+ Or select the 
+\emph on
+Analysis->Genetic Curvefitting
+\emph default
+ menu option.
+\end_layout
+
+\begin_layout Enumerate
+On the 
+\emph on
+function and data
+\emph default
+ tab select the 
+\noun on
+fit function
+\noun default
+ for the analytic profile, e.g.
+ 
+\noun on
+Lipid
+\noun default
+.
+\end_layout
+
+\begin_layout Enumerate
+On the same tab select the Y and X data for the data you want to fit.
+ Loaded reflectivity data is normally kept in the 
+\noun on
+root:data:<datasetname> 
+\noun default
+datafolder.
+\end_layout
+
+\begin_layout Enumerate
+On the 
+\emph on
+data options
+\emph default
+ tab select the error wave for the data you want to fit (if required).
+\end_layout
+
+\begin_layout Enumerate
+On the 
+\emph on
+coefficients
+\emph default
+ tab select the coefficients wave you want to use to fit the data.
+ For the 
+\noun on
+lipid
+\noun default
+ example the wave needs to be 20 rows long.
+ If no wave exists you can create one by selecting the 
+\emph on
+new wave
+\emph default
+ option, you will have to supply the name of the coefficient wave (I suggest
+ something beginning with 
+\noun on
+coef_
+\noun default
+) and the number of parameters (20 for the 
+\noun on
+lipid
+\noun default
+ example).
+\end_layout
+
+\begin_layout Enumerate
+Enter initial guesses for each of the parameters.
+ The meaning of the parameters in the 
+\noun on
+lipid
+\noun default
+ example can be read from the code comments in the 
+\noun on
+lipidtoRef
+\noun default
+ function.
+\end_layout
+
+\begin_layout Enumerate
+Enter lower and upper limits for each parameter.
+\end_layout
+
+\begin_layout Enumerate
+You then need to select the parameters you want to hold during the fit.
+ Often the analytic profile requires that you hold some.
+ In the 
+\noun on
+lipid
+\noun default
+ example you need to hold parameters 9, 10, 11, 12.
+\end_layout
+
+\begin_layout Enumerate
+When you are ready press 
+\noun on
+Do it.
+\end_layout
+
+\begin_layout Enumerate
+The fit proceeds and eventually finished (hopefully with a good fit).
+\end_layout
+
+\begin_layout Enumerate
+The fitted coefficients are contained in the Igor data folder you are currently
+ in.
+ It can be a good idea to move them to the data folder that the data is
+ contained in.
+\end_layout
+
+\begin_layout Enumerate
+If you need to create an SLD profile corresponding to the analytic model
+ use the following steps from the IGOR command line:
+\end_layout
+
+\begin_layout LyX-Code
+//make the SLD wave, give it your own name
+\end_layout
+
+\begin_layout LyX-Code
+make/n=1000/o/d SLD_profile   
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+//calculate the SLD curve
+\end_layout
+
+\begin_layout LyX-Code
+//the W_forreflectivity wave from the last iteration of the fit needs to
+\end_layout
+
+\begin_layout LyX-Code
+//be in the same data folder as you are currently in
+\end_layout
+
+\begin_layout LyX-Code
+Moto_SLDplot(w_foreflectivity, SLD_profile)
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+//alternatively you can calculate it again
+\end_layout
+
+\begin_layout LyX-Code
+lipidtoref(coefs_for_fit)
+\end_layout
+
+\begin_layout LyX-Code
+Moto_SLDplot(w_foreflectivity, SLD_profile)
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+//Display the SLD plot
+\end_layout
+
+\begin_layout LyX-Code
+display SLD_profile
+\end_layout
+
+\begin_layout Section
+parameterisation of 
+\noun on
+W_forreflectivity
+\begin_inset LatexCommand label
+name "sec:parameterisation-of-W_forreflectivity"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+W_forreflectivity 
+\noun default
+should be 4N+6 rows long, where N is the number of layers in the model of
+ the interface.
+ The meaning of the 4N+6 parameters is as follows:
+\end_layout
+
+\begin_layout Standard
+w[0] = N
+\end_layout
+
+\begin_layout Standard
+w[1] = scale factor
+\end_layout
+
+\begin_layout Standard
+w[2] = SLD of fronting medium
+\end_layout
+
+\begin_layout Standard
+w[3] = SLD of backing medium
+\end_layout
+
+\begin_layout Standard
+w[4] = linear background
+\end_layout
+
+\begin_layout Standard
+w[5] = roughness between the backing medium and layer N
+\end_layout
+
+\begin_layout Standard
+w[6] = thickness of layer 1
+\end_layout
+
+\begin_layout Standard
+w[7] = SLD of layer 1
+\end_layout
+
+\begin_layout Standard
+w[8] = solvent penetration, expressed as a percentage, in layer 1
+\end_layout
+
+\begin_layout Standard
+w[9] = roughness between layer 1 and fronting medium
+\end_layout
+
+\begin_layout Standard
+........
+\end_layout
+
+\begin_layout Standard
+w[4(N - 1) + 6] = thickness of layer N
+\end_layout
+
+\begin_layout Standard
+w[4(N - 1) + 7] = SLD of layer N
+\end_layout
+
+\begin_layout Standard
+w[4(N - 1) + 8] = solvent penetration, expressed as a percentage, in layer
+ N
+\end_layout
+
+\begin_layout Standard
+w[4(N - 1) + 9] = roughness between layer N and N-1
+\end_layout
+
+\begin_layout Standard
+All SLD's are used in units of 
+\begin_inset Formula $10^{-6}A^{-2}$
+\end_inset
+
+ (the NSLD of Si would be entered as 2.07).
+ All thicknesses are in Angstrom.
+ All roughnesses are described by an error function with that s.d..
+ Solvent penetration is expressed in terms of percentage solvent in layer
+ N.
+ The overall SLD in layer N is a volume fraction weighted sum of the SLD
+ of layer N and the amount of backing medium (solvent) in layer N.
+\end_layout
+
+\begin_layout Section
+Bilayer example
+\begin_inset LatexCommand label
+name "sec:Bilayer-example"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+#pragma rtGlobals=1 // Use modern global access method.
+\end_layout
+
+\begin_layout LyX-Code
+Function lipid(coefs,rr,qq):fitfunc
+\end_layout
+
+\begin_deeper
+\begin_layout LyX-Code
+wave coefs,qq,rr
+\end_layout
+
+\begin_layout LyX-Code
+lipidtoRef(coefs)
+\end_layout
+
+\begin_layout LyX-Code
+Wave W_forReflectivity
+\end_layout
+
+\begin_layout LyX-Code
+motofit(W_forreflectivity,RR,qq)
+\end_layout
+
+\begin_layout LyX-Code
+RR=log(RR)
+\end_layout
+
+\end_deeper
+\begin_layout LyX-Code
+End
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+Function lipidtoRef(coefs)
+\end_layout
+
+\begin_deeper
+\begin_layout LyX-Code
+Wave coefs
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[0]=scalefactor
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[1]=SLDsuperphase (silicon?)
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[2]=SLDsolvent (d2o mix?) 
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[3]=background
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[5]=oxide thickness
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[6]=SLDoxide
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[7]=roughness of si/sio2
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[8]=roughness of inner lipid head/sio2
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[9]=Vh, headvolume     (cubic A)                     FIX
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[10]= bh, sum of scattering lengths of headgroup     FIX
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[11]= Vt, molecular volume of tailgroup (cubic A)    FIX
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[12]= bt, sum of scattering lengths of tailgroup     FIX
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[13]=Area per molecule (inner)
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[14]=thickness of inner leaflet head
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[15]=thickness of inner leaflet chain 
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[16]=Area per molecule (outer)
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[17]=thickness of outer leaflet chain
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[18]=thickness of outer leaflet head
+\end_layout
+
+\begin_layout LyX-Code
+//coefs[19]=roughness of lipid layers
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+make/o/d/n=(5*4+6) W_forReflectivity
+\end_layout
+
+\begin_layout LyX-Code
+W_forReflectivity[0] = 5
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[1] = coefs[0]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[2] = coefs[1]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[3] = coefs[2]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[4] = coefs[3]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[5] = coefs[19]
+\end_layout
+
+\begin_layout LyX-Code
+//SiO2 layer
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[6] = coefs[5]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[7] = coefs[6]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[8] = 0
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[9] = coefs[7]
+\end_layout
+
+\begin_layout LyX-Code
+//inner head
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[10] = coefs[14]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[11] = coefs[10] / coefs[9]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[12] = 100 - 100 * (coefs[9] / (coefs[13] * coefs[14]))
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[13] = coefs[8]
+\end_layout
+
+\begin_layout LyX-Code
+//inner chain
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[14] = coefs[15]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[15] = coefs[12] / coefs[11]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[16] = 100 - 100 * (coefs[11] / (coefs[13] * coefs[15]))
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[17] = coefs[19]
+\end_layout
+
+\begin_layout LyX-Code
+//outer tail
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[18] = coefs[17]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[19] = coefs[12] / coefs[11]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[20] = 100 - 100 * (coefs[11] / (coefs[16] * coefs[17]))
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[21] = coefs[19]
+\end_layout
+
+\begin_layout LyX-Code
+//outer head
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[22] = coefs[18]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[23] = coefs[10] / coefs[9]
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[24] = 100 - 100 * (coefs[9] / (coefs[16] * coefs[18]))
+\end_layout
+
+\begin_layout LyX-Code
+W_forreflectivity[25] = coefs[19]
+\end_layout
+
+\end_deeper
+\begin_layout LyX-Code
+End
+\end_layout
+
+\end_body
+\end_document
