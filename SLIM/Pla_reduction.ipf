@@ -1124,8 +1124,8 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		
 		//setup time of flight paraphenalia
 		Wave TOF = $(tempDF + ":data:time_of_flight")
-		make/n=(dimsize(TOF, 0), numspectra)/o M_specTOFHIST, M_lambdaHIST
-		make/n=(dimsize(TOF, 0) - 1, numspectra)/o M_lambda, M_specTOF
+		make/n=(dimsize(TOF, 0), numspectra)/o/d M_specTOFHIST, M_lambdaHIST
+		make/n=(dimsize(TOF, 0) - 1, numspectra)/o/d M_lambda, M_specTOF
 		M_specTOFHIST[][] = TOF[p][q]
 		M_lambdaHIST = 0
 		
@@ -1324,7 +1324,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		endif
 
 		scanpoint = originalScanPoint
-	
+			
 		//someone provided a wavelength spectrum BIN EDGES to rebin to.
 		variable hiPoint, loPoint
 		if(!paramisdefault(rebinning) && waveexists(rebinning))
@@ -1374,7 +1374,9 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		M_lambda[][] = 0.5 * (M_lambdaHIST[p][q] + M_lambdaHIST[p + 1][q])
 		M_spectof[][] = 0.5 * (M_specTOFHIST[p][q] + M_specTOFHIST[p + 1][q])
 		
-	
+		detector[][][] /= M_lambdaHIST[p+1][r] - M_lambdaHIST[p][r]
+		detectorSD[][][] /= M_lambdaHIST[p+1][r] - M_lambdaHIST[p][r]
+
 		//Now work out where the beam hits the detector
 		//this is used to work out the correct angle of incidence.
 		//it will be contained in a wave called beampos
@@ -1434,14 +1436,6 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		Wave M_topAndTailSD = $(tempDF+":M_topandtailSD")
 	
 		//assert that in the background subtracted specta + SD matrices there are no NaN or SD < 0
-		wavestats/q/z M_spec
-		if(V_numNans || V_numINFs)
-			abort "Error, found NaNs or INFs in M_spec (processNexusFile)"
-		endif
-		wavestats/q/z M_specSD
-		if(V_numNans || V_numINFs || V_min < 0)
-			abort "Error, found NaNs or INFs, or there was a negative value in M_specSD (processNexusFile)"
-		endif
 		wavestats/q/z M_topandtail
 		if(V_numNans || V_numINFs)
 			abort "Error, found NaNs or INFs, or there was a negative value in M_topandtail (processNexusFile)"
@@ -1450,6 +1444,15 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		if(V_numNans || V_numINFs || V_min < 0)
 			abort "Error, found NaNs or INFs, or there was a negative value in M_topandtailSD (processNexusFile)"
 		endif
+		wavestats/q/z M_spec
+		if(V_numNans || V_numINFs)
+			abort "Error, found NaNs or INFs in M_spec (processNexusFile)"
+		endif
+		wavestats/q/z M_specSD
+		if(V_numNans || V_numINFs || V_min < 0)
+			abort "Error, found NaNs or INFs, or there was a negative value in M_specSD (processNexusFile)"
+		endif
+
 
 		
 		//if you want to normalise by monitor counts do so here.

@@ -127,7 +127,7 @@ Function/c Pla_GetWeightedScalingInOverlap(wave1q,wave1R, wave1dR, wave2q, wave2
 		
 		if(!numtype(wave2Rtemp[ii]) && !numtype(newi) && !numtype(newdi))
 			W_scalefactor[ii] = newi/wave2Rtemp[ii]
-			W_dScalefactor[ii] = W_scalefactor[ii]* sqrt((newdi/newi)^2 + (wave2drtemp[ii]/wave2rtemp[ii])^2)
+			W_dScalefactor[ii] = sqrt((newdi/wave2Rtemp[ii])^2 + ((newi * wave2drtemp[ii])^2)/wave2Rtemp[ii]^4)
 		endif
 	endfor
 	
@@ -146,7 +146,7 @@ Function/c Pla_GetWeightedScalingInOverlap(wave1q,wave1R, wave1dR, wave2q, wave2
 	
 	normal = num/den
 	dnormal = sqrt(1/den)
-//	print normal
+	print normal, dnormal
 	if(numtype(normal))
 		print "ERROR while splicing (GetScalinginOverlap)"
 	endif
