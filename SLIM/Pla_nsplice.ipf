@@ -146,7 +146,7 @@ Function/c Pla_GetWeightedScalingInOverlap(wave1q,wave1R, wave1dR, wave2q, wave2
 	
 	normal = num/den
 	dnormal = sqrt(1/den)
-	print normal, dnormal
+//	print normal, dnormal
 	if(numtype(normal))
 		print "ERROR while splicing (GetScalinginOverlap)"
 	endif
