@@ -1,4 +1,5 @@
 ; Script generated with the Venis Install Wizard
+RequestExecutionLevel user
 
 ; Define your application name
 !define APPNAME "motofit"
@@ -43,8 +44,8 @@ Abort "You don't appear to have IGOR installed"
 ${EndIf}
 	
 	;get rid of previous versions of motofit
-	Delete "$1\User Procedures\motofit\*"
-	RMDir /r "$1\User Procedures\motofit"
+;	Delete "$1\User Procedures\motofit\*"
+;	RMDir /r "$1\User Procedures\motofit"
 
 	SetOutPath "$INSTDIR\User Procedures\motofit"
 	File "../motofit/*.*"
@@ -53,7 +54,7 @@ ${EndIf}
 	File "../motofit/Data/*.*"
 	
 	SetOutPath "$INSTDIR\Igor Procedures"
-	Delete "$INSTDIR\Igor Procedures\Shortcut to motofit.lnk"	 
+;	Delete "$INSTDIR\Igor Procedures\Shortcut to motofit.lnk"	 
 	File "../MOTOFIT_loadpackage.ipf"
 
 	;INSTALL ALL THE XOPs
