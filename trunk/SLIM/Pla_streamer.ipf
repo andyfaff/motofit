@@ -103,7 +103,7 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, sli
 	Wave slicebins
 	variable totalTime
 
-	variable numevents, period, ii, xpos, ypos, tpos, slicepos, totalEvents, numTimeSlices
+	variable numevents, period, ii, totalEvents, numTimeSlices
 	variable numxbins, numtbins, numybins, val
 	string cDF, timeEachSliceStr
 	
@@ -129,38 +129,33 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, sli
 	numybins = dimsize(ybins, 0) - 1
 	numtbins = dimsize(tbins, 0) - 1
 	//make the detector image
-	make/n=(numTimeSlices, numtbins, numybins, numxbins)/I/U/O detector
+	killwaves/z detector
+	make/n=(numTimeSlices * numtbins * numybins * numxbins)/O detector
 	make/n=(numtimeslices)/d/free timeEachSlice
 	detector = 0
 	
 	timeEachSlice = (tempslicebins[p+1] - tempslicebins[p]) / totalTime
 
 	numevents = dimsize(W_unpackedNeutronsy, 0)
-	for(ii = 0 ; ii < numevents ; ii += 1)
-		xpos = binarysearch(xbins, W_unpackedNeutronsX[ii])
-		if(xpos >= 0)
-			slicepos = binarysearch(tempslicebins, W_unpackedNeutronsf[ii] * period)
-			ypos = binarysearch(ybins, W_unpackedNeutronsy[ii])
-			tpos = binarysearch(tbins, W_unpackedNeutronst[ii])
-			if(xpos == numxbins )
-				xpos -= 1
-			endif
-			if(ypos == numybins )
-				ypos -= 1
-			endif
-			if(tpos == numtbins )
-				tpos -= 1
-			endif
-			if(slicepos == numTimeSlices )
-				slicepos -= 1
-			endif
-			
-			if(tpos >= 0 && ypos >= 0 && slicepos >= 0)
-				detector[slicepos][tpos][ypos][xpos] += 1
-				totalEvents += 1
-			endif
-		endif
-	endfor
+	
+	make/n=(numevents)/free/i/u xpos, ypos, tpos, slicepos, eventpos
+	multithread xpos = binarysearch(xbins, W_unpackedNeutronsX[p])
+	multithread ypos = binarysearch(ybins, W_unpackedNeutronsY[p])
+	multithread tpos = binarysearch(tbins, W_unpackedNeutronst[p])
+	multithread slicepos = binarysearch(tempslicebins,  W_unpackedNeutronsF[p] * period)
+	
+	multithread xpos = xpos[p] == numxbins ? xpos[p] - 1 : xpos[p]
+	multithread ypos = ypos[p] == numybins ? ypos[p] - 1 : ypos[p]
+	multithread tpos = tpos[p] == numtbins ? tpos[p] - 1 : tpos[p]
+	multithread slicepos = slicepos[p] == numtimeslices ? slicepos[p] - 1 : slicepos[p]
+	
+	variable t0 = (numtimeslices) 
+	variable t1 = (numtimeslices * numtbins)
+	variable t2 = (numtimeslices * numtbins * numybins)
+	
+	multithread eventpos = slicepos + tpos * t0 + ypos * t1 + xpos * t2
+	histogram/B={0,1, numpnts(detector)} eventpos, detector
+	redimension/n=(numTimeSlices, numtbins, numybins, numxbins) detector
 	sockitwavetostring/TXT="," timeeachslice, timeeachslicestr
 	Note/k detector, "Events:"+num2istr(totalEvents)+";TIME:"+timeeachslicestr
 	killwaves/z W_unpackedNeutronsF, W_unpackedNeutronsx, W_unpackedNeutronsy, W_unpackedNeutronst
