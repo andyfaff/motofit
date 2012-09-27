@@ -1825,7 +1825,7 @@ static Function/s Moto_loadReffile(filename)
 	
 	//get nice name for file.
 	dataname = cleanupname(ParseFilePath(3, filename, ":", 0, 0), 0)
-	dataname = dataname[0, 31 - 7]
+	dataname = dataname[0, 30 - 7]
 	
 	plotyp = str2num(getmotofitoption("plotyp"))
 	if(numtype(plotyp))
@@ -2444,7 +2444,7 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 			open/d refnum as "fit_" + datasettosave
 			if(strlen(S_filename))
 				open refnum as S_filename
-				wfprintf refnum, "%g\t%g\r", fitQQ, fitRR
+				wfprintf refnum, "%4.15g\t%4.15g\r", fitQQ, fitRR
 				close refnum
 			endif
 		
