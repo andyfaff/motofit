@@ -1,4 +1,9 @@
 #pragma rtGlobals=1		// Use modern global access method.
+//chebyshevapproximator(wave0, fit_c_PLP0008682_R, root:data:c_PLP0008682:c_PLP0008682_q);moto_SLDplot(coef_forreflectivity, root:data:theoretical:SLD_theoretical_R)
+//gencurvefit /X=$(dat + "q")/K={100,20,0.7,0.5}/HOLD=wave2/TOL=0.001/D=root:fit_c_PLP0008682_R/W=$(dat + "E")/I=1 Chebyshevapproximator, $(dat + "R"),root:wave0,"",root:wave1
+
+//chebyshevapproximator(root:data:c_PLP0008698:Coef_c_PLP0008698_R, fit_c_PLP0008698_R, root:data:c_PLP0008698:c_PLP0008698_q);moto_SLDplot(coef_forreflectivity, root:data:c_PLP0008698:SLD_c_PLP0008698_R)
+//chebyshevapproximator(root:data:c_PLP0008682:Coef_c_PLP0008682_R, fit_c_PLP0008682_R, root:data:c_PLP0008682:c_PLP0008682_q);moto_SLDplot(coef_forreflectivity, root:data:c_PLP0008682:SLD_c_PLP0008682_R)
 
 constant NUMSTEPS = 40
 constant DELRHO = 0.05
@@ -9,8 +14,9 @@ Function Chebyshevapproximator(w, yy, xx): fitfunc
 
 	createCoefs_ForReflectivity(w)
 	Wave coef_forReflectivity
-	Abelesall(coef_forReflectivity, yy, xx)
-	multithread yy = log(yy)
+	motofit(coef_forreflectivity, yy, xx)
+//	Abelesall(coef_forReflectivity, yy, xx)
+//	multithread yy = log(yy)
 	
 End
 
@@ -37,6 +43,10 @@ Function createCoefs_ForReflectivity(w)
 		numlayers += 1
 		coef_forreflectivity[0] = numlayers
 	endfor
+	
+	if(chebcoefs < 1)
+		return 0
+	endif
 		
 	//now add in the chebyshev
 	//work out the interpolation points, this is the same as the number of chebyshev coefs.
@@ -77,7 +87,7 @@ Function createCoefs_ForReflectivity(w)
 			coef_forReflectivity[4 * numlayers + 6] = MAX_LENGTH/(NUMSTEPS - 1)
 			coef_forReflectivity[4 * numlayers + 7] = (chebSLD[ii])
 			coef_forReflectivity[4 * numlayers + 8] = 0
-			coef_forReflectivity[4 * numlayers + 9] = 0.0
+			coef_forReflectivity[4 * numlayers + 9] = 1
 			
 			lastSLD = chebSLD[ii]
 			numlayers += 1
