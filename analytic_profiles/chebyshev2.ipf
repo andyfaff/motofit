@@ -6,7 +6,12 @@ constant lambda = .0
 
 Function Chebyshevapproximator(w, yy, xx): fitfunc
 	Wave w, yy, xx
-
+	//w[0] = number of slabs
+	//w[1] = scale
+	//w[2] = fronting SLD
+	//w[3] = backing SLD
+	//w[4] = bkg
+	//w[5] =
 	Wave coef_forReflectivity = createCoefs_ForReflectivity(w)
 	motofit(coef_forReflectivity, yy, xx)
 //	yy = log(yy)
