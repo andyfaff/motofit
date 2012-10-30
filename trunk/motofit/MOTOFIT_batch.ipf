@@ -60,6 +60,10 @@ Function FitRefToListOfWaves()
 		else
 			make/n=0/t/free constraints							
 		endif
+		
+		variable/g Vmullayers = str2num(motofit#getmotofitoption("Vmullayers"))
+		variable/g Vappendlayer =  str2num(motofit#getmotofitoption("Vappendlayer"))
+		variable/g Vmulrep = str2num(motofit#getmotofitoption("Vmulrep"))
 					
 		for(ii = 0; ii < itemsinlist(theList) ; ii += 1)
 			Wave RR = $("batchwave" + num2istr(ii) + "_R")
