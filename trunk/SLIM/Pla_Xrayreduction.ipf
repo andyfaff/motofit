@@ -38,10 +38,10 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 	string ref_fname, bkg1, bkg2
 	variable scalefactor, footprint
 
-	string base, w0,w1,w2, w3	
+	string base, w0,w1,w2, w3	, directory=""
 	string cDF = getdatafolder(1)
 	string namespace = "xrdml=http://www.xrdml.com/XRDMeasurement/1.0"
-	variable fileID, bkg1_fileID, bkg2_fileID, err = 0, err2 = 0
+	variable fileID, bkg1_fileID, bkg2_fileID, err = 0, err2 = 0, saveID = 0
 	Variable CuKa, CuKa1,CuKa2,ratio, countTime
 	variable start,stop, ii,  w_HWHM_direct_beam
 	variable t_m = 0.108	//value at which the beam falls to zero
@@ -56,8 +56,11 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 			base = parsefilepath(3, ref_fname, ":", 0, 0)
 		else
 			base = parsefilepath(3, ref_fname, "\\", 0, 0)
-		endif	
+		endif
+		
 		base = cleanupname(base, 0)
+		
+		directory = ParseFilePath(1, ref_fname, ":", 1, 0)
 
 		//make the names of the datawaves something nicer. 
 		w0 = CleanupName((base + "_q"),0)
@@ -261,6 +264,12 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 		xmlclosefile(bkg2_fileID, 0)
 	endif
 	
+	if(!err)
+		open saveID as directory + base + ".txt"
+		wfprintf saveID, "%g \t %g \t %g \t %g \n", qq, rr, dr, dq	 //this prints the wave to file.
+		close saveID	
+	endif
+
 	setdatafolder $cDF
 	return err
 End
