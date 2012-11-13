@@ -42,8 +42,8 @@ Function cubicSplineRefFitter(w, yy, xx):fitfunc
 	//w[7] = roughness 1st preexisting layer
 	//........
 	//w[5 + 3*w[0]] = max thickness of cubic spline region
-	//w[5 + 3*w[0] + 1] = aj of first knot
-	//w[5] + 3*w[0] + n] = aj of nth knot
+	//w[5 + 3*w[0] + 1 + 1] = aj of first knot
+	//w[5 + 3*w[0] + n + 1] = aj of nth knot
 	Wave coef_forReflectivity = cubicspline#createCoefs_ForReflectivity(w)
 	motofit(coef_forReflectivity, yy, xx)
 End
@@ -76,7 +76,7 @@ Static Function/Wave createCoefs_forReflectivity(w)
 	cubicSplineCurve(cubicAJ, cubicSLD, zed)
 	
 	//add in the number of layers that already exist
-	make/d/o/n=(4 * w[0] + 6) coef_forReflectivity = w	
+	make/d/o/n=(4 * w[0] + 6)/free coef_forReflectivity = w	
 	coef_forReflectivity[5] = 0
 	
 	for(ii = 0 ; ii < w[0] ; ii+=1)
