@@ -2,8 +2,6 @@
 #pragma ModuleName=cubicspline
 
 Constant NUMSTEPS = 100
-
-Constant LAMBDA = 1e-10
 Constant WSMOOTH = 0.0
 Constant WSMOOTH1 = 0.0
 
@@ -28,6 +26,7 @@ Function lagrangeSmoother(coefs, yobs, ycalc, sobs)
 
 	duplicate/free yobs, chi2
 	multithread chi2 = ((chi2 - ycalc)/ sobs)^2
+	NVAR LAMBDA
 	return sum(chi2) + LAMBDA * Nc
 End
 
@@ -47,7 +46,6 @@ Function cubicSplineRefFitter(w, yy, xx):fitfunc
 	//w[5] + 3*w[0] + n] = aj of nth knot
 	Wave coef_forReflectivity = cubicspline#createCoefs_ForReflectivity(w)
 	motofit(coef_forReflectivity, yy, xx)
-
 End
 
 Static Function/Wave createCoefs_forReflectivity(w)
@@ -66,15 +64,15 @@ Static Function/Wave createCoefs_forReflectivity(w)
 //	make/free/n=(numpnts(w) - 4 - 3 * w[0])/d cubicAJ
 //	cubicAJ[1, numpnts(cubicAJ) - 2] = w[p + 6 + 3 * w[0]]
 	duplicate/free/r=[5 + 3*w[0] + 1, numpnts(w) - 1] w, cubicAJ
-	insertpoints 0, 1, cubicAJ
-	if(w[0] == 0)
-		cubicAJ[0] = w[2]
-	else
-		cubicAJ[0] = w[3 * (w[0] - 1) + 6]
-	endif
-	redimension/n=(numpnts(cubicAJ) + 1) cubicAJ
-	cubicAJ[numpnts(cubicAJ) - 1] = w[3]
-	
+//	insertpoints 0, 1, cubicAJ
+//	if(w[0] == 0)
+//		cubicAJ[0] = w[2]
+//	else
+//		cubicAJ[0] = w[3 * (w[0] - 1) + 6]
+//	endif
+//	redimension/n=(numpnts(cubicAJ) + 1) cubicAJ
+//	cubicAJ[numpnts(cubicAJ) - 1] = w[3]
+//	
 	cubicSplineCurve(cubicAJ, cubicSLD, zed)
 	
 	//add in the number of layers that already exist
