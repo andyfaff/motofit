@@ -1045,7 +1045,7 @@ Function gen_graphnowbutton(ba) : ButtonControl
 			//lets calculate chi2
 			make/n=(dimsize(ywave, 0))/free/d chi2
 			chi2 = ywave - outputWav
-			Wave/z weighting = $weightwav
+			Wave/z weighting = $PopupWS_GetSelectionFullPath("gencurvefitpanel","weightWAV_setvar_tab1")
 			if(waveexists(weighting))
 				controlinfo/w=gencurvefitpanel weighting_check0_tab1
 				if(V_value)
