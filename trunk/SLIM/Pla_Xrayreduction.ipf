@@ -82,12 +82,12 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 		endif
 		Wave/t M_xmlcontent
 		make/o/d/n=(dimsize(M_xmlcontent,0)) $w0, $w1, $w2, $w3, bkg_I=0, bkg_SD=0
-		Wave qq = $w0, R = $w1, dR = $w2, dq = $w3
+		Wave qq = $w0, RR = $w1, dR = $w2, dq = $w3
 	
-		R = str2num(M_xmlcontent)
-		dR = sqrt(R)
+		RR = str2num(M_xmlcontent)
+		dR = sqrt(RR)
 		countTime = str2num(XMLstrFmXpath(fileID,"//xrdml:commonCountingTime",namespace,""))
-		R /= countTime
+		RR /= countTime
 		dR /=countTime
 		
 		//load the background files
@@ -105,7 +105,7 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 			make/o/d/n=(dimsize(M_xmlcontent,0)) bkg1_I, bkg1_SD
 			bkg1_I = str2num(M_xmlcontent)
 			bkg1_SD = sqrt(bkg1_I)
-			if(numpnts(R) != numpnts(bkg1_I))
+			if(numpnts(RR) != numpnts(bkg1_I))
 				print "ERROR background run and specular run must have the same number of points (reduceXpertPro)"
 			endif
 			countTime = str2num(XMLstrFmXpath(bkg1_fileID, "//xrdml:commonCountingTime", namespace, ""))
@@ -127,7 +127,7 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 			make/o/d/n=(dimsize(M_xmlcontent,0)) bkg2_I, bkg2_SD
 			bkg2_I = str2num(M_xmlcontent)
 			bkg2_SD = sqrt(bkg2_I)
-			if(numpnts(R) != numpnts(bkg2_I))
+			if(numpnts(RR) != numpnts(bkg2_I))
 				print "ERROR background run and specular run must have the same number of points (reduceXpertPro)"
 			endif
 			countTime = str2num(XMLstrFmXpath(bkg2_fileID, "//xrdml:commonCountingTime", namespace, ""))
@@ -140,7 +140,7 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 				bkg_I /=2
 				bkg_SD /=2
 			endif
-			R -= bkg_I
+			RR -= bkg_I
 			dR = sqrt(dR^2 + bkg_SD)
 		endif
 
@@ -182,7 +182,7 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 			make/d/o w_gausscoefs = {1, 0, T_r/2}
 			for(ii=0 ; ii<numpnts(qq); ii+=1)
 				correctionfactor = erf(footprint * sin(qq[ii] * Pi / 180) / (2 * t_m))
-				R[ii] /= correctionfactor
+				RR[ii] /= correctionfactor
 				dR[ii] /= correctionfactor
 			endfor
 		endif
@@ -197,13 +197,13 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 		
 		if(paramisdefault(scalefactor))
 			//pull up a graph showiing the data, with the error bars
-			Display/K=1 R vs QQ
+			Display/K=1 RR vs QQ
 			Modifygraph log(left)=1,mode=3
 			ErrorBars $w1 Y,wave=($w2,$w2)
 			Doupdate
 
 			//rename the graph, and put a freely moving cursor on the graph.
-			string Rwav=nameofwave(R)
+			string Rwav=nameofwave(RR)
 			Cursor /f/h=1 A $Rwav 0.01,1
 			DoWindow/C Setcriticaledge
 			showinfo
@@ -218,7 +218,7 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 				err2 = UserCursorAdjust("Setcriticaledge")
 				if(err2 == 1)
 					Dowindow/K Setcriticaledge
-					killwaves/z R,qq,dR,M_xmlcontent,W_xmlcontentnodes,R,qq,dR, dq
+					killwaves/z RR,qq,dR,M_xmlcontent,W_xmlcontentnodes,R,qq,dR, dq
 					abort
 				endif
 		
@@ -229,7 +229,7 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 					Dowindow/K Setcriticaledge
 					abort
 				endif 
-				R /= scalefactor
+				RR /= scalefactor
 				dR /= scalefactor
 				allGood = 1
 //				Setaxis/A
@@ -247,7 +247,7 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 			Dowindow/K Setcriticaledge
 			print "Scalefactor for ", base, " is ", scalefactor
 		else
-			R /= scalefactor
+			RR /= scalefactor
 			dR /= scalefactor
 		endif
 	catch
