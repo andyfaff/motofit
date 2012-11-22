@@ -352,61 +352,61 @@ static Function Moto_localchi2()
 	endif
 	switch(dimension)
 		case 1:
-				prompt par0, "first parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs) - 1)
-				prompt extent0, "Percentage range either side"
-				Doprompt "Please select the parameter number and extent for chi2map", par0, extent0
-				if(V_flag)
-					return 0
+			prompt par0, "first parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs) - 1)
+			prompt extent0, "Percentage range either side"
+			Doprompt "Please select the parameter number and extent for chi2map", par0, extent0
+			if(V_flag)
+				return 0
+			endif
+			if(par0 > numpnts(local_copy_coefs) || par0 < 1)
+				abort "enter a reasonable parameter number"
+				return 0
+			endif
+			make/o/d/n=501 chi2map = 0
+			setscale/I x, local_copy_coefs[par0] * (1 - extent0/100), local_copy_coefs[par0] * (1 + extent0/100), chi2map
+			display/K=1 chi2map as "Chi2map for parameter " + num2istr(par0)
+			for(ii = 0 ; ii < dimsize(chi2map, 0) ; ii += 1)
+				coef_theoretical_R[par0] = pnt2x(chi2map, ii)
+				chi2 = Moto_calcchi2()
+				if(numtype(chi2))
+					coef_theoretical_R = local_copy_coefs
+					abort "chi2 calculation was NaN for a value, please check setup"					
 				endif
-				if(par0 > numpnts(local_copy_coefs) || par0 < 1)
-					abort "enter a reasonable parameter number"
-					return 0
-				endif
-				make/o/d/n=501 chi2map = 0
-				setscale/I x, local_copy_coefs[par0] * (1 - extent0/100), local_copy_coefs[par0] * (1 + extent0/100), chi2map
-				display/K=1 chi2map as "Chi2map for parameter " + num2istr(par0)
-				for(ii = 0 ; ii < dimsize(chi2map, 0) ; ii += 1)
-					coef_theoretical_R[par0] = pnt2x(chi2map, ii)
+				chi2map[ii] = chi2
+			endfor
+				
+			break
+		case 2:
+			prompt par0, "first parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs))
+			prompt extent0, "Percentage range either side"
+			prompt par1, "second parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs))
+			prompt extent1, "Percentage range either side"
+
+			Doprompt "Please select the parameter number and extent for chi2map", par0, extent0, par1, extent1
+			if(V_flag)
+				return 0
+			endif
+			if(par0 > numpnts(local_copy_coefs) || par0 < 1 || par1 < 1 || par1 > numpnts(local_copy_coefs))
+				abort "enter a reasonable parameter number"
+				return 0
+			endif
+			make/o/d/n=(201, 201) chi2map = 0
+			setscale/I x, local_copy_coefs[par0] * (1 - extent0/100), local_copy_coefs[par0] * (1 + extent0/100), chi2map
+			setscale/I y, local_copy_coefs[par1] * (1 - extent1/100), local_copy_coefs[par1] * (1 + extent1/100), chi2map
+			newimage/K=1 chi2map
+
+			for(ii = 0 ; ii < dimsize(chi2map, 0) ; ii += 1)
+				for(jj = 0 ; jj < dimsize(chi2map, 1) ; jj += 1)
+					coef_theoretical_R[par0] = DimOffset(chi2map, 0) + ii *DimDelta(chi2map, 0)
+					coef_theoretical_R[par1] = DimOffset(chi2map, 1) + jj *DimDelta(chi2map, 1)
 					chi2 = Moto_calcchi2()
 					if(numtype(chi2))
 						coef_theoretical_R = local_copy_coefs
 						abort "chi2 calculation was NaN for a value, please check setup"					
 					endif
-					chi2map[ii] = chi2
+					chi2map[ii][jj] = chi2
 				endfor
-				
-			break
-		case 2:
-				prompt par0, "first parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs))
-				prompt extent0, "Percentage range either side"
-				prompt par1, "second parameter number 1 <= x <= " + num2istr(numpnts(local_copy_coefs))
-				prompt extent1, "Percentage range either side"
-
-				Doprompt "Please select the parameter number and extent for chi2map", par0, extent0, par1, extent1
-				if(V_flag)
-					return 0
-				endif
-				if(par0 > numpnts(local_copy_coefs) || par0 < 1 || par1 < 1 || par1 > numpnts(local_copy_coefs))
-					abort "enter a reasonable parameter number"
-					return 0
-				endif
-				make/o/d/n=(201, 201) chi2map = 0
-				setscale/I x, local_copy_coefs[par0] * (1 - extent0/100), local_copy_coefs[par0] * (1 + extent0/100), chi2map
-				setscale/I y, local_copy_coefs[par1] * (1 - extent1/100), local_copy_coefs[par1] * (1 + extent1/100), chi2map
-				newimage/K=1 chi2map
-
-				for(ii = 0 ; ii < dimsize(chi2map, 0) ; ii += 1)
-					for(jj = 0 ; jj < dimsize(chi2map, 1) ; jj += 1)
-						coef_theoretical_R[par0] = DimOffset(chi2map, 0) + ii *DimDelta(chi2map, 0)
-						coef_theoretical_R[par1] = DimOffset(chi2map, 1) + jj *DimDelta(chi2map, 1)
-						chi2 = Moto_calcchi2()
-						if(numtype(chi2))
-							coef_theoretical_R = local_copy_coefs
-							abort "chi2 calculation was NaN for a value, please check setup"					
-						endif
-						chi2map[ii][jj] = chi2
-					endfor
-				endfor
+			endfor
 			break
 	endswitch
 	coef_theoretical_R = local_copy_coefs
@@ -477,11 +477,11 @@ static Function Moto_calcchi2()
 	
 	if(useerrors && waveexists(dR))
 		diff /= dR^2
-	//	res_theoretical_R /= dR
+		//	res_theoretical_R /= dR
 	endif
 	Wavestats/q/z/m=1/R=[leftval, rightval] diff
 	chi2 = V_avg
-//   chi2 = sum(diff, leftval, rightval)/ numpnts(diff)
+	//   chi2 = sum(diff, leftval, rightval)/ numpnts(diff)
 	valdisplay Chisquare_tab0, win=reflectivitypanel, value = _NUM:chi2
 	
 	return chi2
@@ -492,6 +492,7 @@ static Function Moto_reflectivitygraphs()
 	Wave theoretical_q = root:data:theoretical:theoretical_q
 	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
 	variable plotyp = str2num(motofit#getmotofitoption("plotyp"))
+	variable ii
 	
 	dowindow/k reflectivitygraph
 	Display/K=1/N=reflectivitygraph/w=(10,44,560,342) theoretical_R vs theoretical_q as "Reflectivity"
@@ -529,6 +530,12 @@ static Function Moto_reflectivitygraphs()
 		Label left, "SLD (10\\S-6\\M "+num2char(129) + "\\S-2\\M)"
 		Label bottom "distance from interface (" + num2char(129) + ")"
 	endif
+	
+	//append the already loaded datasets
+	string datasets = moto_fittable_datasets()
+	for(ii = 0 ; ii < itemsinlist(datasets) ; ii+=1)
+		moto_adddatasettographs(stringfromlist(ii, datasets))
+	endfor
 End
 
 Function moto_iswindows()
@@ -996,27 +1003,27 @@ static Function Moto_do_a_fit()
 End
 
 Function moto_changemode()
-//this function toggles the mode between 0 (solvent penetration) and 1 (imaginarySLD)
-Wave cth = root:data:theoretical:coef_theoretical_R
-variable mode = str2num(getmotofitoption("mode")), ii
+	//this function toggles the mode between 0 (solvent penetration) and 1 (imaginarySLD)
+	Wave cth = root:data:theoretical:coef_theoretical_R
+	variable mode = str2num(getmotofitoption("mode")), ii
 
-if(!mode)
-	//imagfronting
-	insertpoints 4, 1, cth
-	insertpoints 3, 1, cth
-	for(ii = 0 ; ii < cth[0] ; ii+=1)
-		cth[4 * ii + 9] = (cth[4] * 0.01 * cth[4* ii + 10]) + (cth[4*ii + 9] * (1 - 0.01 * cth[4* ii + 10]))
-		cth[4* ii + 10] = 0	
-	endfor	
-	setmotofitoption("mode", "1")
-else
-	deletepoints 5, 1, cth
-	deletepoints 3, 1, cth
-	for(ii = 0 ; ii < cth[0] ; ii+=1)
-		cth[4* ii + 8] = 0	
-	endfor	
-	setmotofitoption("mode", "0")
-endif
+	if(!mode)
+		//imagfronting
+		insertpoints 4, 1, cth
+		insertpoints 3, 1, cth
+		for(ii = 0 ; ii < cth[0] ; ii+=1)
+			cth[4 * ii + 9] = (cth[4] * 0.01 * cth[4* ii + 10]) + (cth[4*ii + 9] * (1 - 0.01 * cth[4* ii + 10]))
+			cth[4* ii + 10] = 0	
+		endfor	
+		setmotofitoption("mode", "1")
+	else
+		deletepoints 5, 1, cth
+		deletepoints 3, 1, cth
+		for(ii = 0 ; ii < cth[0] ; ii+=1)
+			cth[4* ii + 8] = 0	
+		endfor	
+		setmotofitoption("mode", "0")
+	endif
 	moto_usecoefwave(cth)
 	moto_update_theoretical()
 
@@ -1138,15 +1145,15 @@ End
 static Function Moto_refreshData()
 	//this function refreshes the loaded data in the reflectivitygraph
 	//(assumes data is in root:data:)
-	string reflectivitygraph_exists = WinList("reflectivitygraph", ";", "WIN:1")
-	string plottedgraphs = ""
+	string datasets = moto_fittable_datasets(), dataset = ""
 	variable ii
-	if(strlen(reflectivitygraph_exists))
-		plottedgraphs = GetUserData("reflectivitygraph", "", "refFiles")
-		for(ii = 0 ; ii < itemsinlist(plottedgraphs, "\r") ; ii += 1)
-			Moto_loadReffile(stringfromlist(ii, plottedgraphs, "\r"))
-		endfor
-	endif
+	for(ii = 0 ; ii < itemsinlist(datasets) ; ii += 1)
+		dataset = stringfromlist(ii, datasets)
+		SVAR/z filename = $("root:data:" + dataset + ":filename")
+		if(Svar_exists(filename))
+			Moto_loadReffile(filename)
+		endif
+	endfor
 End
 
 static Function moto_change_plotyp(plotyp)
@@ -1204,12 +1211,12 @@ static Function moto_change_plotyp(plotyp)
 	switch(plotyp)
 		default:
 			ModifyGraph/z/w=reflectivitygraph log(left)=0
-		break
+			break
 		case 3:
 		case 4:
 		case 2:
 			ModifyGraph/z/w=reflectivitygraph log(left)=1
-		break
+			break
 	endswitch
 End
 
@@ -1599,7 +1606,7 @@ Function Motofit(w, RR, qq) :Fitfunc
 	variable resolution 
 	variable plotyp 
 	
-//	markperftesttime 0
+	//	markperftesttime 0
 	if(strlen(motofitoptions))
 		resolution = numberbykey("res", motofitoptions)
 		plotyp = numberbykey("plotyp", motofitoptions)
@@ -1622,7 +1629,7 @@ Function Motofit(w, RR, qq) :Fitfunc
 		bkg = abs(w[6])
 		w[6] = 0
 	endif
-//	markperftesttime 1			
+	//	markperftesttime 1			
 	if(resolution > 0.5)
 		//make it an odd number
 		resolution/=100
@@ -1632,7 +1639,7 @@ Function Motofit(w, RR, qq) :Fitfunc
 		Setscale/I x, -1.7*resolution, 1.7*resolution, gausswave
 		Gausswave=gauss(x, 0, resolution/(2 * sqrt(2 * ln(2))))
 		Variable middle = gausswave[x2pnt(gausswave, 0)]
-		 Gausswave /= middle
+		Gausswave /= middle
 		Variable gaussgpoint = (gaussnum-1)/2
 				
 		//find out what the lowest and highest qvalue are
@@ -1652,14 +1659,14 @@ Function Motofit(w, RR, qq) :Fitfunc
 
 		matrixop/o xtemp = powR(10, xtemp)
 
-//		markperftesttime 2
+		//		markperftesttime 2
 
 		if(!mode)
 			Abelesall(w, ytemp, xtemp)
 		else
 			Abeles_imagALl(w, ytemp, xtemp)
 		endif
-//		markperftesttime 3
+		//		markperftesttime 3
 		//do the resolution convolution
 		setscale/I x, start, log(xtemp[numpnts(xtemp) - 1]), ytemp
 		convolve/A gausswave, ytemp
@@ -1673,14 +1680,14 @@ Function Motofit(w, RR, qq) :Fitfunc
 		variable gaussum = 1/(sum(gausswave))
 		fastop ytemp = (gaussum) * ytemp
 
-//		markperftesttime 4
+		//		markperftesttime 4
 		matrixop/free xrtemp = log(qq)
 		duplicate/free rr, ytemp2
 		//interpolate to get the theoretical points at the same spacing of the real dataset
-//		markperftesttime 5
+		//		markperftesttime 5
 		Interpolate2/T=2/E=2/I=3/Y=ytemp2/X=xrtemp ytemp
 		multithread RR = ytemp2
-//		markperftesttime 6
+		//		markperftesttime 6
 
 	else 
 		if(!mode)
@@ -1699,9 +1706,9 @@ Function Motofit(w, RR, qq) :Fitfunc
 	fastop RR = (bkg) + RR
 		
 	//how are you fitting the data?
-//	markperftesttime 7
+	//	markperftesttime 7
 	moto_lindata_to_plotyp(plotyp, qq, RR)
-//	markperftesttime 8
+	//	markperftesttime 8
 End
 
 /// offspecular/diffuse conversions
@@ -1729,7 +1736,7 @@ Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr, dq, removeNonFinite])
 				variable ln10 = ln(10)
 				multithread dr = abs(dR / (RR * ln10))
 			endif
-//			multithread RR = log(RR)
+			//			multithread RR = log(RR)
 			matrixop/o RR = log(RR)
 			break
 		case 2: //linR, do nothing
@@ -1813,10 +1820,10 @@ static Function Moto_changeTheoreticalQrange(num, qmin, qmax)
 	originaldata[][1] = theoretical_R[p]	
 End
 
-static Function/s Moto_loadReffile(filename)
+static Function/s Moto_loadReffile(filenameStr)
 	//this function loads a reflectivity file in and adjusts it to the current plot type.
 	//it does not plot anything.
-	string filename
+	string filenameStr
 	variable fileID,numcols, ii,  plotyp
 	String dataname
 
@@ -1824,7 +1831,7 @@ static Function/s Moto_loadReffile(filename)
 	saveDFR = GetDataFolderDFR( )
 	
 	//get nice name for file.
-	dataname = cleanupname(ParseFilePath(3, filename, ":", 0, 0), 0)
+	dataname = cleanupname(ParseFilePath(3, filenameStr, ":", 0, 0), 0)
 	dataname = dataname[0, 30 - 7]
 	
 	plotyp = str2num(getmotofitoption("plotyp"))
@@ -1836,8 +1843,8 @@ static Function/s Moto_loadReffile(filename)
 	newdatafolder/o/s $("root:data:" + dataname)
 	
 	try
-		if(stringmatch(filename,"*.xml"))	//loading XML type reduced file from Platypus
-			fileID = xmlopenfile(filename)
+		if(stringmatch(filenameStr,"*.xml"))	//loading XML type reduced file from Platypus
+			fileID = xmlopenfile(filenameStr)
 			if(fileID==-1)
 				print "ERROR opening xml file (Moto_loadReffile)"
 				abort
@@ -1855,7 +1862,7 @@ static Function/s Moto_loadReffile(filename)
 				endif			
 			endfor
 		else	
-			LoadWave/Q/M/G/D/N=originaldata fileName
+			LoadWave/Q/M/G/D/N=originaldata filenameStr
 			//if you're not loading 2,3 or 4 column data then there may be something wrong.
 			Wave/z originaldata0
 			duplicate/o originaldata0, originaldata
@@ -1865,6 +1872,8 @@ static Function/s Moto_loadReffile(filename)
 			endif
 
 		endif
+		//make a global variable in the datafolder that will hold the filename of the dataset
+		string/g filename = filenameStr
 		
 		//now we should have a wave called originaldata, partition it into x,y, dy, dx waves.
 		make/n=(dimsize(originaldata, 0))/o/d $(dataname + "_q") = originaldata[p][0]
@@ -1894,6 +1903,89 @@ static Function/s Moto_loadReffile(filename)
 	endtry
 End
 
+ function Moto_addDatasetToGraphs(dataset)
+	string dataset
+
+	string refname, currentTraces, tracecolour, cmdtemplate, cmd
+	Wave/z M_colors = root:packages:motofit:reflectivity:M_colors
+	variable index, numfiles, rr, gg, bb, ii
+
+	if(findlistitem(dataset, moto_fittable_datasets()) == -1)
+		return 1
+	endif
+
+	Wave qq = $("root:data:" + dataset + ":" + dataset + "_q")
+	Wave Ref = $("root:data:" + dataset + ":" + dataset + "_R")
+	Wave/z fitR = $("root:data:" + dataset + ":" + "fit_" + dataset + "_R")
+	Wave/z fitQ = $("root:data:" + dataset + ":" + "fit_" + dataset + "_q")
+	Wave/z dref = $("root:data:" + dataset + ":" + dataset + "_E")
+	refname = nameofwave(Ref)
+
+	currentTraces = tracenamelist("reflectivitygraph", ";", 1)
+	// assign colors randomly		
+	if(Waveexists(M_colors))
+		numfiles = itemsinlist(currentTraces)
+		index = mod(numfiles * 37, dimsize(M_colors, 0))
+		rr = M_colors[index][0]
+		gg = M_colors[index][1]
+		bb = M_colors[index][2]
+	else	
+		rr = abs(trunc(enoise(65535)))
+		gg = abs(trunc(enoise(65535)))
+		bb = abs(trunc(enoise(65535)))
+	endif
+	tracecolour = "(%d, %d, %d)"
+	sprintf tracecolour, tracecolour, rr, gg, bb
+	
+	cmdtemplate = "ModifyGraph/w=%s mode(%s)=%d, rgb(%s)=%s, hideTrace(%s) = 0"
+
+	if(itemsinlist(winlist("reflectivitygraph", ";", "")))
+		//see if it's already displayed
+		CheckDisplayed/W=reflectivitygraph Ref
+		if(!V_flag)
+			AppendToGraph/w=reflectivitygraph Ref vs qq
+			sprintf cmd, cmdtemplate, "reflectivitygraph", refname, 3, refname, tracecolour, refname
+			cmd += ", marker = 8"
+			execute/z cmd
+			if(waveexists(dRef))
+				ErrorBars/T=0/W=reflectivitygraph $refname Y,wave=(dRef,dRef)
+			endif
+		else
+			tracecolour = moto_gettracecolour("reflectivitygraph", refname)
+			modifygraph/W=reflectivitygraph hideTrace($refname) = 0
+		endif
+
+			
+		if(Waveexists(fitR))
+			CheckDisplayed/W=reflectivitygraph fitR
+			if(!V_flag)
+				AppendToGraph/w=reflectivitygraph fitR vs fitq
+				sprintf cmd, cmdtemplate, "reflectivitygraph", nameofwave(fitR), 0, nameofwave(fitR), tracecolour, nameofwave(fitR)
+				cmd += ", lsize = 2"
+				execute/z 	cmd
+			endif
+		endif
+	endif
+	
+	if(itemsinlist(winlist("SLDgraph", ";", "")))
+		Wave/z  SLD = $("root:data:" + dataset + ":" + "SLD_" + dataset + "_R")
+		//see if it's already displayed
+		if(waveexists(SLD))
+			CheckDisplayed/W=SLDgraph SLD
+		
+			if(!V_flag)
+				AppendToGraph/w=SLDgraph SLD
+				sprintf cmd, cmdtemplate,"SLDgraph", nameofwave(SLD), 0, nameofwave(SLD), tracecolour, nameofwave(fitR)
+				cmd += ", lsize = 2"
+				execute/z 	cmd
+			endif
+		endif
+	endif
+	
+	
+			
+End
+
 static Function Moto_Plotreflectivity()
 	//this function loads experimental data from a file, then puts it into a nice graph.  The data is from 2 to 4 columns wide:  Q,R,dR,dQ and can contain as
 	//many datapoints as you want.
@@ -1919,65 +2011,7 @@ static Function Moto_Plotreflectivity()
 		
 		//load the file
 		dataName = Moto_loadReffile(filename)
-  	
-		//find out the name of the wave
-		Wave qq = $("root:data:" + dataname + ":" + dataname + "_q")
-		Wave Ref = $("root:data:" + dataname + ":" + dataname + "_R")
-		Wave/z dref = $("root:data:" + dataname + ":" + dataname + "_E")
-		refname = nameofwave(ref)
-
-		// assign colors randomly		
-		if(Waveexists(M_colors))
-			numfiles = itemsinlist(getuserdata("reflectivitygraph", "", "refFiles"), "\r")
-			index = mod(numfiles * 37, dimsize(M_colors, 0))
-			rr = M_colors[index][0]
-			gg = M_colors[index][1]
-			bb = M_colors[index][2]
-		else	
-			rr = abs(trunc(enoise(65535)))
-			gg = abs(trunc(enoise(65535)))
-			bb = abs(trunc(enoise(65535)))
-		endif
-		
-		if(WinType("") == 1)
-			if(findlistitem(tracenamelist("", ";", 1), nameofwave(Ref)) != -1)
-				//Moto_autoscale()
-				return 0
-			endif
-			DoAlert 1,"Do you want to append this data to the current graph?"
-			if(V_Flag == 1)
-				AppendToGraph Ref vs qq
-				ModifyGraph mode($refname)=3,rgb($refname)=(rr,gg,bb), grid=0, mirror=0, tickUnit=1, marker=8
-				ModifyGraph log(left)=(logg),mirror=0
-				if(waveexists(dRef))
-					ErrorBars/T=0 $refname Y,wave=(dRef,dRef)
-				endif
-			else
-				//new graph
-				Display/K=1 Ref vs qq
-				ModifyGraph log(bottom)=0,mode=3,rgb=(rr,gg,bb),grid=0,mirror=0,tickUnit=1, marker=8
-				ModifyGraph log(left)=(logg)
-				if(waveexists(dRef))
-					ErrorBars/T=0 $refname Y,wave=(dRef,dRef)
-				endif
-				Label bottom "Qz/A\\S-1"
-				Label left "Reflectivity"
-			endif
-		else
-			// graph window was not target, make new one
-			Display/K=1 Ref vs qq
-			ModifyGraph log(bottom)=0,mode($refname)=3,rgb=(rr,gg,bb),grid=0,mirror=0,tickUnit=1, marker=8
-			ModifyGraph log(left)=(logg)
-			if(waveexists(dRef))
-				ErrorBars/T=0 $refname Y,wave=(dRef, dRef)
-			endif
-			Label bottom "Qz/A\\S-1"
-			Label left "Reflectivity"
-		endif
-		
-		//keep a note of which waves are displayed in the graph
-		topGraphStr = WinName(0,1)
-		setwindow $topGraphStr userdata(refFiles) += fileName + "\r"
+		moto_adddatasettographs(dataname)  	
 	endfor
 End
 
@@ -2576,6 +2610,9 @@ static Function moto_GUI_PopMenu(s) : PopupMenuControl
 			moto_update_theoretical()
 			setmotofitoption("dataset", s.popstr)
 			Moto_FTreflectivity()
+			//make sure the dataset is on the graph
+			moto_adddatasettographs(s.popstr)
+			
 			break
 		case "plotype_tab0":
 			moto_change_plotyp(s.popnum)
@@ -2752,12 +2789,12 @@ End
 static Function moto_GUI_setvariable(s) : SetVariableControl
 	STRUCT WMSetVariableAction &s
  	
- 	Wave coef_theoretical_R = root:data:theoretical:coef_theoretical_R
+	Wave coef_theoretical_R = root:data:theoretical:coef_theoretical_R
 
 	switch(s.eventcode)
 		case -1:
 			return 0
-		break
+			break
 		default:
 			strswitch(s.ctrlname)
 				case "res_tab0":
@@ -2768,7 +2805,7 @@ static Function moto_GUI_setvariable(s) : SetVariableControl
 				case "FT_lowQ_tab2":
 				case "FT_hiQ_tab2":
 					Moto_FTreflectivity()
-				break
+					break
 				case "numfringe_tab2":
 					variable numfringes = s.dval, leftP, rightP
 					string lci, rci
@@ -2788,7 +2825,7 @@ static Function moto_GUI_setvariable(s) : SetVariableControl
 						leftP = temp
 					endif
 					setvariable fringe_tab2, win=reflectivitypanel, value = _NUM:numfringes * 2*Pi/(xwave[rightP] - xwave[leftP])
-				break	
+					break	
 				case "Vmullayers_tab0":
 					moto_changeMultilayerWave(s.dval, -1, -1)
 					note/k coef_theoretical_R
@@ -2796,7 +2833,7 @@ static Function moto_GUI_setvariable(s) : SetVariableControl
 						
 					moto_layertabletocref(coef_theoretical_R)
 					moto_update_theoretical()
-				break
+					break
 				case "Vappendlayer_tab0":
 					variable numlayers = coef_theoretical_R[0]
 					NVAR/z Vappendlayer = root:data:theoretical:Vappendlayer
@@ -2809,13 +2846,13 @@ static Function moto_GUI_setvariable(s) : SetVariableControl
 					note/k coef_theoretical_R
 					note coef_theoretical_R, getMotofitOptionString()	
 					moto_update_theoretical()				
-				break
+					break
 				case "Vmulrep_tab0":
 					moto_changeMultilayerWave(-1, -1, s.dval)
 					note/k coef_theoretical_R
 					note coef_theoretical_R, getMotofitOptionString()
 					moto_update_theoretical()
-				break
+					break
 			endswitch
 			break
 	endswitch		
