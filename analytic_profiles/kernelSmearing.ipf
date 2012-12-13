@@ -54,6 +54,7 @@ Function kernelSmearedMotofit(s) : FitFunc
 	
 	multithread yy[] += summ[p]
 	multithread yy[] *= (resolutionKernel[p][1][0] - resolutionKernel[p][0][0]) / 3
+	yy = log(yy)
 End
 
 Function kernelSmearingHarness(w, yy, xx, resolutionKernel)
@@ -66,4 +67,47 @@ Wave s.y = yy
 Wave s.x[0] = xx
 Wave s.ffsWaves[0] = resolutionKernel
 kernelSmearedMotofit(s)
+End
+
+Function main()
+	Wave coef_PLP0001125_R, PLP0001125_q, PLP0001125_R, PLP0001125__E, PLP0001125_dq
+	Wave resolutionkernel, Gencurvefitlimits1
+	
+	// initialise the structure you will use
+	struct fitfuncStruct s
+
+	// we must set the version of the structure (currently 1000)
+	s.ffsversion = 1000
+	
+	// numVarMD is the number of dependent variables you are fitting
+	// this must be correct, or Gencurvefit won't run.
+	s.numVarMD=1		
+
+	Wave s.ffsWaves[0] = resolutionKernel
+	Wave s.w = w
+	Wave s.y = yy
+	Wave s.x[0] = xx
+
+	Gencurvefit /strc=s /X=PLP0001125_q kernelSmearedMotofit,PLP0001125_R,coef_PLP0001125_R,"10100100100000",Gencurvefitlimits1
+End
+
+Function reduceResolutionKernel(resolutionkernel, pts)
+Wave resolutionkernel
+variable pts
+
+variable ii
+
+make/n=(dimsize(resolutionkernel, 1))/free/d kernel, kernelx
+make/n=(pts)/free/d interpo
+
+make/n=(dimsize(resolutionkernel, 0), pts, 2) reducedKernel
+
+for(ii = 0 ; ii < dimsize(resolutionkernel, 0) ; ii+=1)
+kernel = resolutionkernel[ii][p][1]
+kernelx = resolutionkernel[ii][p][0]
+Interpolate2/T=2/N=(pts)/E=2/Y=interpo kernelx, kernel
+reducedkernel[ii][][0] = pnt2x(interpo, q)
+reducedkernel[ii][][1] = interpo[p]
+endfor
+
 End
