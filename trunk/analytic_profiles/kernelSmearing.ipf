@@ -100,14 +100,14 @@ variable ii
 make/n=(dimsize(resolutionkernel, 1))/free/d kernel, kernelx
 make/n=(pts)/free/d interpo
 
-make/n=(dimsize(resolutionkernel, 0), pts, 2) reducedKernel
+make/n=(dimsize(resolutionkernel, 0), pts, 2)/o reducedKernel
 
 for(ii = 0 ; ii < dimsize(resolutionkernel, 0) ; ii+=1)
 kernel = resolutionkernel[ii][p][1]
 kernelx = resolutionkernel[ii][p][0]
 Interpolate2/T=2/N=(pts)/E=2/Y=interpo kernelx, kernel
 reducedkernel[ii][][0] = pnt2x(interpo, q)
-reducedkernel[ii][][1] = interpo[p]
+reducedkernel[ii][][1] = interpo[q]
 endfor
 
 End
