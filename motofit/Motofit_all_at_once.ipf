@@ -164,7 +164,7 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 	//shortcut just means that you are changing the values in the coefficient wave, you're not changing the size.
 	variable shortcut
 	
-	variable mode, ii, newplotyp, multilayer, lVmullayers, lVappendlayer, lVmulrep, alreadyMultilayer, offset
+	variable mode, ii, newplotyp, multilayer, lVmullayers, lVappendlayer, lVmulrep, alreadyMultilayer, offset, reversedSLDplot
 	string coefnote = "", item = "", key = "", val = "", holdstring
 
 	if(!waveexists(coefficientwave))
@@ -178,6 +178,16 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 
 	coefnote = note(coefficientwave)
 	multilayer = numberbykey("multilayer", coefnote)
+	
+	reversedSLDplot = str2num(getmotofitoption("reversedSLDplot"))
+	if(reversedSLDplot != numberbykey("reversedSLDplot", coefnote))
+		moto_reverseSLDplots()
+		reversedSLDplot = numberbykey("reversedSLDplot", coefnote)
+		setmotofitoption("reversedSLDplot", stringbykey("reversedSLDplot", coefnote))
+		if(numberbykey("reversedSLDplot", coefnote))
+			checkbox/z reverseSLDplot, win=sldgraph, value = numberbykey("reversedSLDplot", coefnote)
+		endif
+	endif
 	
 	if(!shortcut)
 		coefnote = note(coefficientwave)
@@ -232,6 +242,7 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 
 		//use error wave?
 		checkbox useerrors_tab0, win=reflectivitypanel, value = str2num(getmotofitoption("useerrors"))
+				
 		
 		//use multilayers?
 		checkbox usemultilayer_tab0, win=reflectivitypanel, value = multilayer
@@ -338,6 +349,7 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 			multilayerparams_selwave[ii][8] = multilayerparams_selwave[ii][8] | selectnumber(str2num(holdstring[4 * ii + 3 + offset]), 0, 16)
 		endfor
 	endif
+	moto_update_theoretical(reversedSLDplot = reversedSLDplot)
 End
 
 static Function Moto_localchi2()
@@ -520,6 +532,8 @@ static Function Moto_reflectivitygraphs()
 	
 	dowindow/k sldgraph
 	Display/K=1/N=SLDgraph/w=(10,364,560,590), SLD_theoretical_R
+	controlbar/T/W=SLDgraph 20
+	CheckBox reverseSLDplot,title="reverse plot",fSize=10, value = 0, proc = motofit#moto_GUI_check
 	Modifygraph/w = SLDgraph lsize(SLD_theoretical_R) = 2, axthick=1, fsize=12, rgb(SLD_theoretical_R) = (0,0,0)
 	DoWindow/T SLDgraph,"Scattering length density"
 	Label bottom "distance from interface ()"
@@ -1239,6 +1253,7 @@ Static Function setupvariables(mode, res, plotyp, SLDpts)
 	setmotofitoption("fitcursors",num2str(0))
 	setmotofitoption("useerrors",num2str(0))
 	setmotofitoption("multilayer",num2str(0))
+	setmotofitoption("reversedSLDplot",num2str(0))
 	
 	ColorTab2wave rainbow
 	setdatafolder savDF
@@ -1429,16 +1444,20 @@ static Function Moto_FTreflectivity()
 	return 0
 End
 
-static Function moto_update_theoretical()
+static Function moto_update_theoretical([reversedSLDplot])
+	variable reversedSLDplot
 	variable plotyp
 	DFREF saveDFR = GetDataFolderDFR()	// Save
 	SetDataFolder root:data:theoretical
 	wave/z coef_theoretical_R, theoretical_R, theoretical_q, SLD_theoretical_R, originaldata
 
+	if(paramisdefault(reversedSLDplot))
+		reversedSLDplot = str2num(getMotofitoption("reversedSLDplot"))
+	endif
 	try
 		variable chi2 = 0;
 		Motofit(coef_theoretical_R, theoretical_R, theoretical_Q)
-		Moto_SLDplot(coef_theoretical_R, sld_theoretical_R)
+		Moto_SLDplot(coef_theoretical_R, sld_theoretical_R, reversedSLDplot=reversedSLDplot)
 		chi2 = Moto_calcchi2()
 		setmotofitoption("V_chisq", num2str(chi2))
 	
@@ -1633,7 +1652,7 @@ Function Motofit(w, RR, qq) :Fitfunc
 	if(resolution > 0.5)
 		//make it an odd number
 		resolution/=100
-		Variable gaussnum=13
+		Variable gaussnum=51
 
 		Make/free/d/n=(gaussnum) gausswave
 		Setscale/I x, -1.7*resolution, 1.7*resolution, gausswave
@@ -2112,8 +2131,23 @@ Function Moto_newSLDplot(coefs, desiredsldwave, sldpts)
 
 End
 
-Function Moto_SLDplot(w, sld)
+Function Moto_reverseSLDplots()
+	string datasets= Moto_fittable_datasets()
+	string dataset
+	variable ii
+	
+	for(ii = 0 ; ii < itemsinlist(datasets) ; ii+=1)
+		dataset =  stringfromlist(ii, datasets)
+		Wave/z SLDgraph = $("root:data:" + dataset + ":SLD_" + dataset + "_R")
+		if(waveexists(SLDgraph))
+			setscale/I x, pnt2x(SLDgraph, numpnts(SLDgraph)-1), leftx(SLDgraph), SLDgraph
+		endif
+	endfor
+End
+
+Function Moto_SLDplot(w, sld, [reversedSLDplot])
 	Wave w, sld
+	variable reversedSLDplot
 	//
 	//This function calculates the SLD profile.
 	//	
@@ -2183,8 +2217,10 @@ Function Moto_SLDplot(w, sld)
 	endif
 
 	setscale/I x, zstart, zend, sld
-
 	sld = Moto_SLD_at_depth(SLD_calcwav, x)
+	if(reversedSLDplot)
+		setscale/I x, zend, zstart, sld
+	endif
 End
 
 Function/Wave moto_expandMultiToNormalModel(w, mode, Vmullayers, Vappendlayer, Vmulrep)
@@ -2202,7 +2238,7 @@ Function/Wave moto_expandMultiToNormalModel(w, mode, Vmullayers, Vappendlayer, V
 			multilayeroffset = 0
 			break
 		case 2:
-			make/n=(4 * (w[0] + Vmullayers) + 8)/d/free expandedSLDmodelwave
+			make/n=(4 * (w[0] + Vmullayers * Vmulrep) + 8)/d/free expandedSLDmodelwave
 			expandedSLDmodelwave[0, 7] = w
 			expandedSLDmodelwave[0] = w[0] + (Vmullayers  * Vmulrep)
 			muloffset = 4 * w[0] + 8
@@ -2586,6 +2622,10 @@ static Function  moto_GUI_check(s) : CheckBoxControl
 		case "fitcursors_tab0":
 			setmotofitoption("fitcursors", num2istr(s.checked))
 			break
+		case "reverseSLDplot":
+			setmotofitoption("reversedSLDplot", num2istr(s.checked))
+			moto_reverseSLDplots()
+			break
 		case "appendresiduals":
 			if(s.checked)
 				moto_appendresiduals()
@@ -2594,7 +2634,7 @@ static Function  moto_GUI_check(s) : CheckBoxControl
 			endif
 			break
 	endswitch
-	moto_update_theoretical()
+	moto_update_theoretical(reversedSLDplot = s.checked)
 End
 
 static Function moto_GUI_PopMenu(s) : PopupMenuControl
@@ -2623,7 +2663,6 @@ static Function moto_GUI_PopMenu(s) : PopupMenuControl
 			datasetname = replacestring("_R", datasetname, "")
 			Wave/z coefs = $("root:data:" + datasetname + ":" + thecoefs)
 			moto_usecoefwave(coefs)
-			moto_update_theoretical()
 			break
 	endswitch
 End
