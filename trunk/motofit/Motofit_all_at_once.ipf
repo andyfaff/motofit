@@ -2623,6 +2623,7 @@ static Function  moto_GUI_check(s) : CheckBoxControl
 			setmotofitoption("fitcursors", num2istr(s.checked))
 			break
 		case "reverseSLDplot":
+			variable reversedSLDplot = s.checked
 			setmotofitoption("reversedSLDplot", num2istr(s.checked))
 			moto_reverseSLDplots()
 			break
@@ -2634,7 +2635,7 @@ static Function  moto_GUI_check(s) : CheckBoxControl
 			endif
 			break
 	endswitch
-	moto_update_theoretical(reversedSLDplot = s.checked)
+	moto_update_theoretical()
 End
 
 static Function moto_GUI_PopMenu(s) : PopupMenuControl
