@@ -667,12 +667,43 @@ static Function Moto_Reflectivitypanel() : Panel
 	//constraints tab
 	Button Addconstraint_tab1,pos={36,52},size={119,29},disable=1,proc=motofit#moto_GUI_button,title="Add constraint",fsize=10
 	Button removeconstraint_tab1,pos={36,95},size={119,30},disable=1,proc=motofit#moto_GUI_button,title="Remove constraint",fsize=10
+	
+	//some plot controls
+	Button allon_tab3 title="toggle on",size={100,20}, proc=motofit#moto_GUI_button, pos={300,68}
+	Button alloff_tab3 title="toggle off",size={100,20}, proc=motofit#moto_GUI_button, pos={413,68}
+
+	make/n=(1,5)/t/o root:packages:motofit:reflectivity:plot_listwave
+	make/n=(1,5)/I/U/o root:packages:motofit:reflectivity:plot_selwave
+	Wave/t plot_listwave = root:packages:motofit:reflectivity:plot_listwave
+	plot_listwave=""
+	Wave plot_selwave = root:packages:motofit:reflectivity:plot_selwave
+	setdimlabel 1,0,dataset, plot_listwave
+	setdimlabel 1,1,datavisible, plot_listwave
+	setdimlabel 1,2,fitvisible, plot_listwave
+	setdimlabel 1,3,SLDvisible, plot_listwave
+	setdimlabel 1,4,resvisible, plot_listwave
+
+	string fittabledatasets = moto_fittable_datasets()
+	redimension/n=(itemsinlist(fittabledatasets) + 1, -1), plot_listwave, plot_selwave
+	plot_listwave[][0] = stringfromlist(p-1, fittabledatasets)
+	plot_listwave[0][0] = "theoretical"
+	plot_selwave = 0
+	plot_selwave[][1] = 2^5 | 2^4
+	plot_selwave[][2] = 2^5 | 2^4
+	plot_selwave[][3] = 2^5 | 2^4
+	plot_selwave[][4] = 2^5 | 2^4	
+	
+	ListBox plot_tab3, pos={26,96},size={535,345},proc=motofit#moto_GUI_listbox
+	ListBox plot_tab3,listWave=root:packages:motofit:reflectivity:plot_listwave
+	ListBox plot_tab3,selWave=root:packages:motofit:reflectivity:plot_selwave, mode=5
 
 	ModifyControlList ControlNameList("Reflectivitypanel", ";", "!*_tab0"), disable = 1
 	ModifyControlList ControlNameList("Reflectivitypanel", ";", "*_tab0"), disable = 0
 	TabControl refpanel,pos={3,1},size={575,571},proc=motofit#moto_GUI_tab
 	TabControl refpanel,tabLabel(0)="Fit",tabLabel(1)="Constraints"
 	TabControl refpanel,tabLabel(2)="thickness estimation", value = 0
+	TabControl refpanel,tabLabel(3)="plot control", value = 0
+
 End
 
 static Function moto_appendresiduals()
@@ -1041,6 +1072,15 @@ Function moto_changemode()
 	moto_usecoefwave(cth)
 	moto_update_theoretical()
 
+End
+
+Function moto_displayorhide_dataset(dataset, ref, fit, SLD, res)
+	string dataset
+	variable ref, fit, sld, res
+	modifygraph/z/W=reflectivitygraph hideTrace($(dataset+"_R")) = (ref==0)
+	modifygraph/z/W=reflectivitygraph hideTrace($("fit_"+dataset+"_R")) = (fit==0)
+	modifygraph/z/W=SLDgraph hideTrace($("SLD_"+dataset+"_R")) = (sld==0)
+	modifygraph/z/W=reflectivitygraph hideTrace($("res_"+dataset+"_R")) = (res==0)
 End
 
 
@@ -1922,11 +1962,14 @@ static Function/s Moto_loadReffile(filenameStr)
 	endtry
 End
 
- function Moto_addDatasetToGraphs(dataset)
+function Moto_addDatasetToGraphs(dataset)
 	string dataset
 
 	string refname, currentTraces, tracecolour, cmdtemplate, cmd
 	Wave/z M_colors = root:packages:motofit:reflectivity:M_colors
+	Wave/z/t plot_listwave
+	Wave/z plot_selwave
+	
 	variable index, numfiles, rr, gg, bb, ii
 
 	if(findlistitem(dataset, moto_fittable_datasets()) == -1)
@@ -2000,9 +2043,19 @@ End
 			endif
 		endif
 	endif
-	
-	
-			
+	//if you've just loaded the wave add it to the list of waves displayed in the plot control
+	if(waveexists(plot_listwave) && waveexists(plot_selwave))
+		//see if it's a reload, or new
+		findvalue/z /text=dataset plot_listwave
+		if(V_Value == -1)
+			redimension/n=(dimsize(plot_listwave, 0) + 1, -1) plot_listwave, plot_selwave
+			plot_listwave[dimsize(plot_listwave, 0) - 1][0] = dataset
+			plot_selwave[dimsize(plot_listwave, 0) - 1][1] = 2^5 | 2^4
+			plot_selwave[dimsize(plot_listwave, 0) - 1][2] = 2^5 | 2^4
+			plot_selwave[dimsize(plot_listwave, 0) - 1][3] = 2^5 | 2^4
+
+		endif
+	endif
 End
 
 static Function Moto_Plotreflectivity()
@@ -2030,7 +2083,7 @@ static Function Moto_Plotreflectivity()
 		
 		//load the file
 		dataName = Moto_loadReffile(filename)
-		moto_adddatasettographs(dataname)  	
+		moto_adddatasettographs(dataname) 	
 	endfor
 End
 
@@ -2381,7 +2434,7 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 	if(B_Struct.eventcode!=2)
 		return 0
 	endif
-	string datasetname = "", datasetnames = ""
+	string datasetname = "", datasetnames = "", fittabledatasets
 	variable ii, refnum
 	strswitch(B_Struct.ctrlname)
 		case "addconstraint_tab1":
@@ -2397,6 +2450,30 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 				redimension/n=(dimsize(constraintslist, 0) + 1) constraintslist, constraintsSel
 				constraintssel=2
 			endif		
+			break
+		case "allon_tab3":
+			wave plot_selwave = root:packages:motofit:reflectivity:plot_selwave
+			plot_selwave[][1] = plot_selwave[p][1] | 2^4
+			plot_selwave[][2] = plot_selwave[p][2] | 2^4
+			plot_selwave[][3] = plot_selwave[p][3] | 2^4
+			plot_selwave[][4] = plot_selwave[p][4] | 2^4
+			fittabledatasets = moto_fittable_datasets() + ";theoretical"
+			for(ii = 0 ; ii < itemsinlist(fittabledatasets) ; ii+=1)
+				moto_displayorhide_dataset(stringfromlist(ii, fittabledatasets), 1,1,1,1)		
+			endfor
+			break
+		case "alloff_tab3":
+			wave plot_selwave = root:packages:motofit:reflectivity:plot_selwave
+			plot_selwave[][1] = 2^5
+			plot_selwave[][2] = 2^5
+			plot_selwave[][3] = 2^5
+			plot_selwave[][4] = 2^5
+
+			fittabledatasets = moto_fittable_datasets() + ";theoretical"
+			for(ii = 0 ; ii < itemsinlist(fittabledatasets) ; ii+=1)
+				moto_displayorhide_dataset(stringfromlist(ii, fittabledatasets), 0,0,0,0)		
+			endfor
+		
 			break
 		case "removeconstraint_tab1":
 			if(waveexists(root:packages:motofit:reflectivity:ConstraintsList)==0)
@@ -2675,6 +2752,22 @@ static Function moto_GUI_listbox(LBS) : ListboxControl
 	Wave selwave = LBS.selwave
 	Wave/T listwave = LBS.listwave
 	variable row = LBS.row, col = LBS.col	, eventcode = LBS.eventcode
+	
+	if(stringmatch(LBS.ctrlname, "plot_tab3"))
+		switch(eventcode)
+			case 2:
+				if(col > 0)
+					string dataset = listwave[row][0]
+					variable refChecked = selwave[row][1] & 2^4
+					variable fitChecked = selwave[row][2] & 2^4
+					variable SLDChecked = selwave[row][3] & 2^4
+					variable resChecked = selwave[row][4] & 2^4
+					moto_displayorhide_dataset(dataset, refchecked, fitchecked, SLDchecked, resChecked)
+				endif
+				break
+		endswitch
+		return 0
+	endif
 	
 	Wave/t layerparams = root:packages:motofit:reflectivity:layerparams
 	Wave layerparams_selwave = root:packages:motofit:reflectivity:layerparams_selwave
