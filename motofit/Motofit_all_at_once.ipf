@@ -1784,11 +1784,14 @@ End
 
 Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr, dq, removeNonFinite])
 	variable plotyp
-	Wave/z qq, RR, dr, dq
+	Wave qq, RR
+	Wave/z dr, dq
 	variable removeNonFinite
 	
 	variable ii
-	
+	if(numpnts(RR)==0 || numpnts(qq) == 0 || numpnts(RR) != numpnts(qq))
+		return 0
+	endif	
 	switch(plotyp)
 		case 1:	//logR
 			if(waveexists(dr))
@@ -1832,7 +1835,12 @@ End
 
 Function moto_plotyp_to_lindata(plotyp, qq, RR[, dr])
 	variable plotyp
-	Wave/z qq, RR, dr
+	Wave qq, RR
+	Wave/z dR
+	
+	if(numpnts(RR)==0 || numpnts(qq) == 0 || numpnts(RR) != numpnts(qq))
+		return 0
+	endif
 	switch(plotyp)
 		case 1:	//logR
 			if(waveexists(dr))
@@ -2053,7 +2061,7 @@ function Moto_addDatasetToGraphs(dataset)
 			plot_selwave[dimsize(plot_listwave, 0) - 1][1] = 2^5 | 2^4
 			plot_selwave[dimsize(plot_listwave, 0) - 1][2] = 2^5 | 2^4
 			plot_selwave[dimsize(plot_listwave, 0) - 1][3] = 2^5 | 2^4
-
+			plot_selwave[dimsize(plot_listwave, 0) - 1][4] = 2^5 | 2^4
 		endif
 	endif
 End
