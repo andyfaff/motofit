@@ -1967,8 +1967,8 @@ function Moto_addDatasetToGraphs(dataset)
 
 	string refname, currentTraces, tracecolour, cmdtemplate, cmd
 	Wave/z M_colors = root:packages:motofit:reflectivity:M_colors
-	Wave/z/t plot_listwave
-	Wave/z plot_selwave
+	Wave/z/t plot_listwave = root:packages:motofit:reflectivity:plot_listwave
+	Wave/z plot_selwave = root:packages:motofit:reflectivity:plot_selwave
 	
 	variable index, numfiles, rr, gg, bb, ii
 
@@ -2495,31 +2495,10 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 				moto_update_theoretical()
 			endif
 			break
-		case "snapshot":
+		case "snapshot":		
 			string ywave ="", xwave="", sldwave="", df = ""
 			if(!Moto_snapshot(ywave, xwave, sldwave, df))
-				if(Findlistitem(ywave, tracenamelist("reflectivitygraph", ";", 1)) == -1)
-					Wave ysnap = $(df + ywave)
-					Wave xsnap = $(df + xwave)
-					Wave/z M_colors = 	root:packages:motofit:reflectivity:M_colors	
-					variable rr, gg, bb, index
-					if(Waveexists(M_colors))
-						variable numfiles = itemsinlist(moto_fittable_datasets())
-						index = mod(37 * numfiles, dimsize(M_colors, 0))
-						rr = M_colors[index][0]
-						gg = M_colors[index][1]
-						bb = M_colors[index][2]
-					endif
-					appendtograph/w=reflectivitygraph ysnap vs xsnap
-					modifygraph/W=reflectivitygraph rgb($ywave)=(rr,gg,bb),lsize($ywave)=2
-					Legend/C/N=text0/A=MC
-				endif
-				if(Findlistitem(sldwave,tracenamelist("sldgraph", ";", 1)) == -1)
-					Wave sldsnap = $(df + sldwave)
-					appendtograph/w=SLDgraph sldsnap
-					modifygraph/W=SLDgraph rgb($SLDwave)=(rr,gg,bb),lsize($SLDwave)=2
-					Legend/C/N=text0/A=MC
-				endif
+				Moto_addDatasetToGraphs(removeending(ywave, "_R"))
 			endif
 			break
 		case "refreshData":
