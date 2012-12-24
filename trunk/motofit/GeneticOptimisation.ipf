@@ -1934,7 +1934,7 @@ End
 	endif
 
 	switch(updatetime)
-		case 1:
+		case 8:
 			Wave chi2trend = root:packages:tempfittingfolder:chi2trend
 			Wave spread = root:packages:tempfittingfolder:spread
 			Wave spreadSD = root:packages:tempfittingfolder:spreadSD
