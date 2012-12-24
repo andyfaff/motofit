@@ -1895,6 +1895,69 @@ ThreadSafe Function motoMCWorkerFunc1()
 	return 0
 End
 
+ Function gen_updatefunc(pars, pop, costmap, updatetime)
+	Wave pars, pop, costmap
+	variable updatetime
+
+	NVAR/z finishedfit = root:packages:tempfittingfolder:finishedfit
+
+	if( (NVAR_exists(finishedfit) && finishedfit == 1) || !datafolderexists("root:packages:tempfittingfolder"))
+		newdatafolder/o root:packages
+		newdatafolder/o root:packages:tempfittingfolder
+		variable/g root:packages:tempfittingfolder:finishedfit = 0
+		make/n=0/d/o root:packages:tempfittingfolder:chi2trend
+		make/n=(dimsize(pop, 0))/d/o root:packages:tempfittingfolder:spread, root:packages:tempfittingfolder:spreadSD
+		make/n=(dimsize(pop, 1), dimsize(pop, 0))/d/o root:packages:tempfittingfolder:temppop
+	
+		Wave chi2trend = root:packages:tempfittingfolder:chi2trend
+		Wave spread = root:packages:tempfittingfolder:spread
+		Wave spreadSD = root:packages:tempfittingfolder:spreadSD
+		Wave temppop = root:packages:tempfittingfolder:temppop
+
+		Display /W=(35,44,726,515)/K=1 spread
+		AppendToGraph/L=vL/T chi2trend
+		ModifyGraph mode(spread)=2
+		ModifyGraph log(vL)=1
+		ModifyGraph mode(spread)=3
+		ModifyGraph marker(spread)=8
+		ModifyGraph lSize(chi2trend)=2
+	
+		ModifyGraph lblPos(left)=60
+		ModifyGraph freePos(vL)={0,top}
+		ModifyGraph axisEnab(left)={0,0.6}
+		ModifyGraph axisEnab(vL)={0.63,1}
+		Label bottom "fitted parameter number"
+		Label vL "chi\\S2"
+		ModifyGraph noLabel(left)=2
+		SetAxis left 0,1
+		ErrorBars spread Y,wave=(spreadSD,spreadSD)
+	endif
+
+	switch(updatetime)
+		case 1:
+			Wave chi2trend = root:packages:tempfittingfolder:chi2trend
+			Wave spread = root:packages:tempfittingfolder:spread
+			Wave spreadSD = root:packages:tempfittingfolder:spreadSD
+			Wave temppop = root:packages:tempfittingfolder:temppop
+			
+			redimension/n=(numpnts(chi2trend) + 1) chi2trend
+			chi2trend[numpnts(chi2trend) - 1] = costmap[0]
+		
+			multithread temppop[][] = pop[q][p]
+			spread[] = mean(temppop, dimsize(temppop, 0) * p, dimsize(temppop, 0) * (p + 1) - 1)
+			spreadSD[] = sqrt(variance(temppop, dimsize(temppop, 0) * p, dimsize(temppop, 0) * (p + 1) - 1))
+			Doupdate
+		break
+		case 16:
+			finishedfit = 1	
+		break
+	endswitch
+		
+	return 0
+End
+
+
+
 Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, outf, fakeweight])
 	String fn
 	Wave w, yy, xx, ee
