@@ -180,7 +180,7 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 	multilayer = numberbykey("multilayer", coefnote)
 	
 	reversedSLDplot = str2num(getmotofitoption("reversedSLDplot"))
-	if(reversedSLDplot != numberbykey("reversedSLDplot", coefnote))
+	if(reversedSLDplot != numberbykey("reversedSLDplot", coefnote) && !numtype(reversedSLDplot))
 		moto_reverseSLDplots()
 		reversedSLDplot = numberbykey("reversedSLDplot", coefnote)
 		setmotofitoption("reversedSLDplot", stringbykey("reversedSLDplot", coefnote))
