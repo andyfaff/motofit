@@ -2743,7 +2743,7 @@ static Function moto_GUI_listbox(LBS) : ListboxControl
 	if(stringmatch(LBS.ctrlname, "plot_tab3"))
 		switch(eventcode)
 			case 2:
-				if(col > 0)
+				if(col > 0 && row < dimsize(selwave, 0) && row > -1)
 					string dataset = listwave[row][0]
 					variable refChecked = selwave[row][1] & 2^4
 					variable fitChecked = selwave[row][2] & 2^4
