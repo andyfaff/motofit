@@ -2307,20 +2307,20 @@ End
 
 Function reduceManyXrayFiles()
 
-	variable err, ii, jj
+	variable err, ii, jj, refnum
 	string cDF = getdatafolder(1)
 	string aFile, theFiles, base
 	try
 		Newdatafolder/o root:packages
 		Newdatafolder /o/s root:packages:Xpert
-		multiopenfiles/M="Please select all specular Xpert Pro files"/F=".xrdml;"
-		if(V_flag)
+		open/MULT=1/r/d/M="Please select all specular Xpert Pro files"/F="XRDML files:.xrdml;" refnum
+		if(!strlen(S_filename))
 			return 0
 		endif
 		theFiles = S_filename
 		
-		for(ii = 0 ; ii<itemsinlist(theFiles) ; ii+=1)
-			aFile = Stringfromlist(ii, theFiles)
+		for(ii = 0 ; ii<itemsinlist(theFiles, "\r") ; ii+=1)
+			aFile = Stringfromlist(ii, theFiles, "\r")
 			print "reducing: ", aFile
 			
 			if(cmpstr(igorinfo(2),"Macintosh")==0)
@@ -2331,14 +2331,14 @@ Function reduceManyXrayFiles()
 			base = cleanupname(base, 0)
 			
 			do
-				multiopenfiles/M="Please select up to two background runs for "+base/F=".xrdml;"
-				if(V_flag)
+				open/MULT=1/r/d/M="Please select up to two background runs for "+base/F="XRDML files:.xrdml;" refnum
+				if(!strlen(S_filename))
 					S_filename = ""
 				endif
 			while(itemsinlist(S_filename)>2)
 		
 			//if there is no problem reducing it, then try to save it
-			if(!Pla_Xrayreduction#reduceXpertPro(afile, bkg1=stringfromlist(0, S_filename), bkg2 = stringfromlist(1, S_filename)))
+			if(!Pla_Xrayreduction#reduceXpertPro(afile, bkg1=stringfromlist(0, S_filename, "\r"), bkg2 = stringfromlist(1, S_filename, "\r")))
 				Pla_Xrayreduction#SaveXraydata(base)		
 			else
 				//someone somewhere aborted the whole thing

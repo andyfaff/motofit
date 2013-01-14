@@ -23,8 +23,10 @@ Function addFilesTogether()
 	if(V_Flag==2)
 		return 1
 	endif
-	multiopenfiles/M="Please select the files you would like to add together"/F=".hdf;"
-	if(V_Flag)
+	variable refnum
+	open/MULT=1/r/d/M="Please select the files you would like to add together"/F="HDF files:.hdf" refnum
+
+	if(!strlen(S_filename))
 		return 1
 	endif
 	string filenames = ""
@@ -40,9 +42,9 @@ Function addFilesTogether()
 			break
 	endswitch
 										
-	outputPathStr = Parsefilepath(1, Stringfromlist(0, S_filename), pathSep, 1, 0)
-	for(ii=0 ; ii<itemsinlist(S_filename); ii+=1)
-		filenames += Parsefilepath(0, Stringfromlist(ii, S_filename), pathSep, 1, 0)+";"
+	outputPathStr = Parsefilepath(1, Stringfromlist(0, S_filename, "\r"), pathSep, 1, 0)
+	for(ii=0 ; ii<itemsinlist(S_filename, "\r"); ii+=1)
+		filenames += Parsefilepath(0, Stringfromlist(ii, S_filename, "\r"), pathSep, 1, 0)+";"
 	endfor
 	madd(outputPathStr, filenames)
 End
@@ -671,7 +673,8 @@ Function SLIM_buttonproc(ba) : ButtonControl
 									
 					//find the files with the new multiopenfiles XOP
 					Newpath/o/q/z pla_temppath_read, thePathstring
-					multiopenfiles/P=pla_temppath_read/M="Select the files you wish to view"/F=fileFilterStr
+					open/MULT=1/r/P=pla_temppath_read/d/M="Select the files you wish to view"/F=fileFilterStr refnum
+
 					killpath/z pla_temppath_read
 					if(V_Flag!=0)
 						return 0
@@ -687,14 +690,14 @@ Function SLIM_buttonproc(ba) : ButtonControl
 							break
 					endswitch
 										
-					thePathstring = Parsefilepath(1, Stringfromlist(0, S_filename), pathSep, 1, 0)					
+					thePathstring = Parsefilepath(1, Stringfromlist(0, S_filename, "\r"), pathSep, 1, 0)					
 					filenames = ""
 
 					for(ii=0 ; ii<itemsinlist(S_filename) ; ii+=1)
-						filenames += ParseFilePath(0, stringfromlist(ii, S_filename), pathSep, 1, 0)+";"
+						filenames += ParseFilePath(0, stringfromlist(ii, S_filename, "\r"), pathSep, 1, 0)+";"
 					endfor
 					
-					if(itemsinlist(filenames)==0)
+					if(itemsinlist(filenames, "\r")==0)
 						return 0
 					endif
 					
