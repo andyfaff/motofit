@@ -1954,7 +1954,8 @@ Function SLIMPOL_buttonprocpol(ba) : ButtonControl //SLIM_buttonproc
 									
 					//find the files with the new multiopenfiles XOP
 					Newpath/o/q/z pla_temppath_read, thePathstring
-					multiopenfiles/P=pla_temppath_read/M="Select the files you wish to view"/F=fileFilterStr
+					open/MULT=1/r/P=pla_temppath_read/d/M="Select the files you wish to view"/F=fileFilterStr refnum
+
 					killpath/z pla_temppath_read
 					if(V_Flag!=0)
 						return 0
@@ -1970,14 +1971,14 @@ Function SLIMPOL_buttonprocpol(ba) : ButtonControl //SLIM_buttonproc
 							break
 					endswitch
 										
-					thePathstring = Parsefilepath(1, Stringfromlist(0, S_filename), pathSep, 1, 0)					
+					thePathstring = Parsefilepath(1, Stringfromlist(0, S_filename, "\r"), pathSep, 1, 0)					
 					filenames = ""
 
-					for(ii=0 ; ii<itemsinlist(S_filename) ; ii+=1)
-						filenames += ParseFilePath(0, stringfromlist(ii, S_filename), pathSep, 1, 0)+";"
+					for(ii=0 ; ii<itemsinlist(S_filename, "\r") ; ii+=1)
+						filenames += ParseFilePath(0, stringfromlist(ii, S_filename, "\r"), pathSep, 1, 0)+";"
 					endfor
 					
-					if(itemsinlist(filenames)==0)
+					if(itemsinlist(filenames, "\r")==0)
 						return 0
 					endif
 					
