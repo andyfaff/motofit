@@ -1294,6 +1294,7 @@ Static Function setupvariables(mode, res, plotyp, SLDpts)
 	setmotofitoption("useerrors",num2str(0))
 	setmotofitoption("multilayer",num2str(0))
 	setmotofitoption("reversedSLDplot",num2str(0))
+	setmotofitoption("respoints", num2str(17))
 	
 	ColorTab2wave rainbow
 	setdatafolder savDF
@@ -1309,7 +1310,7 @@ Static Function setupdatafolders()
 	newdatafolder/o root:packages:motofit:reflectivity:ft
 End
 
-Static function/s getMotofitOption(option)
+threadsafe static function/s getMotofitOption(option)
 	string option
 	SVAR/z motofitcontrol = root:packages:motofit:reflectivity:motofitcontrol
 	if(SVAR_Exists(motofitcontrol))
@@ -1613,6 +1614,12 @@ Function Motofit_smeared(w, RR, qq, dq) :Fitfunc
 	variable mode = mod(numpnts(w) - 6, 4)
 	
 	variable plotyp = str2num(getMotofitOption("plotyp"))
+	variable respoints = str2num(getMotofitOption("respoints"))
+	if(numtype(respoints))
+		respoints = 17
+	endif
+	variable/g V_gausspoints = respoints
+	print V_gausspoints
 		
 	make/free/d/n=(numpnts(qq), 2) xtemp
 	xtemp[][0] = qq[p]
@@ -1646,6 +1653,13 @@ Threadsafe Function Motofit_smeared_log(w, RR, qq, dq):fitfunc
 	duplicate/free qq, tempqq
 	redimension/n=(-1, 2) tempqq
 	tempqq[][1] = dq[p]
+	
+	variable respoints = str2num(getMotofitOption("respoints"))
+	if(numtype(respoints))
+		respoints = 17
+	endif
+	variable/g V_gausspoints = respoints
+	
 	AbelesAll(w, RR, tempqq)
 	RR = log(RR)
 End
