@@ -657,10 +657,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					string thePathstring = ""
 					if(V_flag == 1)
 						thePathstring = inputpathStr
-						fileFilterStr = ".hdf;.xml;.itx;.xrdml;.spectrum;"
+						fileFilterStr = "HDF files (.hdf):.hdf;XML files (.xml):.xml;ITX files (.itx):.itx;spectrum files (.spectrum):.spectrum;"
 					elseif(V_flag == 2)
 						thePathstring = outputpathStr
-						fileFilterStr = ".xml;.itx;.xrdml;.spectrum;.hdf;"
+						fileFilterStr = "XML files (.xml):.xml;HDF files (.hdf):.hdf;ITX files (.itx):.itx;spectrum files (.spectrum):.spectrum;"
 					endif
 					
 					GetFileFolderInfo/q/z thePathstring
@@ -693,7 +693,7 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					thePathstring = Parsefilepath(1, Stringfromlist(0, S_filename, "\r"), pathSep, 1, 0)					
 					filenames = ""
 
-					for(ii=0 ; ii<itemsinlist(S_filename) ; ii+=1)
+					for(ii=0 ; ii<itemsinlist(S_filename, "\r") ; ii+=1)
 						filenames += ParseFilePath(0, stringfromlist(ii, S_filename, "\r"), pathSep, 1, 0)+";"
 					endfor
 					
