@@ -1619,7 +1619,6 @@ Function Motofit_smeared(w, RR, qq, dq) :Fitfunc
 		respoints = 17
 	endif
 	variable/g V_gausspoints = respoints
-	print V_gausspoints
 		
 	make/free/d/n=(numpnts(qq), 2) xtemp
 	xtemp[][0] = qq[p]
