@@ -2010,9 +2010,7 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[cursA, cursB, out
 		funcinfo = functioninfo(fn)
 		if(stringmatch(stringbykey("THREADSAFE", funcinfo), "NO") == 1)
 			duplicate/free w, output
-			duplicate/free yy, yytemp
-			make/n=(numpnts(yy))/o/d root:packages:motofit:old_genoptimise:tempcorefinement
-			Wave tempcorefinement = root:packages:motofit:old_genoptimise:tempcorefinement
+			duplicate/free yy, yytemp, tempcorefinement
 			
 			for(ii = 0 ; ii < iters ; ii += 1)
 				if(fakeweight)
