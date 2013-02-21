@@ -2067,7 +2067,7 @@ function Moto_addDatasetToGraphs(dataset)
 	//if you've just loaded the wave add it to the list of waves displayed in the plot control
 	if(waveexists(plot_listwave) && waveexists(plot_selwave))
 		//see if it's a reload, or new
-		findvalue/z /text=dataset plot_listwave
+		findvalue/z/TXOP=4 /text=dataset plot_listwave
 		if(V_Value == -1)
 			redimension/n=(dimsize(plot_listwave, 0) + 1, -1) plot_listwave, plot_selwave
 			plot_listwave[dimsize(plot_listwave, 0) - 1][0] = dataset
