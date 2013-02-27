@@ -8,7 +8,7 @@ RequestExecutionLevel user
 ; Main Install settings
 Name "${APPNAMEANDVERSION}"
 InstallDir "$INSTDIR"
-OutFile "./motofitInstaller.exe"
+OutFile ".\motofitInstaller.exe"
 
 ; Include LogicLibrary
 !include "LogicLib.nsh"
@@ -45,51 +45,51 @@ ${EndIf}
 	
 	;get rid of previous versions of motofit
 ;	Delete "$1\User Procedures\motofit\*"
-;	RMDir /r "$1\User Procedures\motofit"
+;	RMDir \r "$1\User Procedures\motofit"
 
 	SetOutPath "$INSTDIR\User Procedures\motofit"
-	File "../motofit/*.*"
+	File "..\motofit\*.*"
 
 	SetOutPath "$INSTDIR\User Procedures\motofit\data"
-	File "../motofit/Data/*.*"
+	File "..\motofit\Data\*.*"
 	
 	SetOutPath "$INSTDIR\Igor Procedures"
 ;	Delete "$INSTDIR\Igor Procedures\Shortcut to motofit.lnk"	 
-	File "../MOTOFIT_loadpackage.ipf"
+	File "..\MOTOFIT_loadpackage.ipf"
 
 	;INSTALL ALL THE XOPs
 	SetOutPath "$INSTDIR\Igor Extensions"
 		
-	File "../../../XOP Toolkit 6/IgorXOPs6/Abeles/trunk/win/Abeles.xop"
-	File "../../../XOP Toolkit 6/IgorXOPs6/Abeles/trunk/win/Abeles Help.ihf"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\Abeles\trunk\win\Abeles.xop"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\Abeles\trunk\win\Abeles Help.ihf"
 
-	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/win/GenCurveFit.xop"
-	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/extra/ExampleExperiment.pxp"
-	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/extra/GenCurveFit Help.ihf"
-	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/extra/ReleaseNotes.txt"
-	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/extra/Structurefitexample.pxp"
-	File "../../../XOP Toolkit 6/IgorXOPs6/MultiDimensionalGenCurvefit/trunk/extra/license.txt"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\win\GenCurveFit.xop"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\ExampleExperiment.pxp"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\GenCurveFit Help.ihf"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\ReleaseNotes.txt"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\Structurefitexample.pxp"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\license.txt"
 
-	File "../../../XOP Toolkit 6/IgorXOPs6/easyHttp/trunk/win/easyHttp.xop"
-	File "../../../XOP Toolkit 6/IgorXOPs6/easyHttp/trunk/win/easyHttp Help.ihf"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\easyHttp\trunk\win\easyHttp.xop"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\easyHttp\trunk\win\easyHttp Help.ihf"
 	
-	File "../../../XOP Toolkit 5/IgorXOPs5/multiopenfiles/trunk/win/multiopenfiles.xop"
-	File "../../../XOP Toolkit 5/IgorXOPs5/multiopenfiles/trunk/win/multiopenfiles Help.ihf"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\multiopenfiles\trunk\win\multiopenfiles.xop"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\multiopenfiles\trunk\win\multiopenfiles Help.ihf"
 		
-	File "../../../XOP Toolkit 6/IgorXOPs6/SOCKIT/trunk/win/SOCKIT.xop"
-	File "../../../XOP Toolkit 6/IgorXOPs6/SOCKIT/trunk/win/SOCKIT Help.ihf"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\SOCKIT\trunk\win\SOCKIT.xop"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\SOCKIT\trunk\win\SOCKIT Help.ihf"
 	
-	File "../../../XOP Toolkit 6/IgorXOPs6/XMLutils/trunk/win/XMLutils.xop"
-	File "../../../XOP Toolkit 6/IgorXOPs6/XMLutils/trunk/win/XMLutils Help.ihf"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\XMLutils\trunk\win\XMLutils.xop"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\XMLutils\trunk\win\XMLutils Help.ihf"
 	
-	File "../../../XOP Toolkit 6/IgorXOPs6/ZIP/trunk/win/ZIP.xop"
-	File "../../../XOP Toolkit 6/IgorXOPs6/ZIP/trunk/win/ZIP Help.ihf"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\ZIP\trunk\win\ZIP.xop"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\ZIP\trunk\win\ZIP Help.ihf"
 	
     CreateShortCut "Shortcut to HDF5.lnk" "$1\More Extensions\File Loaders\HDF5.xop"
 
-	File "../../../XOP Toolkit 6/IgorXOPs6/pthreads_win/lib/pthreadVC2.dll"
-	File "../../../XOP Toolkit 6/IgorXOPs6/pthreads_win/lib/COPYING.txt"
-	File "../../../XOP Toolkit 6/IgorXOPs6/pthreads_win/lib/COPYING.lib"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\pthreads_win\lib\pthreadVC2.dll"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\pthreads_win\lib\COPYING.txt"
+	File "..\..\..\XOP Toolkit 6\IgorXOPs6\pthreads_win\lib\COPYING.lib"
 
 SectionEnd
 
