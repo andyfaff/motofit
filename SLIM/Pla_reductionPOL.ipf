@@ -215,7 +215,7 @@ Function PolarizedReduction(inputPathStr, outputPathStr, scalefactorI00, scalefa
 				//endif
 				Ffname = stringfromlist(ii, toSplice, ":")
 				if(verbose)
-					print "(Polarized Reduction) These are the datasets in angle "ii": Ffname = ", Ffname
+					print "(Polarized Reduction) These are the datasets in angle ",ii,": Ffname = ", Ffname
 				endif
 				if(stringmatch(stringfromlist(0, Ffname), "00")||stringmatch(stringfromlist(0, Ffname), "0"))
 					if(verbose)
