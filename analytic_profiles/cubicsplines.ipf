@@ -45,7 +45,8 @@ Function cubicSplineRefFitter(w, yy, xx):fitfunc
 	//w[5 + 3*w[0] + 1] = aj of first knot
 	//w[5 + 3*w[0] + n] = aj of nth knot
 	Wave coef_forReflectivity = cubicspline#createCoefs_ForReflectivity(w)
-	motofit(coef_forReflectivity, yy, xx)
+	AbelesALl(coef_forReflectivity, yy, xx)
+	yy = log(yy)
 End
 
 Static Function/Wave createCoefs_forReflectivity(w)
