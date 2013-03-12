@@ -5,7 +5,7 @@
 //chebyshevapproximator(root:data:c_PLP0008698:Coef_c_PLP0008698_R, fit_c_PLP0008698_R, root:data:c_PLP0008698:c_PLP0008698_q);moto_SLDplot(coef_forreflectivity, root:data:c_PLP0008698:SLD_c_PLP0008698_R)
 //chebyshevapproximator(root:data:c_PLP0008682:Coef_c_PLP0008682_R, fit_c_PLP0008682_R, root:data:c_PLP0008682:c_PLP0008682_q);moto_SLDplot(coef_forreflectivity, root:data:c_PLP0008682:SLD_c_PLP0008682_R)
 
-constant NUMSTEPS = 40
+static constant NUMSTEPS = 40
 constant DELRHO = 0.05
 constant lambda = 10
 
@@ -14,9 +14,9 @@ Function Chebyshevapproximator(w, yy, xx): fitfunc
 
 	createCoefs_ForReflectivity(w)
 	Wave coef_forReflectivity
-	motofit(coef_forreflectivity, yy, xx)
-//	Abelesall(coef_forReflectivity, yy, xx)
-//	multithread yy = log(yy)
+//	motofit(coef_forreflectivity, yy, xx)
+	Abelesall(coef_forReflectivity, yy, xx)
+	multithread yy = log(yy)
 	
 End
 
@@ -25,21 +25,22 @@ Function createCoefs_ForReflectivity(w)
 	
 	variable ii, jj, xmod, multiplier
 	variable lastz, lastSLD, numlayers = 0, MAX_LENGTH
-	variable chebcoefs = dimsize(w, 0) - (w[0] * 3 + 7)
-	MAX_LENGTH = w[w[0] * 3 + 6]
+	variable chebcoefs = dimsize(w, 0) - (w[0] * 3 + 6)
+	MAX_LENGTH = w[w[0] * 3 + 5]
 
 	//make the wave to calculate the reflectivity
-	make/d/o/n=6 coef_forReflectivity = w
+	make/d/o/n=5 coef_forReflectivity = w
+	redimension/n=6 coef_forreflectivity
 	lastz = -MAX_LENGTH/(NUMSTEPS - 1)
 	numlayers = 0
 		
 	//add in the number of layers that already exist
 	redimension/d/n=(dimsize(coef_forreflectivity,0) + 4 * w[0]) coef_forreflectivity
 	for(ii = 0 ; ii < w[0] ; ii+=1)
-		coef_forreflectivity[4 * ii + 6] = w[3 * ii + 6]
-		coef_forreflectivity[4 * ii + 7] = w[3 * ii + 7]
+		coef_forreflectivity[4 * ii + 6] = w[3 * ii + 5]
+		coef_forreflectivity[4 * ii + 7] = w[3 * ii + 6]
 		coef_forreflectivity[4 * ii + 8] = 0
-		coef_forreflectivity[4 * ii + 9] = w[3 * ii + 8]
+		coef_forreflectivity[4 * ii + 9] = w[3 * ii + 7]
 		numlayers += 1
 		coef_forreflectivity[0] = numlayers
 	endfor
@@ -63,8 +64,8 @@ Function createCoefs_ForReflectivity(w)
 			else
 				multiplier = 1
 			endif
-			variable data = w[(w[0] * 3 + 7) + jj]
-			a_n[ii] += multiplier * w[(w[0] * 3 + 7) + jj] * Chebyshev(ii, chebnodes[jj])
+			variable data = w[(w[0] * 3 + 6) + jj]
+			a_n[ii] += multiplier * w[(w[0] * 3 + 6) + jj] * Chebyshev(ii, chebnodes[jj])
 		endfor
 	endfor
 	a_n *= 2/(chebcoefs - 1)
@@ -87,7 +88,7 @@ Function createCoefs_ForReflectivity(w)
 			coef_forReflectivity[4 * numlayers + 6] = MAX_LENGTH/(NUMSTEPS - 1)
 			coef_forReflectivity[4 * numlayers + 7] = (chebSLD[ii])
 			coef_forReflectivity[4 * numlayers + 8] = 0
-			coef_forReflectivity[4 * numlayers + 9] = 1
+			coef_forReflectivity[4 * numlayers + 9] = 0.2
 			
 			lastSLD = chebSLD[ii]
 			numlayers += 1
