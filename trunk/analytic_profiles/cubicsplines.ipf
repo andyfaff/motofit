@@ -1,7 +1,7 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma ModuleName=cubicspline
 
-Constant NUMSTEPS = 100
+Constant NUMSTEPS = 60
 Constant WSMOOTH = 0.0
 Constant WSMOOTH1 = 0.0
 

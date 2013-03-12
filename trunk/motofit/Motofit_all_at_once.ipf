@@ -672,16 +672,17 @@ static Function Moto_Reflectivitypanel() : Panel
 	Button allon_tab3 title="toggle on",size={100,20}, proc=motofit#moto_GUI_button, pos={300,68}
 	Button alloff_tab3 title="toggle off",size={100,20}, proc=motofit#moto_GUI_button, pos={413,68}
 
-	make/n=(1,5)/t/o root:packages:motofit:reflectivity:plot_listwave
-	make/n=(1,5)/I/U/o root:packages:motofit:reflectivity:plot_selwave
+	make/n=(1,6)/t/o root:packages:motofit:reflectivity:plot_listwave
+	make/n=(1,6)/I/U/o root:packages:motofit:reflectivity:plot_selwave
 	Wave/t plot_listwave = root:packages:motofit:reflectivity:plot_listwave
 	plot_listwave=""
 	Wave plot_selwave = root:packages:motofit:reflectivity:plot_selwave
 	setdimlabel 1,0,dataset, plot_listwave
 	setdimlabel 1,1,datavisible, plot_listwave
-	setdimlabel 1,2,fitvisible, plot_listwave
+	setdimlabel 1,2,FITvisible, plot_listwave
 	setdimlabel 1,3,SLDvisible, plot_listwave
-	setdimlabel 1,4,resvisible, plot_listwave
+	setdimlabel 1,4,RESvisible, plot_listwave
+	setdimlabel 1,5,toggleAll, plot_listwave
 
 	string fittabledatasets = moto_fittable_datasets()
 	redimension/n=(itemsinlist(fittabledatasets) + 1, -1), plot_listwave, plot_selwave
@@ -692,6 +693,7 @@ static Function Moto_Reflectivitypanel() : Panel
 	plot_selwave[][2] = 2^5 | 2^4
 	plot_selwave[][3] = 2^5 | 2^4
 	plot_selwave[][4] = 2^5 | 2^4	
+	plot_selwave[][5] = 2^5 | 2^4	
 	
 	ListBox plot_tab3, pos={26,96},size={535,345},proc=motofit#moto_GUI_listbox
 	ListBox plot_tab3,listWave=root:packages:motofit:reflectivity:plot_listwave
@@ -2075,6 +2077,8 @@ function Moto_addDatasetToGraphs(dataset)
 			plot_selwave[dimsize(plot_listwave, 0) - 1][2] = 2^5 | 2^4
 			plot_selwave[dimsize(plot_listwave, 0) - 1][3] = 2^5 | 2^4
 			plot_selwave[dimsize(plot_listwave, 0) - 1][4] = 2^5 | 2^4
+			plot_selwave[dimsize(plot_listwave, 0) - 1][5] = 2^5 | 2^4
+
 		endif
 	endif
 End
@@ -2474,10 +2478,11 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 			break
 		case "allon_tab3":
 			wave plot_selwave = root:packages:motofit:reflectivity:plot_selwave
-			plot_selwave[][1] = plot_selwave[p][1] | 2^4
-			plot_selwave[][2] = plot_selwave[p][2] | 2^4
-			plot_selwave[][3] = plot_selwave[p][3] | 2^4
-			plot_selwave[][4] = plot_selwave[p][4] | 2^4
+			plot_selwave[][] = plot_selwave[p][q] | 2^4
+//			plot_selwave[][2] = plot_selwave[p][2] | 2^4
+//			plot_selwave[][3] = plot_selwave[p][3] | 2^4
+//			plot_selwave[][4] = plot_selwave[p][4] | 2^4
+//			plot_selwave[][5] = plot_selwave[p][5] | 2^4
 			fittabledatasets = moto_fittable_datasets() + ";theoretical"
 			for(ii = 0 ; ii < itemsinlist(fittabledatasets) ; ii+=1)
 				moto_displayorhide_dataset(stringfromlist(ii, fittabledatasets), 1,1,1,1)		
@@ -2485,10 +2490,11 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 			break
 		case "alloff_tab3":
 			wave plot_selwave = root:packages:motofit:reflectivity:plot_selwave
-			plot_selwave[][1] = 2^5
-			plot_selwave[][2] = 2^5
-			plot_selwave[][3] = 2^5
-			plot_selwave[][4] = 2^5
+			plot_selwave[][] = plot_selwave[p][q] & ~(2^4)
+//			plot_selwave[][2] = plot_selwave[p][1] & ~(2^4)
+//			plot_selwave[][3] = plot_selwave[p][1] & ~(2^4)
+//			plot_selwave[][4] = plot_selwave[p][1] & ~(2^4)
+//			plot_selwave[][5] = plot_selwave[p][1] & ~(2^4)
 
 			fittabledatasets = moto_fittable_datasets() + ";theoretical"
 			for(ii = 0 ; ii < itemsinlist(fittabledatasets) ; ii+=1)
@@ -2757,6 +2763,14 @@ static Function moto_GUI_listbox(LBS) : ListboxControl
 		switch(eventcode)
 			case 2:
 				if(col > 0 && row < dimsize(selwave, 0) && row > -1)
+					if(col == 5)
+						variable allOn = selwave[row][5] & 2^4
+						if(allOn)
+							selwave[row][] =  selwave[row][q] | 2^4							
+						else
+							selwave[row][] =  selwave[row][q] & ~(2^4)
+						endif
+					endif
 					string dataset = listwave[row][0]
 					variable refChecked = selwave[row][1] & 2^4
 					variable fitChecked = selwave[row][2] & 2^4
