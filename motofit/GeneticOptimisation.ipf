@@ -1790,9 +1790,10 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring [, limits, paramdescripti
 		SetVariable setvar3,limits={0,1,0.05},value= root:packages:motofit:old_genoptimise:recomb, win=GCF_dialog
 		SetVariable setvar4,pos={12,104},size={215,19},title="fit tolerance",fSize=12, win=GCF_dialog
 		SetVariable setvar4,limits={1e-7,0.1,0.001},value= root:packages:motofit:old_genoptimise:fittol, win=GCF_dialog
-		Button button0,pos={30,310},size={266,25},proc=GCF_dialogProc,title="Continue", win=GCF_dialog
+		Button button0,pos={30,310},size={266,25},proc=GCF_dialogProc,title="\uDo Fit",  fColor=(32768,54615,65535),win=GCF_dialog
 		Button button1,pos={251, 103},size={45, 20},proc=GCF_dialogProc,title="default", fsize=9, win=GCF_dialog
 		Button button2,pos={30,337},size={266,25},proc=GCF_dialogProc,title="Cancel", win=GCF_dialog
+		Setwindow GCF_dialog, hook(GCF_dialog)=GCF_dialog_hook, userdata(continue) = "Do Fit"
 		PauseForUser GCF_dialog
 
 		NVAR GCF_continue = root:packages:motofit:old_genoptimise:GCF_continue
@@ -1816,6 +1817,55 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring [, limits, paramdescripti
 	while (thoseOK != numbeingvaried)
 	
 	setdatafolder $cDF
+End
+
+Function GCF_dialog_hook(s)
+	STRUCT WMWinHookStruct &s
+
+	Variable hookResult = 0
+
+	switch(s.eventCode)
+		case 0:				// Activate
+			// Handle activate
+			break
+
+		case 1:				// Deactivate
+			// Handle deactivate
+			break
+		case 11:
+			switch (s.keycode)
+				case 13:		//enter
+					//do the fit.
+
+					NVAR GCF_continue = root:packages:motofit:old_genoptimise:GCF_continue
+					string option = GetUserdata("GCF_dialog", "", "continue")
+					print s.keycode, option
+					strswitch(option)
+						case "cancel":
+							GCF_continue = 0
+							break
+						case "Do Fit":
+							GCF_continue = 1
+							break
+					endswitch
+					dowindow/k $s.winname
+
+					break
+				case 99: 		//c for cancel
+					Button button2, fColor=(32768,54615,65535),win=GCF_dialog
+					Button button0, fColor=(65535,65535,65535),win=GCF_dialog
+					SetWindow GCF_dialog, userdata(continue) = "cancel"
+				break
+				case 100:		//d for do fit
+					Button button0, fColor=(32768,54615,65535),win=GCF_dialog
+					Button button2, fColor=(65535,65535,65535),win=GCF_dialog
+					SetWindow GCF_dialog, userdata(continue) = "Do Fit"
+				break
+			endswitch	
+		// And so on . . .
+	endswitch
+	
+	return hookResult		// 0 if nothing done, else 1
 End
 
 
