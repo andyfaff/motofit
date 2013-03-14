@@ -1790,9 +1790,9 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring [, limits, paramdescripti
 		SetVariable setvar3,limits={0,1,0.05},value= root:packages:motofit:old_genoptimise:recomb, win=GCF_dialog
 		SetVariable setvar4,pos={12,104},size={215,19},title="fit tolerance",fSize=12, win=GCF_dialog
 		SetVariable setvar4,limits={1e-7,0.1,0.001},value= root:packages:motofit:old_genoptimise:fittol, win=GCF_dialog
-		Button button0,pos={30,310},size={266,25},proc=GCF_dialogProc,title="\uDo Fit",  fColor=(32768,54615,65535),win=GCF_dialog
+		Button button0,pos={30,310},size={266,25},proc=GCF_dialogProc,title="\f04D\f00o Fit",  fColor=(32768,54615,65535),win=GCF_dialog
 		Button button1,pos={251, 103},size={45, 20},proc=GCF_dialogProc,title="default", fsize=9, win=GCF_dialog
-		Button button2,pos={30,337},size={266,25},proc=GCF_dialogProc,title="Cancel", win=GCF_dialog
+		Button button2,pos={30,337},size={266,25},proc=GCF_dialogProc,title="\f04C\f00ancel", win=GCF_dialog
 		Setwindow GCF_dialog, hook(GCF_dialog)=GCF_dialog_hook, userdata(continue) = "Do Fit"
 		PauseForUser GCF_dialog
 
