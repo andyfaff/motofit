@@ -274,6 +274,11 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 	//copy the parameters over, and the holdstring
 	mode = str2num(getmotofitoption("mode"))
 	holdstring = getmotofitoption("holdstring")
+	if(strlen(holdstring) == 0)
+		holdstring = ""
+		holdstring = padstring(holdstring, numpnts(coef_theoretical_R), 48)
+		holdstring[0] = "1"
+	endif
 	
 	Wave/t layerparams = root:packages:motofit:reflectivity:layerparams
 	Wave/t/z multilayerparams = root:packages:motofit:reflectivity:multilayerparams
