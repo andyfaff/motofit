@@ -1839,7 +1839,6 @@ Function GCF_dialog_hook(s)
 
 					NVAR GCF_continue = root:packages:motofit:old_genoptimise:GCF_continue
 					string option = GetUserdata("GCF_dialog", "", "continue")
-					print s.keycode, option
 					strswitch(option)
 						case "cancel":
 							GCF_continue = 0

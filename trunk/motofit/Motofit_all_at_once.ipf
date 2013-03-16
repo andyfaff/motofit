@@ -1802,6 +1802,21 @@ Function/C Moto_angletoQ(omega,twotheta,lambda)
 	return Q
 End
 
+Function moto_bodgeangle(dataset, anglebodge, wavelength)
+String dataset
+variable anglebodge, wavelength
+//some instruments may not be aligned properly (NO NAME - NO PACKDRILL)
+//Bodge the angle by a known amount, but you need to know the wavelength
+//angle offset is in degrees
+
+Wave originaldata = $("root:data:" + dataset + ":originaldata");AbortonRTE
+
+make/n=(dimsize(originaldata, 0))/d/free theta
+theta = 180*asin(originaldata[p][0] * wavelength/4/pi)/pi + anglebodge
+originaldata[][0] = 4 * pi * sin(theta[p]*pi/180)/wavelength
+
+End
+
 Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr, dq, removeNonFinite])
 	variable plotyp
 	Wave qq, RR
