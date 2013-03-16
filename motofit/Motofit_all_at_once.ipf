@@ -1803,19 +1803,34 @@ Function/C Moto_angletoQ(omega,twotheta,lambda)
 End
 
 Function moto_bodgeangle(dataset, anglebodge, wavelength)
-String dataset
-variable anglebodge, wavelength
-//some instruments may not be aligned properly (NO NAME - NO PACKDRILL)
-//Bodge the angle by a known amount, but you need to know the wavelength
-//angle offset is in degrees
+	String dataset
+	variable anglebodge, wavelength
+	//some instruments may not be aligned properly (NO NAME - NO PACKDRILL)
+	//Bodge the angle by a known amount, but you need to know the wavelength
+	//angle offset is in degrees
 
-Wave originaldata = $("root:data:" + dataset + ":originaldata");AbortonRTE
+	Wave originaldata = $("root:data:" + dataset + ":originaldata");AbortonRTE
 
-make/n=(dimsize(originaldata, 0))/d/free theta
-theta = 180*asin(originaldata[p][0] * wavelength/4/pi)/pi + anglebodge
-originaldata[][0] = 4 * pi * sin(theta[p]*pi/180)/wavelength
+	make/n=(dimsize(originaldata, 0))/d/free theta
+	theta = 180*asin(originaldata[p][0] * wavelength/4/pi)/pi + anglebodge
+	originaldata[][0] = 4 * pi * sin(theta[p]*pi/180)/wavelength
 
 End
+
+Function Moto_correc_and_output()
+	string datasets = motofit#moto_fittable_datasets()
+	variable ii
+
+	for(ii = 0 ; ii < itemsinlist(datasets) ; ii += 1)
+		string dataset = stringfromlist(ii, datasets)
+		moto_bodgeangle(dataset, -0.0027, 4.75)
+		Wave originaldata = $("root:data:" + dataset + ":originaldata")
+		deletepoints/M=0 0, 15, originaldata
+		//write out data
+		Save/J/M="\n"/O originaldata as dataset+".txt"
+
+	endfor
+end
 
 Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr, dq, removeNonFinite])
 	variable plotyp
