@@ -612,7 +612,7 @@ static Function Moto_Reflectivitypanel() : Panel
 
 	
 	//datasets
-	Button loaddatas_tab0,pos={32,50},size={108,43},proc=motofit#moto_GUI_button,title="Load data"
+	Button loaddatas_tab0,pos={32,50},size={108,43},proc=motofit#moto_GUI_button,title="\f04l\f00oad data"
 	Button loaddatas_tab0,fColor=(65280,32512,16384)
 
 	PopupMenu dataset_tab0,pos={163,62},size={192,20},bodyWidth=145,proc=motofit#moto_GUI_PopMenu,title="dataset"
@@ -634,7 +634,7 @@ static Function Moto_Reflectivitypanel() : Panel
 	Button Addcursor_tab0,fSize=12
 	
 	//fitting
-	Button Dofit_tab0,pos={30,182},size={111,48},proc=motofit#moto_GUI_button,title="Do fit"
+	Button Dofit_tab0,pos={30,182},size={111,48},proc=motofit#moto_GUI_button,title="Do \f04f\f00it"
 	Button Dofit_tab0,help={"Performs the fit"},fColor=(65280,32512,16384)
 	PopupMenu Typeoffit_tab0,pos={137,195},size={160,20},bodyWidth=150
 	PopupMenu Typeoffit_tab0,mode=1,popvalue="Genetic",value= #"\"Genetic;Levenberg-Marquardt;Genetic + LM;Genetic+MC_Analysis\""
@@ -710,6 +710,8 @@ static Function Moto_Reflectivitypanel() : Panel
 	TabControl refpanel,tabLabel(0)="Fit",tabLabel(1)="Constraints"
 	TabControl refpanel,tabLabel(2)="thickness estimation", value = 0
 	TabControl refpanel,tabLabel(3)="plot control", value = 0
+	
+	Setwindow reflectivitypanel, hook(moto_GUI)=moto_GUI_hook
 
 End
 
@@ -2118,6 +2120,21 @@ function Moto_addDatasetToGraphs(dataset)
 	endif
 End
 
+Function moto_GUI_loaddatawrapper()
+//this is a convenience function, mainly designed to be called from GUI code
+//e.g. the load data button.
+	Dowindow/F reflectivitygraph
+	//this function loads the data into IGOR.
+	//the plot will try to append the loaded data to the first graph.
+	Moto_Plotreflectivity()
+	string loadeddatasets = Moto_fittable_datasets()
+	if(itemsinlist(loadeddatasets) == 1)
+		popupmenu/z dataset_tab0, win=reflectivitypanel, mode=1, value= motofit#Moto_fittable_datasets()
+		setmotofitoption("dataset", stringfromlist(0, loadeddatasets))
+		moto_update_theoretical()	
+	endif
+End
+
 static Function Moto_Plotreflectivity()
 	//this function loads experimental data from a file, then puts it into a nice graph.  The data is from 2 to 4 columns wide:  Q,R,dR,dQ and can contain as
 	//many datapoints as you want.
@@ -2489,6 +2506,33 @@ End
 //           GUI ACTION PROCEDURES
 ///////////////////////////
 ///////////////////////////
+Function moto_GUI_hook(s)
+	STRUCT WMWinHookStruct &s
+
+	Variable hookResult = 0
+
+	switch(s.eventCode)
+		case 0:				// Activate
+			// Handle activate
+			break
+
+		case 1:				// Deactivate
+			// Handle deactivate
+			break
+		case 11:
+			switch (s.keycode)
+				case 102: 		//f for f
+					Moto_do_a_fit()	
+				break
+				case 108:		//l for load
+					moto_GUI_loaddatawrapper()
+				break
+			endswitch	
+		// And so on . . .
+	endswitch
+	return hookResult		// 0 if nothing done, else 1
+End
+
 static Function moto_GUI_button(B_Struct): buttoncontrol
 	STRUCT WMButtonAction &B_Struct
 	if(B_Struct.eventcode!=2)
@@ -2573,17 +2617,7 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 			Setaxis/A/W=reflectivitygraph
 			break
 		case "loaddatas_tab0":
-			Dowindow/F reflectivitygraph
-			//this function loads the data into IGOR.
-			//the plot will try to append the loaded data to the first graph.
-			Moto_Plotreflectivity()
-			string loadeddatasets = Moto_fittable_datasets()
-			if(itemsinlist(loadeddatasets) == 1)
-				popupmenu dataset_tab0, win=reflectivitypanel, mode=1, value= motofit#Moto_fittable_datasets()
-				setmotofitoption("dataset", stringfromlist(0, loadeddatasets))
-				moto_update_theoretical()	
-			endif
-			
+			moto_GUI_loaddatawrapper()
 			break
 		case "dofit_tab0":
 			//start a report notebook for the fitting
