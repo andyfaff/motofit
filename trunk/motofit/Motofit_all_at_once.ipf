@@ -15,6 +15,14 @@
 #include "MOTOFIT_batch"
 #include "MOTOFIT_Global fit 2"
 
+//Motofit is a program for fitting neutron and X-ray reflectometry data.
+//It is open source, licenced under the Gnu Public Licence. It was originally
+//developed by Andrew Nelson, 2005-20xx.
+//Contributions to the project are encouraged from anyone.
+//To start undertstanding the project you can start from one of two places.
+//GUI code starts from plotcalcref().
+//Actual reflectometry related code starts from Motofit()
+
 Menu "Motofit"
 	//this function sets up the user menus at the top of the main IGOR window.
 	"Fit Reflectivity data",plotCalcref()
@@ -2165,6 +2173,7 @@ static Function Moto_Plotreflectivity()
 End
 
 static Function Moto_removeNAN(q,R,dR,dQ)
+	//removes NaN, Inf from input arrays
 	Wave/z q,R,dR,dQ
 	Variable ii
 	for(ii = 0 ; ii < numpnts(q) ; ii += 1)
