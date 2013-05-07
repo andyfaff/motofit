@@ -87,7 +87,7 @@ Function main()
 	Wave s.w = coef_PLP0005568_R
 	Wave s.y = PLP0005568_R
 	Wave s.x[0] = PLP0005568_q
-	Gencurvefit /W=PLP0005568_E/I=1/strc=s/K={2000,20,0.7,0.5}/X=PLP0005568_q kernelSmearedMotofit,PLP0005568_R,coef_PLP0005568_R,"10100000100010",Gencurvefitlimits
+	Gencurvefit /W=PLP0005568_E/I=1/strc=s/TOL=0.05/K={2000,5,0.7,0.5}/X=PLP0005568_q kernelSmearedMotofit,PLP0005568_R,coef_PLP0005568_R,"10100000100010",Gencurvefitlimits
 
 End
 

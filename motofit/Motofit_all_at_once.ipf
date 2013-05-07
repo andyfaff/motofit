@@ -1843,6 +1843,7 @@ Function Moto_correc_and_output()
 end
 
 Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr, dq, removeNonFinite])
+	//transform linear data to log(R) vs Q, R vs Q, RQ4 vs Q, RQ2 vs Q.
 	variable plotyp
 	Wave qq, RR
 	Wave/z dr, dq
