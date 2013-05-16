@@ -37,11 +37,13 @@ Section "Motofit" Section1
 	; Set Section properties
 	SetOverwrite on
 	
-ReadRegStr $1 HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Igor.exe" "Path"
-StrLen $0 $1 
-${If} $0 = 0
-Abort "You don't appear to have IGOR installed"
-${EndIf}
+;ReadRegStr $1 HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Igor.exe" "Path"
+;StrLen $0 $1 
+;${If} $0 = 0
+;Abort "You don't appear to have IGOR installed"
+;${EndIf}
+	
+	StrCpy $INSTDIR "$DOCUMENTS\WaveMetrics\Igor Pro 6 User Files\"
 	
 	;get rid of previous versions of motofit
 ;	Delete "$1\User Procedures\motofit\*"
@@ -93,14 +95,14 @@ ${EndIf}
 
 SectionEnd
 
-Function .onInit
- ReadRegStr $1 HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Igor.exe" "Path"
-StrLen $0 $1 
-${If} $0 = 0
-Abort "You don't appear to have IGOR installed"
-${EndIf}
-StrCpy $INSTDIR "$DOCUMENTS\WaveMetrics\Igor Pro 6 User Files\"
-FunctionEnd
+;Function .onInit
+; ReadRegStr $1 HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Igor.exe" "Path"
+;StrLen $0 $1 
+;${If} $0 = 0
+;Abort "You don't appear to have IGOR installed"
+;${EndIf}
+;StrCpy $INSTDIR "$DOCUMENTS\WaveMetrics\Igor Pro 6 User Files\"
+;FunctionEnd
 
 ; Modern install component descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
