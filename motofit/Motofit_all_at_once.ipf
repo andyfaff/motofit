@@ -799,7 +799,7 @@ End
 //all the fitting is done here:
 static Function Moto_do_a_fit()	
 	string typeoffit, datasetname, df = "", holdstring = "", fitfunc = "", traces = "", lci = "", rci = "", tracecolour
-	variable useerrors, usedqwave, usecursors, leftP, rightP, useconstraint, mode, ii, jj, iters, lVmullayers, lVappendlayer, lVmulrep, resolution
+	variable useerrors, usedqwave, usecursors, leftP, rightP, useconstraint, mode, ii, jj, iters, lVmullayers, lVappendlayer, lVmulrep, resolution, newpoints, oldpoints
 	dfref savDF = getdatafolderDFR()
 
 	controlinfo/W=reflectivitypanel typeoffit_tab0
@@ -821,6 +821,7 @@ static Function Moto_do_a_fit()
 	Wave/z dq = $(datasetname + "_dq")
 	Wave coef_theoretical_R = root:data:theoretical:coef_theoretical_R
 	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
+	Wave/z limiter
 
 	moto_updateholdstring()
 	holdstring = getmotofitoption("holdstring")
@@ -907,16 +908,41 @@ static Function Moto_do_a_fit()
 		variable/g Vmulrep = lVmulrep
 		
 		strswitch(typeoffit)
-			case "Genetic":
-				if(GEN_setlimitsforGENcurvefit(coef, holdstring, paramdescription = moto_paramdescription(coef[0], mode)))
+			case "Genetic":				
+				//set up limits
+				Wave/z gcflimits_history = $("root:data:" + datasetname + ":gcflimits_history")
+				if(waveexists(gcflimits_history))
+					string tempstr = note(gcflimits_history)
+					variable pos = strsearch(tempstr, num2istr(numpnts(coef)), Inf, 1)
+					if(pos != -1)
+						pos = itemsinlist(tempstr[0, pos - 1], "\r")
+						duplicate/free/r=[0, numpnts(coef) - 1][][pos] gcflimits_history, templimits
+						redimension/n=(-1, -1, 0) templimits
+						Wave limiter = templimits
+					endif
+				endif
+				if(GEN_setlimitsforGENcurvefit(coef, holdstring, limits = limiter, paramdescription = moto_paramdescription(coef[0], mode)))
 					abort
 				endif
+				Wave limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
+				//lets keep a history of the limits
+				if(!waveexists(gcflimits_history))
+					make/n=(dimsize(coef, 0), 2, 1)/d $("root:data:" + datasetname + ":gcflimits_history")
+					Wave/z gcflimits_history = $("root:data:" + datasetname + ":gcflimits_history")
+				else
+					newpoints = selectnumber(dimsize(gcflimits_history, 0) > dimsize(coef, 0),  dimsize(coef, 0), dimsize(gcflimits_history, 0))
+					redimension/n=(newpoints, 2, dimsize(gcflimits_history, 2) + 1) gcflimits_history
+					gcflimits_history[][][dimsize(gcflimits_history, 2) - 1] = NaN
+				endif
+				gcflimits_history[0, dimsize(limits, 0) - 1][][dimsize(gcflimits_history, 2) - 1] = limits[p][q]
+				note gcflimits_history, num2istr(numpnts(coef))
+				
 				NVAR popsize = root:packages:motofit:old_genoptimise:popsize
 				NVAR recomb = root:packages:motofit:old_genoptimise:recomb
 				NVAR iterations = root:packages:motofit:old_genoptimise:iterations
 				NVAR k_m = root:packages:motofit:old_genoptimise:k_m
-				NVAR fittol = root:packages:motofit:old_genoptimise:fittol
-				Wave limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
+				NVAR fittol = root:packages:motofit:old_genoptimise:fittol				
+				//do the fit
 				Gencurvefit/D=outputRR/I=1/Q/MAT=1/R/W=dR/X=inputQQ/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fitfunc, RR[leftP, rightP], coef, holdstring, limits
 				break
 			case "Levenberg-Marquardt":
@@ -1633,7 +1659,7 @@ Function Motofit_smeared(w, RR, qq, dq) :Fitfunc
 	variable plotyp = str2num(getMotofitOption("plotyp"))
 	variable respoints = str2num(getMotofitOption("respoints"))
 	if(numtype(respoints))
-		respoints = 17
+		respoints = 21
 	endif
 	variable/g V_gausspoints = respoints
 		
