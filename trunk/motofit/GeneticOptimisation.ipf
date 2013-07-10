@@ -1739,7 +1739,7 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring [, limits, paramdescripti
 		make/o/n=(0, 2) limitsForThoseBeingVaried = 0 
 	endif
 	
-	if(paramisdefault(limits))
+	if(paramisdefault(limits) || !waveexists(limits))
 		Wave/z limits = root:packages:motofit:old_genoptimise:GENcurvefitlimits
 		if(!waveexists(limits) || dimsize(limits, 0) != dimsize(coefs, 0))
 			make/o/n=(dimsize(coefs, 0), 2)/d root:packages:motofit:old_genoptimise:GENcurvefitlimits = 0
@@ -1762,8 +1762,8 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring [, limits, paramdescripti
 		endif	
 	else
 		redimension/n=(numbeingvaried,-1) limitsForThoseBeingVaried
-		limitsforthosebeingvaried[][0] = limits[thosebeingvaried[p]]
-		limitsforthosebeingvaried[][1] = limits[thosebeingvaried[p]] 
+		limitsforthosebeingvaried[][0] = limits[thosebeingvaried[p]][0]
+		limitsforthosebeingvaried[][1] = limits[thosebeingvaried[p]] [1]
 	endif
 
 	limitsdialog_listwave[][2+ paramdescriptionoffset] = num2str(limitsforthosebeingvaried[p][0])
@@ -1799,14 +1799,14 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring [, limits, paramdescripti
 		NVAR GCF_continue = root:packages:motofit:old_genoptimise:GCF_continue
 		if(!GCF_continue)
 			setdatafolder $cDF
-			abort
+			return 1
 		endif
 		limitsforthosebeingvaried[][0] = str2num(limitsdialog_listwave[p][2+ paramdescriptionoffset])
 		limitsforthosebeingvaried[][1] = str2num(limitsdialog_listwave[p][3+ paramdescriptionoffset])
 	
 		for(ii=0 ; ii < numbeingvaried ; ii+=1)
 			limits[thosebeingvaried[ii]][0] = limitsforthosebeingvaried[ii][0] 
-			limits[thosebeingvaried[ii]][1] = limitsforthosebeingvaried[ii][1] 
+			limits[thosebeingvaried[ii]][1] = limitsforthosebeingvaried[ii][1]
 			if(limits[thosebeingvaried[ii]][0] <= limits[thosebeingvaried[ii]][1])
 				thoseOK+=1
 			endif
@@ -1814,9 +1814,11 @@ Function GEN_setlimitsforGENcurvefit(coefs, holdstring [, limits, paramdescripti
 		if(thoseOK != numbeingvaried)
 			Doalert 0, "Lower limit needs to be less than upper limit"
 		endif
+		
 	while (thoseOK != numbeingvaried)
-	
+	duplicate/o limits, GENcurvefitlimits
 	setdatafolder $cDF
+	return 0
 End
 
 Function GCF_dialog_hook(s)
