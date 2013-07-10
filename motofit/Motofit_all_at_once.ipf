@@ -637,7 +637,7 @@ static Function Moto_Reflectivitypanel() : Panel
 	PopupMenu plotype_tab0,mode=1,popvalue="logR vs Q",value= #"\"logR vs Q;R vs Q;RQ^4 vs Q;RQ^2 vs Q\""
 	SetVariable res_tab0,pos={199,129},size={160,19},proc=motofit#moto_GUI_setvariable,title="resolution dq/q %"
 	SetVariable res_tab0,help={"Enter the resolution, dq/q in terms of a percentage. Use dq/q=0 to start with"}
-	SetVariable res_tab0,fSize=12,limits={0,10,0.5},value= _NUM:5,live=1
+	SetVariable res_tab0,fSize=12,limits={0,20,0.5},value= _NUM:5,live=1
 	Button Addcursor_tab0,pos={430,123},size={79,29},proc=motofit#moto_GUI_button,title="Add cursor"
 	Button Addcursor_tab0,fSize=12
 	
