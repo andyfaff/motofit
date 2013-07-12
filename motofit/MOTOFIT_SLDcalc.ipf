@@ -42,6 +42,7 @@ Function Moto_SLDdatabase() : Panel
 		SetVariable neutronSLD_tab1,value= k0,bodyWidth= 100
 		SetVariable XraySLD_tab1,pos={236,130},size={164,19},title="X-ray SLD",fSize=12
 		SetVariable XraySLD_tab1,value= k0,bodyWidth= 100
+	
 		SetVariable rho_tab1,pos={217,170},size={183,19},title="Mass density",fSize=12
 		SetVariable rho_tab1,value= k0,bodyWidth= 100
 		Button savedatabase_tab1,pos={20,120},size={110,30},proc=Moto_Savedatabase,title="Save database"
@@ -58,10 +59,13 @@ Function Moto_SLDdatabase() : Panel
 		SetVariable calcMolVol_tab0,pos={236,60},size={230,23},title="Molecular volume (A^3)",fSize=12, proc=Moto_SLDcalculateSetvariable
 		SetVariable calcMolVol_tab0,limits={0,inf,1},value= _NUM:0
 		
-		SetVariable calcNeutronSLD_tab0,pos={57,171},size={294,23},title="Neutron SLD",fSize=12
-		SetVariable calcNeutronSLD_tab0,limits={-inf,inf,0},value= _NUM:0,bodyWidth= 197
-		SetVariable calcXRAYSLD_tab0,pos={82,208},size={269,23},title="Xray SLD",fSize=12
-		SetVariable calcXRAYSLD_tab0,limits={-inf,inf,0},value= _NUM:0,bodyWidth= 197
+		SetVariable calcNeutronSLD_tab0,pos={27,171},size={274,19},bodyWidth=197,title="Neutron SLD"
+		SetVariable calcNeutronSLD_tab0,fSize=12,limits={-inf,inf,0},value= _NUM:0
+		SetVariable calcXRAYSLD_tab0,pos={48,208},size={253,19},bodyWidth=197,title="Xray SLD"
+		SetVariable calcXRAYSLD_tab0,fSize=12,limits={-inf,inf,0},value= _NUM:0
+		SetVariable xray_energy_tab0,pos={310,207},size={180,19},title="X-ray energy (keV)"
+		SetVariable xray_energy_tab0,fSize=12,limits={80,0.03,1},value= _NUM:8.048, proc=Moto_SLDcalculateSetvariable
+
 		Button CALCULATE_tab0,pos={194,100},size={100,60},title="Calculate",fSize=12,proc = Moto_SLDcalculateButton
 		Button AddToDataBase_tab0,pos={194,235},size={100,60},title="Add to \r database",fSize=12,proc = Moto_addchemicalfromcalculator
 		
@@ -161,15 +165,19 @@ Function Moto_SLDcalculateButton(ctrlName) : ButtonControl
 	Variable/C sld
 	
 	string chemical = "", SLD_neutron = "", SLD_xray = ""
+	variable xrayenergy
 	variable SLD_massdensity
+	
 	controlinfo/W=SLDpanel chemical_tab0
 	chemical = S_value
 	controlinfo/W=SLDpanel calcMASSDENSITY_tab0
 	SLD_massdensity = V_Value
+	controlinfo/W=sldpanel xray_energy_tab0
+	xrayenergy = V_Value	
 	
 	sld = Moto_SLDcalculation(chemical,SLD_massdensity,0)
 	SLD_Neutron = num2str(real(sld)) + " + " + num2str(imag(sld)) + " i "
-	sld = Moto_SLDcalculation(chemical,SLD_massdensity,1)
+	sld = Moto_SLDcalculation(chemical,SLD_massdensity, 1, xrayenergy = xrayenergy)
 	SLD_xray = num2str(real(sld)) + " + " + num2str(imag(sld)) + " i "
 End
 
@@ -315,6 +323,9 @@ Function Moto_SLDcalculateSetvariable(SV_Struct) : Setvariablecontrol
 		controlinfo/W=sldpanel calcMolVol_tab0
 		variable SLD_molvol = V_Value
 		
+		controlinfo/W=sldpanel xray_energy_tab0
+		variable xrayenergy = V_Value
+		
 		strswitch(SV_Struct.ctrlname)
 			case "calcMassDensity_tab0":
 				SLD_molvol = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical, 0))/(SLD_massdensity*6.023e23)
@@ -327,34 +338,36 @@ Function Moto_SLDcalculateSetvariable(SV_Struct) : Setvariablecontrol
 		endswitch
 		
 		Variable/C sld
-		sld = Moto_SLDcalculation(chemical,SLD_massdensity,0)
+		sld = Moto_SLDcalculation(chemical,SLD_massdensity, 0)
 		setvariable calcNeutronSLD_tab0, win=sldpanel, value = _STR:num2str(real(sld)) + " + " + num2str(imag(sld)) + " i "
 		
-		sld = Moto_SLDcalculation(chemical,SLD_massdensity,1)
+		sld = Moto_SLDcalculation(chemical,SLD_massdensity, 1, xrayenergy = xrayenergy)
 		setvariable calcXraySLD_tab0, win=sldpanel, value = _STR:num2str(real(sld)) + " + " + num2str(imag(sld)) + " i "
 	endif
 	return 0
 End
 
-Function/c Moto_SLDcalculation(chemical,massdensity,type)
+Function/c Moto_SLDcalculation(chemical,massdensity, type, [xrayenergy])
 	String chemical
 	variable massdensity
 	variable type //(0=neutrons,1=xrays)
+	variable xrayenergy
 
-	string parsedChemical = Moto_SLDparsechemical(chemical,type)
+	string parsedChemical = Moto_SLDparsechemical(chemical, type, xrayenergy = xrayenergy)
 	variable weight_tot = numberbykey("weight_tot",parsedChemical)
 	variable/c scatlen_tot
 	scatlen_tot = cmplx(numberbykey("scatlen_tot_re",parsedChemical),numberbykey("scatlen_tot_im",parsedChemical))
 	variable/c sld
 	
-	sld = 1e-29*6.023e23*scatlen_tot*massdensity/weight_tot
+	sld = 1e-29 * 6.023e23 * scatlen_tot * massdensity / weight_tot
 	return sld
 End
 
-Function/S Moto_SLDparsechemical(chemical,type)
+Function/S Moto_SLDparsechemical(chemical, type, [xrayenergy])
 	//parses the entered chemical and adds up the total weight and scattering lengths
 	string chemical
 	variable type
+	variable xrayenergy
 
 	wave/t scatlengths = root:packages:motofit:reflectivity:slddatabase:scatlengths
 
@@ -422,8 +435,17 @@ Function/S Moto_SLDparsechemical(chemical,type)
 					abort NO_SCATLEN + num2istr(isotope)+element
 				endif
 				scatlen = numatoms*cmplx(str2num(scatlengths[posintable][2]),str2num(scatlengths[posintable][3]))
-			elseif(type==1)
+			elseif(type == 1)
 				scatlen =numatoms*cmplx(str2num(scatlengths[posintable][5]),str2num(scatlengths[posintable][6]))
+				if(xrayenergy != 8.048)
+					variable/c webSourcedScattLength = Moto_xrayScattLengths(element, xrayenergy * 1000)
+					if(numtype(real(webSourcedScattLength)))
+						//Couldn't get energy dependent scatteringlength
+						DoAlert 0, "Couldn't download energy dependent X-ray scattering lengths - using 8.048keV instead"
+					else
+						scatlen =numatoms * webSourcedScattLength
+					endif
+				endif
 			endif
 			
 			scatlen_tot += scatlen
@@ -433,7 +455,7 @@ Function/S Moto_SLDparsechemical(chemical,type)
 	endif
 
 	if(type==1)
-		scatlen_tot *= 2.8179
+		scatlen_tot *= 2.817940285
 	endif
 	return "weight_tot:" + num2str(weight_tot) + ";scatlen_tot_re:" + num2str(real(scatlen_tot))+";"+"scatlen_tot_im:"+num2str(imag(scatlen_tot))
 End
@@ -480,4 +502,44 @@ Function Moto_mixCalculateSetvarReverse(SV_Struct) : Setvariablecontrol
 		setvariable mixvolfrac2_tab2, value = _NUM:mixvolfrac2,win=SLDpanel
 	endif	
 	return 0
+End
+
+Function/C Moto_xrayScattLengths(element, energy)
+	String element
+	variable energy
+	//returns f1 and f2 by webscraping the CXRO website
+
+	variable/C scattlength = cmplx(NaN, NaN)
+	variable  current_preference, err
+	string postString = "", output = "", f1, f2
+
+	string NUM_REGEX = "([+-]?(?:(?:\\d+\\.\\d+)|(?:\\d+\\.?)|(?:\\.\\d+))(?:[Ee][+-]?\\d+)?)"
+	String full_regex = "<li>f1\\s*:\\s*" + NUM_REGEX + "?\\s*<li>f2\\s*:\\s*"+ NUM_REGEX + "?"
+
+	//we may have saved proxy information in the preferences somewhere
+	Preferences/q
+	current_preference = V_Flag
+	Preferences/q 1
+
+	sprintf postString, "Element=%s&Energy=%d", element, energy
+	easyHttp/TIME=1/POST=poststring "http://henke.lbl.gov/cgi-bin/pert_cgi.pl", output
+
+	err = V_Flag
+
+	//turn the preferences back to what they were
+	Preferences/q current_preference
+
+	if(err)
+		return scattlength
+	endif
+
+	SplitString/E=(full_regex) output, f1, f2
+
+	if(V_flag == 2)
+		//success
+		scattlength = cmplx(str2num(f1), str2num(f2))
+	endif
+
+	//now need to parse for f1 and f2
+	return scattlength
 End
