@@ -170,7 +170,7 @@ Function builddirectorylist(user, password, lowFi, hiFi,  [outsideANSTO])
 		endif
 	endfor
 	
-	Pla_catalogue#MDtextsort(directories, 0, reverse=1)
+	Pla_catalogue#MDsort(directories, 0, reversed=1)
 	insertpoints 0, 1, directories
 	directories[0][0] = "current/"
 

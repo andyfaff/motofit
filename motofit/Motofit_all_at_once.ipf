@@ -720,7 +720,6 @@ static Function Moto_Reflectivitypanel() : Panel
 	TabControl refpanel,tabLabel(3)="plot control", value = 0
 	
 	Setwindow reflectivitypanel, hook(moto_GUI)=moto_GUI_hook
-
 End
 
 static Function moto_appendresiduals()
@@ -2544,9 +2543,7 @@ End
 ///////////////////////////
 Function moto_GUI_hook(s)
 	STRUCT WMWinHookStruct &s
-
 	Variable hookResult = 0
-
 	switch(s.eventCode)
 		case 0:				// Activate
 			// Handle activate
@@ -2554,6 +2551,38 @@ Function moto_GUI_hook(s)
 
 		case 1:				// Deactivate
 			// Handle deactivate
+			break
+		case 3:	//mouse down
+			//see if you are in the slider area on tab=0. If you are, then pressing mousedown can change the value of the slider (even if the mouse
+			//is not on the thumb.
+			controlinfo/w = reflectivitypanel refpanel
+			if(!V_value)
+				controlinfo /w = reflectivitypanel slider0_tab0
+				if(s.mouseloc.v > V_top && s.mouseloc.v < V_top + V_height && s.mouseloc.h > V_left && s.mouseloc.h < V_left + V_width)
+						variable proportion = (s.mouseloc.h - V_left) / V_width
+
+						struct WMSliderAction wmsa
+						wmsa.ctrlname = "slider0_tab0"
+						wmsa.win = "reflectivitypanel"
+						wmsa.mouseloc.v = s.mouseloc.v
+						wmsa.mouseloc.h = s.mouseloc.h						
+						wmsa.eventcode = 2^1
+						moto_GUI_slider(wmsa)
+
+						controlinfo /w = reflectivitypanel slider0_tab0						
+						string NUM_REGEX ="([+-]?(?:(?:\\d+\\.\\d+)|(?:\\d+\\.?)|(?:\\.\\d+))(?:[Ee][+-]?\\d+)?)"
+						string regex = "limits={" + NUM_REGEX + "," + NUM_REGEX + "," + NUM_REGEX+"}"
+						string lo, hi, inc
+						splitstring/E=regex  S_recreation,lo,hi, inc
+						wmsa.curval = proportion * (str2num(hi) - str2num(lo)) + str2num(lo)
+						wmsa.eventcode = 2^2
+						moto_GUI_slider(wmsa)
+						
+						wmsa.eventcode = 2^3
+						moto_GUI_slider(wmsa)
+
+				endif			
+			endif
 			break
 		case 11:
 			switch (s.keycode)
@@ -3004,6 +3033,7 @@ End
 static Function moto_GUI_slider(s) : SliderControl
 	STRUCT WMSliderAction &s
 	string userdata = getuserdata("reflectivitypanel", "slider0_tab0", "whichparam")
+
 	if(!strlen(userdata))
 		return 0
 	endif
