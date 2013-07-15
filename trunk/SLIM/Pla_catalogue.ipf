@@ -587,35 +587,47 @@ Function parseFIZlog(filename, hipadabapaths)
 			endif
 		endfor
 	endfor
-	MDtextsort(M_logentries, 0)
+	MDsort(M_logentries, 0)
 	make/n=(dimsize(M_logentries, 0))/d/o W_logtime = NaN
 	W_logtime[] = str2num(M_logentries[p][0])
 	deletepoints/M=1 0, 1, M_logentries
 End
 
-static Function MDtextsort(w,keycol, [reverse])
-	Wave/t w
-	variable keycol, reverse
+static Function MDsort(w,keycol, [reversed])
+	Wave w
+	variable keycol, reversed
  
-	variable ii
+	variable type
  
-	make/t/free/n=(dimsize(w,0)) key
-	make/o/free/n=(dimsize(w,0)) valindex
+	type = Wavetype(w)
  
-	key[] = w[p][keycol]
-	valindex=p
-
- 	if(!reverse) 		
-		sort/a key,key,valindex
+	make/Y=(type)/free/n=(dimsize(w,0)) key
+	make/free/n=(dimsize(w,0)) valindex
+ 
+	if(type == 0)
+		Wave/t indirectSource = w
+		Wave/t output = key
+		output[] = indirectSource[p][keycol]
 	else
-		sort/a/r key,key,valindex
-	endif
-	
-	duplicate/free/t w, M_newtoInsert
+		Wave indirectSource2 = w
+		multithread key[] = indirectSource2[p][keycol]
+ 	endif
  
-	for(ii=0;ii<dimsize(w,0);ii+=1)
-		M_newtoInsert[ii][] = w[valindex[ii]][q]
-	endfor
+	valindex=p
+ 	if(reversed)
+ 		sort/a/r key,key,valindex
+ 	else
+		sort/a key,key,valindex
+ 	endif
  
-	duplicate/o/t M_newtoInsert,w
+	if(type == 0)
+		duplicate/free indirectSource, M_newtoInsert
+		Wave/t output = M_newtoInsert
+	 	output[][] = indirectSource[valindex[p]][q]
+	 	indirectSource = output
+	else
+		duplicate/free indirectSource2, M_newtoInsert
+	 	multithread M_newtoinsert[][] = indirectSource2[valindex[p]][q]
+		multithread indirectSource2 = M_newtoinsert
+ 	endif 
 End
