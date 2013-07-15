@@ -1,0 +1,5839 @@
+#LyX 1.6.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\use_default_options false
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 0
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Platypus bootcamp
+\end_layout
+
+\begin_layout Author
+Dr Andrew Nelson
+\end_layout
+
+\begin_layout Standard
+(copyright Andrew Nelson 2008-2009)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Important checks before use
+\end_layout
+
+\begin_layout Standard
+Before using the instrument the following things should be checked and understoo
+d.
+\end_layout
+
+\begin_layout Enumerate
+Go through the Platypus SWMS and understand it.
+\end_layout
+
+\begin_layout Enumerate
+Make sure you have the requisite training to use the instrument.
+ The training includes a knowledge of the safety systems and any radiological
+ issues that we need to consider.
+ If you don't know these, ask an instrument scientist.
+\end_layout
+
+\begin_layout Enumerate
+Before the tertiary shutter is opened make sure that the slits are closed
+ (with a visual check) and that the chopper is operating with the correct
+ frequency and phase.
+ If you are unsure that this is the case ask an instrument scientist for
+ help.
+ If these two points are not followed then you WILL DAMAGE the detector.
+\end_layout
+
+\begin_layout Enumerate
+You will probably start off using FIZZY 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sec:FIZZY---operation"
+
+\end_inset
+
+, in this case you don't need to read most of the other sections first off,
+ but you should familiarise yourself with them at some stage.
+\end_layout
+
+\begin_layout Section
+Chopper system
+\end_layout
+
+\begin_layout Standard
+The chopper system pulses the neutron, at around 20Hz.
+ There are many neutron wavelengths (energies) contained in each pulse.
+ As the neutron pulse is allowed through a stopwatch is started on the data
+ acquisition computer, via a signal from the choppers.
+ When each neutron is detected (at the detector) it is possible to work
+ out the time-of-flight for that neutron to travel the set distance from
+ the chopper to the detector.
+ Because we know distance and time we can work out velocity, and therefore
+ the wavelength of the neutron from de-Broglies relationship.
+ 
+\end_layout
+
+\begin_layout Subsection
+Startup
+\end_layout
+
+\begin_layout Standard
+The 
+\noun on
+Astrium
+\noun default
+ rack should be powered on first, only an instrument scientist is allowed
+ to do this.
+\end_layout
+
+\begin_layout Paragraph
+Cooling water
+\end_layout
+
+\begin_layout Standard
+The cooling water should be being supplied at ~16 degrees at a rate of ~4l/min.
+ Check that the flow rate is high enough on the dc-1 computer in the instrument
+ cabin.
+ Check that there are no leaks and that there is enough water in the reservoir.
+\end_layout
+
+\begin_layout Paragraph
+Vacuum
+\end_layout
+
+\begin_layout Standard
+The chopper housing should be at a pressure <2e-2 mBar, and be constantly
+ being pumped by the turbo pump.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Close scroll-collimation tank valve and turbo-chopper valve.
+ Scroll-Chopper valve is open.
+\end_layout
+
+\begin_layout Enumerate
+Pump for ~30 minutes with scroll pump.
+\end_layout
+
+\begin_layout Enumerate
+Turn turbo pump on (turbo-chopper valve still closed).
+\end_layout
+
+\begin_layout Enumerate
+When the pressure reading on the turbo pump gauge matches that in the chopper
+ housing 
+\emph on
+slowly
+\emph default
+ open the turbo-chopper valve.
+\end_layout
+
+\begin_layout Enumerate
+Let both pumps work together for ~15 minutes, slowly opening turbo valve
+ as you go.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Now close chopper - scroll pump valve.
+ If the rotation speed of the turbo drops, use scroll pump again aid turbo
+ pump.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Check that the turbo pump reaches 1500Hz before walking away, otherwise
+ turbo will shut down.
+\end_layout
+
+\begin_layout Paragraph
+Other error warnings
+\end_layout
+
+\begin_layout Standard
+If there are other problems with the choppers then red warning LEDS will
+ appear on the 
+\noun on
+Astrium
+\noun default
+ rack.
+ The choppers will not start until these are all extinguished.
+ Investigate the other warning LED's further.
+\end_layout
+
+\begin_layout Subsection
+Operation
+\end_layout
+
+\begin_layout Standard
+Once the steps in startup have been followed then one can run the 
+\noun on
+ncs013
+\noun default
+ chopper control program.
+ Do not start this program up before the chopper rack is switched on.
+ If the program starts up without errors then:
+\end_layout
+
+\begin_layout Enumerate
+check the following 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+the water flow rate is >4l/min
+\end_layout
+
+\begin_layout Enumerate
+the water temp is less than 20 degrees
+\end_layout
+
+\begin_layout Enumerate
+the vacuum is low enough (in the green region)
+\end_layout
+
+\begin_layout Enumerate
+the vibration level is not high.
+\end_layout
+
+\begin_layout Enumerate
+Any other chopper status notices
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+if 1) is ok then press 
+\noun on
+reset controllers 
+\noun default
+button
+\end_layout
+
+\begin_layout Enumerate
+press 
+\noun on
+calibrate, 
+\noun default
+the chopper status should turn from inactive to commutation.
+\end_layout
+
+\begin_layout Standard
+The choppers are now ready to use.
+ Chopper speed is entered in rpm, not Hz.
+ Further details are available in the operating manual.
+\end_layout
+
+\begin_layout Subsubsection
+Chopper phasing and speed
+\end_layout
+
+\begin_layout Standard
+The choppers are designed to be run in synchronous mode, i.e.
+ with chopper 
+\emph on
+x
+\emph default
+ slaved to chopper 1.
+ This is easy to achieve on the disc chopper controller computer.
+ Chopper 
+\emph on
+x
+\emph default
+ will need to be set as a) synchronous and b) masterwise (spins in same
+ direction as chopper).
+ If the setting is correct then you will see chopper 1 spin with a speed
+ of e.g.
+ 1380 rpm, chopper 2 with a speed of -1380 rpm, chopper 3 with a speed of
+ -1380 rpm and chopper 4 with a speed of 1380 rpm.
+ (you will only use one of 2, 3 or 4.
+ The reason why the speed is negative for discs 2 and 3 is due to the chopper
+ motors being mounted in the opposite direction.
+\end_layout
+
+\begin_layout Standard
+For a typical reflectometry measurement the choppers are normally phased
+ such that the window of the second chopper used just opens as the window
+ of the first chopper closes.
+ Thus if chopper 1 has a window of 60 degrees and chopper 2 has a window
+ of 10 degrees, then a nominal phase angle of 35 degrees needs to be used
+ (angles are taken from the middle of the window).
+\end_layout
+
+\begin_layout Standard
+However, because of the way the choppers are mounted one needs to make sure
+ the correct polarity is used.
+ As of 24/03/2009 the calibrated window openings are:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+chopper 2: 35.02
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+chopper 3: 42.17
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+chopper 4: -59.79
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+IMPORTANT
+\noun default
+: 
+\noun on
+After you have changed/reset the chopper settings you need to issue the
+ SICS
+\end_layout
+
+\begin_layout LyX-Code
+::chopper::ready?
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+command.
+ 
+\noun default
+This is because SICS needs to have the updated values of the chopper speeds
+ and phasings, otherwise they won't be saved in the datafiles correctly.
+ Consequently all data reduction based on those files will be wrong.
+\end_layout
+
+\begin_layout Section
+SICS
+\end_layout
+
+\begin_layout Subsection
+What is SICS
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:What-is-SICS?"
+
+\end_inset
+
+?
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+SICS
+\noun default
+ (
+\noun on
+Swiss Instrument Control Software/System
+\noun default
+), is a computer program running on a 
+\noun on
+Linux
+\noun default
+ box.
+ SICS is a command line program that is responsible for keeping track of
+ all motors, moving the motors, starting data acquisitions, etc.
+ There are specific commands that SICS accepts, which will be referred to
+ as SICS commands in this manual.
+\end_layout
+
+\begin_layout Subsection
+server address
+\end_layout
+
+\begin_layout LyX-Code
+ics1-platypus.nbi.ansto.gov.au
+\end_layout
+
+\begin_layout Subsection
+starting SICS
+\end_layout
+
+\begin_layout Standard
+ssh to the server from Cygwin/Putty:
+\end_layout
+
+\begin_layout LyX-Code
+ssh platypus@ics1-platypus
+\end_layout
+
+\begin_layout Standard
+navigate to SICS directory:
+\end_layout
+
+\begin_layout LyX-Code
+cd /usr/local/sics/server
+\end_layout
+
+\begin_layout Standard
+start the server, with the Platypus configuration file.
+ The configuration file says what motors are attached, etc.
+\end_layout
+
+\begin_layout LyX-Code
+runsics stop
+\end_layout
+
+\begin_layout LyX-Code
+runsics start
+\end_layout
+
+\begin_layout Standard
+To gain access to the SICS command line:
+\end_layout
+
+\begin_layout LyX-Code
+socat READLINE,history=history tcp4:127.0.0.1:server-platypus,crlf
+\end_layout
+
+\begin_layout Standard
+You then have to give a username and password, please ask the instrument
+ scientist for these if you require SICS to be rebooted.
+\end_layout
+
+\begin_layout Subsection
+Important SICS commands
+\end_layout
+
+\begin_layout Subsubsection
+
+\noun on
+sicslist
+\noun default
+ - getting list of SICS components
+\end_layout
+
+\begin_layout Standard
+List all the SICS commands:
+\end_layout
+
+\begin_layout LyX-Code
+sicslist
+\end_layout
+
+\begin_layout Standard
+To get a list of the available motors type:
+\end_layout
+
+\begin_layout LyX-Code
+sicslist type motor
+\end_layout
+
+\begin_layout Subsubsection
+
+\noun on
+sicslist type motor
+\noun default
+ - List the motors available to be driven
+\end_layout
+
+\begin_layout Standard
+Here is a list of the motors and their explanations.
+ The frame of reference is looking down the instrument from the reactor
+ towards the detector.
+\end_layout
+
+\begin_layout List
+\labelwidthstring 00.00.0000
+\begin_inset Tabular
+<lyxtabular version="3" rows="23" columns="3">
+<features>
+<column alignment="center" valignment="top" width="0.75in">
+<column alignment="center" valignment="top" width="1.25in">
+<column alignment="center" valignment="top" width="2.5in">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SICS axis
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+real name
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+details
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss1l
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit1 left blade
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss1r
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit1 right blade
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss1u
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit1 upper blade
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss1d
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit1 down blade
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss1vg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit1 vertical gap
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+the space between 
+\noun on
+ss1u
+\noun default
+ and 
+\noun on
+ss1d 
+\noun default
+(~2mm)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss1vo
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit1 vertical offset
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+the vertical offset from the middle of 
+\noun on
+ss1vg
+\noun default
+ to the beam centre
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss1hg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit1 horizontal gap
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+the space between 
+\noun on
+ss1l
+\noun default
+ and 
+\noun on
+ss1r 
+\noun default
+(~50mm)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss1ho
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit1 horizonal offset
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+the vertical offset from the middle of 
+\noun on
+ss1hg
+\noun default
+ to the beam centre
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss2<x>
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit 2 has the same submotors as ss1 
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+c1ht
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+collimation tank translation
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+translates different collimation elements into beam
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+m1ro
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+mirror1 rotation
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+rotates deflection mirror to deflect neutron beam downwards
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss3<x>
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit 3 has the same submotors as ss1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+st3vt
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit3 vertical tower
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+moves the entire slit 3 package vertically
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+sz
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+sample z
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+changes the height of the sample.
+ Watch out for collisions of sample stage and slit4.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+sx
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+sample x
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+translates different samples into the beam
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+sth
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+sample theta
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+changes the pitch of the sample stage with respect to incident neutron beam
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+sphi
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+sample phi
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+changes the roll of the sample stage with respect to the incident neutron
+ beam
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+ss4<x>
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit 4 has the same submotors as ss1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+st4vt
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+slit4 vertical tower
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+moves the entire slit 4 package vertically
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+dy
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+detector y
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+moves the detector longitudinally (horizontally)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+dz
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+detector z
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+moves the detector transversely (vertically)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\noun on
+bz
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+beamshade z
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+moves the beamshade in front of the detector
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+
+\noun on
+run / drive
+\noun default
+ - Moving a motor
+\end_layout
+
+\begin_layout Standard
+There are two ways of moving a motor.
+ One command, 
+\noun on
+drive
+\noun default
+, doesn't let you do anything else in SICS until the motor has finished
+ moving.
+ The second, 
+\noun on
+run
+\noun default
+, allows you to move many motors at the same time.
+\end_layout
+
+\begin_layout Standard
+Change the vertical gap of slit 3 to 10mm, don't allow any other SICS commands
+ be entered while you are moving:
+\end_layout
+
+\begin_layout LyX-Code
+drive ss3vg 10
+\end_layout
+
+\begin_layout Standard
+Change the vertical gap of slit 3 to 10mm, allow any other SICS commands
+ be entered while you are moving:
+\end_layout
+
+\begin_layout LyX-Code
+run ss3vg 10
+\end_layout
+
+\begin_layout Standard
+To get an update of the motor position, whenever it changes type:
+\end_layout
+
+\begin_layout LyX-Code
+ss3vg interest
+\end_layout
+
+\begin_layout Standard
+To deregister that interest type:
+\end_layout
+
+\begin_layout LyX-Code
+ss3vg uninterest
+\end_layout
+
+\begin_layout Standard
+You can also get updates by using:
+\end_layout
+
+\begin_layout LyX-Code
+hnotify / 1
+\end_layout
+
+\begin_layout Standard
+Which specifies that you want to be informed about anything happening on
+ the 
+\noun on
+hipadaba
+\noun default
+ path / (which is the root path for all axes).
+ The hipadaba system is a way of containing the instrument information,
+ it is akin to the filesystem on a computer.
+ For example the hipadaba path for ss2l is:
+\end_layout
+
+\begin_layout LyX-Code
+/instrument/slits/second/horizontal/left
+\end_layout
+
+\begin_layout Standard
+To get the hipadaba path for a specific motor type:
+\end_layout
+
+\begin_layout LyX-Code
+sicslist <motorname> hdb_path
+\end_layout
+
+\begin_layout Subsubsection
+
+\emph on
+\noun on
+motorname
+\emph default
+\noun default
+ - get the current motor position
+\end_layout
+
+\begin_layout Standard
+type the motor name, the current motor position will be printed to screen
+\end_layout
+
+\begin_layout LyX-Code
+
+\emph on
+motorname
+\end_layout
+
+\begin_layout Subsubsection
+
+\noun on
+list
+\noun default
+ - Parameters associated with an axis
+\end_layout
+
+\begin_layout Standard
+To get a list of the parameters associated with the motor, such as position,
+ softzero, softlimits, hardlimits, etc type:
+\end_layout
+
+\begin_layout LyX-Code
+
+\emph on
+motorname
+\emph default
+ list
+\end_layout
+
+\begin_layout Standard
+To change any of these parameters you would type:
+\end_layout
+
+\begin_layout LyX-Code
+motorname parameter newvalue
+\end_layout
+
+\begin_layout Standard
+For example, the following code sets the softlowerlimit of sphi to -5 degrees:
+\end_layout
+
+\begin_layout LyX-Code
+sphi softlowerlim -5
+\end_layout
+
+\begin_layout Subsubsection
+fixed motors
+\end_layout
+
+\begin_layout Standard
+Some of the motors you use may be fixed, probably with good reason.
+ So don't bother with this section unless you are an instrument scientist.
+\end_layout
+
+\begin_layout Standard
+Fixing the motors prevents them from being moved.
+ You can check this with:
+\end_layout
+
+\begin_layout LyX-Code
+
+\emph on
+motorname
+\emph default
+ fixed
+\end_layout
+
+\begin_layout Standard
+It will return the current fixed status.
+  To free the motor again type:
+\end_layout
+
+\begin_layout LyX-Code
+
+\emph on
+motorname
+\emph default
+ fixed -1
+\end_layout
+
+\begin_layout Subsubsection
+Limits
+\end_layout
+
+\begin_layout Standard
+Don't change these unless you know what you are doing, not even then, speak
+ to Andy / Ferdi /Doug.
+\end_layout
+
+\begin_layout Paragraph
+Hardlimits
+\end_layout
+
+\begin_layout Standard
+Hardlimits are the axis positions at which the motor will drive into the
+ upper and lower limit switches.
+\end_layout
+
+\begin_layout Paragraph
+Softlimits
+\end_layout
+
+\begin_layout Standard
+Softlimits are the software limits on how far each axis may be driven.
+ This is to prevent the motor from ever driving onto the 
+\noun on
+hardlimits
+\noun default
+.
+ The 
+\noun on
+run/drive
+\noun default
+ commands can only issue orders if the new position is within the softlimits
+\end_layout
+
+\begin_layout Subsubsection
+
+\noun on
+motorname homerun 1 - 
+\noun default
+Homing slits 1,2,3,4
+\end_layout
+
+\begin_layout Standard
+slit systems 1,2,3 and 4 (not st3vt and st4vt) are not on absolute encoders.
+ This means that after a power outage the slit positions are lost.
+ This is bad because SICS may say the slit gaps are small, when in fact
+ they are large.
+ This may let too many neutrons through and overwhelm the detector.
+ The slits must be homed before use, enter 
+\emph on
+all
+\emph default
+ the following commands:
+\end_layout
+
+\begin_layout LyX-Code
+ss1u homerun 0
+\end_layout
+
+\begin_layout LyX-Code
+ss1u homerun 1
+\end_layout
+
+\begin_layout LyX-Code
+drive ss1vg -1
+\end_layout
+
+\begin_layout LyX-Code
+drive ss2vg -1
+\end_layout
+
+\begin_layout LyX-Code
+ss3u homerun 0
+\end_layout
+
+\begin_layout LyX-Code
+ss3u homerun 1
+\end_layout
+
+\begin_layout LyX-Code
+drive ss3vg -1
+\end_layout
+
+\begin_layout LyX-Code
+drive ss4vg -1
+\end_layout
+
+\begin_layout Standard
+You are now in a position to consider what slit positions you need for the
+ experiment.
+\end_layout
+
+\begin_layout Subsubsection
+
+\noun on
+setpos / softzero
+\noun default
+ - changing offsets for a motor
+\end_layout
+
+\begin_layout Standard
+When calibrating the instrument we will need offsets.
+ Each motor axis has an absolute scale.
+ Each axis has a corresponding 
+\noun on
+softzero
+\noun default
+, which is where all 
+\noun on
+drive
+\noun default
+ and 
+\noun on
+run
+\noun default
+ commands are offset from.
+\end_layout
+
+\begin_layout Standard
+For example 
+\noun on
+st3vt 
+\noun default
+may have an absolute range of -20 to +20 (mm) on the motor hardware.
+ If the softzero is changed to +20, then you may enter 
+\noun on
+run/drive
+\noun default
+ commands between -40 and +0.
+ If you changed the softzero to -100 then you could enter drive commands
+ between -120 and -80.
+\end_layout
+
+\begin_layout Paragraph
+
+\noun on
+softzero
+\end_layout
+
+\begin_layout Standard
+The command for changing the softzero is:
+\end_layout
+
+\begin_layout LyX-Code
+
+\emph on
+motorname
+\emph default
+ softzero 20
+\end_layout
+
+\begin_layout Standard
+so for the example given above you would type:
+\end_layout
+
+\begin_layout LyX-Code
+st3vt softzero 20
+\end_layout
+
+\begin_layout Paragraph
+
+\noun on
+setpos
+\end_layout
+
+\begin_layout Standard
+The 
+\noun on
+setpos
+\noun default
+ command can also change the 
+\noun on
+softzero
+\noun default
+.
+ This is often more useful than the 
+\noun on
+softzero
+\noun default
+ command.
+\end_layout
+
+\begin_layout Standard
+It has two forms.
+ The first form takes a position 
+\noun on
+old
+\noun default
+, and makes it 
+\noun on
+new.
+\end_layout
+
+\begin_layout LyX-Code
+
+\emph on
+motorname
+\emph default
+ setpos old new
+\end_layout
+
+\begin_layout Standard
+For example:
+\end_layout
+
+\begin_layout LyX-Code
+st3vt setpos 20 40
+\end_layout
+
+\begin_layout Standard
+changes the 
+\noun on
+softzero
+\noun default
+ such that the position of 20 would now be 40 (in effect this is the same
+ as setting the softzero lower by 20).
+\end_layout
+
+\begin_layout Standard
+The second form takes the current position and sets it to NEW:
+\end_layout
+
+\begin_layout LyX-Code
+
+\emph on
+motorname
+\emph default
+ setpos new
+\end_layout
+
+\begin_layout Standard
+For example:
+\end_layout
+
+\begin_layout LyX-Code
+st3vt setpos 100
+\end_layout
+
+\begin_layout Standard
+Would change the 
+\noun on
+softzero
+\noun default
+ such that the current position of st3vt is now 100.
+\end_layout
+
+\begin_layout Subsubsection
+
+\emph on
+bat
+\emph default
+ - using and troubleshooting the beam attenuator
+\end_layout
+
+\begin_layout Standard
+The beam attenuator rasters the beam over the detector to ensure that the
+ detector is not burnt.
+ This should be used for measuring the direct beam + the critical angle.
+\end_layout
+
+\begin_layout Standard
+To park the beam attenuator in the beam:
+\end_layout
+
+\begin_layout LyX-Code
+bat send oscd=0
+\end_layout
+
+\begin_layout Standard
+The 
+\noun on
+send
+\noun default
+ command is actually a motor controller command.
+ To remove the beam attenuator:
+\end_layout
+
+\begin_layout LyX-Code
+bat send oscd=-1
+\end_layout
+
+\begin_layout Standard
+To oscillate the beam attenuator (which is its intended use):
+\end_layout
+
+\begin_layout LyX-Code
+bat send oscd=1
+\end_layout
+
+\begin_layout Standard
+Sometimes thread0 has stopped, which is the computer process that drives
+ the oscillation.
+  To start this you have to reset the motor controller:
+\end_layout
+
+\begin_layout LyX-Code
+bat send rs
+\end_layout
+
+\begin_layout Standard
+To see if thread0 is functioning type:
+\end_layout
+
+\begin_layout LyX-Code
+bat thread0
+\end_layout
+
+\begin_layout Standard
+If the number changes on several uses of this command, then thread0 is probably
+ running (number refers to line in code).
+  If thread0=-1 the thread has stopped.
+\end_layout
+
+\begin_layout Standard
+To list motor controller variables type:
+\end_layout
+
+\begin_layout LyX-Code
+bat send lv
+\end_layout
+
+\begin_layout Standard
+To see if the bat axis is on either of the limit switches type:
+\end_layout
+
+\begin_layout LyX-Code
+bat send mg _lr`,lf`
+\end_layout
+
+\begin_layout Standard
+If it is not on the limit switches both values are 1.
+\end_layout
+
+\begin_layout Subsection
+Troubleshooting motors
+\end_layout
+
+\begin_layout Standard
+Sometimes one experiences problems with motors, the following SICS commands
+ can help.
+ We'll concentrate on 
+\emph on
+sth
+\emph default
+, although they apply equally to all other motors
+\end_layout
+
+\begin_layout Subsubsection
+Listing the variables associated with a motor
+\end_layout
+
+\begin_layout Standard
+(speed, direction, encoder counts, etc
+\end_layout
+
+\begin_layout LyX-Code
+sth send lv
+\end_layout
+
+\begin_layout Subsubsection
+Seeing if the motor controller has seized
+\end_layout
+
+\begin_layout LyX-Code
+sth thread0
+\end_layout
+
+\begin_layout Standard
+Is the value returned==-1? If so you have to restart the motor controller.
+\end_layout
+
+\begin_layout Subsubsection
+restarting the motor controller for a specific motor
+\end_layout
+
+\begin_layout LyX-Code
+sth send xq
+\end_layout
+
+\begin_layout Subsubsection
+Getting the encoder counts on a motor
+\end_layout
+
+\begin_layout LyX-Code
+sth send tp`
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout Section
+Histogram Server
+\end_layout
+
+\begin_layout Standard
+The Histogram server, das1-platypus, is the computer that does all the data
+ acquisition.
+ In otherwords, it interfaces to the chopper system, SICS and the detector
+ and possibly your sample environment.
+ The program that does all this work is actually a webserver and can be
+ viewed in a web browser.
+ The program that you use to acquire data, FIZZY, downloads data from the
+ webserver, and displays the detector pattern in a nice image.
+\end_layout
+
+\begin_layout Subsection
+Server address
+\end_layout
+
+\begin_layout LyX-Code
+das1-platypus.nbi.ansto.gov.au
+\end_layout
+
+\begin_layout Subsection
+Viewing histogram server configuration on a webpage
+\end_layout
+
+\begin_layout Standard
+The histogram can be fully configured and run from a web browser (I recommend
+ Firefox).
+ You need to go to the address:
+\end_layout
+
+\begin_layout LyX-Code
+http://137.157.202.140:8080/admin/viewdata.egi
+\end_layout
+
+\begin_layout Standard
+Ask the instrument scientist for a user name and password to view this.
+\end_layout
+
+\begin_layout Subsection
+Getting data using CURL (instrument scientists)
+\end_layout
+
+\begin_layout Standard
+The data on the histogram server can be programatically downloaded using
+ a command line client such as CURL, or by using the easyHttp XOP in IGOR.
+ You will need to work out the correct HTTP request to give to those clients.
+ This is fairly simple to do, but some features are hidden/not documented:
+\end_layout
+
+\begin_layout Standard
+1) 
+\emph on
+/admin/textstatus.egi
+\emph default
+ returns the text status of the instrument (including count rate, total
+ counts, etc).
+\end_layout
+
+\begin_layout Standard
+2) when downloading the data be sure not to use the gui version, as this
+ affects the webpage, e.g.
+\end_layout
+
+\begin_layout LyX-Code
+http://137.157.202.140:8080/admin/saveviewdata.egi
+\end_layout
+
+\begin_layout Standard
+instead of 
+\end_layout
+
+\begin_layout LyX-Code
+http://137.157.202.140:8080/admin/saveviewdatagui.egi
+\end_layout
+
+\begin_layout Standard
+It is also easy to download the histogram config file, change it with an
+ XML editor, then re-upload it.
+ One can also start and stop the histogram server using this type of approach.
+\end_layout
+
+\begin_layout Subsection
+Starting histogram server/beam monitor servers (instrument scientists)
+\end_layout
+
+\begin_layout Standard
+Using Cygwin/PUTTY ssh to the server:
+\end_layout
+
+\begin_layout LyX-Code
+ssh root@das1-platypus
+\end_layout
+
+\begin_layout Standard
+To stop and start the server type the following command:
+\end_layout
+
+\begin_layout LyX-Code
+/etc/init.d/ansto_histogram_server stop
+\end_layout
+
+\begin_layout LyX-Code
+/etc/init.d/ansto_histogram_server start
+\end_layout
+
+\begin_layout Standard
+To (restart) the beam monitor type:
+\end_layout
+
+\begin_layout LyX-Code
+/usr/local/beam_monitor/start_beam_monitor.sh
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout Subsection
+Connection to chopper signal (instrument scientists)
+\end_layout
+
+\begin_layout Standard
+Make sure that a BNC cable runs from the 
+\noun on
+CS1
+\noun default
+ connector to the 
+\noun on
+input A1 port
+\noun default
+ on the 
+\noun on
+ortec dual sum and invert card
+\noun default
+.
+ This carries the TTL pulse from the chopper opening to the histogrammer,
+ triggering the start of a new frame.
+ If this isn't done your data will be crap.
+\end_layout
+
+\begin_layout Standard
+If this is done correctly a red LED will flash with a frequency equal to
+ the chopper frequency (choose a frequency of 1 Hz to check).
+\end_layout
+
+\begin_layout Subsection
+Configuring the histogram server (instrument scientist)
+\end_layout
+
+\begin_layout Standard
+Once you have setup the instrument and started the histogram server you
+ are in a position to do scans, runs, etc.
+ The instrument must be configured correctly, otherwise the data is gibberish.
+ This is especially important for things like the chopper frequency.
+\end_layout
+
+\begin_layout Subsubsection
+Configuring the 
+\noun on
+oat_table
+\end_layout
+
+\begin_layout Standard
+The 
+\noun on
+oat_table
+\noun default
+ configures the pixellation on the histogram server, i.e.
+ the bin boundaries in the x, y, t dimensions.
+ The larger the number of bins, the greater the file size, so beware.
+ The 
+\noun on
+oat_table
+\noun default
+ is typically configured with the following SICS command:
+\end_layout
+
+\begin_layout LyX-Code
+oat_table -set Y {-110.5 -109.5} NYC 221 
+\end_layout
+
+\begin_layout LyX-Code
+oat_table -set T {0 43} NTC 1000
+\end_layout
+
+\begin_layout Standard
+To set X and T bins use NXC and NYC respectively
+\end_layout
+
+\begin_layout Standard
+This would configure 221 bins in the Y direction, with the leftmost bin
+ position starting at -110.5 and having a width of 1.
+ The 
+\noun on
+oat_table
+\noun default
+ command then generates the rest of the bins based on this bin width.
+ Do not set negative times for the time bins, that doesn't make sense.
+ The 
+\emph on
+times are entered in microseconds
+\emph default
+.
+ The 1000 time bins requested means that the last bin ends at 42957 microseconds
+, which is 0.043 seconds.
+ This time channel setting might be appropriate for a chopper operating
+ at 23 Hz (period = 0.0434sec).
+ 
+\series bold
+\emph on
+\bar under
+Do not set the oat_table up to have a longer time period than the chopper
+ period.
+\end_layout
+
+\begin_layout Standard
+The 
+\noun on
+oat_table
+\noun default
+ configuration then needs to be uploaded from SICS to the histogram server.
+ This can be accomplished by the following SICS command:
+\end_layout
+
+\begin_layout LyX-Code
+histmem loadconf
+\end_layout
+
+\begin_layout Subsubsection
+Making sure the histogram server / SICS are using the right chopper frequency
+\end_layout
+
+\begin_layout Standard
+If the chopper frequency/phasing is changed then SICS and the histogram
+ server must be updated.
+ To check what SICS thinks is the frequency type:
+\end_layout
+
+\begin_layout LyX-Code
+histmem freq
+\end_layout
+
+\begin_layout Standard
+This should be the same as the chopper frequency as listed on the chopper
+ computer.
+ You can use the 
+\noun on
+config
+\noun default
+ tab of the histogram server webpage to check it's value.
+ If the two aren't the same as the chopper type:
+\end_layout
+
+\begin_layout LyX-Code
+histmem freq 23
+\end_layout
+
+\begin_layout LyX-Code
+histmem loadconf
+\end_layout
+
+\begin_layout Standard
+If the chopper frequency is 23 Hz.
+\end_layout
+
+\begin_layout Standard
+This will update the values contained in SICS, and will cause the histogram
+ servers version to be updated.
+ It's worth checking again after this.
+ The 
+\end_layout
+
+\begin_layout LyX-Code
+::chopper::ready?
+\end_layout
+
+\begin_layout Standard
+command should also be issued after any chopper velocities/phasings have
+ changed.
+\end_layout
+
+\begin_layout Section
+More useful SICS commands
+\end_layout
+
+\begin_layout Standard
+These commands can ONLY be issued from SICS.
+\end_layout
+
+\begin_layout Subsubsection
+Drive a motor
+\end_layout
+
+\begin_layout Standard
+In blocking mode (no other motors are allowed to run):
+\end_layout
+
+\begin_layout LyX-Code
+drive sth 0.1
+\end_layout
+
+\begin_layout Standard
+In non-blocking mode (other motors are allowed to run):
+\end_layout
+
+\begin_layout LyX-Code
+run sth 0.1
+\end_layout
+
+\begin_layout Subsubsection
+Entering offsets
+\end_layout
+
+\begin_layout Standard
+e.g.
+ sets the current position of sth to be 0.5
+\end_layout
+
+\begin_layout LyX-Code
+setpos sth 0.5
+\end_layout
+
+\begin_layout Standard
+e.g.
+ sets sth such that a value of 1.2 becomes 0.5
+\end_layout
+
+\begin_layout LyX-Code
+setpos sth 1.2 0.5
+\end_layout
+
+\begin_layout Subsubsection
+Getting into the SICS command line from an SSH terminal
+\end_layout
+
+\begin_layout LyX-Code
+sicsclient
+\end_layout
+
+\begin_layout Subsubsection
+Starting the sics server (issued from a terminal, not SICS itself)
+\end_layout
+
+\begin_layout LyX-Code
+runsics start
+\end_layout
+
+\begin_layout Subsubsection
+stopping the sics server (issued from a terminal, not SICS itself)
+\end_layout
+
+\begin_layout LyX-Code
+runsics stop 
+\end_layout
+
+\begin_layout Subsubsection
+Leaving the SICS command line
+\end_layout
+
+\begin_layout LyX-Code
+logoff
+\end_layout
+
+\begin_layout Subsubsection
+Listing the variable associated with a motor (speed, softzero's, etc)
+\end_layout
+
+\begin_layout LyX-Code
+sth list
+\end_layout
+
+\begin_layout Subsubsection
+Changing the histogram frequency
+\end_layout
+
+\begin_layout LyX-Code
+histmem freq 23
+\end_layout
+
+\begin_layout Subsubsection
+Updating SICS after changing the chopper speed/phasing
+\end_layout
+
+\begin_layout Standard
+When you alter the chopper speed or phasing you need to get SICS to update
+ it's information.
+ To get SICS to query the chopper server issue the following command:
+\end_layout
+
+\begin_layout LyX-Code
+chopperController status
+\end_layout
+
+\begin_layout Subsubsection
+Changing the histogram OAT_TABLE
+\end_layout
+
+\begin_layout LyX-Code
+oat_table -set Y {-110.5 -109.5} NYC 221 
+\end_layout
+
+\begin_layout LyX-Code
+histmem loadconf
+\end_layout
+
+\begin_layout Subsubsection
+Setting user metadata e.g.
+ sample name, phone number, email
+\end_layout
+
+\begin_layout Standard
+This metadata is saved with every 
+\noun on
+NeXUS
+\noun default
+ file that is created.
+ At a minimum the sample data should be entered, otherwise no one will know
+ what the data is.
+\end_layout
+
+\begin_layout Standard
+To enter a sample name type:
+\end_layout
+
+\begin_layout LyX-Code
+samplename Cobaltate-Iron mix.
+ Prepared on 12/3/03.
+\end_layout
+
+\begin_layout Standard
+The sample name is everything after the 
+\noun on
+sample
+\noun default
+ command.
+ One can also store the 
+\noun on
+title, user, email, phone.
+\end_layout
+
+\begin_layout Subsubsection
+
+\noun on
+saving a new file
+\end_layout
+
+\begin_layout LyX-Code
+newfile HISTOGRAM_XYT
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+newfile
+\noun default
+ tells SICS to start a new NeXUS datafile to write to.
+ If this command is not issued then consecutive 
+\noun on
+save
+\noun default
+ commands will overwrite (or append to) the data contained in the last file.
+\end_layout
+
+\begin_layout Subsubsection
+
+\noun on
+saving data
+\end_layout
+
+\begin_layout LyX-Code
+save <number>
+\end_layout
+
+\begin_layout Standard
+this saves the data currently in the histogram memory to the latest NeXUS
+ file.
+ The
+\noun on
+ 
+\noun default
+data will be inserted into the 
+\noun on
+number
+\noun default
+'th spectrum in the file.
+ This has the possibility of overwriting previous data, unless 
+\noun on
+number 
+\noun default
+is incremented by one each time (such as in a temperature run), or unless
+ the 
+\noun on
+newfile
+\noun default
+ command has been issued.
+ One can save data, even if the data stopped acquiring hours ago (as long
+ as a new acquisition wasn't started).
+\end_layout
+
+\begin_layout Section
+IGOR Pro
+\end_layout
+
+\begin_layout Subsection
+Quick Introduction to IGOR
+\end_layout
+
+\begin_layout Standard
+IGOR is a data analysis package which can be used for many purposes.
+ It handles data in many different ways, you will use it to acquire data
+ (with FIZZY), reduce data (with SLIM) and analyse data (Motofit).
+ 
+\end_layout
+
+\begin_layout Standard
+Data is encapsulated in IGOR in different forms, listed below.
+ To get a full handle of what IGOR can do please use the 
+\begin_inset Quotes eld
+\end_inset
+
+Getting started
+\begin_inset Quotes erd
+\end_inset
+
+ tutorial, which is accessed through the 
+\begin_inset Quotes eld
+\end_inset
+
+Help->Getting Started
+\begin_inset Quotes erd
+\end_inset
+
+ menu.
+\end_layout
+
+\begin_layout Subsubsection
+Waves
+\end_layout
+
+\begin_layout Standard
+Waves can be from 1 to 4 dimensional.
+ Each dimension can have as many points as you like.
+ You can think of Waves as matrices or arrays (one can do many different
+ matrix operations on them).
+ Waves can hold either numeric data or text information.
+ The numeric data can be real or complex, and it can be integer, float or
+ double.
+ IGOR has a rich suite of inbuilt routines for operating on waves, such
+ as image processing, matrix math, statistics, etc.
+ If there is a bit of analysis that's not builtin you can write it yourself
+ in what is called a procedure.
+\end_layout
+
+\begin_layout Subsubsection
+Procedures
+\end_layout
+
+\begin_layout Standard
+Type 
+\noun on
+Ctrl-M
+\noun default
+, the IGOR procedure window pops up.
+ You can type code in here to write your own analysis routines, or control
+ the instrument.
+\end_layout
+
+\begin_layout Standard
+An example routine could be:
+\end_layout
+
+\begin_layout LyX-Code
+Function test(a,b,words)
+\end_layout
+
+\begin_layout LyX-Code
+variables a, b
+\end_layout
+
+\begin_layout LyX-Code
+string words
+\end_layout
+
+\begin_layout LyX-Code
+variable c
+\end_layout
+
+\begin_layout LyX-Code
+c = a+b
+\end_layout
+
+\begin_layout LyX-Code
+print words,c
+\end_layout
+
+\begin_layout LyX-Code
+End
+\end_layout
+
+\begin_layout Standard
+This function is called 
+\noun on
+test
+\noun default
+.
+ The function has three 
+\noun on
+arguments 
+\noun default
+called 
+\noun on
+a, b
+\noun default
+ and 
+\noun on
+words
+\noun default
+.
+ 
+\noun on
+a 
+\noun default
+and
+\noun on
+ b 
+\noun default
+are variables (or numbers), whilst 
+\noun on
+words
+\noun default
+ is a 
+\noun on
+string.
+ 
+\noun default
+A string contains text, such as 
+\begin_inset Quotes eld
+\end_inset
+
+abc123
+\begin_inset Quotes erd
+\end_inset
+
+.
+ This function adds a and b, then prints the sum to the command window,
+ along with the string that you sent to the function.
+ IGOR procedures can be written to do any analysis you like, using all the
+ inbuilt functionality of IGOR makes things easier.
+ Please note that we could've used a wave as an argument as well.
+ A collection of these IGOR functions is good enough to run Platypus.
+\end_layout
+
+\begin_layout Subsubsection
+Command line
+\end_layout
+
+\begin_layout Standard
+The results from all the analysis you do often turns up in the 
+\noun on
+history
+\noun default
+ section of the 
+\noun on
+command window
+\noun default
+.
+ The history contains a record of what you've asked IGOR to do.
+ In the command line you can issue your own commands.
+ For example you could write the following command:
+\end_layout
+
+\begin_layout LyX-Code
+test(1,10,
+\begin_inset Quotes erd
+\end_inset
+
+the sum was: 
+\begin_inset Quotes eld
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+If you had created the test function this would've printed out;
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+the sum was: 11
+\end_layout
+
+\begin_layout Standard
+in the history window.
+\end_layout
+
+\begin_layout Standard
+To get to the command window type
+\noun on
+ Ctrl-J.
+\end_layout
+
+\begin_layout Subsubsection
+Strings
+\end_layout
+
+\begin_layout Standard
+Strings are variables that contain text.
+ e,g,
+\end_layout
+
+\begin_layout Standard
+string test = 
+\begin_inset Quotes eld
+\end_inset
+
+Hello world!
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+String variables can be passed to functions.
+\end_layout
+
+\begin_layout Subsubsection
+Variables
+\end_layout
+
+\begin_layout Standard
+Variables contain real or complex numbers.
+\end_layout
+
+\begin_layout Standard
+e.g.
+ variable foo = 10
+\end_layout
+
+\begin_layout Standard
+Variables can be passed to functions.
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:FIZZY---operation"
+
+\end_inset
+
+FIZZY - operation of Platypus via a GUI, in IGOR Pro.
+\end_layout
+
+\begin_layout Standard
+FIZZY is a set of code written in the IGOR Pro language that is designed
+ to operate an instrument running SICS.
+ Within the FIZZY program there is a terminal window in which you can type
+ SICS commands.
+ However, IGOR also has a command window, in which you can enter IGOR commands.
+ Please note that 
+\noun on
+Igor commands and SICS commands are totally different and must not be mixed
+ up.
+
+\noun default
+ Please see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:SICS-cmd-line"
+
+\end_inset
+
+ for further details.
+\end_layout
+
+\begin_layout Subsection
+Starting FIZZY up
+\end_layout
+
+\begin_layout Standard
+FIZZY must be started after SICS starts.
+ Select the menus
+\noun on
+ Platypus -> FIZZY.
+ 
+\noun default
+You are then prompted for a SICS username and password, the instrument scientist
+ will give these to you.
+\end_layout
+
+\begin_layout Subsubsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:FIZZY-console"
+
+\end_inset
+
+FIZZY console
+\end_layout
+
+\begin_layout Standard
+Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:FIZZY-terminal-window"
+
+\end_inset
+
+ is the main screen of FIZZY.
+\end_layout
+
+\begin_layout Subsubsection*
+SICS terminal
+\end_layout
+
+\begin_layout Standard
+On the left hand side there is a terminal window where you can enter SICS
+ (not IGOR) commands.
+ Previous commands are highlighted in blue.
+ Output from SICS is in black.
+ Here we have asked about the vertical gap for slits 1 and two, and changed
+ the title of the experiment.
+ 
+\end_layout
+
+\begin_layout Subsubsection*
+Current motor positions
+\end_layout
+
+\begin_layout Standard
+On the right side is a list of motors, their current positions, and the
+ lower and upper limits for each of the motors.
+ One can move a motor by a) issuing a SICS command in the terminal or b)
+ by clicking in the current position box for a motor, entering the desired
+ value and pressing return.
+ 
+\end_layout
+
+\begin_layout Subsubsection*
+Stop and close buttons
+\end_layout
+
+\begin_layout Standard
+If you experience any difficulties, such as the motion positioning crashing
+ into something, you can press the STOP button.
+ This stops all the motors from moving, shuts all the slits and puts the
+ attenuator in.
+ The close button shuts FIZZY down.
+\end_layout
+
+\begin_layout Subsubsection*
+SICS status
+\end_layout
+
+\begin_layout Standard
+This box tells you what SICS is doing, e.g.
+ Driving, Counting, etc.
+ The only way you can be sure that SICS will do what you want is if it says
+ 
+\begin_inset Quotes eld
+\end_inset
+
+Eager to execute commands
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:FIZZY-terminal-window"
+
+\end_inset
+
+FIZZY terminal window
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename images/FIZZY_terminal.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Run a scan
+\end_layout
+
+\begin_layout Standard
+It's easy to run a scan.
+ Select the motor you wish to investigate (select 
+\begin_inset Quotes eld
+\end_inset
+
+_none_
+\begin_inset Quotes erd
+\end_inset
+
+ if you just want to acquire data without moving anything).
+ Select the range over which you would like to scan, and enter the number
+ of points, with a run time for each point.
+ The scan will examine the region:
+\end_layout
+
+\begin_layout Standard
+currentpos-range/2 <= motor <= currentpos+range/2.
+ Enter a sample name for the run (so you know what the datafile is at a
+ later date) and press the Go button.
+ The run will be saved if you choose to, the run name will be updated when
+ you press go (it will be something like PLP0001120.nx.hdf, note this down
+ in the instrument logbook).
+ When the run has started you can stop and pause it using the 
+\noun on
+STOP
+\noun default
+ and 
+\noun on
+PAUSE
+\noun default
+ buttons that appear.
+\end_layout
+
+\begin_layout Standard
+The graph show the number of counts versus the motor position.
+ 
+\end_layout
+
+\begin_layout Standard
+Once the scan finishes FIZZY will attempt to fit a gaussian to the curve,
+ and calculate the centroid.
+ You are then asked if you would like to move to the centroid/gaussian centre
+ or a graph cursor position.
+ Then a prompt appears asking whether you would like to make an offset to
+ the motor position.
+ This is a key feature for sample alignment.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/FIZZY_scan.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+FIZZY scan window
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Detector view
+\end_layout
+
+\begin_layout Standard
+Figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:The-detector-view"
+
+\end_inset
+
+ illustrates how to visualise the data coming off the instrument (although
+ there isn't any data on there).
+ A 
+\noun on
+Platypus
+\noun default
+ detector pixel has three components: 
+\emph on
+x_bin, y_bin 
+\emph default
+and
+\emph on
+ time_of_flight
+\emph default
+.
+ In 
+\noun on
+FIZZY
+\noun default
+ you can only visualise any two of those axes at a time.
+ The displayorder popup allows you to select those axes.
+ Since 
+\noun on
+Platypus 
+\noun default
+normally operates with a single 
+\emph on
+x_bin 
+\emph default
+the 
+\emph on
+time_of_flight:y_bin 
+\emph default
+is the most useful.
+ The top image shows a 2D plot of the requested axes.
+ For a specular beam this image will usually show a stripe at constant 
+\emph on
+y_bin
+\emph default
+.
+ The two graphs below are the projection of the 2D image along the ordinate
+ (left axis) and abscissa (bottom axis) of the 2D image.
+ For the 
+\emph on
+time_of_flight:y_bin 
+\emph default
+option these would normally show a single peak (specular neutrons come out
+ at the same height on the detector) and the time of flight spectrum respectivel
+y.
+ You can get the plot to update automatically, and also view a logarithmic
+ plot of the 2D data.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/FIZZY_detector.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:The-detector-view"
+
+\end_inset
+
+The detector view
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Batch
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:Batch"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This tab is used to schedule a large list of experimental commands, such
+ as those required for multiple samples.
+ The commands you enter here are 
+\noun on
+Igor
+\noun default
+ commands!!!! However, you can send a command to 
+\noun on
+SICS
+\noun default
+ by using the 
+\noun on
+SICS
+\noun default
+(cmdStr) 
+\noun on
+Igor
+\noun default
+ command.
+ Create the batch file in a normal text editor (e.g.
+ Notepad), then load them in using the 
+\noun on
+Load Batch File
+\noun default
+ button.
+ You select the commands you want to run using the checkboxes.
+ Before running the batch file press the 
+\noun on
+Check batch file
+\noun default
+ button, if there are any problems with the commands you will discover that
+ here.
+ When you are ready press 
+\noun on
+GO
+\noun default
+.
+ Once the batch is running a 
+\noun on
+stop
+\noun default
+ and 
+\noun on
+pause
+\noun default
+ button will appear.
+ You could use 
+\noun on
+pause
+\noun default
+ if you need to go into the Platypus enclosure to check your sample.
+ 
+\end_layout
+
+\begin_layout Standard
+As the instrument finishes each line the window will show a 
+\begin_inset Quotes eld
+\end_inset
+
+Finished message
+\begin_inset Quotes erd
+\end_inset
+
+ in the second column.
+ The active line is indicated by an 
+\begin_inset Quotes eld
+\end_inset
+
+executing
+\begin_inset Quotes erd
+\end_inset
+
+ message.
+ Even if the batch mode has started you can still change the commands that
+ appear after the currently executing line.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/FIZZY_batch.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+FIZZY batch file window
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Instrument layout
+\end_layout
+
+\begin_layout Standard
+In this window you can check on several important parameters at once.
+ Such as the current count rate (don't allow the count rate to go above
+ 20000), the positions of the more important motors, the reactor power,
+ cold source temp, shutter status, 
+\noun on
+SICS
+\noun default
+ status, etc.
+ omega is the nominal angle of incidence of the beam onto the sample, two
+ theta is the nominal scattered angle of the reflected beam.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/FIZZY_layout.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+FIZZY instrument layout
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:SICS-cmd-line"
+
+\end_inset
+
+SICS cmd line and IGOR command line
+\end_layout
+
+\begin_layout Standard
+You can enter 
+\noun on
+SICS
+\noun default
+ commands on the first tab of the FIZZY window (Figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:FIZZY-console"
+
+\end_inset
+
+).
+ However, the 
+\noun on
+SICS
+\noun default
+ terminal and the 
+\noun on
+Igor
+\noun default
+ command line are different beasts.
+ You cannot 
+\emph on
+directly
+\emph default
+ issue 
+\noun on
+SICS
+\noun default
+ commands from the 
+\noun on
+Igor
+\noun default
+ command line (although it is possible).
+ You definitely can't send 
+\noun on
+Igor
+\noun default
+ commands from the 
+\noun on
+SICS
+\noun default
+ console window.
+ Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:The-IGOR-command"
+
+\end_inset
+
+ shows some commands in the 
+\noun on
+Igor 
+\noun default
+command window.
+ Note the last one, it is a command that is sent to 
+\noun on
+SICS, 
+\noun default
+through the 
+\emph on
+sics(cmdStr)
+\emph default
+ command that is within 
+\noun on
+FIZZY.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/IGOR_cmd_line.png
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:The-IGOR-command"
+
+\end_inset
+
+The IGOR command line
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So what use is either? Well the SICS terminal is fine for when you just
+ want to talk to SICS, but that's only really useful if you know all the
+ SICS commands.
+\end_layout
+
+\begin_layout Standard
+The 
+\noun on
+Igor
+\noun default
+ command line is useful.
+ One can develop 
+\noun on
+Igor
+\noun default
+ scripts to control the instrument, then start them running from here.
+ The 
+\noun on
+Igor
+\noun default
+ command line can be brought to the front using 
+\noun on
+Ctrl-J 
+\noun default
+or
+\noun on
+ windows->Command line.
+ S
+\noun default
+imilarly, the batch 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:Batch"
+
+\end_inset
+
+ view uses 
+\noun on
+Igor
+\noun default
+ commands.
+ The whole set of 
+\noun on
+Igor
+\noun default
+ commands is quite large (just look at the 
+\noun on
+Igor
+\noun default
+ help file), and it's not within the scope of this manual to describe how
+ they all work.
+ However, I've written several convenience commands that help make running
+ the instrument easier.
+ The following commands can all be issued from the 
+\noun on
+Igor
+\noun default
+ command line, or from the batch mode.
+ Batch mode is obviously useful for running several samples at once.
+ However, not all of the commands will be useful in batch mode, as successive
+ commands are only executed when the previous one has finished.
+\end_layout
+
+\begin_layout Subsection
+Viewing instrument status via the web
+\end_layout
+
+\begin_layout Standard
+The status of Platypus can also be viewed from the web, 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://dav1-platypus.nbi.ansto.gov.au/status.html
+\end_layout
+
+\end_inset
+
+.
+ This webpage has some reactor status, detector count rate, acquisition
+ status, recent detector images, motor positions, etc.
+ This is useful if you wish to check on your experiment remotely.
+\end_layout
+
+\begin_layout Subsection
+Relevant Igor commands to running Platypus from FIZZY
+\end_layout
+
+\begin_layout Subsubsection
+sics(cmdStr)
+\end_layout
+
+\begin_layout Standard
+this IGOR function send the string 
+\emph on
+cmdStr 
+\emph default
+to SICS.
+ For example the command:
+\end_layout
+
+\begin_layout LyX-Code
+sics(
+\begin_inset Quotes eld
+\end_inset
+
+run ss3vg 1.5
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+tells SICS to open the slit3 vertical gap to 1.5mm.
+\end_layout
+
+\begin_layout Subsubsection
+attenuate(posVar)
+\end_layout
+
+\begin_layout Standard
+sets the attenuator.
+ posVar is a variable and has one of three values:
+\end_layout
+
+\begin_layout Standard
+-1 removes the attenuator altogether
+\end_layout
+
+\begin_layout Standard
+0 puts the attenuator in the beam, blocking it almost altogether
+\end_layout
+
+\begin_layout Standard
+1 puts the attenuator in the beam in an oscillating fashion.
+ The attenuation factor is around 100.
+ Do not leave the attenuator running for a large amount of time.
+\end_layout
+
+\begin_layout LyX-Code
+attenuate(0)
+\end_layout
+
+\begin_layout Subsubsection
+drive(motorStr, posVar)
+\end_layout
+
+\begin_layout Standard
+drives motorStr to posVar, if possible.
+ e.g.
+\end_layout
+
+\begin_layout LyX-Code
+drive(
+\begin_inset Quotes eld
+\end_inset
+
+ss3vg
+\begin_inset Quotes erd
+\end_inset
+
+, 1.5)
+\end_layout
+
+\begin_layout Standard
+This motion is blocking, you cannot drive anything else whilst this motor
+ is moving.
+ To move several motors at the same time use 
+\noun on
+run.
+\end_layout
+
+\begin_layout Subsubsection
+run(motorStr, posVar)
+\end_layout
+
+\begin_layout Standard
+moves motorStr to posVar, if possible.
+ e.g.
+\end_layout
+
+\begin_layout LyX-Code
+run(
+\begin_inset Quotes eld
+\end_inset
+
+ss3vg
+\begin_inset Quotes erd
+\end_inset
+
+, 1.5)
+\end_layout
+
+\begin_layout Standard
+Unlike 
+\noun on
+drive
+\noun default
+ this motion is not blocking.
+  You can run several motors at the same time,saving time.
+\end_layout
+
+\begin_layout Subsubsection
+rel(motorStr, posVar)
+\end_layout
+
+\begin_layout Standard
+moves motorStr by an incremement posVar.
+ e.g.
+\end_layout
+
+\begin_layout LyX-Code
+rel(
+\begin_inset Quotes eld
+\end_inset
+
+sth
+\begin_inset Quotes erd
+\end_inset
+
+, 1.5)
+\end_layout
+
+\begin_layout Standard
+takes the current position of sth and moves it by 1.5.
+ i.e.
+ it is not an absolute motion.
+\end_layout
+
+\begin_layout Subsubsection
+checkdrive(motorStr, posVar)
+\end_layout
+
+\begin_layout Standard
+checks to see if one can drive a motor to a position without contravening
+ limits.
+ It returns 0 if the motion is possible, or 1 if it is forbidden.
+ e.g.
+\end_layout
+
+\begin_layout LyX-Code
+print checkdrive(
+\begin_inset Quotes eld
+\end_inset
+
+ss3u
+\begin_inset Quotes erd
+\end_inset
+
+, 2)
+\end_layout
+
+\begin_layout LyX-Code
+//can we drive ss3u to 2?
+\end_layout
+
+\begin_layout Subsubsection
+getpos(motorStr)
+\end_layout
+
+\begin_layout Standard
+Gets the physical position of a motor, e.g.
+\end_layout
+
+\begin_layout LyX-Code
+print getPos(
+\begin_inset Quotes eld
+\end_inset
+
+ss3vg
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Subsubsection
+setpos(motorStr, newpos[, oldpos])
+\end_layout
+
+\begin_layout Standard
+setpos changes the offset for a motor axis.
+ It 
+\emph on
+doesn
+\emph default
+'t move a motor.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+motorStr
+\noun default
+ is a string containing the name of a motor
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+newpos
+\noun default
+ is a variable specifying a new position
+\end_layout
+
+\begin_layout Standard
+OPTIONAL
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+oldpos
+\noun default
+ is a variable specifying an old position.
+\end_layout
+
+\begin_layout Standard
+Note that when you use optional parameters you have to specify the parameter
+ name, this isn't necessary for required parameters.
+\end_layout
+
+\begin_layout Standard
+e.g.
+\end_layout
+
+\begin_layout LyX-Code
+setpos(
+\begin_inset Quotes eld
+\end_inset
+
+ss3u
+\begin_inset Quotes erd
+\end_inset
+
+, 0.2) 
+\end_layout
+
+\begin_layout LyX-Code
+//sets the current position of ss3u to 0.2
+\end_layout
+
+\begin_layout Standard
+e.g.
+ 
+\end_layout
+
+\begin_layout LyX-Code
+setpos(
+\begin_inset Quotes eld
+\end_inset
+
+ss3u
+\begin_inset Quotes erd
+\end_inset
+
+, 0.2, oldpos=0.5)
+\end_layout
+
+\begin_layout LyX-Code
+//adjusts the offset such that what was a position of 0.5 for ss3u is now
+ 0.2.
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout Subsubsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:vslits"
+
+\end_inset
+
+vslits(slit1var, slit2var, slit3var, slit4var)
+\end_layout
+
+\begin_layout Standard
+sets all the vertical slit gaps.
+ Slit1, or 
+\noun on
+ss1vg
+\noun default
+, is set to 
+\noun on
+slit1var
+\noun default
+, etc.
+ e.g.
+\end_layout
+
+\begin_layout LyX-Code
+vslits(2, 0.6, 0.6, 2)
+\end_layout
+
+\begin_layout Standard
+is the same as using:
+\end_layout
+
+\begin_layout LyX-Code
+run(
+\begin_inset Quotes eld
+\end_inset
+
+ss1vg, 2)
+\end_layout
+
+\begin_layout LyX-Code
+run(
+\begin_inset Quotes eld
+\end_inset
+
+ss2vg,0.6)
+\end_layout
+
+\begin_layout LyX-Code
+run(
+\begin_inset Quotes eld
+\end_inset
+
+ss3vg,0.6)
+\end_layout
+
+\begin_layout LyX-Code
+run(
+\begin_inset Quotes eld
+\end_inset
+
+ss4vg,2)
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout Subsubsection
+hslits(slit1var, slit2var, slit3var, slit4var)
+\end_layout
+
+\begin_layout Standard
+sets all the horizontal slit gaps (see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:vslits"
+
+\end_inset
+
+), i.e.
+
+\noun on
+ ss1hg, ss2hg, ss3hg, ss4hg.
+\end_layout
+
+\begin_layout Subsubsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:acquire"
+
+\end_inset
+
+acquire(presettypeStr, presetVar, samplename, [points])
+\end_layout
+
+\begin_layout Standard
+Acquires data on the detector and saves it in a NeXUS file.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+PresettypeStr 
+\noun default
+is either 
+\begin_inset Quotes eld
+\end_inset
+
+TIME
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+MONITOR
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+preset 
+\noun default
+is linked to the presettype (e.g.
+ 5 seconds).
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+samplename
+\noun default
+ is a string containing the name of the sample that is recorded in the datafile
+\end_layout
+
+\begin_layout Standard
+OPTIONAL:
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+points
+\noun default
+ - variable specifying how many acquisitions do you want to do?
+\end_layout
+
+\begin_layout Standard
+e.g.
+\end_layout
+
+\begin_layout LyX-Code
+acquire(
+\begin_inset Quotes eld
+\end_inset
+
+TIME
+\begin_inset Quotes erd
+\end_inset
+
+, 10, 
+\begin_inset Quotes eld
+\end_inset
+
+Si wafer
+\begin_inset Quotes erd
+\end_inset
+
+, points=3)
+\end_layout
+
+\begin_layout Standard
+Tells IGOR to do 3 runs, each 10 seconds long, with the samplename 
+\begin_inset Quotes eld
+\end_inset
+
+Si wafer
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Note that when you use the optional parameter, 
+\emph on
+points
+\emph default
+, you have to specify the parameter name, this isn't necessary for required
+ parameters.
+\end_layout
+
+\begin_layout Subsubsection
+acquireStop()
+\end_layout
+
+\begin_layout Standard
+Stops an acquisition started with acquire 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:acquire"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:pauseAcquire"
+
+\end_inset
+
+pauseAcquire(pauseOrRestart)
+\end_layout
+
+\begin_layout Standard
+Pauses an acquisition started with acquire 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:acquire"
+
+\end_inset
+
+pauseOrRestart is a variable, if set to 1 will pause the run, if set to
+ 0 will restart.
+ e.g.
+\end_layout
+
+\begin_layout LyX-Code
+pauseAcquire(1) //pause
+\end_layout
+
+\begin_layout LyX-Code
+pauseAcquire(0) //restart
+\end_layout
+
+\begin_layout Subsubsection
+acquireStatus()
+\end_layout
+
+\begin_layout Standard
+returns the status of an acquisition started with acquire 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:acquire"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+return values:
+\end_layout
+
+\begin_layout Standard
+0 - not running
+\end_layout
+
+\begin_layout Standard
+1 - running
+\end_layout
+
+\begin_layout Standard
+2 - paused
+\end_layout
+
+\begin_layout Standard
+e.g.
+\end_layout
+
+\begin_layout LyX-Code
+print acquireStatus()
+\end_layout
+
+\begin_layout Subsubsection
+samplename(sampleNameStr)
+\end_layout
+
+\begin_layout Standard
+Sets the sample name to 
+\noun on
+sampleNameStr
+\noun default
+, e.g.
+\end_layout
+
+\begin_layout LyX-Code
+samplename(
+\begin_inset Quotes eld
+\end_inset
+
+Si wafer
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Subsubsection
+user(userNameStr)
+\end_layout
+
+\begin_layout Standard
+changes the user name to 
+\noun on
+userNameStr, 
+\noun default
+e.g.
+ 
+\end_layout
+
+\begin_layout LyX-Code
+user(
+\begin_inset Quotes eld
+\end_inset
+
+Fred Bloggs
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Subsubsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:setexperimentalmode"
+
+\end_inset
+
+setexperimentalmode(modeStr)
+\end_layout
+
+\begin_layout Standard
+Used to set the type of experiment you would like to run, which then determines
+ combined motions of motors on the instrument.
+ Most of the modes correspond to the type of collimation element desired.
+ It moves the guide element into place.
+ This 
+\noun on
+should not be used
+\noun default
+ without prior instruction from the instrument scientist.
+\end_layout
+
+\begin_layout Standard
+allowable modes:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Quotes eld
+\end_inset
+
+MT
+\begin_inset Quotes erd
+\end_inset
+
+ - for normal air-solid experiments
+\end_layout
+
+\begin_layout Standard
+\begin_inset Quotes eld
+\end_inset
+
+FOC
+\begin_inset Quotes erd
+\end_inset
+
+ - for inserting the focussing guide for solid- liquid experiments.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Quotes eld
+\end_inset
+
+SB
+\begin_inset Quotes erd
+\end_inset
+
+ - for air-liquid experiments with the single bounce deflection mirror
+\end_layout
+
+\begin_layout Standard
+\begin_inset Quotes eld
+\end_inset
+
+DB
+\begin_inset Quotes erd
+\end_inset
+
+ - for air-liquid experiments with the double bounce deflection mirror.
+\end_layout
+
+\begin_layout Standard
+e.g.
+\end_layout
+
+\begin_layout LyX-Code
+setexperimentalmode(
+\begin_inset Quotes eld
+\end_inset
+
+FOC
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Subsubsection
+omega_2theta(omegaVar, twothetaVar)
+\end_layout
+
+\begin_layout Standard
+Moves the instrument to a given angle of incidence (omega) and scattered
+ angle (twotheta).
+ For example, for an air-solid experiment it tilts the sample stage to omega
+ degrees, then moves the detector and slit4 to track the reflected beam.
+ This motion is different for each experimental mode you are in 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:setexperimentalmode"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/geometry.eps
+	scale 50
+	rotateOrigin center
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:definition-of-omega"
+
+\end_inset
+
+definition of omega and two theta
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+With an air-solid experiment the sample stage tilts, slit tower 4 moves
+ up, and the detector moves up to track the reflected beam.
+\end_layout
+
+\begin_layout Standard
+For an air-liquid experiment the single bounce mirror rotates, slit tower
+ 3 moves down, the sample stage moves down.
+ Slit tower 4 and the detector are moved, depending on the value of omega
+ and twotheta.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+IMPORTANT: For higher angles of incidence the slits (vslits) are normally
+ opened wider.
+ Before going to lower angles of incidence you must make sure you close
+ the slits before returning to low angle of incidence - otherwise you can
+ damage the detector.
+\end_layout
+
+\begin_layout Standard
+e.g.
+\end_layout
+
+\begin_layout LyX-Code
+setexperimentalmode(
+\begin_inset Quotes eld
+\end_inset
+
+FOC
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout LyX-Code
+omega_2theta(1.2, 2.4)
+\end_layout
+
+\begin_layout Subsubsection
+stopAndPrimeDetector(presettypeStr, preset)
+\end_layout
+
+\begin_layout Standard
+Sets the detector up to perform a 
+\begin_inset Quotes eld
+\end_inset
+
+freestyle
+\begin_inset Quotes erd
+\end_inset
+
+ detector acquisition, i.e.
+ you don't care about saving the data, etc.
+\end_layout
+
+\begin_layout Standard
+e.g.
+\end_layout
+
+\begin_layout LyX-Code
+stopAndPrimeDetector(
+\begin_inset Quotes eld
+\end_inset
+
+TIME
+\begin_inset Quotes erd
+\end_inset
+
+, 5)
+\end_layout
+
+\begin_layout Standard
+stops the detector and sets it up to measure for 5secs, but doesn't actually
+ start the detector.
+ Use acquire() - 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:acquire"
+
+\end_inset
+
+, when you wish to start the detector in a batch run.
+\end_layout
+
+\begin_layout Subsubsection
+stopDetector()
+\end_layout
+
+\begin_layout Standard
+stops the detector acquiring.
+ It speaks directly to the histogram server.
+ This has the effect of stopping any other scans you might be doing.
+\end_layout
+
+\begin_layout Subsubsection
+pauseDetector(pauseOrRestart)
+\end_layout
+
+\begin_layout Standard
+see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:pauseAcquire"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:fpx"
+
+\end_inset
+
+fpx(motorStr, rangeVal, points, [presettype, preset, saveOrNot,sampleTitle,auto]
+) - scanning of a motor
+\end_layout
+
+\begin_layout Standard
+Performs a scan of a single motor (motorStr), over a range (rangeVal), with
+ several points (points).
+ The scan will normally return 
+\noun on
+motorStr
+\noun default
+ to its starting position when it finishes, unless 
+\noun on
+auto
+\noun default
+ is specified.
+\end_layout
+
+\begin_layout Standard
+REQUIRED:
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+motorStr
+\noun default
+ - the name of the motor of interest
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+rangeVal
+\noun default
+ - the range of interest
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+points
+\noun default
+ - the number of points in the scan
+\end_layout
+
+\begin_layout Standard
+OPTIONAL:
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+presettype
+\noun default
+ - 
+\begin_inset Quotes eld
+\end_inset
+
+TIME
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+MONITOR
+\begin_inset Quotes erd
+\end_inset
+
+ (default = 
+\begin_inset Quotes eld
+\end_inset
+
+TIME
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+preset
+\noun default
+ - how much of the presettype do you want to acquire at each point (default
+ = 1).
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+saveOrNot
+\noun default
+ - whether you want to save the scan.
+ Set to 0 to save, or 1 to discard (default = 0).
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+sampleTitle
+\noun default
+ - the name of the sample.
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+auto
+\noun default
+ - when the scan finishes a curvefit + centroid analysis is performed.
+ If auto=1, then the motor is moved to the peak position.
+ If auto = 0 (default), then the motor returns to the start position.
+\end_layout
+
+\begin_layout Standard
+e.g.
+\end_layout
+
+\begin_layout LyX-Code
+fpx(
+\begin_inset Quotes eld
+\end_inset
+
+ss3u
+\begin_inset Quotes erd
+\end_inset
+
+, 0.3, 11, presettype = 
+\begin_inset Quotes eld
+\end_inset
+
+TIME
+\begin_inset Quotes erd
+\end_inset
+
+, preset = 10, saveOrNot=1, auto = 1)
+\end_layout
+
+\begin_layout LyX-Code
+//performs a scan of ss3u, over a range of 0.3mm, with 11 points.
+  Each point is run for 10 seconds, the data isn't saved.
+  
+\end_layout
+
+\begin_layout LyX-Code
+//when the run finishes ss3u is moved to the centroid of the peak.
+\end_layout
+
+\begin_layout Subsubsection
+fpxStop()
+\end_layout
+
+\begin_layout Standard
+Stops an fpx scan 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:fpx"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+pausefpx(pauseOrRestart)
+\end_layout
+
+\begin_layout Standard
+pauses an fpx scan.
+ See 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:fpx"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:pauseAcquire"
+
+\end_inset
+
+ for more details for what 
+\noun on
+pauseOrRestart
+\noun default
+ means.
+\end_layout
+
+\begin_layout Subsubsection
+fpxStatus()
+\end_layout
+
+\begin_layout Standard
+returns the status of the fpx scan.
+ 
+\end_layout
+
+\begin_layout Standard
+0 = not running 
+\end_layout
+
+\begin_layout Standard
+1 = running 
+\end_layout
+
+\begin_layout Standard
+2 = paused
+\end_layout
+
+\begin_layout Standard
+e.g.
+\end_layout
+
+\begin_layout LyX-Code
+print fpxStatus()
+\end_layout
+
+\begin_layout Subsubsection
+batchScanStop()
+\end_layout
+
+\begin_layout Standard
+Stops a batch scan
+\end_layout
+
+\begin_layout Subsubsection
+batchScanPause(pauseOrRestart)
+\end_layout
+
+\begin_layout Standard
+Pauses a batch scan (see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:pauseAcquire"
+
+\end_inset
+
+ for more details on pauseOrAcquire).
+\end_layout
+
+\begin_layout Subsubsection
+batchScanStatus()
+\end_layout
+
+\begin_layout Standard
+returns the status of the batch scan.
+ 
+\end_layout
+
+\begin_layout Standard
+0 = not running 
+\end_layout
+
+\begin_layout Standard
+1 = running 
+\end_layout
+
+\begin_layout Standard
+2 = paused
+\end_layout
+
+\begin_layout Standard
+e.g.
+\end_layout
+
+\begin_layout LyX-Code
+print batchScanStatus()
+\end_layout
+
+\begin_layout Subsubsection
+catalogue(pathStr [,start, stop])
+\end_layout
+
+\begin_layout Standard
+goes through all the NeXUS datafiles in the folder pointed to by pathStr.
+ One can control where the cataloging starts and finishes using the optional
+ start and finish variables.
+ It puts the catalogue into an XML file in the same path and also produces
+ an IGOR table, which can be printed out and put in the log book.
+\end_layout
+
+\begin_layout Standard
+e.g.
+\end_layout
+
+\begin_layout LyX-Code
+//catalogues all the NeXUS files on my desktop
+\end_layout
+
+\begin_layout LyX-Code
+catalogue(
+\begin_inset Quotes eld
+\end_inset
+
+//Users/andrew/Desktop
+\begin_inset Quotes erd
+\end_inset
+
+) 
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+//catalogues all the files on the desktop, starting from PLP0000010.nx.hdf
+ 
+\end_layout
+
+\begin_layout LyX-Code
+//to PLP0000100.nx.hdf
+\end_layout
+
+\begin_layout LyX-Code
+catalogue(
+\begin_inset Quotes eld
+\end_inset
+
+//Users/andrew/Desktop
+\begin_inset Quotes erd
+\end_inset
+
+, start = 10, finish = 99) 
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout Subsubsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:wait"
+
+\end_inset
+
+wait(timeout)
+\end_layout
+
+\begin_layout Standard
+can be used in a batch scan to wait for timeout seconds before proceeding
+ to the next batch point.
+\end_layout
+
+\begin_layout Subsubsection
+stopwait()
+\end_layout
+
+\begin_layout Standard
+issued from the command line to stop the wait 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:wait"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+waitstatus()
+\end_layout
+
+\begin_layout Standard
+issued from the command line, it returns the status of the wait 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "sub:wait"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection
+labels(labelsStr)
+\end_layout
+
+\begin_layout Standard
+see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:goto(labelsStr,-repeats)"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+goto(labelsStr, repeats)
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:goto(labelsStr,-repeats)"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In conjunction with the 
+\noun on
+labels
+\noun default
+ command 
+\noun on
+goto 
+\noun default
+can be used in the batch file to create a loop, allowing acquisitions to
+ be repeated, etc.
+\end_layout
+
+\begin_layout Standard
+A typical batch file may look like:
+\end_layout
+
+\begin_layout LyX-Code
+labels(
+\begin_inset Quotes eld
+\end_inset
+
+a
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout LyX-Code
+acquire(
+\begin_inset Quotes eld
+\end_inset
+
+TIME
+\begin_inset Quotes erd
+\end_inset
+
+, 3600, 
+\begin_inset Quotes eld
+\end_inset
+
+mysamplename
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout LyX-Code
+goto(
+\begin_inset Quotes eld
+\end_inset
+
+a
+\begin_inset Quotes erd
+\end_inset
+
+, 5)
+\end_layout
+
+\begin_layout Standard
+This code sets up the 
+\emph on
+\noun on
+label
+\emph default
+\noun default
+ called 
+\begin_inset Quotes eld
+\end_inset
+
+a
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The batchfile scheduler will first of all do an acquisition of 3600 seconds.
+ When it gets to the 
+\noun on
+goto
+\noun default
+ command it will scan the batchfile from the start for a line containing
+ the text 
+\emph on
+labels(
+\begin_inset Quotes eld
+\end_inset
+
+a
+\begin_inset Quotes erd
+\end_inset
+
+).
+
+\emph default
+ It is important that there are no extra spaces in the command (e.g.
+ labels( 
+\begin_inset Quotes eld
+\end_inset
+
+a
+\begin_inset Quotes erd
+\end_inset
+
+ )), or any comments after.
+ If it finds the line containing 
+\emph on
+labels(
+\begin_inset Quotes eld
+\end_inset
+
+a
+\begin_inset Quotes erd
+\end_inset
+
+)
+\emph default
+ it will run all the commands following it, until it gets to the 
+\noun on
+goto
+\noun default
+ line again.
+ It will repeat that loop 
+\noun on
+repeats
+\noun default
+ times.
+\end_layout
+
+\begin_layout Subsubsection
+txtme(textStr)
+\end_layout
+
+\begin_layout Standard
+Sends an SMS message to the registered mobile phone with the message textStr.
+ 
+\end_layout
+
+\begin_layout Standard
+Set the phone number by using:
+\end_layout
+
+\begin_layout LyX-Code
+hset /user/phone 04xxxxxxxx
+\end_layout
+
+\begin_layout Standard
+where 04xxxxxxxx is the mobile number.
+\end_layout
+
+\begin_layout Section
+How to align a sample (air-solid, solid-liquid)
+\end_layout
+
+\begin_layout Standard
+This is a quick and 
+\emph on
+rough
+\emph default
+ overview of how to perform a sample alignment on a air-solid or solid-liquid
+ sample.
+ If you don't really understand what these steps mean ask an instrument
+ scientist.
+\end_layout
+
+\begin_layout Enumerate
+Close the beam
+\end_layout
+
+\begin_layout Enumerate
+Use the following IGOR commands:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+vslits(0,0,0,0)
+\end_layout
+
+\begin_layout Enumerate
+setexperimentalmode(
+\begin_inset Quotes eld
+\end_inset
+
+FOC
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Enumerate
+omega_2theta(0,0)
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Put the sample(s) on the sample stage.
+ Make sure that the interface of interest is 570mm above the main sample
+ stage, use the labjack to do this.
+ Make sure that the beam will be centred on the sample (change the sx motor
+ to achieve this).
+\end_layout
+
+\begin_layout Enumerate
+Make sure that the samples are lower than the beam, so that the beam passes
+ directly to the detector, e.g.
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+run(
+\begin_inset Quotes eld
+\end_inset
+
+sz
+\begin_inset Quotes erd
+\end_inset
+
+, -30)
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Exit the enclosure 
+\end_layout
+
+\begin_layout Enumerate
+Open the beam
+\end_layout
+
+\begin_layout Enumerate
+Use the following IGOR commands:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+vslits(5,0.5,0.5,3).
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Perform a quick acquire on the detector, for ~100 seconds, 1 point, scanning
+ no motor, don't save the data.
+ Spawn a 2D graph of 
+\emph on
+time_of_flight:y_bin 
+\emph default
+from the detector view tab, once enough counts have been acquired.
+ Using the line profile button in the spawned window create a vertical line
+ profile using the 
+\emph on
+low
+\emph default
+ time of flight data (~40 timebins wide).
+ This should be a single peak corresponding to the direct beam.
+ Right click on the line profile, select 
+\begin_inset Quotes eld
+\end_inset
+
+quick fit
+\begin_inset Quotes erd
+\end_inset
+
+ and fit to a gaussian.
+ Note the peak position of the gaussian.
+ Stop the acquisition when you've got this far.
+\end_layout
+
+\begin_layout Enumerate
+Use the following IGOR commands:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+omega_2theta(0.5, 1)
+\end_layout
+
+\begin_layout Enumerate
+run(
+\begin_inset Quotes eld
+\end_inset
+
+dz
+\begin_inset Quotes erd
+\end_inset
+
+, 0)
+\end_layout
+
+\begin_layout Enumerate
+run(
+\begin_inset Quotes eld
+\end_inset
+
+ss4vg
+\begin_inset Quotes erd
+\end_inset
+
+, 25)
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Perform a quick acquire on the detector, for ~1000 seconds, 1 point, scanning
+ no motor, don't save the data.
+ As you are acquiring the data slowly raise the sample back into the beam,
+ step by step (a).
+ As the beam starts to intersect the sample you should notice a second stripe
+ appearing.
+ The lower stripe is the direct beam, the upper stripe should be the reflected
+ beam.
+ The reflected beam will probably be most intense towards the large time
+ bin end.
+ As you raise the sample the direct beam will become less intense (more
+ neutrons are reflected).
+ You will want to stop before the direct beam disappears.
+ Stop the acquisition when you've got this far.
+ If you don't see a second stripe appear then try increasing/decreasing
+ the angle of incidence onto the sample (b).
+ Note that in step 9) we set the angle of incidence to 0.5, so you could
+ investigate the range 0 < sth < 1.
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+run(
+\begin_inset Quotes eld
+\end_inset
+
+sz
+\begin_inset Quotes erd
+\end_inset
+
+,-1)
+\end_layout
+
+\begin_layout Enumerate
+run(
+\begin_inset Quotes eld
+\end_inset
+
+sth
+\begin_inset Quotes erd
+\end_inset
+
+, 0.6).
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Work out the pixel displacement between the direct and reflected beams.
+ To do this perform a quick acquire on the detector, for ~100 seconds, 1
+ point, scanning no motor, don't save the data.
+ Spawn a 2D graph of 
+\emph on
+time_of_flight:y_bin 
+\emph default
+from the detector view tab, once enough counts have been acquired.
+ Using the line profile button in the spawned window create a vertical line
+ profile, with enough timebins to get reasonable statistics (~100 timebins
+ wide).
+ There should be two peaks, corresponding to the direct beam (low y pixel)
+ and the reflected beam (higher y pixel).
+ Try and maximise the reflected beam signal by getting the line profile
+ from the high time bin end of the spectrum.
+ Right click on the line profile, select 
+\begin_inset Quotes eld
+\end_inset
+
+quick fit
+\begin_inset Quotes erd
+\end_inset
+
+ and fit to a gaussian.
+ Note the peak position of the reflected beam.
+ Stop the acquisition when you've got this far.
+\end_layout
+
+\begin_layout Enumerate
+Now we need to work out the reflected angle.
+ Steps 8) and 11) allow us to work out the deflection, in detector pixels,
+ between the direct beam and the reflected beam.
+ Because we know the sample-detector distance (dy) and how many mm a detector
+ pixel represents, we can work out two_theta (Figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:definition-of-omega"
+
+\end_inset
+
+).
+ To do this type:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+wott(reflectedPixel, directPixel).
+\end_layout
+
+\begin_layout Enumerate
+The actual angle of incidence is printed out in the IGOR command window.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+\Omega=0.5\times\arctan\left(\frac{\left(ref_{px}-db_{px}\right)\times1.168}{dy}\right)\]
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Now we have to enter an offset for sth, because it was probably slightly
+ wrong.
+ So type:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+sics(
+\begin_inset Quotes eld
+\end_inset
+
+sth setpos 0.5 newpos
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Enumerate
+where newpos was the angle that you calculated in step 12).
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Now that we have aligned the angle of incidence somewhat we need to align
+ the sample height more accurately, with a rocking curve scan.
+ First of all we will close down the slit 4 slits, to give more accuracy
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+run(
+\begin_inset Quotes eld
+\end_inset
+
+ss4vg
+\begin_inset Quotes erd
+\end_inset
+
+,1)
+\end_layout
+
+\begin_layout Enumerate
+then run a scan for 
+\begin_inset Quotes eld
+\end_inset
+
+sz
+\begin_inset Quotes erd
+\end_inset
+
+, with a range of ~1->2mm, with ~21 points.
+ You should see a peak in this scan.
+ If you don't increase the range & use more points.
+\end_layout
+
+\begin_layout Enumerate
+When the scan finishes move to the peak centre or centroid (your choice),
+ and when FIZZY asks you if you want to set an offset, say yes, and set
+ the new position to be 0.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+At this point we should have a better alignment, but because we changed
+ the sample height, and sample tilt, either one may have changed slightly.
+ Therefore repeat steps 9) to 14), several times.
+ You can stop when step 14) has a peak at sz=0, and when step 12) prints
+ out an angle of incidence=0.5 (or whatever value you chose in step 9).
+ Note that in step 10) you probably won't need to change the 
+\begin_inset Quotes eld
+\end_inset
+
+sz
+\begin_inset Quotes erd
+\end_inset
+
+ position after the first time, just work out the reflected beam position.
+\end_layout
+
+\begin_layout Enumerate
+For good measure perform a 
+\begin_inset Quotes eld
+\end_inset
+
+sphi
+\begin_inset Quotes erd
+\end_inset
+
+ scan (sphi is the roll of the sample).
+ This scan is quite broad, use a range of ~3deg with 31 steps.
+ The scan should have a peak centred at 0.
+ Enter an offset to make this so if it isn't the case.
+ You will need to repeat steps 9) to 15) after this.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Your sample is aligned, perform a measurement.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Access to your data
+\end_layout
+
+\begin_layout Standard
+You have access to your data whilst you are at ANSTO.
+ You can take your data in many ways, such as emailing it to yourself, burning
+ a CD, memory stick, etc.
+ However, data is also available for downloading via a webpage: 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi
+\end_layout
+
+\end_inset
+
+.
+ This webpage requires authentication.
+ If you would like a login for this method please see an instrument scientist.
+ You can also download data using 
+\noun on
+SLIM,
+\noun default
+ which is the 
+\noun on
+Platypus
+\noun default
+ data reduction program.
+ This uses the same web based method for downloading the data, so you will
+ need a login for this method as well.
+ The SLIM is the easiest way.
+ The only thing you need to remember are the run numbers for your data files.
+\end_layout
+
+\begin_layout Section
+
+\noun on
+SLIM
+\noun default
+ - reducing data in 
+\noun on
+Igor
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+SLIM 
+\noun default
+is the data viewer and reduction module for 
+\noun on
+Platypus.
+ 
+\noun default
+It also works in 
+\noun on
+Igor.
+ 
+\noun default
+This means that you can acquire data (
+\noun on
+FIZZY
+\noun default
+), reduce it (
+\noun on
+SLIM
+\noun default
+) and analyse it (
+\noun on
+Motofit
+\noun default
+) in a fluid, logical way.
+ 
+\noun on
+SLIM 
+\noun default
+can reduce data in real time (i.e.
+ as the data comes off the instrument), from any computer that has web access,
+ anywhere in the world.
+\end_layout
+
+\begin_layout Standard
+SLIM is part of more recent Motofit distributions, which can either be obtained
+ from 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://motofit.sourceforge.net
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://dav1-platypus.nbi.ansto.gov.au
+\end_layout
+
+\end_inset
+
+ (this is the more up to date version).
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/SLIM.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+The main SLIM window
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The first thing to do is set the directory where your data is, or where
+ you would like it to be saved.
+ This can be done by pressing the change button at the top right hand corner
+ of the 
+\noun on
+SLIM
+\noun default
+ window.
+\end_layout
+
+\begin_layout Subsection
+Data format
+\end_layout
+
+\begin_layout Standard
+Platypus data is saved in NeXUS format, inside an HDF file, which is binary,
+ not ASCII.
+ One can download HDFview (
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://www.hdfgroup.org/hdf-java-html/hdfview/
+\end_layout
+
+\end_inset
+
+) to examine the data within the file, or there is an HDF browser within
+ IGOR.
+\end_layout
+
+\begin_layout Subsection
+Downloading data if you don't already have it
+\end_layout
+
+\begin_layout Standard
+Simply press the 
+\emph on
+Download Platypus data button
+\emph default
+.
+ You are then prompted for a login password (see an instrument scientist
+ for a login).
+ If the login succeeds you enter the run numbers you require, and SLIM will
+ download, unzip and place the required files in the data directory you
+ specified.
+\end_layout
+
+\begin_layout Subsection
+Controlling how SLIM performs the reduction (background, rebinning, etc)
+\end_layout
+
+\begin_layout Standard
+Check the 
+\emph on
+background sub
+\emph default
+ checkbox to perform background subtractions during the reduction.
+\end_layout
+
+\begin_layout Standard
+If you wish to control other options press the 
+\emph on
+show reducer variables
+\emph default
+ button (Figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:Controlling-the-parameters"
+
+\end_inset
+
+).
+ Here you can change the wavelength region that you are interested in, how
+ coarsely you want the data to be rebinned, and at what y pixel you expect
+ the specular beam to appear.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/SLIMvarpanel.png
+	scale 50
+	rotateOrigin center
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Controlling-the-parameters"
+
+\end_inset
+
+Controlling the parameters of a data reduction
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Visualising Platypus files (wavelength spectra, etc)
+\end_layout
+
+\begin_layout Standard
+Click on 
+\emph on
+Plot 
+\emph default
+in the main SLIM window (Figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:Loading-many-files"
+
+\end_inset
+
+).
+ Select the files you wish to open and press 
+\emph on
+Get Files
+\emph default
+.
+ If you select the 
+\emph on
+.hdf
+\emph default
+ file type you will view the raw data, with wavelength spectra, etc.
+ If you select the 
+\emph on
+.xml
+\emph default
+ file type you will visualise reduced data.
+ If you select the 
+\emph on
+.itx
+\emph default
+ file type you will visualise scans resulting from alignment scans (i.e.
+ counts vs.
+ motor position).
+ If one of the run numbers is the current sample then pressing the 
+\emph on
+refresh 
+\emph default
+button will cause that spectrum to be updated in the plot.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/Multifileloadpanel.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Loading-many-files"
+
+\end_inset
+
+Loading many files at once.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/SLIM_lambda.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Using SLIM to view wavelength spectra
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/SLIM_detector.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Using SLIM to view detector patterns, showing data from 3 different angles
+ of incidence.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Reducing data
+\end_layout
+
+\begin_layout Standard
+To reduce data set up the options for the reduction (Figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:Controlling-the-parameters"
+
+\end_inset
+
+).
+ Then enter the scale factor, and the run numbers for the reflected and
+ direct beam measurements.
+ The scalefactor is a number that the final reflectivity curve is divided
+ by, to make the reflectivity of the critical edge equal to 1.
+ If you have a detector efficiency scan, a 
+\emph on
+waterrun
+\emph default
+, enter that as well.
+ You can reduce all your files at the same time if you wish.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename images/SLIM_reduction.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:reducing"
+
+\end_inset
+
+reducing
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Sometimes the automated specular beam finding algorithm cannot find the
+ specular beam.
+ If this happens SLIM will display a graph, asking you to help define the
+ specular region.
+ This is done by asking you to specify a region of interest.
+ As you change the ROI SLIM will integrate over the time bins present, and
+ try to fit a specular peak.
+ Once you are happy that SLIM has found the specular beam press continue.
+ 
+\emph on
+Hint
+\emph default
+: the ROI should be located at the high time bin end, as this region usually
+ has less background than low wavelength data.
+\end_layout
+
+\begin_layout Standard
+Once you have reduced your data you can analyse them using Motofit, or you
+ can view the files in SLIM.
+\end_layout
+
+\begin_layout Subsection
+Data format from the reduction
+\end_layout
+
+\begin_layout Standard
+There are several files produced during the data reduction process.
+ They are of two file type 
+\emph on
+.dat
+\emph default
+ and 
+\emph on
+.xml
+\emph default
+.
+ Both these can be opened by recent versions of Motofit (
+\emph on
+xml 
+\emph default
+is more recent).
+ The XML file is a way of including more metadata (such as sample name)
+ in the reduced file, it is also extensible to offspecular data files.
+\end_layout
+
+\begin_layout Standard
+Each individual reflection run has a corresponding 
+\emph on
+xml
+\emph default
+ and 
+\emph on
+dat
+\emph default
+ file.
+ In addition, if several runs are reduced together there is a combined file
+ which contains a single dataset that consists of all the reflectivity data
+ spliced together.
+ The example shown in Figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:reducing"
+
+\end_inset
+
+ will produce the following files as output:
+\end_layout
+
+\begin_layout Standard
+Individual runs: PLP1054.dat, PLP1055.dat, PLP1056.dat, PLP1054.xml, PLP1055.xml,
+ PLP1056.xml
+\end_layout
+
+\begin_layout Standard
+Combined runs: c_plp1054.dat, c_plp1054.xml
+\end_layout
+
+\begin_layout Standard
+There are 4 arrays/columns of data in a specular reflectivity file which
+ are of interest.
+ Each of these arrays has an equivalent number of points and correspond
+ to (listed in order that they appear in the 
+\emph on
+.dat
+\emph default
+ file):
+\end_layout
+
+\begin_layout Subsubsection*
+Q
+\end_layout
+
+\begin_layout Standard
+The Q value for a reflectivity point, units Å
+\begin_inset Formula $^{\text{-1}}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection*
+Ref
+\end_layout
+
+\begin_layout Standard
+The reflectivity value, which is unitless.
+\end_layout
+
+\begin_layout Subsubsection*
+dRef
+\end_layout
+
+\begin_layout Standard
+The experimental uncertainty in a reflectivity value, expressed as a standard
+ deviation.
+\end_layout
+
+\begin_layout Subsubsection*
+dQ
+\end_layout
+
+\begin_layout Standard
+The uncertainty in the given Q value, expressed in FWHM terms, units Å
+\begin_inset Formula $^{\text{-1}}$
+\end_inset
+
+.
+ This value represents the resolution with which the experiment was done,
+ i.e.
+ a combination of the angular resolution of the beam (which is dependent
+ on the slits), and the wavelength resolution of the measurement.
+ Full details on this calculation may be obtained from two papers:
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+A.A.
+ van Well, H.
+ Fredrikze
+\emph default
+, 
+\begin_inset Quotes eld
+\end_inset
+
+On the resolution and intensity of a time-of-flight neutron reflectometer
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\emph on
+Physica B
+\emph default
+, 
+\series bold
+357
+\series default
+(2005) 204-207.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+V-O.
+ de Haan, J.
+ de Blois, P.
+ van der Ende, H.
+ Frederikze, A.
+ van der Graaf, M.N.
+ Schipper, A.A.
+ van Well, J.
+ van der Zanden
+\emph default
+, 
+\begin_inset Quotes eld
+\end_inset
+
+ROG, the neutron reflectometer at IRI, Delft
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\emph on
+Nuclear Instruments and Methods in Physics Research A
+\emph default
+, 
+\series bold
+362
+\series default
+(1995), 434-453.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset index_print
+LatexCommand printindex
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
