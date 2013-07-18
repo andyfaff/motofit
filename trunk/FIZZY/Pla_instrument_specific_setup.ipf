@@ -458,9 +458,6 @@ Function Instrument_Specific_Setup()
 		print "error with hnotify_registation(instrument_specific_setup)"
 		return 1
 	endif
-		
-	//get all the values in the hipadaba tree
-	//getCurrentHipaVals()
 	
 	//setup the default histogram OAT_Table
 	//bHistogram()

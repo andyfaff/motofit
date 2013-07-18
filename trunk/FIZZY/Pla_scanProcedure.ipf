@@ -19,8 +19,12 @@ Function/c findthecentre(position,tempY,tempE)
 	
 	variable V_fiterror = 0
 	//can easily change to lorentzian
-	curvefit/n/q/w=0 gauss tempy /X=position/W=tempE/I=1
-	if(V_fiterror)
+	try
+		curvefit/n/q/w=0 gauss tempy /X=position/W=tempE/I=1; ABORTONRTE
+	catch
+		Variable CFerror = GetRTError(1)	// 1 to clear the error
+	endtry
+	if(V_fiterror || V_abortcode)
 		print "error while fitting gaussian (findthecentre)"	
 	else 
 		Wave W_coef
@@ -37,10 +41,12 @@ End
 Function fpxStop()
 	//stop the fpx scan running
 	CtrlNamedBackground  scanTask status
+	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
 	if(numberbykey("RUN",S_info))	//if the scan is running, stop it, and finish
+		CtrlNamedBackground  scanTask kill = 1
+		sockitsendmsg SOCK_interupt, "INT1712 2\n"
 		finishscan(1)
 		sics_cmd_interest("statemon stop FPX")
-		CtrlNamedBackground  scanTask kill=1
 	endif
 End
 
@@ -61,45 +67,63 @@ End
 Function fpxStatus()
 	//returns the status of the scan
 	//0 = not running
-	//1 = running
-	//2 = paused
+	//bitwise return
+	//1 = paused
+	//2 = bkdtask
+	//3 = fpxstatemon
+	//4 = runscanstatus - /commands/scan/runscan/feedback/status
+	//5 = hmcontrol
+	//FPX is a statemon addition, because sometimes it takes a while for the runscan status to change.
+	//use this as a guard to say the scan has started, but we're still waiting for the status to change to BUSY
+	//once it's done this you can remove it.
+	
 	NVAR/z userPaused = root:packages:platypus:data:scan:userPaused
 	ctrlnamedbackground scanTask,status
 	variable running = 0
 	
 	variable bkdtask = numberbykey("RUN",S_info)
-	variable fpxstatemon = statemonstatus("FPX")
-	variable runscanstatus = stringmatch(gethipaval("/commands/scan/runscan/feedback/status"), "BUSY")
-	
-	running = bkdtask | fpxstatemon | runscanstatus
-	
+	if(numberbykey("RUN",S_info))
+		running = running | 2^2
+	endif	
+	if(statemonstatus("FPX"))
+		running = running | 2^3
+	endif	
+	if(stringmatch(gethipaval("/commands/scan/runscan/feedback/status"), "BUSY"))
+		running = running | 2^4
+	endif
+	if(statemonstatus("hmcontrol"))
+		running = running | 2^5
+	endif
 	if(running)
 		if(userPaused)
-			return 2
+			running = running | 2^1
 		endif
 	endif
 	return running
 End
 
-Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,auto])
-	string motorstr
-	variable rangeVal,points
-	string presettype
-	variable preset,saveOrNot
+Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename, automatic])
+	string motorName
+	variable rangeVal, numpoints
+	string mode
+	variable preset, savetype
 	string samplename
-	variable auto
+	variable automatic
 	//performs a range scan for the motor specified by motorStr, over rangeVal distance, with points points
-	//motorStr			-	self explanatory, but set to "_none_" if you don't want to scan a motor
+	//motorStr		-	self explanatory, but set to "_none_" if you don't want to scan a motor
 	//points			-	the number of scan points >=0
-	//presettype		-	TIME or MONITOR
+	//mode			-	time, unlimited, period, count, frame, MONITOR_1, MONITOR_2
 	//preset			-	the number of seconds for the scan >0
 	//saveOrNot		-	saves the results in a file if saveOrNot=0 (default), if saveOrNot=1, then don't save
 	//sampleTitle		-	if the results are going to be saved, then this will be the sample title
-	//auto			-	auto=0 - ask for user interaction
-	//					auto=1 - no user interaction, automatically go to the peak
-	//					auto=2 - no user interaction, do not go to the peak
+	//automatic		-	automatic=0 - ask for user interaction
+	//					automatic=1 - no user interaction, automatically go to the peak
+	//					automatic=2 - no user interaction, do not go to the peak
 	//
-	//e.g. fpx("sphi",0.5,11,presettype="TIME",preset=5)
+	//e.g. fpx("sphi",0.5,11,presettype="time",preset=5)
+	//sics command is:
+	//runscan scan_variable start stop numpoints time||unlimited||period||count||frame||MONITOR_1||MONITOR_2 savetype save||nosave force true||false
+	
 	Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
 	NVAR/z	Grange =  root:packages:platypus:SICS:range
 	NVAR/z Gpreset = root:packages:platypus:SICS:preset
@@ -113,28 +137,52 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	//		a string that is send on SOCK_cmd channel for user commands
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
 	SVAR Gsicsstatus = root:packages:platypus:SICS:sicsstatus
+	Wave/t statemon = root:packages:platypus:SICS:statemon
+	Wave/t axeslist = root:packages:platypus:SICS:axeslist
+	NVAR motoraxisrow = root:packages:platypus:data:scan:motoraxisrow
+	Wave position = root:packages:platypus:data:scan:position
+	Wave counts = root:packages:platypus:data:scan:counts
+	NVAR currentpoint = root:packages:platypus:data:scan:currentpoint
+	NVAR initialposition =  root:packages:platypus:data:scan:initialPosition
+	NVAR motorprecision = root:packages:platypus:data:scan:motorprecision	
+	NVAR pointProgress = root:packages:platypus:data:scan:pointProgress
+	NVAR userPaused = root:packages:platypus:data:scan:userPaused
+	NVAR auto = root:packages:platypus:data:scan:auto				//says whether you are going to autofit and drive to the centre
+
+	string msg = "", saveStr
+	string supportedScanTypes = "time||unlimited||period||count||frame||MONITOR_1||MONITOR_2"
+	variable start, stop
+	DFref cDF
+	variable col, row
+
+	cDF = getdatafolderdfr()
 	
-	if(paramisDefault(auto))
-		auto = 0
+	if(paramisDefault(automatic))
+		automatic = 0
 	endif
 	
-	if(paramisDefault(presettype))
-		presettype = "TIME"
+	if(paramisDefault(mode))
+		mode = "time"
 	endif
 	if(paramisDefault(preset))
 		preset = 1
 	endif
-	if(paramisDefault(saveOrNot))
-		saveOrNot = 0
+	if(paramisDefault(savetype))
+		savetype = 0
 	endif
 	if(paramisDefault(samplename))
 		samplename = ""
+	endif
+	if(!saveType)
+		saveStr = "save"
+	else
+		saveStr = "nosave"
 	endif
 	
 	//set the display variable to those sent to the function
 	Grange = rangeVal
 	Gpreset = preset
-	Gnumpoints = points
+	Gnumpoints = numpoints
 	
 	Dowindow/k fpxScan
 	
@@ -142,39 +190,6 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 		print "scan is already running (fpx)", time()
 		return 1
 	endif
-	
-	//if the tertiary shutter is closed, it might be a good idea to open it.
-	if(!stringmatch(gethipaval("/instrument/status/tertiary"), "*OPEN*"))
-		print "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons (fpx)"
-		//if auto is set, then its probably an automatic scan, so don't ask if you want to stop
-		//if auto is NOT set, then you probably want to open the shutter, so ask if you want to continue.
-		if(!auto)	
-			doalert 1, "Warning, the tertiary shutter appears closed, do you want to continue? (Scan will start when you press yes)"
-			if(V_Flag==2)
-				print "Stopping because the tertiary shutter was closed (fpx)"
-				return 1
-			endif
-		endif
-	endif
-			
-	//all the positions
-	//Wave position = root:packages:platypus:data:scan:position
-	//the counts at those positions
-	//Wave counts = root:packages:platypus:data:scan:counts
-	//current point
-	//variable/g currentpoint = root:packages:platypus:data:scan:currentpoint
-	//motor name being scanned
-	//string/g scanmotor = root:packages:platypus:data:scan:scanmotor
-
-	string cDF,msg,lhs="",rhs=""
-	variable col,row
-	Wave/t axeslist = root:packages:platypus:SICS:axeslist
-	variable/g root:packages:platypus:data:scan:motoraxisrow = NaN
-	NVAR motoraxisrow = root:packages:platypus:data:scan:motoraxisrow
-
-	cDF = getdatafolder(1)
-
-	Wave/t statemon = root:packages:platypus:SICS:statemon
 	if(numpnts(statemon)>0)
 		print "The SICS statemon isn't cleared, may need to clear it? (fpx)"
 		print statemon
@@ -185,100 +200,82 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 		Print "you are currently acquiring data, or the histogram server is doing something (fpx)"
 		return 1
 	endif
-
-	//see if SICS is doing anything
-//	if(SICSstatus(msg)) 
-//		Print "SICS is: "+msg + " (fpx)"
-//		return 1
-//	endif
 	if(!stringmatch(Gsicsstatus, "Eager to execute commands"))
 		Print "ERROR - SICS is: "+Gsicsstatus + " (fpx)", time()
 		return 1
 	endif
-		
-	//first have to check if motor exists
-	if(stringmatch(motorStr,"_none_"))
-		motoraxisrow = NaN
-	else
-		findvalue/text=motorStr/Z axeslist
-		if(V_Value == -1)
-			Print "Error: The" + motorStr + " motor is not in the current motor list. (fpx)"
-			return 1
-		else 
-			col=floor(V_Value / dimsize(axeslist, 0))
-			row=V_Value-col*dimsize(axeslist, 0)
-			motoraxisrow = row
+	
+	//if the tertiary shutter is closed, it might be a good idea to open it.
+	if(!stringmatch(gethipaval("/instrument/status/tertiary"), "*OPEN*"))
+		print "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons (fpx)"
+		//if auto is set, then its probably an automatic scan, so don't ask if you want to stop
+		//if auto is NOT set, then you probably want to open the shutter, so ask if you want to continue.
+		if(!automatic)	
+			doalert 1, "Warning, the tertiary shutter appears closed, do you want to continue? (Scan will start when you press yes)"
+			if(V_Flag==2)
+				print "Stopping because the tertiary shutter was closed (fpx)"
+				return 1
+			endif
 		endif
 	endif
+		
+	//first have to check if motor exists
+	findvalue/text=motorName/Z axeslist
+	if(V_Value == -1)
+		Print "Error: The" + motorName + " motor is not in the current motor list. (fpx)"
+		return 1
+	else 
+		col=floor(V_Value / dimsize(axeslist, 0))
+		row=V_Value - col*dimsize(axeslist, 0)
+		motoraxisrow = row
+	endif
+
 	//rangeval has to be greater than or equal to 0
 	if(rangeval < 0)
-		Print "range must be >=0 (fpx)"
+		Print "range must be >= 0 (fpx)"
 		return 1
 	endif
 
 	//number of points has to be greater than or equal to 1
-	points = round (points)
-	if(points < 1)
+	numpoints = round (numpoints)
+	if(numpoints < 1)
 		Print "you must have at least 1 point (fpx)"
 		return 1
 	endif
 
 	//now check upper and lower limits, but not for virtual motors.
-	if(!stringmatch(motorStr, "_none_") && !numtype(str2num(axeslist[row][4])) && !numtype(str2num(axeslist[row][6])) )
-		if( (str2num(axeslist[row][2]) - rangeval/2) < str2num(axeslist[row][4]) || (str2num(axeslist[row][2])+rangeval/2) > str2num(axeslist[row][6]))
+	if(!numtype(str2num(axeslist[row][4])) && !numtype(str2num(axeslist[row][6])) )
+		if( (str2num(axeslist[row][2]) - rangeval / 2) < str2num(axeslist[row][4]) || (str2num(axeslist[row][2]) + rangeval / 2) > str2num(axeslist[row][6]))
 			Print "scan range will exceed limits of motor (fpx)"
 			return 1
 		endif
 	endif
+	start = str2num(axeslist[row][2]) - rangeval / 2
+	stop = str2num(axeslist[row][2]) + rangeval / 2
 	
-
+	//change the samplename
+	if(!paramisDefault(samplename))
+		sics_cmd_interest("samplename " + samplename)
+	endif
+	
 	//create the data structures
 	//see fillScanStats() for column information
-	make/o/d/n=(points) root:packages:platypus:data:scan:position
-	make/o/d/n=(points,14) root:packages:platypus:data:scan:counts=0
-	
-	variable/g root:packages:platypus:data:scan:currentpoint = -1			//initialise to -1
-	string/g root:packages:platypus:data:scan:scanmotor = motorStr
-	string/g root:packages:platypus:data:scan:presettype = presettype
-	variable/g root:packages:platypus:data:scan:preset = preset
-	variable/g root:packages:platypus:data:scan:dontSave = saveOrNot
-	variable/g root:packages:platypus:data:scan:initialPosition = str2num(axeslist[row][2])
-	variable/g root:packages:platypus:data:scan:pointProgress = 0
-	variable/g root:packages:platypus:data:scan:auto = auto				//says whether you are going to autofit and drive to the centre
-	variable/g root:packages:platypus:data:scan:userPaused = 0		//says whether you are currently in a user paused situation
-	variable/g root:packages:platypus:data:scan:autosave = 1			//a global which will workout if its time to autosave (every three minutes)
-	variable/g root:packages:platypus:data:scan:timeMoveStarted = 1			
-	variable/g root:packages:platypus:data:scan:areYouMoving = 0			
-	variable/g root:packages:platypus:data:scan:motorprecision = 0	
-	variable/g root:packages:platypus:data:scan:requestedPointStart=0 //acquisition was requested to start
-	variable/g root:packages:platypus:data:scan:requestedPointStartTime=0 //time at which the acquisition was requested to start
+	redimension/n=(numpoints) position
+	redimension/n=(numpoints, -1) counts
+	counts = NaN
+	doupdate
 
-	Wave position = root:packages:platypus:data:scan:position
-	Wave counts = root:packages:platypus:data:scan:counts
-	NVAR currentpoint = root:packages:platypus:data:scan:currentpoint
-	NVAR initialposition =  root:packages:platypus:data:scan:initialPosition
-	NVAR motorprecision = root:packages:platypus:data:scan:motorprecision
-	
-	//findout what the precision of the motor of interest is
-	//it's contained in the hipadaba tree
-	if(!numtype(motoraxisrow))	
-		motorprecision = str2num(gethipaval(axeslist[motoraxisrow][1] + "/precision"))
-	endif
-
-	//the virtual motors don't have precision associated with them, so give a default if the number is NaN/Inf
-	if(numtype(motorprecision) != 0)
-		motorprecision = 0.008
-	endif
+	currentpoint = 0
+	initialPosition = str2num(axeslist[row][2])
+	pointprogress = 0
+	userPaused = 0
+	auto = automatic
 	
 	//create the positions for the scan
-	if(stringmatch(motorstr,"_none_"))
-		position = p
+	if(numpoints == 1)
+		position[] = initialposition
 	else
-		if(points ==1)
-			position[] = initialposition
-		else
-			position[] = rangeVal*(p/(points - 1)) + str2num(axeslist[row][2]) - rangeval/2
-		endif
+		position[] = rangeVal*(p/(numpoints - 1)) + str2num(axeslist[row][2]) - rangeval/2
 	endif
 
 	//append counts to scan graph
@@ -287,78 +284,81 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	STRUCT WMPopupAction PU_Struct
 	PU_Struct.popstr = S_value
 	counttypeVSpos_popupcontrol(PU_Struct)
-	
-//	//stop the detector to initialise it, then put it into a paused (not the true pause, but the yellow button) state to 
-//	//initialise the detector
-//	//the detector starts much faster from a suspended state than from a stopped state.
-//	if(stopAndPrimeDetector(presettype,preset))
-//		print "ERROR while stopping detector (fpx)"
-//		return 1
+		
+//	if(SAWDEVICE)
+//		if(sics_cmd_interest("\nhmm configure read_data_period_number 0\nsave 0\nhmm configure read_data_period_number 1\nsave 1\n"))//+num2str(currentpoint)))
+//			print "problem while autosaving (fpx)"
+//		endif
+//	else
+//		if(sics_cmd_interest("save 0"))
+//			print "ERROR whilst speaking to SICS (fpx)3"
+//			return 1
+//		endif
 //	endif
-
-	//if you're going to save, then start a new file	
-	if(saveOrNot)
-		//no save, except we will store it in the scratch file, in case we need it at the end.
-		sics_cmd_interest("newfile HISTOGRAM_XYT scratch")
-	else	//save
-		sics_cmd_interest("newfile HISTOGRAM_XYT")
-	endif
 	
-	if(!paramisDefault(samplename))
-		sics_cmd_interest("samplename " + samplename)
-	endif
-	
-	if(SAWDEVICE)
-		if(sics_cmd_interest("\nhmm configure read_data_period_number 0\nsave 0\nhmm configure read_data_period_number 1\nsave 1\n"))//+num2str(currentpoint)))
-			print "problem while autosaving (fpx)"
-		endif
-	else
-		if(sics_cmd_interest("save 0"))
-			print "ERROR whilst speaking to SICS (fpx)3"
-			return 1
-		endif
-	endif
-	
-	sockitsendmsg/time=1 SOCK_interest,"datafilename\n"
-	if(V_Flag)
-		print "ERROR whilst speaking to SICS (fpx)3"
-		return 1
-	endif
-	
-	if(HISTMEM_preparedetector(presettype,preset))
-		print "ERROR while preparing detector (fpx)"
-		return 1
-	endif
-	
-	//check that we know what presettype we have, and what the preset is.
-	sics_cmd_interest("hget /instrument/detector/mode\nhget /instrument/detector/preset")
-	
-	strswitch(presettype)
-		case "unlimited":
-			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, inf, 0}
-		break
-		default:
-			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, points*preset, 0}
-		break
-	endswitch
-	ValDisplay/z progress_tab1,win=SICScmdpanel,value= #"root:packages:platypus:data:scan:pointProgress"
-	label/W=SICScmdPanel#G0_tab1/z bottom, motorstr
-	PopupMenu/z motor_tab1, win=SICScmdpanel, fSize=10, mode=1, popvalue = motorStr, value = #"motorlist()"
-	findvalue/TEXT=motorStr/z/txop=4 root:packages:platypus:SICS:axeslist
-	if(V_Value > 0)
-		SetVariable currentpos_tab1, win=sicscmdpanel, limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist[V_Value][2]
-	else
-		SetVariable currentpos_tab1,win=sicscmdpanel, limits={-inf,inf,0},value=NaN
-	endif
+	//change the GUI look if you are acquiring
+	changeGUIforAcquiring(mode, motorName, numpoints, preset, 0)
 	
 	doupdate
 	print "Beginning scan"
 	//start the scan task
 	appendstatemon("FPX")
-//	sics_cmd_interest("statemon start FPX")
-	CtrlNamedBackground  scanTask period=600, proc=scanBkgTask, burst=0, dialogsOK =0
+	
+	//create the SICS command to start the scan
+	//runscan scan_variable start stop numpoints time||unlimited||period||count||frame||MONITOR_1||MONITOR_2 savetype save||nosave force true||false
+	string cmdTemplate, cmd
+	cmdTemplate = "autosave 30\nrunscan %s %e %e %d %s %f savetype %s force true"
+	sprintf cmd, cmdTemplate, motorName, start, stop, numpoints, mode, preset, saveStr
+//	print cmd
+	//send it to SICS, and tell it to autosave
+	sics_cmd_cmd(cmd)
+	
+	CtrlNamedBackground  scanTask period=60, proc=scanBkgTask, burst=0, dialogsOK =0
 	CtrlNamedBackground  scanTask start
+	
 	return 0
+End
+
+Function changeGUIforAcquiring(mode, motorName, numpoints, preset, currentlyPaused)
+	//changes the GUI look if you are acquiring
+	string mode, motorName
+	variable numpoints, preset, currentlyPaused
+	Wave axeslist = root:packages:platypus:SICS:axeslist
+	
+	strswitch(mode)
+		case "unlimited":
+			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, inf, 0}
+		break
+		default:
+			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, numpoints * preset, 0}
+		break
+	endswitch
+	Button/z Go_tab1 win=sicscmdpanel,disable=1	//if the scan starts disable the go button
+	Button/z stop_tab1 win=sicscmdpanel,disable=0		//if the scan starts enable the stop button
+	Button/z pause_tab1 win=sicscmdpanel,disable=0		//if the scan starts enable the pause button
+	
+	setvariable/z sampletitle_tab1 win=sicscmdpanel,disable=2		//if the scan starts disable the title button
+	setvariable/z preset_tab1 win=sicscmdpanel,disable=2
+	PopupMenu/z mode_tab1 win=sicscmdpanel,disable=2	
+	PopupMenu/z motor_tab1 win=sicscmdpanel,disable=2	
+	setvariable/z numpnts_tab1 win=sicscmdpanel,disable=2
+	setvariable/z range_tab1 win=sicscmdpanel,disable=2
+	checkbox/z save_tab1 win=sicscmdpanel,disable=2	
+						
+	ValDisplay/z progress_tab1,win=SICScmdpanel,value= #"root:packages:platypus:data:scan:pointProgress"
+	label/W=SICScmdPanel#G0_tab1/z bottom, motorName
+	PopupMenu/z motor_tab1, win=SICScmdpanel, fSize=10, mode=1, popvalue = motorName, value = #"motorlist()"
+	findvalue/TEXT=motorName/z/txop=4 root:packages:platypus:SICS:axeslist
+	if(V_Value > 0)
+		SetVariable currentpos_tab1, win=sicscmdpanel, limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist[V_Value][2]
+	else
+		SetVariable currentpos_tab1,win=sicscmdpanel, limits={-inf,inf,0},value=NaN
+	endif
+	if(currentlyPaused)
+		Button/z Pause_tab1,win=sicscmdpanel, title="Restart"
+	else
+		Button/z Pause_tab1,win=sicscmdpanel, title="Pause"	
+	endif
 End
 
 Function forceScanBkgTask()
@@ -372,193 +372,39 @@ End
 
 Function scanBkgTask(s)
 	STRUCT WMBackgroundStruct &s
-	//this is a named background task that is called by runscan, that will move the instrument point by point and acquire data
-	 
-	Wave position = root:packages:platypus:data:scan:position
-	Wave counts = root:packages:platypus:data:scan:counts
-	Wave/t axeslist = root:packages:platypus:SICS:axeslist
-	NVAR currentpoint = root:packages:platypus:data:scan:currentpoint			//what scan point you are on.  Subtract one from this value to get the real number
+	
 	NVAR pointProgress = root:packages:platypus:data:scan:pointProgress
-	NVAR preset = root:packages:platypus:data:scan:preset
-	NVAR dontSave = root:packages:platypus:data:scan:dontSave	
-	SVAR presettype = root:packages:platypus:data:scan:presettype
-	NVAR userPaused = root:packages:platypus:data:scan:userPaused		//says whether you are currently in a user paused situation
-	NVAR autosave = root:packages:platypus:data:scan:autosave
-	NVAR timeMoveStarted = root:packages:platypus:data:scan:timeMoveStarted			
-	NVAR requestedPointStart = root:packages:platypus:data:scan:requestedPointStart //have you requested acquisition to start
-	NVAR requestedPointStartTime = root:packages:platypus:data:scan:requestedPointStartTime //have you requested acquisition to start
-	NVAR areYouMoving = root:packages:platypus:data:scan:areYouMoving
-	SVAR scanmotor = root:packages:platypus:data:scan:scanmotor
-	NVAR motoraxisrow = root:packages:platypus:data:scan:motoraxisrow
-	NVAR motorprecision = root:packages:platypus:data:scan:motorprecision
-	SVAR sicsstatus = root:packages:platypus:SICS:sicsstatus
-	Wave/t statemon = root:packages:platypus:SICS:statemon
-
-	//		for sending sics commands that will be displayed
-	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
-	//		for sending an emergency stop command
-	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
-	//		for sending commands that won't be displayed, but to also get current axis information as it changes.
-	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
-
-	string msg,tempstr,lhs,rhs
-	variable status,temp, hmstatus=0
+	NVAR currentpoint = root:packages:platypus:data:scan:currentpoint
+	Wave position = root:packages:platypus:data:scan:position
+	Wave counts = root:packages:platypus:data:scan:counts	
 	
-	//flush the buffered TCP/IP messages, this will update counts, etc.
-	//execute/P/Q "DOXOPIdle"
+	variable scanpoint = str2num(getHipaval("/commands/scan/runscan/feedback/scanpoint"))
 	
-	//in the last call to this function we may have asked the histo to start acquiring
-	//sometimes it takes a while for SICS to emit the hmcontrol message.
-	//we want to wait for a while to make sure that sics has sent the message
-	//if it doesn't then we'll do a time out.
-	hmstatus = statemonstatus("hmcontrol") | statemonstatus("HistogramMemory")
-
-	if(requestedPointStart)
-		if(hmstatus)
-			requestedPointStart = 0
-		elseif( (ticks - requestedPointStartTime) > 3600)
-			print "ERROR whilst trying to start histogram server (scanbkgtask)"
-			finishScan(1)
-			return 1
-		else
-			return 0
-		endif
-	endif
+	//bitwise return
+	//1 = paused
+	//2 = bkdtask
+	//3 = fpxstatemon
+	//4 = runscanstatus - /commands/scan/runscan/feedback/status
+	//5 = hmcontrol
+	variable status = fpxstatus()
 	
-	//lets do an autosave every three minutes, useful for long scans, but only if you're acquiring
-	//you can also do a test to see if the required stats have been reached.
-	if( hmstatus )
-		if(mod(round(str2num(gethipaval("/instrument/detector/time"))/60),3)==0 && !autosave)
-			//save every 3 minutes
-			print "AUTOSAVED ", gethipaval("/experiment/file_name")
-			
-			if(SAWDEVICE)
-				if(sics_cmd_interest("\nhmm configure read_data_period_number 0\nsave 0\nhmm configure read_data_period_number 1\nsave 1\n"))//+num2str(currentpoint)))
-					print "problem while autosaving (fpx)"
-				endif
-			else
-				if(sics_cmd_interest("save "+num2str(currentpoint)))
-					print "problem while autosaving (fpx)"
-				endif
-			endif
-					
-			//see if the scan is ready to be finished
-			if(scanReadyToBeStopped(currentPoint))
-				sics_cmd_interest("histmem stop")
-				autosave = 1
-				return 0
-			endif
-			
-			autosave = 1
-		elseif(mod(round(str2num(gethipaval("/instrument/detector/time"))/60),3) != 0)
-			autosave = 0
-		endif
-	endif	
-	
-	if( hmstatus )		//you are still acquiring
-		pointprogress = currentpoint*preset
-		strswitch(gethipaval("/instrument/detector/mode"))
-			case "TIME":
-				pointProgress += round(str2num(gethipaval("/instrument/detector/time")))
-			break
-			case "MONITOR_1":
-				pointprogress += str2num(gethipaval("/monitor/bm1_counts"))
-			break
-			case "unlimited":
-				pointprogress = round(str2num(gethipaval("/instrument/detector/time")))
-			break
-			case "count":
-				pointprogress += str2num(gethipaval("/instrument/detector/total_counts"))
-			break
-			
-		endswitch
+	//if you have moved to a new point then do a whole fill of the scanstats
+	if(currentpoint != scanpoint) 
+		fillScanStats(position, counts, 1)
+		currentpoint = scanpoint
+	else 
 		fillScanStats(position, counts, 0)
-		return 0
-
-	elseif(statemonstatus(scanmotor))
-		return 0	//SICS is doing something 
-		
-	elseif(areyoumoving == 0)
-		//here we're not moving the scanmotor, and we're not acquiring
-		//either we've just finished the scan point, or you've just started an fpx scan
-		pointProgress = (currentpoint+1)*preset
-
-		if(currentpoint >= 0)	//If currentpoint >=0, then we've already started the scan and completed at least one point
-			if( hmstatus )//SICS hasn't finished updating.
-				return 0
-			endif
-			
-			if(SAWDEVICE)
-				if(sics_cmd_interest("\nhmm configure read_data_period_number 0\nsave 0\nhmm configure read_data_period_number 1\nsave 1\n"))//+num2str(currentpoint)))
-					print "problem while autosaving (fpx)"
-				endif
-			else
-				if(sics_cmd_interest("save "+num2str(currentpoint)))
-					print "problem while saving (fpx)"
-				endif
-			endif
-		
-			fillScanStats(position, counts, 1)
-			print "Position:\t" + num2str(position[currentpoint]) + "\t\tCounts:\t" + num2str(counts[currentpoint][0])			
-			
-			//if the following test is true, you've finished the fpx scan.
-			if(currentPoint == numpnts(position) - 1 )
-				finishScan(0)
-				return 1
-			endif
-		endif
-		
-		//update the point number and move on to the next one, this is also called for the first scan point
-		currentpoint += 1
-
-		timeMoveStarted = dateTime	
-		areYouMoving = 1
-				
-		if(stringmatch(scanmotor, "_none_"))
-		else
-			//drive to the currentpoint and let it get there.
-			if(run(scanmotor, position[currentpoint]))
-				print "Error while asking to do a move (scanBkgTask)"
-				finishScan(1)
-				return 1
-			endif
-			return 0
-		endif
 	endif
 	
-	if(areyoumoving == 1) 	//we should only get to this point if we have started a move (move includes the "_none_" motor).
-//		status = sicsstatus(msg)
-		if(statemonstatus(scanmotor) || ((abs(position[currentpoint] - str2num(axeslist[motoraxisrow][2])) > motorprecision) && !stringmatch(scanmotor,"_none_")) || sicsstatus(msg))	
-			if(datetime - timeMoveStarted > MOTIONTIMEOUT)
-				print "Motion timed out on scan, Aborting (scanBkgTask)"
-				finishScan(1)
-				return 1
-			endif
-			return 0
-		else//if(!status)		//we're not moving, so we should be able to start the acquisition.
-			areYouMoving = 0
-			//we want to plot the actual position, not what we requested
-			if(stringmatch(scanmotor,"_none_"))
-				position[currentpoint] = currentpoint
-			else
-				if(abs(position[currentpoint] - str2num(axeslist[motoraxisrow][2])) > motorprecision)
-					//check if the motion was within tolerance
-					print "The "+scanmotor+" motion wasn't within tolerance (scanbkgtask)"
-					finishScan(1)
-					return 1					
-				endif
-				position[currentpoint] = str2num(axeslist[motoraxisrow][2])
-			endif		
-			//it's time to do an acquisition if you'v e stopped moving
-			if(HISTMEM_startDetector())
-				print "Couldn't start the detector at point "+num2str(currentpoint) + " (scanBkgTask)"
-				finishScan(1)
-				return 1
-			endif
-			requestedPointStart = 1
-			requestedPointStartTIme = ticks
-			return 0	
-		endif
+	//if you have started running, and the FPX statemon is set, then you can clear that statemon	
+	if((status & 2^4) && (status & 2^3))
+		statemonclear("FPX")	
+	endif
+	
+	//see if you've finished?
+	if(!(status & 2^4) && !(status & 2^3))
+		finishScan(0)
+		return 1
 	endif
 	
 	return 0
@@ -568,7 +414,7 @@ Function finishScan(status)
 	//status describes whether runscan finished with errors (status=1)
 	variable status
 	
-	SVAR scanmotor = root:packages:platypus:data:scan:scanmotor
+	string scanmotor = gethipaval("/commands/scan/runscan/scan_variable")
 	NVAR initialPosition = root:packages:platypus:data:scan:initialPosition
 	Wave position = root:packages:platypus:data:scan:position
 	Wave counts = root:packages:platypus:data:scan:counts
@@ -598,9 +444,11 @@ Function finishScan(status)
 	string var,whichStat
 	variable num, offsetValue
 
-	sics_cmd_interest("statemon stop FPX")
 	statemonclear("FPX")
 	ctrlnamedbackground scanTask, kill=1
+	
+	//get the last stats updated
+	fillScanStats(position, counts, 1)
 
 	controlinfo/w=sicscmdpanel sicstab
 	if(V_Value==1)
@@ -609,38 +457,30 @@ Function finishScan(status)
 		Button Pause_tab1,win=sicscmdpanel,disable=1
 		setvariable/z sampletitle_tab1 win=sicscmdpanel,disable=0
 		setvariable/z preset_tab1 win=sicscmdpanel,disable=0
-		PopupMenu/z presettype_tab1 win=sicscmdpanel,disable=0
+		PopupMenu/z mode_tab1 win=sicscmdpanel,disable=0
 		PopupMenu/z motor_tab1 win=sicscmdpanel,disable=0	
 		setvariable/z numpnts_tab1 win=sicscmdpanel,disable=0
 		setvariable/z range_tab1 win=sicscmdpanel,disable=0
 		checkbox/z save_tab1 win=sicscmdpanel,disable=0	
 	endif
 	
-	
 	//tell the histogram server to stop acquiring if it's an abnormal stop
 	if(status)
 		do
 			string reply = sics_cmd_sync("histmem stop", timer = 10)
 		while(grepstring(reply, "ERROR: Busy"))
-		
 		print "Stopped scan for some reason (finishScan)"
-		fillScanStats(position, counts, 1)
 	endif
 	
 	print "scan finished"
-//	DoXOPIdle
 
 	//if you want to save, then we must save the data.
-	if(SAWDEVICE)
-		if(sics_cmd_interest("\nhmm configure read_data_period_number 0\nsave 0\nhmm configure read_data_period_number 1\nsave 1\n"))//+num2str(currentpoint)))
-			print "problem while autosaving (fpx)"
-		endif
-	else
-		do
-			 reply = sics_cmd_sync("save " + num2str(currentpoint), timer = 10)
-		while(grepstring(reply, "ERROR: Busy"))
-	endif
-	
+//	if(SAWDEVICE)
+//		if(sics_cmd_interest("\nhmm configure read_data_period_number 0\nsave 0\nhmm configure read_data_period_number 1\nsave 1\n"))//+num2str(currentpoint)))
+//			print "problem while autosaving (fpx)"
+//		endif
+//	endif
+
 	//save the scan itself, not the overall data, just counts vs position
 	Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + Ind_Process#grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
 	string fname =  "FIZscan" + num2str(getFIZscanNumberAndIncrement()) + ".itx"
@@ -676,11 +516,6 @@ Function finishScan(status)
 		ModifyGraph/w=fpxscan rgb(tagyy)=(0,0,0)
 		ModifyGraph/w=fpxscan rgb(tagyy#1)=(0,0,52224)
 	endif
-	
-	if(stringmatch(scanmotor,"_none_"))
-		print "finished scan"
-		return 0
-	endif
 					
 	//find the centre
 	variable/c centre
@@ -693,11 +528,17 @@ Function finishScan(status)
 		Tag/C/N=text1/TL={lineRGB=(0,0,65280)} bottom, imag(centre),"\\K(0,0,65280)centroid"
 	endif
 	doupdate
-		
+	
+	if(numtype(initialposition))
+		initialposition = str2num(gethipaval("/commands/scan/runscan/scan_start"))
+		initialposition += str2num(gethipaval("/commands/scan/runscan/scan_stop"))
+		initialposition *= 0.5
+	endif		
+	
 	if(auto)	//if you are auto aligning
 		if(status)	//if there was an error during the auto align
 			print "there was an error during the auto align, returning to pre-scan position (finishScan)"
-			run(scanmotor,initialPosition)
+			run(scanmotor, initialPosition)
 			return 1
 		endif
 		if(auto ==1)
@@ -712,7 +553,6 @@ Function finishScan(status)
 			return 1
 		endif
 		sleep/q/S 2
-//		DoXOPIdle	
 	else		//no auto alignment, ask the user
 		Prompt var,"which variable",popup,"counts;"
 		Prompt whichStat,"which statistic",popup,"gaussian;centroid;graph cursors"
@@ -820,6 +660,10 @@ Function fillScanStats(position, w, full)
 	datafilenameandpath = PATH_TO_DATA + "current:" + datafilename
 	Wave/t/z axeslist = root:packages:platypus:SICS:axeslist
 
+	variable scanpoint = str2num(getHipaval("/commands/scan/runscan/feedback/scanpoint"))		
+	if(scanpoint + 1 > dimsize(counts, 0))
+		redimension/n=(scanpoint + 1, -1) w, position
+	endif
 
 	if(full)	//at the end of a scan get the numbers from the histoserver, because SICS may not have issued them
 //		histostatus = grabAllHistoStatus()
@@ -827,15 +671,20 @@ Function fillScanStats(position, w, full)
 		
 		//try getting the counts from the HDF file.
 		hdf5openfile/Z/R fileID as datafilenameandpath
+		if(!fileID)
+			setdatafolder saveDFR
+			return 0
+		endif
 		
 		//what is the scan variable?
 		string scanvariable = gethipaval("/commands/scan/runscan/scan_variable")
+		
 		//see if the scan variable is in the axeslist (should be first column)
 		FindValue/Z/text=(scanvariable)/txop=4 axeslist
 		if(V_Value > -1)
 			variable col = floor(V_Value / dimsize(axeslist, 0))
 			variable row = V_Value - col * dimsize(axeslist, 0)
-			string nodepath = "entry1/" + axeslist[row][1]
+			string nodepath = "/entry1" + axeslist[row][1]
 			hdf5loaddata/z/o/q fileID, nodepath
 			Wave pos = $(stringfromlist(0, S_wavenames))
 			position[0, numpnts(pos) - 1] = pos[p]
@@ -864,19 +713,18 @@ Function fillScanStats(position, w, full)
 				
 		hdf5closefile/z fileID
 	else
-		variable point = str2num(getHipaval("/commands/scan/runscan/feedback/scanpoint"))
-		position[point] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
+		position[scanpoint] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
 		
 		//time
 		times = str2num(gethipaval("/instrument/detector/time"))
 		//counts
-		w[point][0] = str2num(gethipaval("/instrument/detector/total_counts"))
+		w[scanpoint][0] = str2num(gethipaval("/instrument/detector/total_counts"))
 		//max detector count rate
-		w[point][3] =  str2num(gethipaval("/instrument/detector/max_binrate"))
+		w[scanpoint][3] =  str2num(gethipaval("/instrument/detector/max_binrate"))
 
 		//BM1 monitor counts
-		w[point][7] =  str2num(gethipaval("/monitor/bm1_counts"))
-		w[point][9] =  str2num(gethipaval("/monitor/bm1_event_rate"))
+		w[scanpoint][7] =  str2num(gethipaval("/monitor/bm1_counts"))
+		w[scanpoint][9] =  str2num(gethipaval("/monitor/bm1_event_rate"))
 	endif
 	
 	
