@@ -438,17 +438,19 @@ Function Instrument_Specific_Setup()
 	//speak to the MOXA box at the sample area.
 	make/t/o root:packages:platypus:SICS:MOXAbuf
 	Wave/t MOXAbuf = root:packages:platypus:SICS:MOXAbuf
-	sockitopenconnection/q/time=2 SOCK_MOXA1,MOXAserverIP,MOXA1serverPort,MOXAbuf
-	sockitopenconnection/q/time=2 SOCK_MOXA2,MOXAserverIP,MOXA2serverPort,MOXAbuf
-	sockitopenconnection/q/time=2 SOCK_MOXA3,MOXAserverIP,MOXA3serverPort,MOXAbuf
-	sockitopenconnection/q/time=2 SOCK_MOXA4,MOXAserverIP,MOXA4serverPort,MOXAbuf
+	sockitopenconnection/q/time=1 SOCK_MOXA1,MOXAserverIP,MOXA1serverPort,MOXAbuf
+	sockitopenconnection/q/time=1 SOCK_MOXA2,MOXAserverIP,MOXA2serverPort,MOXAbuf
+	sockitopenconnection/q/time=1 SOCK_MOXA3,MOXAserverIP,MOXA3serverPort,MOXAbuf
+	sockitopenconnection/q/time=1 SOCK_MOXA4,MOXAserverIP,MOXA4serverPort,MOXAbuf
 			
 	//speak to the choppers
 	make/t/o root:packages:platypus:SICS:chopperBuf
 	Wave chopperBuf = root:packages:platypus:SICS:chopperBuf
 	sockitopenconnection/q/time=2 SOCK_chopper,CHOPPERserverIP,CHOPPERserverPort,chopperBuf
-	sockitsendnrecv/SMAL/TIME=2 SOCK_chopper,"user:NCS\r"
-	sockitsendnrecv/SMAL/TIME=2 SOCK_chopper,"password:NCS013\r"
+	sockitsendnrecvf(sock_chopper, "user:NCS\r", 1, 2)
+	sockitsendnrecvf(sock_chopper, "password:NCS013\r", 1, 2)
+//	sockitsendnrecv/SMAL/TIME=2 SOCK_chopper,"user:NCS\r"
+//	sockitsendnrecv/SMAL/TIME=2 SOCK_chopper,"password:NCS013\r"
 	
 	//set up the notifications you want to receive.  In general, this should be all of the motion axes, etc.
 	err = hnotify_registration()
@@ -458,7 +460,7 @@ Function Instrument_Specific_Setup()
 	endif
 		
 	//get all the values in the hipadaba tree
-	getCurrentHipaVals()
+	//getCurrentHipaVals()
 	
 	//setup the default histogram OAT_Table
 	//bHistogram()
@@ -2598,7 +2600,7 @@ Function ThomasMagnetStatus()
 	SetVariable desired_current,limits={-30,30,1},value= root:packages:platypus:SICS:hipadaba_paths[hipapos][1]
 End
 
-Function flipper1(state)
+Function flipper1a(state)
 variable state
 	if(state)
 		sics_cmd_interest("hset /instrument/polarizer_flipper/switch_on 1")
@@ -2608,7 +2610,7 @@ variable state
 	wait(60)
 End
 
-Function flipper2(state)
+Function flipper2a(state)
 variable state
 	if(state)
 		sics_cmd_interest("hset /instrument/analyzer_flipper/switch_on 1")

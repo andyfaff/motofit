@@ -373,7 +373,7 @@ Function startSICS()
 	//and now setup places for the global variables
 	setUpGlobalVariables()
 	
-	variable err=0
+	variable err=0, timer
 	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
 	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
 	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
@@ -443,27 +443,46 @@ Function startSICS()
 	DoXOPIDLE
 	//get the SICS hipadaba paths as a full list
 	string pathToHipaDaba = SpecialDirPath("Temporary", 0, 0, 0)
+	timer = startmstimer
 	print "LOADING HIPADABA PATHS"
-	sockitsendnrecv/FILE=pathtoHipaDaba+"hipadaba.xml"/TIME=3 SOCK_interest, "getGumtreeXml / \n"
+	string hipaxml = ""
+	hipaxml = sockitsendnrecvf(SOCK_interest, "getGumtreeXml / \n", 0, 2)
+	//save the hipadaba paths to file
+	variable hipafileID
+	open hipafileID  as pathtoHipaDaba+"hipadaba.xml"
+	fbinwrite hipafileID, hipaxml
+	close hipafileID
+//	sockitsendnrecv/FILE=pathtoHipaDaba+"hipadaba.xml"/TIME=3 SOCK_interest, "getGumtreeXml / \n"
+	print "OBTAINED HIPADABA PATHS, now pruning", stopmstimer(timer)/1e6
+	timer = startmstimer
 	if(enumerateHipadabapaths(pathtoHipaDaba+"hipadaba.xml"))
 		print "Error while enumerating hipadaba paths (startSICS)"
 		sicsclose()
 		return 1
 	endif
+	print "FINISHED PRUNING HIPADABA PATHS", stopmstimer(timer)/1e6
 	Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
 	
 	DoXOPIdle
 	//setup experimental details
 	experimentDetailsWizard()
 
+	//get all the values in the hipadaba tree
+	print "Getting current hipadaba values"
+	timer = startmstimer
+	getCurrentHipaVals()
+	print "Finished getting current hipadaba values", stopmstimer(timer)/1e6
+
 	//ok, now get current list of SICS axis positions, then register the interestProcessor on the socket.
 	//this function creates root:packages:platypus:SICS:axeslist
+	print "Creating Axis List"
+	timer = startmstimer
 	err = createAxisListAndPopulate(SOCK_interest)
 	setdatafolder $cDF
 	if(err)
 		Abort "Couldn't get full list of current motor positions for some reason (SICScmd)"
 	endif
-
+	print "Finished Axis List", stopmstimer(timer)/1e6
 
 	//register a processor for everything coming back on the interest sockit.  THis sockit is used
 	//for collecting information on when anything on the instrument hipadaba paths changes.	
@@ -486,18 +505,17 @@ Function startSICS()
 	sockitsendmsg sock_interest,"status\n"
 
 	//this is instrument dependent!!!! Only call this function on your own instrument.
+	print "Instrument specific setup"
+	timer = startmstimer
 	err = Instrument_Specific_Setup()
 	if(err)
 		abort "problem with instrument specific setup (SICScmd)"
 	endif
-
+	print "Finished instrument specific setup", stopmstimer(timer)/1e6
+	
 	//create a layout graph of all the motors
 	Instrumentlayout_panel()
-	
-	//get all the values in the hipadaba tree
-	getCurrentHipaVals()
-	getCurrentHipaVals()
-	
+			
 	//Waves for the current axes positions
 	//the set of positions has already been completed.
 	//here we make a colour wave and the listbox selection wave
@@ -511,6 +529,13 @@ Function startSICS()
 	//define plane 1 of the selection wave as background colours
 	SetDimLabel 2,1,backColors,selaxeslist
 	
+	//waves for holding scan statistics. The scan might already be going, so lets fill up the statistics
+	variable scanpoints = str2num(gethipaval("/commands/scan/runscan/numpoints"))
+	make/n=(scanpoints)/o/d root:packages:platypus:data:scan:position = NaN
+	make/n=(scanpoints, 14)/o/d root:packages:platypus:data:scan:counts = NaN
+	Wave position = root:packages:platypus:data:scan:position
+	Wave counts = root:packages:platypus:data:scan:counts
+	fillscanstats(position, counts, 1)	
 
 	make/n=(600, 5)/t/o root:packages:platypus:data:batchScan:list_batchbuffer = ""	
 	make/n=(600, 5)/o root:packages:platypus:data:batchScan:sel_batchbuffer
@@ -598,6 +623,7 @@ Function startSICS()
 	
 		Display/W=(33,254,679,711)/FG=(UGV1,UGH2,UGV2,UGH3)/HOST=# 
 		RenameWindow #,G0_tab1
+		appendtograph/w=SICScmdpanel#G0_tab1 counts[][0] vs position
 		SetActiveSubwindow ##
 	
 		Button UpdateHMM_tab2,pos={215,31},size={130,40},proc=button_SICScmdpanel,title="Update Detector"
@@ -661,6 +687,7 @@ Function enumerateHipadabapaths(filepath)
 	variable fileID=0, retval
 	variable ii, jj
 	string currentPath, searchstring,outputString
+	string cmd = ""
 
 	try
 		fileID = XMLopenfile(filepath)
@@ -1072,20 +1099,16 @@ Function createAxisListAndPopulate(sock)
 
 	variable V_Flag = 0,err
 	variable numitems = 0,ii,offset,number
-	string output ="",cmd
+	string output ="",cmd, msg
 	string str1,str2
 
 	make/o/t/n=(0,0) axeslist
 	
 	//get list of motors
-	SOCKITsendnrecv/Time=1 sock,"sicslist type motor\n"
-	output = replacestring("\n",S_tcp,"")
-	output = removeending(output," ")
+	msg = sockitsendnrecvf(sock, "sicslist type motor\n", 1, 1)
+	output = replacestring("\n",msg, "")
+	output = removeending(output, " ")
 
-	if(V_Flag)
-		print "error while getting list of motors (createAxisListAndPopulate)"
-		return 1
-	endif
 	//remove the forbidden motors
 	for(ii=0;ii<itemsinlist(forbiddenmotors);ii+=1)
 		output = removefromlist(stringfromlist(ii,forbiddenmotors),output," ")
@@ -1099,12 +1122,9 @@ Function createAxisListAndPopulate(sock)
 	endfor	
 	
 	//get list of configureable virtual motors
-	SOCKITsendnrecv/Time=1 sock,"sicslist type configurablevirtualmotor\n"
-	output = replacestring("\n",S_tcp,"")
-	output = removeending(output," ")
-	if(V_flag)
-		return 1
-	endif
+	msg = sockitsendnrecvf(sock, "sicslist type configurablevirtualmotor\n", 1, 1)
+	output = replacestring("\n", msg, "")
+	output = removeending(output, " ")
 	//remove the forbidden motors
 	for(ii=0;ii<itemsinlist(forbiddenmotors);ii+=1)
 		output = removefromlist(stringfromlist(ii,forbiddenmotors),output," ")
@@ -1127,65 +1147,22 @@ Function createAxisListAndPopulate(sock)
 		cmd+="sicslist "+axeslist[ii][0]+" hdb_path\n"
 	endfor
 	
-	SOCKITsendnrecv/time =2 sock,cmd
-	output = S_tcp
-	if(V_flag)
-		print "err"
-		return 1
-	endif
+	msg = sockitsendnrecvf(sock, cmd, 0, 2)
+	output = msg
 	for(ii=0;ii<itemsinlist(output,"\n");ii+=1)
 		parseReply(stringfromlist(ii,output,"\n"),str1,str2)
 		axeslist[ii][1] = str2
 	endfor
 		
-	//now get posn of slits.
-	cmd = ""
-	for(ii=0;ii<dimsize(axeslist,0);ii+=1)
-		cmd+=axeslist[ii][0]+"\n"
-	endfor
-	SOCKITsendnrecv/Time=1 sock,cmd
-	output=S_tcp
-	if(V_Flag)
-		return 1
-	endif
-	for(ii=0;ii<itemsinlist(output,"\n");ii+=1)
-		parseReply(stringfromlist(ii,output,"\n"),str1,str2)
-		axeslist[ii][2] = num2str(str2num(str2))
-	endfor
-			
-	//now get softlower and softupper limits
-	cmd=""
-	for(ii=0;ii<dimsize(axeslist,0);ii+=1)
-		cmd += axeslist[ii][0]+" softlowerlim\n"
+	//now get posn of slits and upper and lower limits from hipadaba tree.
+	for(ii = 0 ; ii < dimsize(axeslist, 0) ; ii += 1)
+		axeslist[ii][2] =  gethipaval(axeslist[ii][1])
 		axeslist[ii][3] = axeslist[ii][1]+"/softlowerlim"
-	endfor
-	sockitsendnrecv/time=1 sock,cmd
-	output = S_tcp
-	if(V_Flag)
-		print "err"
-		return 1
-	endif
-	for(ii=0;ii<itemsinlist(output,"\n");ii+=1)
-		parseReply(stringfromlist(ii,output,"\n"),str1,str2)
-		axeslist[ii][4] = num2str(str2num(str2))
-	endfor
-
-	cmd=""
-	for(ii=0;ii<dimsize(axeslist,0);ii+=1)
-		cmd += axeslist[ii][0]+" softupperlim\n"
+		axeslist[ii][4] = gethipaval(axeslist[ii][3])
 		axeslist[ii][5] = axeslist[ii][1]+"/softupperlim"
+		axeslist[ii][6] = gethipaval(axeslist[ii][5])
 	endfor
-	sockitsendnrecv/time=1 sock,cmd
-	output = S_tcp
-	if(V_Flag)
-		print "err"
-		return 1
-	endif
-	for(ii=0;ii<itemsinlist(output,"\n");ii+=1)
-		parseReply(stringfromlist(ii,output,"\n"),str1,str2)
-		axeslist[ii][6] = num2str(str2num(str2))
-	endfor
-
+		
 	return err
 End
 
@@ -2711,16 +2688,17 @@ Function setSoftZeroList(softzeropos)
 End
 
 Function getCurrentHipaVals()
-Wave/t  hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
-NVAR  SOCK_interest = root:packages:platypus:SICS:SOCK_interest
-string cmd=""
-
-variable ii = 0;
-for(ii=0; ii<dimsize(hipadaba_paths,0) ; ii+=1)
-	cmd = "hget "+hipadaba_paths[ii][0]+"\n"
-	sockitsendmsg SOCK_interest, cmd
-endfor
-
+	Wave/t  hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
+	NVAR  SOCK_interest = root:packages:platypus:SICS:SOCK_interest
+	string cmd=""
+	string msg = "", lhs, rhs
+	variable ii = 0;
+	for(ii=0; ii<dimsize(hipadaba_paths,0) ; ii+=1)
+		cmd = "hget "+hipadaba_paths[ii][0]+"\n"
+		msg = sockitsendnrecvf(SOCK_INTEREST, cmd, 1, 1)
+		parseReply(msg,lhs,rhs)
+		hipadaba_paths[ii][1] = rhs	
+	endfor
 End
 
 Function email(to, msg)
