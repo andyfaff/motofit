@@ -65,7 +65,14 @@ Function fpxStatus()
 	//2 = paused
 	NVAR/z userPaused = root:packages:platypus:data:scan:userPaused
 	ctrlnamedbackground scanTask,status
-	variable running = numberbykey("RUN",S_info)
+	variable running = 0
+	
+	variable bkdtask = numberbykey("RUN",S_info)
+	variable fpxstatemon = statemonstatus("FPX")
+	variable runscanstatus = stringmatch(gethipaval("/commands/scan/runscan/feedback/status"), "BUSY")
+	
+	running = bkdtask | fpxstatemon | runscanstatus
+	
 	if(running)
 		if(userPaused)
 			return 2
@@ -246,7 +253,6 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	variable/g root:packages:platypus:data:scan:requestedPointStart=0 //acquisition was requested to start
 	variable/g root:packages:platypus:data:scan:requestedPointStartTime=0 //time at which the acquisition was requested to start
 
-
 	Wave position = root:packages:platypus:data:scan:position
 	Wave counts = root:packages:platypus:data:scan:counts
 	NVAR currentpoint = root:packages:platypus:data:scan:currentpoint
@@ -346,7 +352,6 @@ Function fpx(motorStr,rangeVal,points,[presettype,preset,saveOrNot,samplename,au
 	endif
 	
 	doupdate
-//	DoXOPIdle
 	print "Beginning scan"
 	//start the scan task
 	appendstatemon("FPX")
@@ -467,7 +472,7 @@ Function scanBkgTask(s)
 			break
 			
 		endswitch
-		fillScanStats(counts, currentpoint, 0)
+		fillScanStats(position, counts, 0)
 		return 0
 
 	elseif(statemonstatus(scanmotor))
@@ -493,7 +498,7 @@ Function scanBkgTask(s)
 				endif
 			endif
 		
-			fillScanStats(counts, currentpoint, 1)
+			fillScanStats(position, counts, 1)
 			print "Position:\t" + num2str(position[currentpoint]) + "\t\tCounts:\t" + num2str(counts[currentpoint][0])			
 			
 			//if the following test is true, you've finished the fpx scan.
@@ -619,7 +624,7 @@ Function finishScan(status)
 		while(grepstring(reply, "ERROR: Busy"))
 		
 		print "Stopped scan for some reason (finishScan)"
-		fillScanStats(counts, currentpoint, 1)
+		fillScanStats(position, counts, 1)
 	endif
 	
 	print "scan finished"
@@ -798,29 +803,70 @@ Function getFIZscanNumberAndIncrement()
 	return fizscannumber
 End
 
-Function fillScanStats(w,point,full)
+Function fillScanStats(position, w, full)
+	wave position
 	wave w			//where to put the stats
-	variable point		//the stats will be put in this row
-	variable full		//full is issued at the end, to get the correct numbers		
-	
+	variable full		//full is issued at the end, to get the correct numbers
+
 	string histostatus
-	variable times
+	variable times, fileID
 	
+	DFREF saveDFR = GetDataFolderDFR()
+	DFref tempDF = newfreedatafolder()
+	setdatafolder tempDF
+			
+	string datafilenameandpath = gethipaval("/experiment/file_name")
+	string datafilename = parsefilepath(0, datafilenameandpath, "//", 1, 0)
+	datafilenameandpath = PATH_TO_DATA + "current:" + datafilename
+	Wave/t/z axeslist = root:packages:platypus:SICS:axeslist
+
+
 	if(full)	//at the end of a scan get the numbers from the histoserver, because SICS may not have issued them
-		histostatus = grabAllHistoStatus()
-		//time
-		times = numberbykey("acq_dataset_active_sec",histostatus,": ","\r")
-		//counts
-		w[point][0] = numberbykey("num_events_filled_to_histo",histostatus,": ","\r")	
-		//max detector count rate
-		w[point][3] = numberbykey("ratemap_xy_max_bin",histostatus,": ","\r")
-		//BM2 monitor counts
-		w[point][4] =  numberbykey("BM2_Counts",histostatus,": ","\r")
-		w[point][6] =  w[point][4]/times
-		//BM1 monitor counts
-		w[point][7] =  numberbykey("BM1_Counts",histostatus,": ","\r")
-		w[point][9] =  w[point][7]/times
+//		histostatus = grabAllHistoStatus()
+//		w[point][0] = numberbykey("num_events_filled_to_histo",histostatus,": ","\r")			
+		
+		//try getting the counts from the HDF file.
+		hdf5openfile/Z/R fileID as datafilenameandpath
+		
+		//what is the scan variable?
+		string scanvariable = gethipaval("/commands/scan/runscan/scan_variable")
+		//see if the scan variable is in the axeslist (should be first column)
+		FindValue/Z/text=(scanvariable)/txop=4 axeslist
+		if(V_Value > -1)
+			variable col = floor(V_Value / dimsize(axeslist, 0))
+			variable row = V_Value - col * dimsize(axeslist, 0)
+			string nodepath = "entry1/" + axeslist[row][1]
+			hdf5loaddata/z/o/q fileID, nodepath
+			Wave pos = $(stringfromlist(0, S_wavenames))
+			position[0, numpnts(pos) - 1] = pos[p]
+		endif
+		
+		//get the total_counts for the scan points
+		hdf5loaddata/z/o/q fileID, "/entry1/instrument/detector/total_counts"
+		Wave total_counts = $(stringfromlist(0, S_wavenames))
+		w[0, numpnts(total_counts) - 1][0] = total_counts[p]
+		
+		hdf5loaddata/z/o/q fileID, "/entry1/instrument/detector/total_maprate"
+		Wave total_maprate = $(stringfromlist(0, S_wavenames))
+		w[0, numpnts(total_counts) - 1][3] = total_maprate[p]
+	
+		hdf5loaddata/z/o/q fileID, "/entry1/instrument/detector/total_maprate"
+		Wave total_maprate = $(stringfromlist(0, S_wavenames))
+		w[0, numpnts(total_maprate) - 1][3] = total_maprate[p]
+		
+		hdf5loaddata/z/o/q fileID, "/entry1/monitor/bm1_counts"
+		Wave bm1_counts = $(stringfromlist(0, S_wavenames))
+		w[0, numpnts(bm1_counts) - 1][7] = bm1_counts[p]
+	
+		hdf5loaddata/z/o/q fileID, "/entry1/monitor/bm1_event_rate"
+		Wave bm1_event_rate = $(stringfromlist(0, S_wavenames))
+		w[0, numpnts(bm1_event_rate) - 1][9] = bm1_event_rate[p]
+				
+		hdf5closefile/z fileID
 	else
+		variable point = str2num(getHipaval("/commands/scan/runscan/feedback/scanpoint"))
+		position[point] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
+		
 		//time
 		times = str2num(gethipaval("/instrument/detector/time"))
 		//counts
@@ -828,28 +874,25 @@ Function fillScanStats(w,point,full)
 		//max detector count rate
 		w[point][3] =  str2num(gethipaval("/instrument/detector/max_binrate"))
 
-		//BM2 monitor counts
-//		w[point][4] =  str2num(gethipaval("/monitor/bm2_counts"))
-//		w[point][6] =  str2num(gethipaval("/monitor/bm2_event_rate"))
-
 		//BM1 monitor counts
 		w[point][7] =  str2num(gethipaval("/monitor/bm1_counts"))
 		w[point][9] =  str2num(gethipaval("/monitor/bm1_event_rate"))
 	endif
 	
 	
-	w[point][1] = sqrt(w[point][0])
-	w[point][2] = w[point][0]/times
-	w[point][5] = sqrt(w[point][4])
-	w[point][8] = sqrt(w[point][7])
+	w[][1] = sqrt(w[p][0])
+	w[][2] = w[p][0]/times
+	w[][5] = sqrt(w[p][4])
+	w[][8] = sqrt(w[p][7])
 	
 	//detector counts/BM2 counts
-	w[point][10] = w[point][0] / w[point][4]
-	w[point][11] = w[point][10] * sqrt((w[point][1]/w[point][0])^2 + (w[point][5]/w[point][4])^2)
+	w[][10] = w[p][0] / w[p][4]
+	w[][11] = w[p][10] * sqrt((w[p][1]/w[p][0])^2 + (w[p][5]/w[p][4])^2)
 	
 	//detector counts/BM1 counts
-	w[point][12] = w[point][0] / w[point][7]
-	w[point][13] = w[point][12] * sqrt((w[point][1]/w[point][0])^2 + (w[point][8]/w[point][7])^2)
+	w[][12] = w[p][0] / w[p][7]
+	w[][13] = w[p][12] * sqrt((w[p][1]/w[p][0])^2 + (w[p][8]/w[p][7])^2)
+	setdatafolder saveDFR
 End
 
 
