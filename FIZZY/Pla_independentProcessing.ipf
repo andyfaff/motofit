@@ -1,5 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IndependentModule=Ind_Process
+//#pragma ModuleName=Ind_Process
 
 // SVN date:    $Date$
 // SVN author:  $Author$
@@ -119,9 +120,6 @@ Function interestProcessor(w,x)
 					endif
 				endif
 				if(stringmatch(str2, "hmcontrol") || stringmatch(str2, "HistogramMemory"))
-					//					execute/P/Q "DoXOPIdle"
-					execute/Q "ProcGlobal#Platypus#forceScanBkgTask()"
-					execute/P/Q "DoXOPIdle"
 					startStreamingImage()
 				endif
 				break

@@ -119,7 +119,13 @@ Function setUpGlobalVariables()
 	string/g root:packages:platypus:data:RAW:displayed:order = ""
 
 	variable/g root:packages:platypus:data:batchScan:currentpoint = -1
-	 variable/g root:packages:platypus:data:batchScan:userPaused = 0
+	variable/g root:packages:platypus:data:batchScan:userPaused = 0
+	variable/g root:packages:platypus:data:scan:currentpoint = NaN 
+	variable/g root:packages:platypus:data:scan:initialPosition = NaN 
+	variable/g root:packages:platypus:data:scan:pointProgress = 0
+	variable/g root:packages:platypus:data:scan:auto 				//says whether you are going to autofit and drive to the centre
+	variable/g root:packages:platypus:data:scan:userPaused = 0	//says whether you are currently in a user paused situation
+	variable/g root:packages:platypus:data:scan:motorAxisRow = -1
 End
 
 Function button_SICScmdpanel(ba) : ButtonControl
@@ -164,23 +170,11 @@ Function button_SICScmdpanel(ba) : ButtonControl
 					string motorStr = S_Value
 					ControlInfo /w=SICScmdpanel save_tab1
 					variable saveOrNot = V_Value
-					Controlinfo/w=SICScmdpanel presettype_tab1
+					Controlinfo/w=SICScmdpanel mode_tab1
 					string method = S_Value
 										
 					//now run the scan
-					if(!fpx(motorStr,range,numpoints,presettype = method,preset = preset,saveOrNot = saveOrNot,samplename = sampleStr))
-						Button/z Go_tab1 win=sicscmdpanel,disable=1	//if the scan starts disable the go button
-						Button/z stop_tab1 win=sicscmdpanel,disable=0		//if the scan starts enable the stop button
-						Button/z pause_tab1 win=sicscmdpanel,disable=0		//if the scan starts enable the pause button
-						
-						setvariable/z sampletitle_tab1 win=sicscmdpanel,disable=2		//if the scan starts disable the title button
-						setvariable/z preset_tab1 win=sicscmdpanel,disable=2
-						PopupMenu/z presettype_tab1 win=sicscmdpanel,disable=2	
-						PopupMenu/z motor_tab1 win=sicscmdpanel,disable=2	
-						setvariable/z numpnts_tab1 win=sicscmdpanel,disable=2
-						setvariable/z range_tab1 win=sicscmdpanel,disable=2
-						checkbox/z save_tab1 win=sicscmdpanel,disable=2	
-					endif
+					fpx(motorStr,range,numpoints,mode = method, preset = preset,savetype = saveOrNot,samplename = sampleStr)
 					Dowindow/k fpxScan
 					break
 				case "Stop_tab1":
@@ -192,23 +186,22 @@ Function button_SICScmdpanel(ba) : ButtonControl
 				endif
 				break
 			case "Pause_tab1":
-				switch(fpxstatus())
-					case 2:
-						pausefpx(0)
-						Button/z Pause_tab1,win=sicscmdpanel,title="Pause"
-						//if the tertiary shutter is closed, it might be a good idea to open it.
-						if(stringmatch(gethipaval("/instrument/status/tertiary"), "*Closed*"))
-							doalert 1, "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons, do you want to continue?"
-							if(V_Flag==2)
-								abort
-							endif
-						endif						
-						break
-					case 1:
-						pausefpx(1)
-						Button/z Pause_tab1,win=sicscmdpanel, title="Restart"
-						break
-				endswitch
+				variable status = fpxstatus()
+				if(status & 2^1)
+					pausefpx(0)
+					Button/z Pause_tab1,win=sicscmdpanel,title="Pause"
+					//if the tertiary shutter is closed, it might be a good idea to open it.
+					if(stringmatch(gethipaval("/instrument/status/tertiary"), "*Closed*"))
+						doalert 1, "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons, do you want to continue?"
+						if(V_Flag==2)
+							abort
+						endif
+					endif						
+				elseif(status > 0)
+					pausefpx(1)
+					Button/z Pause_tab1,win=sicscmdpanel, title="Restart"
+					break
+				endif
 				break
 			case "runbatch_tab3":
 					//see if you're doing a batch scan
@@ -439,14 +432,15 @@ Function startSICS()
 	
 	Setdatafolder root:packages:platypus:SICS
 
-	sleep/t 40
 	DoXOPIDLE
 	//get the SICS hipadaba paths as a full list
 	string pathToHipaDaba = SpecialDirPath("Temporary", 0, 0, 0)
 	timer = startmstimer
 	print "LOADING HIPADABA PATHS"
 	string hipaxml = ""
-	hipaxml = sockitsendnrecvf(SOCK_interest, "getGumtreeXml / \n", 0, 2)
+	hipaxml = sockitsendnrecvf(SOCK_interest, "getGumtreeXml / \n", 0, 3)
+	hipaxml = replacestring("autosave 0", hipaxml, "")
+	
 	//save the hipadaba paths to file
 	variable hipafileID
 	open hipafileID  as pathtoHipaDaba+"hipadaba.xml"
@@ -464,8 +458,6 @@ Function startSICS()
 	Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
 	
 	DoXOPIdle
-	//setup experimental details
-	experimentDetailsWizard()
 
 	//get all the values in the hipadaba tree
 	print "Getting current hipadaba values"
@@ -589,15 +581,15 @@ Function startSICS()
 		SetVariable sicsstatus_tab0,limits={-inf,inf,0},value= root:packages:platypus:SICS:sicsstatus,bodyWidth= 237
 
 		PopupMenu motor_tab1,pos={70,40},size={136,21},proc=motor_tab1menuproc,title="Motor Name"
-		PopupMenu motor_tab1,fSize=10,mode=1,popvalue="_none_",value= #"motorlist()"
+		PopupMenu motor_tab1,fSize=10,mode=1,popvalue="dummy_motor",value= #"motorlist()"
 		SetVariable range_tab1,pos={54,80},size={107,16},title="range",fSize=10
 		SetVariable range_tab1,limits={0,1000,0.1},value= root:packages:platypus:SICS:range
 		SetVariable numpnts_tab1,pos={171,80},size={121,16},title="num points",fSize=10
 		SetVariable numpnts_tab1,limits={1,inf,1},value= root:packages:platypus:SICS:numpoints
 		CheckBox save_tab1,pos={315,89},size={47,26},title="don/t\rsave?",value= 0
-		PopupMenu presettype_tab1,pos={51,103},size={110,21},bodyWidth=85,title="type"
-		PopupMenu presettype_tab1,fSize=10
-		PopupMenu presettype_tab1,mode=1,popvalue="TIME",value= #"\"time;MONITOR_1;count;unlimited;frame\""
+		PopupMenu mode_tab1,pos={51,103},size={110,21},bodyWidth=85,title="type"
+		PopupMenu mode_tab1,fSize=10
+		PopupMenu mode_tab1,mode=1,popvalue="time",value= #"\"time;MONITOR_1;count;unlimited;frame\""
 		Button Go_tab1,pos={462,39},size={101,101},proc=button_SICScmdpanel,title=""
 		Button Go_tab1,picture= procglobal#go_pict
 		Button Stop_tab1,pos={462,39},size={101,101},disable=1,proc=button_SICScmdpanel,title=""
@@ -675,6 +667,19 @@ Function startSICS()
 	tca.eventcode=2
 	tca.tab=0
 	sics_tabcontrol(tca)
+	
+	//see if you are currently acquiring by doing a runscan (not just a histmem start)
+	if(fpxstatus())
+		//you are doing an acquisition, change the GUI to acquiring.
+		string mode = gethipaval("/commands/scan/runscan/mode")
+		string motorName = gethipaval("/commands/scan/runscan/scan_variable")
+		variable numpoints = str2num(gethipaval("/commands/scan/runscan/numpoints"))
+		variable preset = str2num(gethipaval("/commands/scan/runscan/preset"))
+		changeGUIforAcquiring(mode, motorName, numpoints, preset, 0)
+		//start the fpx background task
+		CtrlNamedBackground  scanTask period=60, proc=scanBkgTask, burst=0, dialogsOK = 0
+		CtrlNamedBackground  scanTask start
+	endif
 	
 	//start the regular background task list going
 	//lets do it every 3 minutes.
@@ -990,7 +995,7 @@ Function sics_tabcontrol(tca) : TabControl
 					Button Go_tab1,win=sicscmdpanel,disable=1
 					setvariable/z sampletitle_tab1 win=sicscmdpanel,disable=2		//if the scan starts disable the title button
 					setvariable/z preset_tab1 win=sicscmdpanel,disable=2
-					PopupMenu/z presettype_tab1 win=sicscmdpanel,disable=2	
+					PopupMenu/z mode_tab1 win=sicscmdpanel,disable=2	
 					PopupMenu/z motor_tab1 win=sicscmdpanel,disable=2
 					setvariable/z numpnts_tab1 win=sicscmdpanel,disable=2
 					setvariable/z range_tab1 win=sicscmdpanel,disable=2	
@@ -1001,7 +1006,7 @@ Function sics_tabcontrol(tca) : TabControl
 					Button Go_tab1,win=sicscmdpanel,disable=0
 					setvariable/z sampletitle_tab1 win=sicscmdpanel,disable=0		//if the scan starts disable the title button
 					setvariable/z preset_tab1 win=sicscmdpanel,disable=0
-					PopupMenu/z presettype_tab1 win=sicscmdpanel,disable=0
+					PopupMenu/z mode_tab1 win=sicscmdpanel,disable=0
 					PopupMenu/z motor_tab1 win=sicscmdpanel,disable=0	
 					setvariable/z numpnts_tab1 win=sicscmdpanel,disable=0
 					setvariable/z range_tab1 win=sicscmdpanel,disable=0
@@ -1038,11 +1043,10 @@ Function SICSclose()
 	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
 
-		
-	batchScanStop()
-	fpxStop()
 	stopwait()
 	stopregulartasks()
+	CtrlNamedBackground  scanTask kill = 1
+	Ctrlnamedbackground batchScan, kill=1
 	ctrlnamedbackground autoupdate_detector,stop,kill
 	
 	sockitsendmsg sock_cmd,"logoff\n"
@@ -1225,14 +1229,14 @@ Function/t motorlist()
 	Wave/t axeslist = root:packages:platypus:SICS:axeslist
 
 	if(!waveexists(axeslist))
-		return "_none_"
+		return "dummy_motor"
 	endif
 	variable ii
 	
 	for(ii=0;ii<dimsize(axeslist,0);ii+=1)
 		motors = addlistitem(axeslist[ii][0],motors)
 	endfor
-	motors = addlistitem("_none_",motors)
+	motors = addlistitem("dummy_motor", motors)
 
 	return motors
 End
@@ -2333,7 +2337,7 @@ Function sics_cmd_cmd(cmd)
 	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
 	cmd += "\n"
 	sockitsendmsg SOCK_cmd,"\n"
-	SOCKITsendmsg SOCK_cmd,cmd
+	SOCKITsendmsg SOCK_cmd, cmd
 	//	SOCKITsendnrecv SOCK_interest,cmd
 	//	print s_tcp
 	//	print cmd
@@ -2611,7 +2615,7 @@ Function acquire(presettype,preset, samplename, [points])
 	if(paramisDefault(points))
 		points = 1
 	endif
-	if(fpx("_none_",0,points,presettype=presettype,preset=preset,samplename=samplename, auto = 2))
+	if(fpx("_none_",0,points,mode = presettype, preset = preset,samplename = samplename, automatic = 2))
 		print "error while acquiring data (acquire)2"
 		return 1
 	endif
