@@ -136,6 +136,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	//		a string that is send on SOCK_cmd channel for user commands
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
+	SVAR user = root:packages:platypus:SICS:user
 	SVAR Gsicsstatus = root:packages:platypus:SICS:sicsstatus
 	Wave/t statemon = root:packages:platypus:SICS:statemon
 	Wave/t axeslist = root:packages:platypus:SICS:axeslist
@@ -156,6 +157,10 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	variable col, row
 
 	cDF = getdatafolderdfr()
+	
+	if(!stringmatch(user, "manager"))
+		print "you are not logged in as the correct user to start a scan"
+	endif
 	
 	if(paramisDefault(automatic))
 		automatic = 0
@@ -296,14 +301,10 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 //		endif
 //	endif
 	
-	//change the GUI look if you are acquiring
-	changeGUIforAcquiring(mode, motorName, numpoints, preset, 0)
-	
-	doupdate
 	print "Beginning scan"
 	//start the scan task
 	appendstatemon("FPX")
-	
+		
 	//create the SICS command to start the scan
 	//runscan scan_variable start stop numpoints time||unlimited||period||count||frame||MONITOR_1||MONITOR_2 savetype save||nosave force true||false
 	string cmdTemplate, cmd
@@ -313,17 +314,22 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	//send it to SICS, and tell it to autosave
 	sics_cmd_cmd(cmd)
 	
+	//change the GUI look if you are acquiring
+	changeGUIforfpx(mode, motorName, numpoints, preset)
+	doupdate
+
 	CtrlNamedBackground  scanTask period=60, proc=scanBkgTask, burst=0, dialogsOK =0
 	CtrlNamedBackground  scanTask start
 	
 	return 0
 End
 
-Function changeGUIforAcquiring(mode, motorName, numpoints, preset, currentlyPaused)
+Function changeGUIforfpx(mode, motorName, numpoints, preset)
 	//changes the GUI look if you are acquiring
 	string mode, motorName
-	variable numpoints, preset, currentlyPaused
+	variable numpoints, preset
 	Wave axeslist = root:packages:platypus:SICS:axeslist
+	variable status = fpxstatus()
 	
 	strswitch(mode)
 		case "unlimited":
@@ -333,18 +339,37 @@ Function changeGUIforAcquiring(mode, motorName, numpoints, preset, currentlyPaus
 			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, numpoints * preset, 0}
 		break
 	endswitch
-	Button/z Go_tab1 win=sicscmdpanel,disable=1	//if the scan starts disable the go button
-	Button/z stop_tab1 win=sicscmdpanel,disable=0		//if the scan starts enable the stop button
-	Button/z pause_tab1 win=sicscmdpanel,disable=0		//if the scan starts enable the pause button
-	
-	setvariable/z sampletitle_tab1 win=sicscmdpanel,disable=2		//if the scan starts disable the title button
-	setvariable/z preset_tab1 win=sicscmdpanel,disable=2
-	PopupMenu/z mode_tab1 win=sicscmdpanel,disable=2	
-	PopupMenu/z motor_tab1 win=sicscmdpanel,disable=2	
-	setvariable/z numpnts_tab1 win=sicscmdpanel,disable=2
-	setvariable/z range_tab1 win=sicscmdpanel,disable=2
-	checkbox/z save_tab1 win=sicscmdpanel,disable=2	
-						
+	if(status)
+		Button/z Go_tab1 win=sicscmdpanel,disable=2^6	//if the scan starts disable the go button
+		Button/z stop_tab1 win=sicscmdpanel,disable=0		//if the scan starts enable the stop button
+		Button/z pause_tab1 win=sicscmdpanel,disable=0		//if the scan starts enable the pause button
+		
+		setvariable/z sampletitle_tab1 win=sicscmdpanel,disable=2		//if the scan starts disable the title button
+		setvariable/z preset_tab1 win=sicscmdpanel,disable=2
+		PopupMenu/z mode_tab1 win=sicscmdpanel,disable=2	
+		PopupMenu/z motor_tab1 win=sicscmdpanel,disable=2	
+		setvariable/z numpnts_tab1 win=sicscmdpanel,disable=2
+		setvariable/z range_tab1 win=sicscmdpanel,disable=2
+		checkbox/z save_tab1 win=sicscmdpanel,disable=2	
+		if(status & 2^1)
+			Button/z Pause_tab1,win=sicscmdpanel, title="Restart"
+		else
+			Button/z Pause_tab1,win=sicscmdpanel, title="Pause"	
+		endif
+	else
+		Button/z Go_tab1 win=sicscmdpanel,disable=0	//if the scan starts disable the go button
+		Button/z stop_tab1 win=sicscmdpanel,disable=6		//if the scan starts enable the stop button
+		Button/z pause_tab1 win=sicscmdpanel,disable=6		//if the scan starts enable the pause button
+		
+		setvariable/z sampletitle_tab1 win=sicscmdpanel,disable=0		//if the scan starts disable the title button
+		setvariable/z preset_tab1 win=sicscmdpanel,disable=0
+		PopupMenu/z mode_tab1 win=sicscmdpanel,disable=0	
+		PopupMenu/z motor_tab1 win=sicscmdpanel,disable=0	
+		setvariable/z numpnts_tab1 win=sicscmdpanel,disable=0
+		setvariable/z range_tab1 win=sicscmdpanel,disable=0
+		checkbox/z save_tab1 win=sicscmdpanel,disable=0
+	endif
+								
 	ValDisplay/z progress_tab1,win=SICScmdpanel,value= #"root:packages:platypus:data:scan:pointProgress"
 	label/W=SICScmdPanel#G0_tab1/z bottom, motorName
 	PopupMenu/z motor_tab1, win=SICScmdpanel, fSize=10, mode=1, popvalue = motorName, value = #"motorlist()"
@@ -353,11 +378,6 @@ Function changeGUIforAcquiring(mode, motorName, numpoints, preset, currentlyPaus
 		SetVariable currentpos_tab1, win=sicscmdpanel, limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist[V_Value][2]
 	else
 		SetVariable currentpos_tab1,win=sicscmdpanel, limits={-inf,inf,0},value=NaN
-	endif
-	if(currentlyPaused)
-		Button/z Pause_tab1,win=sicscmdpanel, title="Restart"
-	else
-		Button/z Pause_tab1,win=sicscmdpanel, title="Pause"	
 	endif
 End
 
@@ -379,7 +399,11 @@ Function scanBkgTask(s)
 	Wave counts = root:packages:platypus:data:scan:counts	
 	
 	variable scanpoint = str2num(getHipaval("/commands/scan/runscan/feedback/scanpoint"))
-	
+	variable numpoints = str2num(getHipaval("/commands/scan/runscan/numpoints"))
+	variable timer = str2num(getHipaval("/instrument/detector/time"))
+	variable preset = str2num(getHipaval("/instrument/detector/preset"))
+	pointProgress =  scanpoint * preset
+
 	//bitwise return
 	//1 = paused
 	//2 = bkdtask
@@ -387,6 +411,14 @@ Function scanBkgTask(s)
 	//4 = runscanstatus - /commands/scan/runscan/feedback/status
 	//5 = hmcontrol
 	variable status = fpxstatus()
+	
+	if(status & 2^4)
+		pointProgress += timer
+	endif
+	if(status & 2^3)
+		pointProgress = 0
+	endif
+	
 	
 	//if you have moved to a new point then do a whole fill of the scanstats
 	if(currentpoint != scanpoint) 

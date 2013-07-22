@@ -101,6 +101,7 @@ Function setUpGlobalVariables()
 	variable/g root:packages:platypus:SICS:SOCK_interupt=-1
 	variable/g root:packages:platypus:SICS:SOCK_interest=-1
 	variable/g root:packages:platypus:SICS:SOCK_sync=-1
+	string/g root:packages:platypus:SICS:user = ""
 	
 	string/g root:packages:platypus:SICS:secondaryshutter
 	string/g root:packages:platypus:SICS:tertiaryshutter
@@ -371,6 +372,7 @@ Function startSICS()
 	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
 	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
+	SVAR user = root:packages:platypus:SICS:user
 
 	make/o/t/n=(1,2)/o root:packages:platypus:SICS:cmd_buffer
 	make/o/t/n=(1,2)/o root:packages:platypus:SICS:interest_buffer
@@ -389,6 +391,7 @@ Function startSICS()
 	if(V_flag)
 		abort
 	endif
+	user = sicsuser
 	
 	//socket for sending vanilla sics commands from user
 	NewPath/o/z/q logpath, LOG_PATH
@@ -675,7 +678,7 @@ Function startSICS()
 		string motorName = gethipaval("/commands/scan/runscan/scan_variable")
 		variable numpoints = str2num(gethipaval("/commands/scan/runscan/numpoints"))
 		variable preset = str2num(gethipaval("/commands/scan/runscan/preset"))
-		changeGUIforAcquiring(mode, motorName, numpoints, preset, 0)
+		changeGUIforfpx(mode, motorName, numpoints, preset)
 		//start the fpx background task
 		CtrlNamedBackground  scanTask period=60, proc=scanBkgTask, burst=0, dialogsOK = 0
 		CtrlNamedBackground  scanTask start
