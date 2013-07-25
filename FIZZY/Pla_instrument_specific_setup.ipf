@@ -28,6 +28,7 @@
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
 	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
+	StrConstant PATH_TO_HSDATA = "\\\\Filer\\experiments:platypus:hsdata:"
 	strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
 
 	
