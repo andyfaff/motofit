@@ -679,22 +679,12 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					if(V_Flag!=0)
 						return 0
 					endif
-
-					string pathSep
-					strswitch(UpperStr(IgorInfo(2)))
-						case "MACINTOSH":
-							pathSep = ":"
-							break
-						case "WINDOWS":
-							pathSep = "\\"
-							break
-					endswitch
-										
-					thePathstring = Parsefilepath(1, Stringfromlist(0, S_filename, "\r"), pathSep, 1, 0)					
+						
+					thePathstring = S_path
 					filenames = ""
 
 					for(ii=0 ; ii<itemsinlist(S_filename, "\r") ; ii+=1)
-						filenames += ParseFilePath(0, stringfromlist(ii, S_filename, "\r"), pathSep, 1, 0)+";"
+						filenames += ParseFilePath(0, stringfromlist(ii, S_filename, "\r"), ":", 1, 0)+";"
 					endfor
 					
 					if(itemsinlist(filenames, "\r")==0)
@@ -1578,7 +1568,7 @@ Function createSpecBeamAdjustmentPanel(detector, ordProj)
 	Button Continue_Button,pos={465,407},size={161,43},proc=killSpecBeamAdjustmentPanel,title="Continue",win=specBeamAdjustmentPanel
 	SetVariable pixelsToInclude_setvar,pos={449,275},size={185,19},proc=adjustAOI,title="TOF Pixels to include",win=specBeamAdjustmentPanel
 	SetVariable pixelsToInclude_setvar,fSize=12,win=specBeamAdjustmentPanel
-	SetVariable pixelsToInclude_setvar,limits={1,999,1},value= root:packages:platypus:data:reducer:TOFpixels,win=specBeamAdjustmentPanel
+	SetVariable pixelsToInclude_setvar,limits={1,9999,1},value= root:packages:platypus:data:reducer:TOFpixels,win=specBeamAdjustmentPanel
 	SetVariable width_setvar,pos={464,297},size={170,19},proc=adjustAOI,title="integrate width",win=specBeamAdjustmentPanel
 	SetVariable width_setvar,fSize=12,win=specBeamAdjustmentPanel
 	SetVariable width_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:width,win=specBeamAdjustmentPanel

@@ -265,9 +265,10 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	
 	//create the data structures
 	//see fillScanStats() for column information
-	redimension/n=(numpoints) position
-	redimension/n=(numpoints, -1) counts
+	redimension/n=(0) position
+	redimension/n=(0, -1) counts
 	counts = NaN
+	position = NaN
 	doupdate
 
 	currentpoint = 0
@@ -276,12 +277,12 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	userPaused = 0
 	auto = automatic
 	
-	//create the positions for the scan
-	if(numpoints == 1)
-		position[] = initialposition
-	else
-		position[] = rangeVal*(p/(numpoints - 1)) + str2num(axeslist[row][2]) - rangeval/2
-	endif
+//	//create the positions for the scan
+//	if(numpoints == 1)
+//		position[] = initialposition
+//	else
+//		position[] = rangeVal*(p/(numpoints - 1)) + str2num(axeslist[row][2]) - rangeval/2
+//	endif
 
 	//append counts to scan graph
 	//this is done by the counttypeVSpos_popupcontrol function
@@ -480,7 +481,7 @@ Function finishScan(status)
 	ctrlnamedbackground scanTask, kill=1
 	
 	//get the last stats updated
-	fillScanStats(position, counts, 1)
+	fillScanStats(position, counts, 2)
 
 	controlinfo/w=sicscmdpanel sicstab
 	if(V_Value==1)
@@ -693,72 +694,80 @@ Function fillScanStats(position, w, full)
 	Wave/t/z axeslist = root:packages:platypus:SICS:axeslist
 
 	variable scanpoint = str2num(getHipaval("/commands/scan/runscan/feedback/scanpoint"))		
-	if(scanpoint + 1 > dimsize(counts, 0))
-		redimension/n=(scanpoint + 1, -1) w, position
-	endif
+	redimension/n=(scanpoint + 1, -1) w, position
+	
+	switch(full)
+		case 0:
+			position[scanpoint] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
+			//time
+			times = str2num(gethipaval("/instrument/detector/time"))
+			//counts
+			w[scanpoint][0] = str2num(gethipaval("/instrument/detector/total_counts"))
+			//max detector count rate
+			w[scanpoint][3] =  str2num(gethipaval("/instrument/detector/max_binrate"))
+	
+			//BM1 monitor counts
+			w[scanpoint][7] =  str2num(gethipaval("/monitor/bm1_counts"))
+			w[scanpoint][9] =  str2num(gethipaval("/monitor/bm1_event_rate"))
+		break
+		case 1:
+			string DAQname = PATH_TO_HSDATA + gethipaval("/instrument/detector/daq_dirname") + ":DATASET_"+num2istr(scanpoint)+":EOS.bin"
+			//neutronunpacker
 
-	if(full)	//at the end of a scan get the numbers from the histoserver, because SICS may not have issued them
-//		histostatus = grabAllHistoStatus()
-//		w[point][0] = numberbykey("num_events_filled_to_histo",histostatus,": ","\r")			
+		break
+		case 2:
+			//at the end of a scan get the numbers from the histoserver, because SICS may not have issued them
+	//		histostatus = grabAllHistoStatus()
+	//		w[point][0] = numberbykey("num_events_filled_to_histo",histostatus,": ","\r")			
+			print "full", scanpoint, datafilename, datafilenameandpath
+			//try getting the counts from the HDF file.
+			hdf5openfile/z/R fileID as datafilenameandpath
+			if(!fileID)
+				print "HAD ERROR OPENING HDFFILE"		
+				setdatafolder saveDFR
+				return 0
+			endif
+			
+			//what is the scan variable?
+			string scanvariable = gethipaval("/commands/scan/runscan/scan_variable")
+			
+			//see if the scan variable is in the axeslist (should be first column)
+			FindValue/Z/text=(scanvariable)/txop=4 axeslist
+			if(V_Value > -1)
+				variable col = floor(V_Value / dimsize(axeslist, 0))
+				variable row = V_Value - col * dimsize(axeslist, 0)
+				string nodepath = "/entry1" + axeslist[row][1]
+				hdf5loaddata/o/z/q fileID, nodepath
+				Wave pos = $(stringfromlist(0, S_wavenames))
+				position[0, numpnts(pos) - 1] = pos[p]
+				print numpnts(pos)
+			endif
+			
+			//get the total_counts for the scan points
+			hdf5loaddata/o/z/q fileID, "/entry1/instrument/detector/total_counts"
+			Wave total_counts = $(stringfromlist(0, S_wavenames))
+			w[0, numpnts(total_counts) - 1][0] = total_counts[p]
+			
+			hdf5loaddata/o/q/z fileID, "/entry1/instrument/detector/total_maprate"
+			Wave total_maprate = $(stringfromlist(0, S_wavenames))
+			w[0, numpnts(total_counts) - 1][3] = total_maprate[p]
 		
-		//try getting the counts from the HDF file.
-		hdf5openfile/Z/R fileID as datafilenameandpath
-		if(!fileID)
-			setdatafolder saveDFR
-			return 0
-		endif
+			hdf5loaddata/o/q/z fileID, "/entry1/instrument/detector/total_maprate"
+			Wave total_maprate = $(stringfromlist(0, S_wavenames))
+			w[0, numpnts(total_maprate) - 1][3] = total_maprate[p]
+			
+			hdf5loaddata/o/q/z fileID, "/entry1/monitor/bm1_counts"
+			Wave bm1_counts = $(stringfromlist(0, S_wavenames))
+			w[0, numpnts(bm1_counts) - 1][7] = bm1_counts[p]
 		
-		//what is the scan variable?
-		string scanvariable = gethipaval("/commands/scan/runscan/scan_variable")
-		
-		//see if the scan variable is in the axeslist (should be first column)
-		FindValue/Z/text=(scanvariable)/txop=4 axeslist
-		if(V_Value > -1)
-			variable col = floor(V_Value / dimsize(axeslist, 0))
-			variable row = V_Value - col * dimsize(axeslist, 0)
-			string nodepath = "/entry1" + axeslist[row][1]
-			hdf5loaddata/z/o/q fileID, nodepath
-			Wave pos = $(stringfromlist(0, S_wavenames))
-			position[0, numpnts(pos) - 1] = pos[p]
-		endif
-		
-		//get the total_counts for the scan points
-		hdf5loaddata/z/o/q fileID, "/entry1/instrument/detector/total_counts"
-		Wave total_counts = $(stringfromlist(0, S_wavenames))
-		w[0, numpnts(total_counts) - 1][0] = total_counts[p]
-		
-		hdf5loaddata/z/o/q fileID, "/entry1/instrument/detector/total_maprate"
-		Wave total_maprate = $(stringfromlist(0, S_wavenames))
-		w[0, numpnts(total_counts) - 1][3] = total_maprate[p]
-	
-		hdf5loaddata/z/o/q fileID, "/entry1/instrument/detector/total_maprate"
-		Wave total_maprate = $(stringfromlist(0, S_wavenames))
-		w[0, numpnts(total_maprate) - 1][3] = total_maprate[p]
-		
-		hdf5loaddata/z/o/q fileID, "/entry1/monitor/bm1_counts"
-		Wave bm1_counts = $(stringfromlist(0, S_wavenames))
-		w[0, numpnts(bm1_counts) - 1][7] = bm1_counts[p]
-	
-		hdf5loaddata/z/o/q fileID, "/entry1/monitor/bm1_event_rate"
-		Wave bm1_event_rate = $(stringfromlist(0, S_wavenames))
-		w[0, numpnts(bm1_event_rate) - 1][9] = bm1_event_rate[p]
-				
-		hdf5closefile/z fileID
-	else
-		position[scanpoint] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
-		
-		//time
-		times = str2num(gethipaval("/instrument/detector/time"))
-		//counts
-		w[scanpoint][0] = str2num(gethipaval("/instrument/detector/total_counts"))
-		//max detector count rate
-		w[scanpoint][3] =  str2num(gethipaval("/instrument/detector/max_binrate"))
+			hdf5loaddata/o/q/z fileID, "/entry1/monitor/bm1_event_rate"
+			Wave bm1_event_rate = $(stringfromlist(0, S_wavenames))
+			w[0, numpnts(bm1_event_rate) - 1][9] = bm1_event_rate[p]
+					
+			hdf5closefile/z fileID
+		break		
+	endswitch
 
-		//BM1 monitor counts
-		w[scanpoint][7] =  str2num(gethipaval("/monitor/bm1_counts"))
-		w[scanpoint][9] =  str2num(gethipaval("/monitor/bm1_event_rate"))
-	endif
-	
 	
 	w[][1] = sqrt(w[p][0])
 	w[][2] = w[p][0]/times
