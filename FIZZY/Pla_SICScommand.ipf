@@ -2599,26 +2599,26 @@ Function emailupdate(user,password,to,subject,body)
 	endif
 End
 
-Function acquire(presettype,preset, samplename, [points])
-	string presettype
+Function acquire(mode,preset, samplename, [points])
+	string mode
 	variable preset
 	string samplename
 	variable points
 
 	//starts the detector running, and will save the data that comes off
-	//presettype is either "TIME" or "MONITOR_1"
+	//mode is either :-  time, unlimited, period, count, frame, MONITOR_1, MONITOR_2
 	//preset is therefore either in seconds or monitor counts
 	//samplename changes the samplename for the run
 	//points will measure several different spectra, putting each one into the same NeXUS file
 	//
 	//example:
-	//acquire("TIME",1,"mysample",points=2)
+	//acquire("time",1,"mysample",points=2)
 	//
 	//does two acquisitions, each of 1 second each, with the sample title set as "mysample"
 	if(paramisDefault(points))
 		points = 1
 	endif
-	if(fpx("_none_",0,points,mode = presettype, preset = preset,samplename = samplename, automatic = 2))
+	if(fpx("dummy_motor",0,points,mode = mode, preset = preset,samplename = samplename, automatic = 2))
 		print "error while acquiring data (acquire)2"
 		return 1
 	endif
