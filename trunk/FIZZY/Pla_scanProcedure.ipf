@@ -707,17 +707,24 @@ Function fillScanStats(position, w, full)
 			w[scanpoint][9] =  str2num(gethipaval("/monitor/bm1_event_rate"))
 		break
 		case 1:
-			string DAQname = PATH_TO_HSDATA + gethipaval("/instrument/detector/daq_dirname") + ":DATASET_"+num2istr(scanpoint)+":EOS.bin"
-			//neutronunpacker
-
-		break
+			position[scanpoint] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
+//			string DAQname = PATH_TO_HSDATA + replacestring(" ", gethipaval("/instrument/detector/daq_dirname"), "") + ":DATASET_"+num2istr(scanpoint)+":EOS.bin"
+//			neutronunpacker/z DAQname
+//			if(V_flag)
+//				setdatafolder saveDFR
+//				return 0
+//			endif
+//			wave W_unpackedneutronsT
+//			w[scanpoint][0] = numpnts(W_unpackedneutronsT)
+//		break
 		case 2:
 			//at the end of a scan get the numbers from the histoserver, because SICS may not have issued them
 	//		histostatus = grabAllHistoStatus()
 	//		w[point][0] = numberbykey("num_events_filled_to_histo",histostatus,": ","\r")			
-			print "full", scanpoint, datafilename, datafilenameandpath
 			//try getting the counts from the HDF file.
-			hdf5openfile/z/R fileID as datafilenameandpath
+			CopyFile/D /O/Z datafilenameandpath as specialdirpath("Temporary", 0, 0, 0)
+			hdf5openfile/z/R fileID as S_filename			
+//			hdf5openfile/z/R fileID as datafilenameandpath
 			if(!fileID)
 				print "HAD ERROR OPENING HDFFILE"		
 				setdatafolder saveDFR
@@ -734,31 +741,42 @@ Function fillScanStats(position, w, full)
 				variable row = V_Value - col * dimsize(axeslist, 0)
 				string nodepath = "/entry1" + axeslist[row][1]
 				hdf5loaddata/o/z/q fileID, nodepath
-				Wave pos = $(stringfromlist(0, S_wavenames))
-				position[0, numpnts(pos) - 1] = pos[p]
-				print numpnts(pos)
+				if(!V_flag)
+					Wave pos = $(stringfromlist(0, S_wavenames))
+					position[0, numpnts(pos) - 1] = pos[p]
+				endif				
 			endif
 			
 			//get the total_counts for the scan points
 			hdf5loaddata/o/z/q fileID, "/entry1/instrument/detector/total_counts"
-			Wave total_counts = $(stringfromlist(0, S_wavenames))
-			w[0, numpnts(total_counts) - 1][0] = total_counts[p]
+			if(!V_flag)
+				Wave total_counts = $(stringfromlist(0, S_wavenames))
+				w[0, numpnts(total_counts) - 1][0] = total_counts[p]
+			endif
 			
 			hdf5loaddata/o/q/z fileID, "/entry1/instrument/detector/total_maprate"
-			Wave total_maprate = $(stringfromlist(0, S_wavenames))
-			w[0, numpnts(total_counts) - 1][3] = total_maprate[p]
+			if(!V_flag)
+				Wave total_maprate = $(stringfromlist(0, S_wavenames))
+				w[0, numpnts(total_counts) - 1][3] = total_maprate[p]
+			endif
 		
 			hdf5loaddata/o/q/z fileID, "/entry1/instrument/detector/total_maprate"
-			Wave total_maprate = $(stringfromlist(0, S_wavenames))
-			w[0, numpnts(total_maprate) - 1][3] = total_maprate[p]
+			if(!V_flag)
+				Wave total_maprate = $(stringfromlist(0, S_wavenames))
+				w[0, numpnts(total_maprate) - 1][3] = total_maprate[p]
+			endif
 			
 			hdf5loaddata/o/q/z fileID, "/entry1/monitor/bm1_counts"
-			Wave bm1_counts = $(stringfromlist(0, S_wavenames))
-			w[0, numpnts(bm1_counts) - 1][7] = bm1_counts[p]
+			if(!V_flag)
+				Wave bm1_counts = $(stringfromlist(0, S_wavenames))
+				w[0, numpnts(bm1_counts) - 1][7] = bm1_counts[p]
+			endif
 		
 			hdf5loaddata/o/q/z fileID, "/entry1/monitor/bm1_event_rate"
-			Wave bm1_event_rate = $(stringfromlist(0, S_wavenames))
-			w[0, numpnts(bm1_event_rate) - 1][9] = bm1_event_rate[p]
+			if(!V_flag)
+				Wave bm1_event_rate = $(stringfromlist(0, S_wavenames))
+				w[0, numpnts(bm1_event_rate) - 1][9] = bm1_event_rate[p]
+			endif
 					
 			hdf5closefile/z fileID
 		break		
