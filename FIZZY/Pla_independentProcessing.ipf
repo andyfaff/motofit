@@ -165,21 +165,28 @@ Function interestProcessor(w,x)
 					SetVariable/Z sicsstatus_tab0 win=SICScmdPanel, valueBackColor=(65280,0,0)
 				endif
 				
-				if(stringmatch(str2, "Eager to execute commands"))
+				//if(stringmatch(str2, "Eager to execute commands"))
 					//cause any scans to see if they need updating
 					//					execute/P/Q "DoXOPIdle"
-					execute/Q "ProcGlobal#Platypus#forceScanBkgTask()"
-					execute/P/Q "DoXOPIdle"
+					//execute/Q "ProcGlobal#Platypus#forceScanBkgTask()"
+					//execute/P/Q "DoXOPIdle"
 					//					execute/P/Q "ProcGlobal#forcebatchbkgtask()"
 					//					execute/P/Q "DoXOPIdle"
-				endif
+				//endif
 								
+				break
+			case "/commands/scan/runscan/feedback/status":
+				if(stringmatch(str2, "IDLE"))
+					SetVariable/Z runscanstatus win=instrumentlayout, valueBackColor=(0,65280,0)
+				else
+					SetVariable/Z runscanstatus win=instrumentlayout, valueBackColor=(65280,0,0)
+				endif
+				
 				break
 			case "/sample/name":
 				sampleName = str2
 				break
 			case "/instrument/detector/total_counts":
-
 				temp = endoflastevent 			
 				if(sum(streameddetector) != str2num(str2))
 					nunpack_intodet(EOSfileID, temp, streamedDetector, tbins, ybins, xbins)

@@ -120,15 +120,12 @@ Function gHistogram()		//suitable for 7mm HG with FOC
 	oat_table("T",0,50,1000,freq=20)
 End
 
-
-
-
 Function hHistogram()	
 	//suitable for hslits(44,40,37,44) which gives a 40mm widebeam onto sample with FOC guide.
 	//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
 	oat_table("X",54.5,-54.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq = 20)
+	oat_table("T",0,50,2000,freq = 10)
 End
 
 Function iHistogram() //Bills SAW, hslits(10,4,4,20)
@@ -1588,6 +1585,10 @@ Function Instrumentlayout_panel()
 	SetVariable sicsstatus,pos={468,246},size={200,16},title="SICS status", win=instrumentlayout
 	SetVariable sicsstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
 	SetVariable sicsstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:sicsstatus,noedit= 1, win=instrumentlayout
+	
+	SetVariable runscanstatus title="runscan status",valueBackColor=(0,52224,0), pos={468,267}, win=instrumentlayout
+	SetVariable runscanstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout, size = {200,16}
+	SetVariable runscanstatus,limits={-inf,inf,0},value=  root:packages:platypus:SICS:hipadaba_paths[gethipapos("/commands/scan/runscan/feedback/status")][1],noedit= 1, win=instrumentlayout
 
 	SetVariable julabo,pos={90,253},size={90,16},title="Julabo temp", win=instrumentlayout,bodywidth=40
 	SetVariable julabo,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
