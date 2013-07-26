@@ -128,7 +128,7 @@ Function hHistogram()
 	//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
 	oat_table("X",54.5,-54.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,30,1000,freq = 20)
+	oat_table("T",0,50,1000,freq = 20)
 End
 
 Function iHistogram() //Bills SAW, hslits(10,4,4,20)
@@ -1949,9 +1949,11 @@ Function/t createFizzyCommand(type)
 	//txtme
 	string cmd=""
 
-	string motor="",motorlist="", samplename="", sicscmd="",mode
+	string motor="",motors="", samplename="", sicscmd="",mode
 	variable position=0, ii, timer = 0, omega=0.5, twotheta=1, s1=0,s2=0,s3=0,s4=0
 
+	motors = motorlist()
+	
 	strswitch(type)
 		case "":
 			break
@@ -1980,13 +1982,7 @@ Function/t createFizzyCommand(type)
 			sprintf cmd, "txtme(\"%s\")", text
 			break
 		case "run":
-			Wave/t axeslist = root:packages:platypus:SICS:axeslist
-			motorlist = ""
-			for(ii=0 ; ii<dimsize(axeslist,0) ; ii+=1)
-				motorlist += axeslist[ii][0] + ";"
-			endfor
-		
-			prompt motor, "motor:", popup, motorlist
+			prompt motor, "motor:", popup, motors
 			prompt position, "position:"
 			doprompt "Select motor and desired position", motor, position
 			if(V_Flag)
@@ -1995,13 +1991,7 @@ Function/t createFizzyCommand(type)
 			sprintf cmd, "run(\"%s\",%f)", motor, position
 			break
 		case "setpos":
-			Wave/t axeslist = root:packages:platypus:SICS:axeslist
-			motorlist = ""
-			for(ii=0 ; ii<dimsize(axeslist,0) ; ii+=1)
-				motorlist += axeslist[ii][0] + ";"
-			endfor
-		
-			prompt motor, "motor:", popup, motorlist
+			prompt motor, "motor:", popup, motors
 			prompt position, "position:"
 			doprompt "Select motor and desired position", motor, position
 			if(V_Flag)
@@ -2010,13 +2000,7 @@ Function/t createFizzyCommand(type)
 			sprintf cmd, "setpos(\"%s\",%f)", motor, position
 			break
 		case "rel":
-			Wave/t axeslist = root:packages:platypus:SICS:axeslist
-			motorlist = ""
-			for(ii=0 ; ii<dimsize(axeslist,0) ; ii+=1)
-				motorlist += axeslist[ii][0] + ";"
-			endfor
-
-			prompt motor, "motor:", popup, motorlist
+			prompt motor, "motor:", popup, motors
 			prompt position, "position:"
 			doprompt "Select motor and desired relative motion", motor, position
 			if(V_Flag)

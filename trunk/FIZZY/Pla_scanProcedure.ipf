@@ -110,7 +110,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	string samplename
 	variable automatic
 	//performs a range scan for the motor specified by motorStr, over rangeVal distance, with points points
-	//motorStr		-	self explanatory, but set to "_none_" if you don't want to scan a motor
+	//motorStr		-	self explanatory, but set to "dummy_motor" if you don't want to scan a motor
 	//points			-	the number of scan points >=0
 	//mode			-	time, unlimited, period, count, frame, MONITOR_1, MONITOR_2
 	//preset			-	the number of seconds for the scan >0
@@ -591,11 +591,9 @@ Function finishScan(status)
 		Prompt whichStat,"which statistic",popup,"gaussian;centroid;graph cursors"
 		Doprompt "Do you want to move to the peak centre?", var, whichstat			
 		if(V_Flag==1)	//if you don't want to move to peak centre
-			if(!stringmatch(scanmotor,"_none_") )
-				print "Scan finishing"
-				if(run(scanmotor,initialPosition))
-					print "Error while returning to original Pos (finishScan)"
-				endif
+			print "Scan finishing"
+			if(run(scanmotor,initialPosition))
+				print "Error while returning to original Pos (finishScan)"
 			endif
 		else		//if you want to move to peak centre
 			strswitch(whichStat)
@@ -636,12 +634,10 @@ Function finishScan(status)
 					return 1
 				endif
 			else				//if you don't want to enter an offset
-				if(!stringmatch(scanmotor, "_none_") )
-					print "Scan finishing, driving to peak position"
-					err= run(scanmotor, num)
-					if(err)
-						print "Error while returning to new position (finishScan)"
-					endif
+				print "Scan finishing, driving to peak position"
+				err= run(scanmotor, num)
+				if(err)
+					print "Error while returning to new position (finishScan)"
 				endif
 			endif
 		endif	
