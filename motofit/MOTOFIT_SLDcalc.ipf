@@ -64,7 +64,7 @@ Function Moto_SLDdatabase() : Panel
 		SetVariable calcXRAYSLD_tab0,pos={48,208},size={253,19},bodyWidth=197,title="Xray SLD"
 		SetVariable calcXRAYSLD_tab0,fSize=12,limits={-inf,inf,0},value= _NUM:0
 		SetVariable xray_energy_tab0,pos={310,207},size={180,19},title="X-ray energy (keV)"
-		SetVariable xray_energy_tab0,fSize=12,limits={80,0.03,1},value= _NUM:8.048, proc=Moto_SLDcalculateSetvariable
+		SetVariable xray_energy_tab0,fSize=12,limits={0.03,80,1},value= _NUM:8.048, proc=Moto_SLDcalculateSetvariable
 
 		Button CALCULATE_tab0,pos={194,100},size={100,60},title="Calculate",fSize=12,proc = Moto_SLDcalculateButton
 		Button AddToDataBase_tab0,pos={194,235},size={100,60},title="Add to \r database",fSize=12,proc = Moto_addchemicalfromcalculator
