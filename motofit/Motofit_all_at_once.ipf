@@ -28,6 +28,7 @@ Menu "Motofit"
 	"Fit Reflectivity data",plotCalcref()
 	"Load experimental data",motofit#Moto_Plotreflectivity()
 	"Co-refine Reflectometry Data", Motofit_GR#init_fitting()
+	"Change settings", Moto_settings()
 	"SLD calculator", Moto_SLDdatabase()
 	"create local chi2map for requested parameter",motofit#Moto_localchi2()
 	Submenu "Fit batch data"
@@ -102,6 +103,47 @@ Function plotcalcref()
 	
 	moto_update_theoretical()
 	setdatafolder $cDF
+End
+
+Function moto_settings()
+	variable lowQ, hiQ, numRefPnts, SLDpnts, gaussQuadPoints
+
+	Wave theoretical_Q = root:data:theoretical:theoretical_Q
+	Wave theoretical_R = root:data:theoretical:theoretical_R
+	Wave originaldata = root:data:theoretical:originaldata
+	Wave SLD_theoretical_R = root:data:theoretical:SLD_theoretical_R
+
+	lowQ = theoretical_Q[0]
+	hiQ = theoretical_Q[numpnts(theoretical_Q) - 1]
+	numrefpnts = dimsize(theoretical_Q, 0)
+	SLDpnts = str2num(motofit#getMotofitOption("SLDpnts"))
+	gaussQuadPoints = str2num(motofit#getMotofitOption("respoints"))
+
+	if(numtype(gaussQuadPoints))
+		gaussQuadPoints = 21
+	endif
+
+	prompt lowQ, "Low Q for calculation"
+	prompt hiQ, "High Q for calculation"
+	prompt numrefpnts, "Number of Q points for calculation"
+	prompt sldpnts, "How many points for SLD profile"
+	prompt gaussQuadPoints, "Gaussian Quadrature points for pointwise smearing"
+
+	Doprompt "Change Motofit environment", lowQ, hiQ, numrefpnts, sldpnts, gaussquadpoints
+	if(V_Flag)
+		return 0
+	endif
+
+	//enforce the settings.
+	motofit#setMotofitOption("SLDpnts", num2istr(sldpnts))
+	redimension/n=(sldpnts) SLD_theoretical_R
+
+	motofit#setMotofitOption("respoints", num2istr(gaussquadpoints))
+	redimension/n=(numrefpnts, -1)/d theoretical_Q, theoretical_R, originaldata
+	theoretical_Q = lowQ + p * (hiQ - lowQ) / (numrefpnts - 1)
+	originaldata[][0] = theoretical_Q
+	motofit#moto_update_theoretical()
+
 End
 
 static Function Moto_LayerTableToCref(coefficients)
