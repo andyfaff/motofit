@@ -437,6 +437,23 @@ static Function Moto_localchi2()
 	coef_theoretical_R = local_copy_coefs
 End
 
+Function Moto_resolutionPoints(finish)
+	variable finish
+	variable ii, current
+	//a function to figure out how many resolution integration points are required.
+	//you must select a dataset and a reasonable fit.  It only works with dq/q per-point smearing.
+	
+	Wave/z coef_theoretical_R = root:data:theoretical:coef_theoretical_R
+	make/n=(finish)/d/o chi2respoints = 0
+	current = str2num(getMotofitOption("respoints"))
+	
+	for(ii = 2 ; ii < finish ; ii += 1)
+		setMotofitOption("respoints", num2istr(ii))
+		chi2respoints[ii] = motofit#Moto_calcchi2()
+	endfor
+	setMotofitOption("respoints", num2istr(current))
+End
+
 
 static Function Moto_calcchi2()
 	//this function calculates chi2 when you change the model in the reflectivity panel

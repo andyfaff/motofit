@@ -328,11 +328,11 @@ Function Moto_SLDcalculateSetvariable(SV_Struct) : Setvariablecontrol
 		
 		strswitch(SV_Struct.ctrlname)
 			case "calcMassDensity_tab0":
-				SLD_molvol = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical, 0))/(SLD_massdensity*6.023e23)
+				SLD_molvol = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical, 0))/(SLD_massdensity*6.022e23)
 				setvariable calcMolVol_tab0, win=sldpanel, value = _NUM:SLD_molvol
 				break
 			case "calcmolvol_tab0":
-				SLD_massdensity = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_molvol*6.023e23)
+				SLD_massdensity = 1e24  * numberbykey("weight_tot",Moto_SLDparsechemical(chemical,0))/(SLD_molvol*6.022e23)
 				setvariable calcMassDensity_tab0, value = _NUM:SLD_massdensity, win=SLDpanel
 				break
 		endswitch
@@ -359,7 +359,7 @@ Function/c Moto_SLDcalculation(chemical,massdensity, type, [xrayenergy])
 	scatlen_tot = cmplx(numberbykey("scatlen_tot_re",parsedChemical),numberbykey("scatlen_tot_im",parsedChemical))
 	variable/c sld
 	
-	sld = 1e-29 * 6.023e23 * scatlen_tot * massdensity / weight_tot
+	sld = 1e-29 * 6.022e23 * scatlen_tot * massdensity / weight_tot
 	return sld
 End
 
