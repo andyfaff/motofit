@@ -231,7 +231,7 @@ Function moto_usecoefWave(coefficientwave, [shortcut])
 	
 	reversedSLDplot = str2num(getmotofitoption("reversedSLDplot"))
 	if(reversedSLDplot != numberbykey("reversedSLDplot", coefnote) && !numtype(reversedSLDplot))
-		moto_reverseSLDplots()
+		moto_reverseSLDplots(reversedSLDplot)
 		reversedSLDplot = numberbykey("reversedSLDplot", coefnote)
 		setmotofitoption("reversedSLDplot", stringbykey("reversedSLDplot", coefnote))
 		if(numberbykey("reversedSLDplot", coefnote))
@@ -2352,10 +2352,11 @@ Function Moto_newSLDplot(coefs, desiredsldwave, sldpts)
 	Wave sld = $desiredsldwave
 	Moto_SLDplot(coefs, sld)
 	SetDataFolder saveDFR
-
 End
 
-Function Moto_reverseSLDplots()
+Function Moto_reverseSLDplots(reversed)
+	//this function reverses all the SLD traces in the SLD graph
+	variable reversed
 	string datasets= Moto_fittable_datasets()
 	string dataset
 	variable ii
@@ -2363,8 +2364,9 @@ Function Moto_reverseSLDplots()
 	for(ii = 0 ; ii < itemsinlist(datasets) ; ii+=1)
 		dataset =  stringfromlist(ii, datasets)
 		Wave/z SLDgraph = $("root:data:" + dataset + ":SLD_" + dataset + "_R")
-		if(waveexists(SLDgraph))
-			setscale/I x, pnt2x(SLDgraph, numpnts(SLDgraph)-1), leftx(SLDgraph), SLDgraph
+		Wave/z coefs = $("root:data:" + dataset + ":coef_" + dataset + "_R")
+		if(waveexists(SLDgraph) && waveexists(coefs))
+			moto_SLDplot(coefs, SLDgraph, reversedSLDplot = reversed)
 		endif
 	endfor
 End
@@ -2402,6 +2404,9 @@ Function Moto_SLDplot(w, sld, [reversedSLDplot])
 		endif
 		Wave SLD_calcwav = moto_expandMultiToNormalModel(w, mode, Vmullayers, Vappendlayer, Vmulrep)
 		nlayers = SLD_calcwav[0]
+	endif
+	if(reversedSLDplot)
+		Moto_reversemodel(SLD_calcwav)
 	endif
 
 	//setup the start and finish points of the SLD profile
@@ -2442,9 +2447,6 @@ Function Moto_SLDplot(w, sld, [reversedSLDplot])
 
 	setscale/I x, zstart, zend, sld
 	sld = Moto_SLD_at_depth(SLD_calcwav, x)
-	if(reversedSLDplot)
-		setscale/I x, zend, zstart, sld
-	endif
 End
 
 Function/Wave moto_expandMultiToNormalModel(w, mode, Vmullayers, Vappendlayer, Vmulrep)
@@ -2901,7 +2903,7 @@ static Function  moto_GUI_check(s) : CheckBoxControl
 		case "reverseSLDplot":
 			variable reversedSLDplot = s.checked
 			setmotofitoption("reversedSLDplot", num2istr(s.checked))
-			moto_reverseSLDplots()
+			moto_reverseSLDplots(s.checked)
 			break
 		case "appendresiduals":
 			if(s.checked)
