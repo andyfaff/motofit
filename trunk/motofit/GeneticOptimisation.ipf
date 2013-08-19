@@ -2070,7 +2070,7 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[limits, cursA, cu
 			
 		//see if the fitfunction is threadsafe
 		funcinfo = functioninfo(fn)
-		if(stringmatch(stringbykey("THREADSAFE", funcinfo), "NO") == 1)
+		if(stringmatch(stringbykey("THREADSAFE", funcinfo), "NO"))
 			if(!paramisdefault(otherDataDF))
 				Setdatafolder $otherDataDF
 			endif

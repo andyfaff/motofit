@@ -1729,16 +1729,11 @@ Function Motofit_smeared(w, RR, qq, dq) :Fitfunc
 		bkg = abs(w[4])
 		w[4] = 0
 		Abelesall(w, RR, xtemp)
+		w[4] = bkg
 	else
 		bkg = abs(w[6])
 		w[6] = 0
 		Abeles_imagALl(w, RR, xtemp)
-	endif
-
-	//add in the linear background again
-	if(!mode)
-		w[4] = bkg
-	else
 		w[6] = bkg
 	endif
 		
@@ -1750,6 +1745,10 @@ End
 
 Threadsafe Function Motofit_smeared_log(w, RR, qq, dq):fitfunc
 	Wave w, RR, qq, dq
+	
+	variable mode = mod(numpnts(w) - 6, 4)
+	variable bkg
+	
 	duplicate/free qq, tempqq
 	redimension/n=(-1, 2) tempqq
 	tempqq[][1] = dq[p]
@@ -1760,13 +1759,31 @@ Threadsafe Function Motofit_smeared_log(w, RR, qq, dq):fitfunc
 	endif
 	variable/g V_gausspoints = respoints
 	
-	AbelesAll(w, RR, tempqq)
+	if(!mode)
+		bkg = abs(w[4])
+		w[4] = 0
+		Abelesall(w, RR, tempqq)
+		w[4] = bkg
+	else
+		bkg = abs(w[6])
+		w[6] = 0
+		Abeles_imagALl(w, RR, tempqq)
+		w[6] = bkg
+	endif
+	fastop RR = (bkg) + RR
+
 	RR = log(RR)
 End
 
 Threadsafe Function Motofit_log(w, RR, qq):fitfunc
 	Wave w, RR, qq
-	AbelesAll(w, RR, qq)
+	
+	variable mode = mod(numpnts(w) - 6, 4)
+	if(!mode)
+		Abelesall(w, RR, qq)
+	else
+		Abeles_imagALl(w, RR, qq)
+	endif
 	RR = log(RR)
 End
 
@@ -2363,12 +2380,22 @@ Function Moto_reverseSLDplots(reversed)
 	
 	for(ii = 0 ; ii < itemsinlist(datasets) ; ii+=1)
 		dataset =  stringfromlist(ii, datasets)
-		Wave/z SLDgraph = $("root:data:" + dataset + ":SLD_" + dataset + "_R")
-		Wave/z coefs = $("root:data:" + dataset + ":coef_" + dataset + "_R")
-		if(waveexists(SLDgraph) && waveexists(coefs))
-			moto_SLDplot(coefs, SLDgraph, reversedSLDplot = reversed)
-		endif
+		Moto_reverseSLDplot(dataset, reversed)
 	endfor
+End
+
+Function Moto_reverseSLDplot(dataset, reversed)
+	//this function reverses a single SLD traces in the SLD graph
+	string dataset
+	variable reversed
+	string datasets= Moto_fittable_datasets()
+	variable ii
+	
+	Wave/z SLDgraph = $("root:data:" + dataset + ":SLD_" + dataset + "_R")
+	Wave/z coefs = $("root:data:" + dataset + ":coef_" + dataset + "_R")
+	if(waveexists(SLDgraph) && waveexists(coefs))
+		moto_SLDplot(coefs, SLDgraph, reversedSLDplot = reversed)
+	endif
 End
 
 Function Moto_SLDplot(w, sld, [reversedSLDplot])
