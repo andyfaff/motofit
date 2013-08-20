@@ -604,8 +604,6 @@ static Function Moto_reflectivitygraphs()
 	
 	dowindow/k sldgraph
 	Display/K=1/N=SLDgraph/w=(10,364,560,590), SLD_theoretical_R
-	controlbar/T/W=SLDgraph 20
-	CheckBox reverseSLDplot,title="reverse plot",fSize=10, value = 0, proc = motofit#moto_GUI_check
 	Modifygraph/w = SLDgraph lsize(SLD_theoretical_R) = 2, axthick=1, fsize=12, rgb(SLD_theoretical_R) = (0,0,0)
 	DoWindow/T SLDgraph,"Scattering length density"
 	Label bottom "distance from interface ()"
@@ -744,8 +742,8 @@ static Function Moto_Reflectivitypanel() : Panel
 	Button allon_tab3 title="toggle on",size={100,20}, proc=motofit#moto_GUI_button, pos={300,68}
 	Button alloff_tab3 title="toggle off",size={100,20}, proc=motofit#moto_GUI_button, pos={413,68}
 
-	make/n=(1,6)/t/o root:packages:motofit:reflectivity:plot_listwave
-	make/n=(1,6)/I/U/o root:packages:motofit:reflectivity:plot_selwave
+	make/n=(1,7)/t/o root:packages:motofit:reflectivity:plot_listwave
+	make/n=(1,7)/I/U/o root:packages:motofit:reflectivity:plot_selwave
 	Wave/t plot_listwave = root:packages:motofit:reflectivity:plot_listwave
 	plot_listwave=""
 	Wave plot_selwave = root:packages:motofit:reflectivity:plot_selwave
@@ -754,7 +752,8 @@ static Function Moto_Reflectivitypanel() : Panel
 	setdimlabel 1,2,FITvisible, plot_listwave
 	setdimlabel 1,3,SLDvisible, plot_listwave
 	setdimlabel 1,4,RESvisible, plot_listwave
-	setdimlabel 1,5,toggleAll, plot_listwave
+	setdimlabel 1,6,toggleAll, plot_listwave
+	setdimlabel 1,5,reverseSLD, plot_listwave
 
 	string fittabledatasets = moto_fittable_datasets()
 	redimension/n=(itemsinlist(fittabledatasets) + 1, -1), plot_listwave, plot_selwave
@@ -765,7 +764,8 @@ static Function Moto_Reflectivitypanel() : Panel
 	plot_selwave[][2] = 2^5 | 2^4
 	plot_selwave[][3] = 2^5 | 2^4
 	plot_selwave[][4] = 2^5 | 2^4	
-	plot_selwave[][5] = 2^5 | 2^4	
+	plot_selwave[][5] = 2^5
+	plot_selwave[][6] = 2^5 | 2^4
 	
 	ListBox plot_tab3, pos={26,96},size={535,345},proc=motofit#moto_GUI_listbox
 	ListBox plot_tab3,listWave=root:packages:motofit:reflectivity:plot_listwave
@@ -1175,13 +1175,14 @@ Function moto_changemode()
 
 End
 
-Function moto_displayorhide_dataset(dataset, ref, fit, SLD, res)
+Function moto_displayorhide_dataset(dataset, ref, fit, SLD, res, SLDreversed)
 	string dataset
-	variable ref, fit, sld, res
+	variable ref, fit, sld, res, SLDreversed
 	modifygraph/z/W=reflectivitygraph hideTrace($(dataset+"_R")) = (ref==0)
 	modifygraph/z/W=reflectivitygraph hideTrace($("fit_"+dataset+"_R")) = (fit==0)
 	modifygraph/z/W=SLDgraph hideTrace($("SLD_"+dataset+"_R")) = (sld==0)
 	modifygraph/z/W=reflectivitygraph hideTrace($("res_"+dataset+"_R")) = (res==0)
+	moto_reverseSLDplot(dataset, SLDreversed)
 End
 
 
@@ -2224,8 +2225,8 @@ function Moto_addDatasetToGraphs(dataset)
 			plot_selwave[dimsize(plot_listwave, 0) - 1][2] = 2^5 | 2^4
 			plot_selwave[dimsize(plot_listwave, 0) - 1][3] = 2^5 | 2^4
 			plot_selwave[dimsize(plot_listwave, 0) - 1][4] = 2^5 | 2^4
-			plot_selwave[dimsize(plot_listwave, 0) - 1][5] = 2^5 | 2^4
-
+			plot_selwave[dimsize(plot_listwave, 0) - 1][5] = 2^5
+			plot_selwave[dimsize(plot_listwave, 0) - 1][6] = 2^5 | 2^4
 		endif
 	endif
 End
@@ -2717,7 +2718,7 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 //			plot_selwave[][5] = plot_selwave[p][5] | 2^4
 			fittabledatasets = moto_fittable_datasets() + ";theoretical"
 			for(ii = 0 ; ii < itemsinlist(fittabledatasets) ; ii+=1)
-				moto_displayorhide_dataset(stringfromlist(ii, fittabledatasets), 1,1,1,1)		
+				moto_displayorhide_dataset(stringfromlist(ii, fittabledatasets), 1,1,1,1, 0)		
 			endfor
 			break
 		case "alloff_tab3":
@@ -2730,7 +2731,7 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 
 			fittabledatasets = moto_fittable_datasets() + ";theoretical"
 			for(ii = 0 ; ii < itemsinlist(fittabledatasets) ; ii+=1)
-				moto_displayorhide_dataset(stringfromlist(ii, fittabledatasets), 0,0,0,0)		
+				moto_displayorhide_dataset(stringfromlist(ii, fittabledatasets), 0,0,0,0, 0)		
 			endfor
 		
 			break
@@ -2927,11 +2928,6 @@ static Function  moto_GUI_check(s) : CheckBoxControl
 		case "fitcursors_tab0":
 			setmotofitoption("fitcursors", num2istr(s.checked))
 			break
-		case "reverseSLDplot":
-			variable reversedSLDplot = s.checked
-			setmotofitoption("reversedSLDplot", num2istr(s.checked))
-			moto_reverseSLDplots(s.checked)
-			break
 		case "appendresiduals":
 			if(s.checked)
 				moto_appendresiduals()
@@ -2979,26 +2975,32 @@ static Function moto_GUI_listbox(LBS) : ListboxControl
 	string whichList =  nameofwave(LBS.listwave)
 	Wave selwave = LBS.selwave
 	Wave/T listwave = LBS.listwave
-	variable row = LBS.row, col = LBS.col	, eventcode = LBS.eventcode
+	variable row = LBS.row, col = LBS.col	, eventcode = LBS.eventcode, ii, jj
 	
 	if(stringmatch(LBS.ctrlname, "plot_tab3"))
 		switch(eventcode)
 			case 2:
 				if(col > 0 && row < dimsize(selwave, 0) && row > -1)
-					if(col == 5)
-						variable allOn = selwave[row][5] & 2^4
-						if(allOn)
-							selwave[row][] =  selwave[row][q] | 2^4							
-						else
-							selwave[row][] =  selwave[row][q] & ~(2^4)
-						endif
+					if(col == 6)
+						variable allOn = selwave[row][6] & 2^4
+						for(ii = 0 ; ii < 7 ; ii += 1)
+							if(ii == 5)
+								continue
+							endif
+							if(allOn)
+								selwave[row][ii] =  selwave[row][ii] | 2^4							
+							else
+								selwave[row][ii] =  selwave[row][ii] & ~(2^4)
+							endif
+						endfor
 					endif
 					string dataset = listwave[row][0]
 					variable refChecked = selwave[row][1] & 2^4
 					variable fitChecked = selwave[row][2] & 2^4
 					variable SLDChecked = selwave[row][3] & 2^4
 					variable resChecked = selwave[row][4] & 2^4
-					moto_displayorhide_dataset(dataset, refchecked, fitchecked, SLDchecked, resChecked)
+					variable SLDreversed = selwave[row][5] & 2^4
+					moto_displayorhide_dataset(dataset, refchecked, fitchecked, SLDchecked, resChecked, SLDreversed)
 				endif
 				break
 		endswitch
@@ -3030,7 +3032,6 @@ static Function moto_GUI_listbox(LBS) : ListboxControl
 				variable newlayers = str2num(listwave[0][1])
 				variable oldlayers = dimsize(layerparams, 0) - 2
 				variable howmany = abs(oldlayers - newlayers)
-				variable  ii=0, jj=0
 		
 				if(oldlayers > newlayers)
 					//this line of code enables the user to remove the layer from where he would like
