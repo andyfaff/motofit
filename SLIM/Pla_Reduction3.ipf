@@ -138,62 +138,60 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 	print "Finished downloading Platypus data."
 End
 
-Function builddirectorylist(user, password, lowFi, hiFi,  [outsideANSTO])
+Function builddirectorylist(user, password)
 	string user, password
-	variable lowFi, hiFi, outsideANSTO
-	string data = "", direct, files, file, a, b, c, URL="", stopfile
-	variable ii, isdirectory, jj, lowf = inf, hif = -inf, startDir
+	//this function will build a directory list of the preexisting files on the server.
+	
+	string file, files, URL="", directorylist, unixtime, dater, size, path, regex, regex2, fnumber, stuff
+	variable ii, isdirectory
+
+	DFREF saveDFR = GetDataFolderDFR()
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:platypus
-	newdatafolder/o root:packages:platypus:catalogue
+	newdatafolder/o/s root:packages:platypus:catalogue
 	
-	sprintf stopfile, "PLP%07d.nx.hdf", lowfi
+	URL = "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/"
 
-	if(outsideANSTO)
-		URL = "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/"
-	else
-		URL = "sftp://custard.nbi.ansto.gov.au/experiments/platypus/data/"
-	endif
-
-	make/o/t/n=(0, 2) root:packages:platypus:catalogue:directories/Wave=directories
-	easyHttp/TIME=5/PROX=""/PASS=USER + ":"+PASSWORD URL + "cycle/", data
-	if(V_Flag)
+	//get the directory list
+	easyHttp/TIME=5/PROX=""/PASS=(USER + ":"+PASSWORD) URL + "cycle/data_map.txt", directorylist
+	if(V_flag)
+		setdatafolder saveDFR
 		return 1
 	endif
-	data = replacestring("\n", data, "\r")
-
-	for(ii = 2 ; ii < itemsinlist(data, "\r") ; ii += 1)
-		direct = parseDirectorylistline(stringfromlist(ii, data, "\r"), isdirectory)
-		if(isdirectory)
-			redimension/n=(dimsize(directories, 0) + 1, -1) directories
-			directories[dimsize(directories, 0) - 1][0] = "cycle/" + direct + "/"
-		endif
+	
+	//only get the entries that are nexus files. This will be a line ending with PLP0000000.nx.hdf
+	directorylist = greplist(directorylist, "(PLP[0-9]{7}.nx.hdf)$", 0, "\n")
+	sockitstringtowave/dest=directories/tok="\n" 0, directorylist
+	Wave/t director = directories
+	redimension/n=(-1, 2) director
+	
+	regex = "([0-9]+) ([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}) ([0-9]+) ([\/0-9A-Za-z]+PLP[0-9]{7}.nx.hdf$)"
+	regex2 ="([\/0-9A-Za-z]+PLP)([0-9]{7}).nx.hdf"
+	//go through and get the paths and the numbers
+	for(ii = 0 ; ii < dimsize(director, 0) ; ii += 1)
+		splitstring/E=regex director[ii][0], unixtime, dater, size, path
+		director[ii][0] = path
+		splitstring/E=regex2 path, stuff,  fnumber
+		director[ii][1] = num2istr(str2num(fnumber))
 	endfor
 	
-	Pla_catalogue#MDsort(directories, 0, reversed=1)
-	insertpoints 0, 1, directories
-	directories[0][0] = "current/"
-
-	startDir = 0
-	for(ii = startDir ; ii < dimsize(directories, 0) ; ii += 1)
-		direct = directories[ii][0]
-		easyHttp/TIME=5/PROX=""/PASS=USER + ":"+PASSWORD URL + direct, files
-		if(V_Flag)
-			return 1
-		endif
-		files = replacestring("\n", files, "\r")
-		lowf = inf
-		hif = -inf
-		for(jj = 2 ; jj < itemsinlist(files, "\r") ; jj += 1)
-			file = parseDirectoryListLine(stringfromlist(jj, files, "\r"), isdirectory)
-			if(grepstring(file, "PLP[[:digit:]]{7}.nx.hdf"))
-				directories[ii][1] += file + ";"
-			endif
-		endfor
-		if(grepstring(directories[ii][1], stopfile))
-			return 0
+	//now lets get the files in current
+	easyHttp/TIME=5/PROX=""/PASS=(USER + ":"+PASSWORD) URL + "current/", files
+	if(V_Flag)
+		setdatafolder saveDFR
+		return 1
+	endif
+	files = replacestring("\n", files, "\r")
+	for(ii = 2 ; ii < itemsinlist(files, "\r") ; ii += 1)
+		file = parseDirectoryListLine(stringfromlist(ii, files, "\r"), isdirectory)
+		if(grepstring(file, "PLP[[:digit:]]{7}.nx.hdf$"))
+			redimension/n=(dimsize(director, 0) + 1, -1) director
+			director[dimsize(director, 0) - 1][0] = "/experiments/platypus/data/current/" + file
+			splitstring/E=regex2 file, stuff,  fnumber
+			director[dimsize(director, 0) - 1][1] = num2istr(str2num(fnumber))
 		endif
 	endfor
+	setdatafolder saveDFR
 End
 
 Function/s parseDirectoryListLine(directoryline, isdirectory)
@@ -284,13 +282,9 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 	endfor
 	outsideANSTO -= 1
 	
-	if(outsideANSTO)
-		url = "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/"
-	else
-		url = "sftp://custard.nbi.ansto.gov.au/experiments/platypus/data/"
-	endif
+	url = "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/"
 	
-	if(builddirectorylist(user, password, lowFi, hiFi, outsideANSTO = outsideANSTO))
+	if(builddirectorylist(user, password))
 		abort "problem building remote directory list"
 	endif
 	Wave/t directory = root:packages:platypus:catalogue:directories
