@@ -1,0 +1,64 @@
+How IGOR loads code when it starts (how to clean up troublesome Motofit installs).
+
+User domain created code can be loaded by IGOR on startup and is normally placed under the 'My Documents/Wavemetrics/Igor Pro 6 User Files/' path.  
+
+1) When IGOR starts up it first loads IGOR Extensions, XOP files, placed in the 'My Documents/Wavemetrics/Igor Pro 6 User Files/Igor Extensions' directory.  IGOR XOPs are DLL's that are compiled in the C programming language for improved performance.  IGOR will also follow shortcuts to XOPs placed in this directory and load them as well.  You can expect Motofit to install the following extensions (some may be missing):
+
+Abeles.xop
+Gencurvefit.xop
+XMLutils.xop
+zip.xop
+SOCKIT.xop
+easyHttp.xop
+neutronunpacker.xop
+multiopenfiles.xop
+base64.xop
+pthreadVC2.dll (windows only)
+
+2) IGOR then loads all the procedure files (.ipf extension) in 'My Documents/Wavemetrics/Igor Pro 6 User Files/Igor Procedures'.  These procedures are available to the user once IGOR has finished initialising.
+In more recent versions of Motofit you would expect to find the following file:
+
+MOTOFIT_loadpackage.ipf
+
+in this directory.  Older installers placed all Motofit code in this directory, but this was a bad idea and sometimes caused conflict with other packages.
+
+3) Other procedures are placed in 'My Documents/Wavemetrics/Igor Pro 6 User Files/User Procedures'.  These procedures are not immediately available in IGOR once it has started.  However, procedures in this directory (and shortcuts to locations containing procedures) can be made available by using an include statement.  Type the following from the IGOR command line to find out more:
+
+Displayhelptopic "The Include Statement"
+
+This is what Motofit does.  When the 'Motofit->Load Motofit Package' menu item is selected the MOTOFIT_loadpackage procedure (see point 2 above) '#includes' the rest of the Motofit code. 
+The latest version of the Motofit installers create a motofit directory with the following path:
+'My Documents/Wavemetrics/Igor Pro 6 User Files/User Procedures/motofit'
+This directory contains all the procedures needed for Motofit to work.
+At the moment these files are:
+
+GeneticOptimisation.ipf
+Motofit_all_at_once.ipf
+MOTOFIT_batch.ipf
+MOTOFIT_Global fit 2.ipf
+MOTOFIT_globalreflectometry.ipf
+MOTOFIT_SLDcalc.ipf
+
+Some of these files have been renamed over the past few years, and you may have some others, but they will probably start with 'MOTOFIT_'.
+
+4) Older versions of the Motofit installer placed its payload in the Igor Pro application directory, i.e.:
+C:/Program Files/WaveMetrics/Igor Pro 6 Folder (windows)
+or
+/Applications/Igor Pro 6 Folder (OSX)
+
+These payloads were distributed in a manner to points 1 + 2 + 3 above.
+For example, XOPs were placed in:
+C:/Program Files/WaveMetrics/Igor Pro 6 Folder/Igor Extensions.
+
+However, this wasn't a great idea because sometimes you needed admin privileges to write to these directories.  This is why they are now placed in 'My Documents', the installers require no privileges to work.
+NOTE: if you are experiencing problems with Windows Vista, please contact me, there are some extra problems here.
+
+5) If you have a problem with a motofit install, it's probably because you have older versions of different files installed in a slightly different place.  Sorry, it's because writing installer programs is really difficult. The easiest thing to do is to clean out all remnants of Motofit and start again.  You should be able to identify the remnants because I've listed most of the files above.
+i.e.
+
+a) Remove all extensions from 1)
+b) Remove all procedures from 2)
+c) Remove all procedures from 3)
+d) See if there is any Motofit code placed in the way described in 4).
+
+Once you've done this, try using the installer again.
