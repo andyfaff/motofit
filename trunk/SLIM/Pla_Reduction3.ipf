@@ -282,7 +282,7 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 	endfor
 	outsideANSTO -= 1
 	
-	url = "sftp://scp.nbi.ansto.gov.au/experiments/platypus/data/"
+	url = "sftp://scp.nbi.ansto.gov.au"
 	
 	if(builddirectorylist(user, password))
 		abort "problem building remote directory list"
@@ -314,8 +314,8 @@ Threadsafe Function downloader(url, directory, inputpathstr, userpasscombo, fnum
 	col=floor(V_value / rowsInWave)
 	row=V_value-col*rowsInWave
 	direct = directory[row][0]
-	
-	easyHttp/PROX=""/PASS=userpasscombo/File=inputpathStr + fname  url + direct + fname
+	print userpasscombo, url + direct
+	easyHttp/PROX=""/PASS=userpasscombo/File=inputpathStr + fname  url + direct
 	print "Got", fname
 	return 0
 End
