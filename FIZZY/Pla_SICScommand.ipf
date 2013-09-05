@@ -2699,11 +2699,13 @@ Function getCurrentHipaVals()
 	NVAR  SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	string cmd=""
 	string msg = "", lhs, rhs
-	variable ii = 0;
-	for(ii=0; ii<dimsize(hipadaba_paths,0) ; ii+=1)
-		cmd = "hget "+hipadaba_paths[ii][0]+"\n"
+	variable ii = 0, numleaves
+	
+	numleaves = dimsize(hipadaba_paths,0) 
+	for(ii = 0; ii < numleaves ; ii += 1)
+		cmd = "hget " + hipadaba_paths[ii][0] + "\n"
 		msg = sockitsendnrecvf(SOCK_INTEREST, cmd, 1, 1)
-		parseReply(msg,lhs,rhs)
+		parseReply(msg, lhs, rhs)
 		hipadaba_paths[ii][1] = rhs	
 	endfor
 End

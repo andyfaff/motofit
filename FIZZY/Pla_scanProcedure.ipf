@@ -331,19 +331,37 @@ Function changeGUIforfpx(mode, motorName, numpoints, preset)
 	variable numpoints, preset
 	Wave axeslist = root:packages:platypus:SICS:axeslist
 	variable status = fpxstatus()
+	variable currtab
 	
 	strswitch(mode)
 		case "unlimited":
-			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, inf, 0}
+			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, inf, 0}, value= #"root:packages:platypus:data:scan:pointProgress"
 		break
 		default:
-			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, numpoints * preset, 0}
+			ValDisplay/z progress_tab1,win=SICScmdpanel,limits={0, numpoints * preset, 0}, value= #"root:packages:platypus:data:scan:pointProgress"
 		break
 	endswitch
+	label/W=SICScmdPanel#G0_tab1/z bottom, motorName
+	PopupMenu/z motor_tab1, win=SICScmdpanel, fSize=10, mode=1, popvalue = motorName, value = #"motorlist()"
+	findvalue/TEXT=motorName/z/txop=4 root:packages:platypus:SICS:axeslist
+	if(V_Value > 0)
+		SetVariable currentpos_tab1, win=sicscmdpanel, limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist[V_Value][2]
+	else
+		SetVariable currentpos_tab1,win=sicscmdpanel, limits={-inf,inf,0},value=NaN
+	endif
+	
+	//what tab are you on?
+	controlinfo/W=sicscmdpanel sicstab
+	currtab = V_Value
+	if(currtab != 1)
+		modifycontrollist Controlnamelist("sicscmdpanel", ";", "_tab1") disable = 1
+		return 0
+	endif
+	
 	if(status)
-		Button/z Go_tab1 win=sicscmdpanel,disable=2^6	//if the scan starts disable the go button
-		Button/z stop_tab1 win=sicscmdpanel,disable=0		//if the scan starts enable the stop button
-		Button/z pause_tab1 win=sicscmdpanel,disable=0		//if the scan starts enable the pause button
+		Button/z Go_tab1 win=sicscmdpanel,disable = 3  	//if the scan starts disable the go button
+		Button/z stop_tab1 win=sicscmdpanel,disable = 0		//if the scan starts enable the stop button
+		Button/z pause_tab1 win=sicscmdpanel,disable = 0		//if the scan starts enable the pause button
 		
 		setvariable/z sampletitle_tab1 win=sicscmdpanel,disable=2		//if the scan starts disable the title button
 		setvariable/z preset_tab1 win=sicscmdpanel,disable=2
@@ -358,9 +376,9 @@ Function changeGUIforfpx(mode, motorName, numpoints, preset)
 			Button/z Pause_tab1,win=sicscmdpanel, title="Pause"	
 		endif
 	else
-		Button/z Go_tab1 win=sicscmdpanel,disable=0	//if the scan starts disable the go button
-		Button/z stop_tab1 win=sicscmdpanel,disable=6		//if the scan starts enable the stop button
-		Button/z pause_tab1 win=sicscmdpanel,disable=6		//if the scan starts enable the pause button
+		Button/z Go_tab1 win = sicscmdpanel, disable = 0		//if the scan starts disable the go button
+		Button/z stop_tab1 win=sicscmdpanel, disable = 3		//if the scan starts enable the stop button
+		Button/z pause_tab1 win = sicscmdpanel, disable = 3		//if the scan starts enable the pause button
 		
 		setvariable/z sampletitle_tab1 win=sicscmdpanel,disable=0		//if the scan starts disable the title button
 		setvariable/z preset_tab1 win=sicscmdpanel,disable=0
@@ -371,15 +389,6 @@ Function changeGUIforfpx(mode, motorName, numpoints, preset)
 		checkbox/z save_tab1 win=sicscmdpanel,disable=0
 	endif
 								
-	ValDisplay/z progress_tab1,win=SICScmdpanel,value= #"root:packages:platypus:data:scan:pointProgress"
-	label/W=SICScmdPanel#G0_tab1/z bottom, motorName
-	PopupMenu/z motor_tab1, win=SICScmdpanel, fSize=10, mode=1, popvalue = motorName, value = #"motorlist()"
-	findvalue/TEXT=motorName/z/txop=4 root:packages:platypus:SICS:axeslist
-	if(V_Value > 0)
-		SetVariable currentpos_tab1, win=sicscmdpanel, limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist[V_Value][2]
-	else
-		SetVariable currentpos_tab1,win=sicscmdpanel, limits={-inf,inf,0},value=NaN
-	endif
 End
 
 Function forceScanBkgTask()
