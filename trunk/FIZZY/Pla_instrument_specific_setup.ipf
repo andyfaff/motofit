@@ -125,7 +125,7 @@ Function hHistogram()
 	//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
 	oat_table("X",54.5,-54.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,2000,freq = 10)
+	oat_table("T",0,50,1000,freq = 20)
 End
 
 Function iHistogram() //Bills SAW, hslits(10,4,4,20)
