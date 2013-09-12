@@ -73,6 +73,7 @@ Function fpxStatus()
 	//3 = fpxstatemon
 	//4 = runscanstatus - /commands/scan/runscan/feedback/status
 	//5 = hmcontrol
+	//6 = hmscan
 	//FPX is a statemon addition, because sometimes it takes a while for the runscan status to change.
 	//use this as a guard to say the scan has started, but we're still waiting for the status to change to BUSY
 	//once it's done this you can remove it.
@@ -93,6 +94,9 @@ Function fpxStatus()
 	endif
 	if(statemonstatus("hmcontrol"))
 		running = running | 2^5
+	endif
+	if(statemonstatus("hmscan"))
+		running = running | 2^6
 	endif
 	if(running)
 		if(userPaused)
@@ -420,6 +424,7 @@ Function scanBkgTask(s)
 	//3 = fpxstatemon
 	//4 = runscanstatus - /commands/scan/runscan/feedback/status
 	//5 = hmcontrol
+	//6 = hmscan
 	variable status = fpxstatus()
 	
 	if(status & 2^4)
@@ -439,12 +444,12 @@ Function scanBkgTask(s)
 	endif
 	
 	//if you have started running, and the FPX statemon is set, then you can clear that statemon	
-	if((status & 2^4) && (status & 2^3))
+	if(((status & 2^4) && (status & 2^5) && (status & 2^6)) && (status & 2^3))
 		statemonclear("FPX")	
 	endif
 	
 	//see if you've finished?
-	if(!(status & 2^4) && !(status & 2^3))
+	if(!(status & 2^4) && !(status & 2^3) && !(status & 2^5) && !(status & 2^6))
 		finishScan(0)
 		return 1
 	endif
@@ -732,6 +737,11 @@ Function fillScanStats(position, w, full)
 	//		w[point][0] = numberbykey("num_events_filled_to_histo",histostatus,": ","\r")			
 			//try getting the counts from the HDF file.
 			CopyFile/D /O/Z datafilenameandpath as specialdirpath("Temporary", 0, 0, 0)
+			if(V_flag)
+				//no HDF file
+				setdatafolder saveDFR
+				return 0
+			endif
 			hdf5openfile/z/R fileID as S_filename			
 //			hdf5openfile/z/R fileID as datafilenameandpath
 			if(!fileID)

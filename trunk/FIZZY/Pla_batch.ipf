@@ -121,7 +121,7 @@ Function batchScanReadyForNextPoint()
 	try
 		if(userPaused)
 			return 2
-		elseif(dimsize(statemon, 0) > 0 || fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus ("HistogramMemory") || waitStatus())
+		elseif(dimsize(statemon, 0) > 0 || fpxStatus() || statemonstatus("hmcontrol")  || statemonstatus("hmscan") || statemonstatus ("HistogramMemory") || waitStatus())
 			Execute/P/Q/Z "DoXOPIdle"
 			return 1
 		elseif(!stringmatch(sicsstatus, "Eager to execute commands"))
@@ -145,8 +145,6 @@ Function batchScanReadyForNextPoint()
 				theFile = removeending(theFile, ".nx.hdf")
 				list_batchbuffer[currentpoint][4] = theFile
 			endif
-		
-			
 			return 0
 		endif
 	catch

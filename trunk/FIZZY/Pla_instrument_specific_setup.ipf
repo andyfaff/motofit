@@ -56,7 +56,7 @@
 	//constants for creating a webpage with instrument updates.
 	//on Platypus this is an apache webserver running on DAV1.
 	StrConstant SAVELOC = "C:website:htdocs:"
-	StrConstant HTTP_PROXY = "www-proxy.nbi.ansto.gov.au:3128"
+	StrConstant HTTP_PROXY = "proxy.nbi.ansto.gov.au:3128"
 
 Function DefaultHistogram()
 	oat_table("X",210.5,209.5,421)
