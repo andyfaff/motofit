@@ -50,7 +50,7 @@
 	Constant P_MN = 3.95603e-7
 	
 	//the constants below may change frequently
-	Constant Y_PIXEL_SPACING = 1.177	//in mm
+	Constant Y_PIXEL_SPACING = 1.175	//in mm
 	Constant CHOPFREQ = 23		//Hz
 	Constant ROUGH_BEAM_POSITION = 150		//Rough direct beam position
 	constant ROUGH_BEAM_WIDTH = 10
