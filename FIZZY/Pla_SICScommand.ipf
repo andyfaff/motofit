@@ -1286,8 +1286,7 @@ Function getLatestData()
 		//convert the unzipped binary array into a wave
 		//the first argument is the wavetype (see wavetype()), in this case signed INT32.
 		//use /e if you expect the data to be big endian.
-		sockitstringtowave 32,data
-		wave W_stringtowave
+		sockitstringtowave/dest=hmm 32,data
 
 		//work out how long the axes are for the loaded data.  This is obtained in the grabdata call above.
 		dim0 = str2num(stringfromlist(0,axis_sizes))
@@ -1306,7 +1305,7 @@ Function getLatestData()
 			numdims = 3
 			totalsize = dim0 * dim1 *dim2
 		endif
-		if(totalsize != numpnts(W_stringtowave))
+		if(totalsize != numpnts(hmm))
 			print "ERROR unzipped wave isn't same size as the reported dimensions (getlatestdata)"
 			return 1
 		endif
@@ -1314,17 +1313,15 @@ Function getLatestData()
 		//now have to redimension the wave to get it in the right order
 		switch(numdims)
 			case 1:
-				redimension/n=(dim0) W_stringtowave
+				redimension/n=(dim0) hmm
 				break
 			case 2:
-				redimension/n=(dim0,dim1) W_stringtowave
+				redimension/n=(dim0,dim1) hmm
 				break
 			case 3:
-				redimension/n=(dim0,dim1,dim2) W_stringtowave
+				redimension/n=(dim0,dim1,dim2) hmm
 				break
 		endswitch
-
-		duplicate/o W_stringtowave, hmm
 		
 		setdatafolder $cDF
 	
@@ -1336,7 +1333,7 @@ Function getLatestData()
 	
 		string newdisplaypossibilities = displayorderlist()
 		if(whichlistitem(currentdisplayorder,newdisplaypossibilities) != -1)//we can still display that kind of data
-			reDisplay(currentdisplayorder,isLog)
+			reDisplay(currentdisplayorder,isLog, justdata = 1)
 		else
 			reDisplay("",isLog)
 		endif
@@ -1424,9 +1421,9 @@ Function popup_changedisplayorder(pa) : PopupMenuControl
 End
 
 
-Function reDisplay(order,isLog)
+Function reDisplay(order,isLog, [justdata])
 	String order
-	variable isLog
+	variable isLog, justdata
 	//this function implicitly assumes that the data from the histoserver is histogrammed!!!!
 	//the order string specifies how the live data is displayed on tab2 of the panel.  e.g.
 	//e.g. the original data may be t;x;y
@@ -1437,6 +1434,8 @@ Function reDisplay(order,isLog)
 	// 1D data is displayed as a graph
 	// 2D data is displayed as an image (user defined order)
 	// 3D data is first transposed (user defined order), then the useless dimension summed.
+	//
+	//if justdata is true then it is assumed that only the data has changed, and the axes haven't been reordered
 
 	string cDF = getdatafolder(1)
 	setdatafolder  root:packages:platypus:data:RAW:displayed
@@ -1488,9 +1487,8 @@ Function reDisplay(order,isLog)
 				Wave displayed2D = root:packages:platypus:data:RAW:displayed:displayed2D
 				matrixtranspose displayed2D
 			endif
-			 
-			imagestats root:packages:platypus:data:RAW:displayed:displayed2D
-			integratedcounts = 	V_avg * V_npnts
+
+			integratedcounts = 	sum(root:packages:platypus:data:RAW:displayed:displayed2D)
 			
 			imagetransform sumallcols  root:packages:platypus:data:RAW:displayed:displayed2D
 			imagetransform sumallrows  root:packages:platypus:data:RAW:displayed:displayed2D
@@ -1549,8 +1547,7 @@ Function reDisplay(order,isLog)
 			Wave M_sumplanes
 			duplicate/o M_sumplanes,root:packages:platypus:data:RAW:displayed:displayed2D
 
-			imagestats root:packages:platypus:data:RAW:displayed:displayed2D
-			integratedcounts = 	V_avg * V_npnts
+			integratedcounts = 	sum(root:packages:platypus:data:RAW:displayed:displayed2D)
 			
 			imagetransform sumallcols  root:packages:platypus:data:RAW:displayed:displayed2D
 			imagetransform sumallrows  root:packages:platypus:data:RAW:displayed:displayed2D
@@ -1566,8 +1563,22 @@ Function reDisplay(order,isLog)
 			break
 	endswitch
 
+	if(dims>1 && isLog)
+		Wave displayed2D = root:packages:platypus:data:RAW:displayed:displayed2D
+		redimension/d displayed2D
+		displayed2D=log(displayed2D)
+		displayed2D = displayed2D[p][q]==NaN ? 0 : displayed2D[p][q]
+		displayed2D = displayed2D[p][q]==-Inf ? 0 : displayed2D[p][q]
+	elseif(dims==1 && isLog)
+		ModifyGraph/w=sicscmdpanel#g0_tab2 log(left)=1
+	endif
+	
 	killwaves/z M_volumetranspose,M_sumplanes,hmm,w_sumrows,w_sumcols
 
+	if(justdata)
+		return 0
+	endif
+	
 	dims = wavedims(rawdetector)
 			
 	if(dims==1)
@@ -1607,16 +1618,7 @@ Function reDisplay(order,isLog)
 	endif
 	Label/z/w=sicscmdpanel#g0_tab2 bottom stringfromlist(0,order,";")
 	Label/z/w=sicscmdpanel#g0_tab2 left ""				
-	
-	if(dims>1 && isLog)
-		Wave displayed2D = root:packages:platypus:data:RAW:displayed:displayed2D
-		redimension/d displayed2D
-		displayed2D=log(displayed2D)
-		displayed2D = displayed2D[p][q]==NaN ? 0 : displayed2D[p][q]
-		displayed2D = displayed2D[p][q]==-Inf ? 0 : displayed2D[p][q]
-	elseif(dims==1 && isLog)
-		ModifyGraph/w=sicscmdpanel#g0_tab2 log(left)=1
-	endif
+
 	setdatafolder $cDF
 End
 
