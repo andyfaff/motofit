@@ -528,7 +528,10 @@ Function/s reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 			Wave/t user = $(angle0DF + ":user:name")
 			Wave/t samplename = $(angle0DF + ":sample:name")			
 			writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, "", user[0], samplename[0], angle0, reductionCmd)
-						
+			
+			//calculate the actual PDF for the resolution function, for each point
+			assignActualKernel(angle0DF, directDF, W_q,  ii)
+									
 			//write a 2D XMLfile for the offspecular data
 			if(saveoffspec)
 				Multithread qz2D[][] = M_qz[p][q][ii]
@@ -823,7 +826,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 	//OUTPUT
 	//M_Spec,M_specSD,M_lambda,M_lambdaSD,M_lambdaHIST,M_specTOF,M_specTOFHIST, W_waternorm, M_beampos
 	
-	variable ChoD, toffset, nrebinpnts,ii, jj, D_CX, phaseAngle, pairing, freq, poff, calculated_width, temp, finishingPoint, MASTER_OPENING
+	variable toffset, nrebinpnts,ii, jj, pairing, freq, poff, calculated_width, temp, finishingPoint, MASTER_OPENING
 	variable originalScanPoint, scanpoint, numTimeSlices, numSpectra, typeOfIntegration, timeSliceDuration
 	string tempDF, cDF,tempDFwater, eventStreamingFile, cmd, proccmd, fractionalTimeStr
 	variable/c bkgloc
@@ -1126,6 +1129,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		Wave TOF = $(tempDF + ":data:time_of_flight")
 		make/n=(dimsize(TOF, 0), numspectra)/o/d M_specTOFHIST, M_lambdaHIST
 		make/n=(dimsize(TOF, 0) - 1, numspectra)/o/d M_lambda, M_specTOF
+		make/d/o/n=(numspectra) chod, D_CX, phaseAngle
 		M_specTOFHIST[][] = TOF[p][q]
 		M_lambdaHIST = 0
 		
@@ -1181,7 +1185,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			if(exists(tempDF + ":instrument:parameters:slave") == 1 && exists(tempDF + ":instrument:parameters:master") == 1)
 				Wave slave = $(tempDF+":instrument:parameters:slave")
 				Wave master = $(tempDF+":instrument:parameters:master")
-				phaseangle = 0
+				phaseangle[ii] = 0
 				if(slave[0] < 1 || slave[0] > 4 || master[0] < 1 || master[0] > 4)
 					print "ERROR master/slave pairing is incorrect (processNexusfile)"
 					abort
@@ -1191,18 +1195,18 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			
 				switch (master[scanpoint])
 					case 1:
-						D_CX = -chopper1_distance[0]
-						phaseangle += 0.5 * O_C1d
+						D_CX[ii] = -chopper1_distance[0]
+						phaseangle[ii] += 0.5 * O_C1d
 						MASTER_OPENING = O_C1
 						break
 					case 2:
-						D_CX = -chopper2_distance[0]
-						phaseangle += 0.5 * O_C2d
+						D_CX[ii] = -chopper2_distance[0]
+						phaseangle[ii] += 0.5 * O_C2d
 						MASTER_OPENING = O_C2
 						break
 					case 3:
-						D_CX = -chopper3_distance[0]
-						phaseangle += 0.5 * O_C3d
+						D_CX[ii] = -chopper3_distance[0]
+						phaseangle[ii] += 0.5 * O_C3d
 						MASTER_OPENING = O_C3
 						break
 					default:
@@ -1211,19 +1215,19 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				endswitch			
 				switch (slave[scanpoint])
 					case 2:
-						D_CX += chopper2_distance[0]
-						phaseangle += 0.5 * O_C2d
-						phaseangle += -ch2phase[0] - ch2phaseoffset[0]
+						D_CX[ii] += chopper2_distance[0]
+						phaseangle[ii] += 0.5 * O_C2d
+						phaseangle[ii] += -ch2phase[0] - ch2phaseoffset[0]
 						break
 					case 3:
-						phaseangle += 0.5 * O_C3d
-						phaseangle += -ch3phase[0] - ch3phaseoffset[0]
-						D_CX += chopper3_distance[0]
+						phaseangle[ii] += 0.5 * O_C3d
+						phaseangle[ii] += -ch3phase[0] - ch3phaseoffset[0]
+						D_CX[ii] += chopper3_distance[0]
 						break
 					case 4:
-						phaseangle += 0.5 * O_C4d
-						phaseangle += ch4phase[0] - ch4phaseoffset[0]
-						D_CX += chopper4_distance[0]
+						phaseangle[ii] += 0.5 * O_C4d
+						phaseangle[ii] += ch4phase[0] - ch4phaseoffset[0]
+						D_CX[ii] += chopper4_distance[0]
 						break
 					default:
 						print "ERROR master/slave pairing is incorrect (processNexusfile)"
@@ -1235,22 +1239,22 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				MASTER_OPENING = O_C1
 				if(abs(ch2speed[0]) > 10)
 					pairing = pairing | 2^2
-					D_CX = chopper2_distance[0]
-					phaseangle = -ch2phase[0] - ch2phaseoffset[0] + 0.5*(O_C2d+O_C1d)
+					D_CX[ii] = chopper2_distance[0]
+					phaseangle[ii] = -ch2phase[0] - ch2phaseoffset[0] + 0.5*(O_C2d+O_C1d)
 				elseif(abs(ch3speed[scanpoint]) > 10)
 					pairing = pairing | 2^3
-					D_CX = chopper3_distance[0]
-					phaseangle = -ch3phase[0] - ch3phaseoffset[0] + 0.5*(O_C3d+O_C1d)
+					D_CX[ii] = chopper3_distance[0]
+					phaseangle[ii] = -ch3phase[0] - ch3phaseoffset[0] + 0.5*(O_C3d+O_C1d)
 				else
 					pairing = pairing | 2^4
-					D_CX = chopper4_distance[0]
-					phaseangle = ch4phase[0] - ch4phaseoffset[0] + 0.5*(O_C4d + O_C1d)
+					D_CX[ii] = chopper4_distance[0]
+					phaseangle[ii] = ch4phase[0] - ch4phaseoffset[0] + 0.5*(O_C4d + O_C1d)
 				endif
 			endif
 		
 			//work out the total flight length
-			chod = ChoDCalculator(fileName, omega, two_theta, pairing = pairing, scanpoint = 0)
-			if(numtype(chod))
+			chod[ii] = ChoDCalculator(fileName, omega, two_theta, pairing = pairing, scanpoint = 0)
+			if(numtype(chod[ii]))
 				print "ERROR, chod is NaN (processNexusdata)"
 				abort
 			endif
@@ -1265,14 +1269,14 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				abort
 			endif
 			variable poffset = 1e6 * poff/(2 * 360 * freq)
-			toffset = poffset + (1e6 * MASTER_OPENING/2/(2 * Pi)/freq) - (1e6 * phaseAngle /(360 * 2 * freq))
+			toffset = poffset + (1e6 * MASTER_OPENING/2/(2 * Pi)/freq) - (1e6 * phaseAngle[ii] /(360 * 2 * freq))
 			Multithread M_specTOFHIST[][ii] -= toffset
 		
 			//		print master, slave, chod, phaseangle, poff, toffset
 		endfor
 			
 		//convert TOF to lambda	
-		Multithread M_lambdaHIST[][] = TOFtoLambda(M_specTOFHIST[p][q], ChoD)
+		Multithread M_lambdaHIST[][] = TOFtoLambda(M_specTOFHIST[p][q], ChoD[q])
 		M_lambda[][] = 0.5* (M_lambdaHIST[p][q] + M_lambdaHIST[p + 1][q])
 		
 		//find out where the beam hits the detector
@@ -1349,7 +1353,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			
 			redimension/n=(dimsize(rebinning, 0), -1) M_lambdaHIST, M_specTOFHIST
 			M_lambdaHIST[][] = rebinning[p][q]			
-			Multithread M_specTOFHIST[][] = LambdatoTOF(M_lambdaHIST[p][q], chod)			
+			Multithread M_specTOFHIST[][] = LambdatoTOF(M_lambdaHIST[p][q], chod[q])			
 			killwaves/z W_tof, M_rebin, M_rebinSD
 			
 		else		//delete the lolambda and hilambda cutoffs
@@ -1479,7 +1483,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		//account for the gross resolution of the chopper, adding in a contribution if you have a phase
 		//opening.  (don't forget freq is in Hz, W_point is in us.
 		//TODO ChoD might change from scanpoint to scanpoint..... The resolution will be out if you are scanning dy.
-		M_LambdaSD[][] += ((D_CX / ChoD)+(phaseAngle / (360 * freq * 1e-6 * M_specTOF[p][q])))^2
+		M_LambdaSD[][] += ((D_CX[q] / ChoD[q])+(phaseAngle[q] / (360 * freq * 1e-6 * M_specTOF[p][q])))^2
 		
 		//TODO ss2vg might change from scanpoint to scanpoint..... The resolution will be out if you are scanning ss2vg.
 		variable tauH = (1e6 * ss2vg[originalscanpoint] / (DISCRADIUS * 2 * Pi * freq))

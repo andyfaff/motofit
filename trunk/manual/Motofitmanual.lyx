@@ -1,5 +1,5 @@
-#LyX 1.5.4 created this file. For more info see http://www.lyx.org/
-\lyxformat 276
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
 \begin_document
 \begin_header
 \textclass article
@@ -36,38 +36,59 @@
 
 \makeatother
 \end_preamble
+\use_default_options false
+\maintain_unincluded_children false
 \language english
+\language_package default
 \inputencoding latin1
+\fontencoding global
 \font_roman default
 \font_sans default
 \font_typewriter default
 \font_default_family default
+\use_non_tex_fonts false
 \font_sc false
 \font_osf false
 \font_sf_scale 100
 \font_tt_scale 100
+
 \graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
 \paperfontsize default
 \spacing single
+\use_hyperref false
 \papersize default
 \use_geometry false
 \use_amsmath 0
 \use_esint 0
+\use_mhchem 0
+\use_mathdots 1
 \cite_engine basic
 \use_bibtopic false
+\use_indices false
 \paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
-\defskip medskip
+\paragraph_indentation default
 \quotes_language english
 \papercolumns 1
 \papersides 1
 \paperpagestyle default
 \tracking_changes false
 \output_changes false
-\author "" 
-\author "" 
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
 \end_header
 
 \begin_body
@@ -81,7 +102,7 @@ Motofit
 \begin_layout Standard
 \begin_inset Graphics
 	filename moto_2.jpg
-	display none
+	display false
 	scale 40
 	BoundingBox -250bp -50bp 584bp 992bp
 
@@ -94,7 +115,7 @@ Motofit
 \begin_inset ERT
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 
 \backslash
@@ -107,7 +128,7 @@ http://motofit.sourceforge.net
 \begin_inset ERT
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 }
 \end_layout
@@ -121,7 +142,7 @@ status collapsed
 \begin_inset ERT
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 
 \backslash
@@ -136,7 +157,7 @@ Andrew_Nelson@users.sourceforge.net
 \begin_inset ERT
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 }
 \end_layout
@@ -157,13 +178,15 @@ try data.
 \end_layout
 
 \begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
 
-\newpage
 
 \end_layout
 
 \begin_layout Standard
-\begin_inset LatexCommand tableofcontents
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
 
 \end_inset
 
@@ -171,8 +194,9 @@ try data.
 \end_layout
 
 \begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
 
-\newpage
 
 \end_layout
 
@@ -196,7 +220,8 @@ Motofit
 The specular reflectivity is calculated using the 
 \emph on
 Abeles
-\begin_inset LatexCommand cite
+\begin_inset CommandInset citation
+LatexCommand cite
 key "Heavens1955"
 
 \end_inset
@@ -206,7 +231,8 @@ key "Heavens1955"
  formulation (giving identical results to 
 \emph on
 Parratts
-\begin_inset LatexCommand cite
+\begin_inset CommandInset citation
+LatexCommand cite
 key "Parratt1954"
 
 \end_inset
@@ -222,8 +248,10 @@ r momentum transfer, Q
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-Q_{z}=\frac{4\pi}{\lambda}\sin\theta\label{Equation:Qvector}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+Q_{z}=\frac{4\pi}{\lambda}\sin\theta\label{Equation:Qvector}
+\end{equation}
 
 \end_inset
 
@@ -322,7 +350,8 @@ Journal of
 Applied Crystallography
 \emph default
  paper
-\begin_inset LatexCommand cite
+\begin_inset CommandInset citation
+LatexCommand cite
 key "Nelson2006"
 
 \end_inset
@@ -355,7 +384,8 @@ The reflectivity is calculated using the
 Abeles
 \emph default
  matrix method for stratified interface
-\begin_inset LatexCommand cite
+\begin_inset CommandInset citation
+LatexCommand cite
 key "Heavens1955"
 
 \end_inset
@@ -369,7 +399,7 @@ wide false
 sideways false
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename stratified.eps
 	scale 80
@@ -381,10 +411,10 @@ status collapsed
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Reflection from a stratified medium
 \end_layout
 
@@ -456,8 +486,10 @@ In this description the interface is split into
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-k_{n}=\sqrt{k_{0}^{2}-4\pi\left(\rho_{n}-\rho_{0}\right)}\label{Equation:wavevector}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+k_{n}=\sqrt{k_{0}^{2}-4\pi\left(\rho_{n}-\rho_{0}\right)}\label{Equation:wavevector}
+\end{equation}
 
 \end_inset
 
@@ -491,8 +523,10 @@ n+1
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-r_{n,n+1}=\frac{k_{n}-k_{n+1}}{k_{n}+k_{n+1}}\label{eq:}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+r_{n,n+1}=\frac{k_{n}-k_{n+1}}{k_{n}+k_{n+1}}\label{eq:}
+\end{equation}
 
 \end_inset
 
@@ -503,13 +537,15 @@ r_{n,n+1}=\frac{k_{n}-k_{n+1}}{k_{n}+k_{n+1}}\label{eq:}\end{equation}
 Since the interface between each layer is unlikely to be perfectly smooth
  the roughness/diffuseness of each interface modifies the Fresnel coefficient
  
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "eq:rough"
 
 \end_inset
 
  and is accounted for by an error function, as described by Nevot and Croce
-\begin_inset LatexCommand cite
+\begin_inset CommandInset citation
+LatexCommand cite
 key "Nevot1980"
 
 \end_inset
@@ -518,8 +554,10 @@ key "Nevot1980"
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-r_{n,n+1}=\frac{k_{n}-k_{n+1}}{k_{n}+k_{n+1}}\exp\left(-2k_{n}k_{n+1}\sigma_{n,n+1}^{2}\right)\label{eq:rough}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+r_{n,n+1}=\frac{k_{n}-k_{n+1}}{k_{n}+k_{n+1}}\exp\left(-2k_{n}k_{n+1}\sigma_{n,n+1}^{2}\right)\label{eq:rough}
+\end{equation}
 
 \end_inset
 
@@ -535,8 +573,10 @@ A phase factor,
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-\beta_{n}=k_{n}d_{n}\label{eq:phasefactor}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+\beta_{n}=k_{n}d_{n}\label{eq:phasefactor}
+\end{equation}
 
 \end_inset
 
@@ -548,10 +588,13 @@ A characteristic matrix,cn is then calculated for each layer.
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
+\begin_inset Formula 
+\begin{equation}
 c_{n}=\left[\begin{array}{cc}
 \exp\left(\beta_{n}\right) & r_{n}\exp\left(\beta_{n}\right)\\
-r_{n}\exp\left(-\beta_{n}\right) & \exp\left(-\beta_{n}\right)\end{array}\right]\label{eq:characteristic matrix}\end{equation}
+r_{n}\exp\left(-\beta_{n}\right) & \exp\left(-\beta_{n}\right)
+\end{array}\right]\label{eq:characteristic matrix}
+\end{equation}
 
 \end_inset
 
@@ -564,8 +607,10 @@ The resultant matrix is defined as the product of these characteristic matrices,
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-M=\prod_{0}^{n}c_{n}\label{eq:matrixmultiply}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+M=\prod_{0}^{n}c_{n}\label{eq:matrixmultiply}
+\end{equation}
 
 \end_inset
 
@@ -573,8 +618,10 @@ M=\prod_{0}^{n}c_{n}\label{eq:matrixmultiply}\end{equation}
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-R=\left|\frac{M_{00}}{M_{10}}\right|^{2}\label{eq:reflectivity}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+R=\left|\frac{M_{00}}{M_{10}}\right|^{2}\label{eq:reflectivity}
+\end{equation}
 
 \end_inset
 
@@ -583,7 +630,8 @@ R=\left|\frac{M_{00}}{M_{10}}\right|^{2}\label{eq:reflectivity}\end{equation}
 
 \begin_layout Section
 What files do you need?
-\begin_inset LatexCommand label
+\begin_inset CommandInset label
+LatexCommand label
 name "sec:What-files-do"
 
 \end_inset
@@ -633,10 +681,14 @@ Multiopenfiles.xop
 
 \begin_layout Standard
 You will need to open them all for the program to work.
- The 
-\begin_inset LatexCommand htmlurl
-name "latest version"
-target "http://sourceforge.net/projects/motofit/files/latest/download"
+ The latest version 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://sourceforge.net/projects/motofit/files/latest/download
+\end_layout
 
 \end_inset
 
@@ -668,10 +720,14 @@ Igor Pro 6 User Files
 \end_layout
 
 \begin_layout Enumerate
-Go to the 
-\begin_inset LatexCommand htmlurl
-name "subversion repository"
-target "https://motofit.svn.sourceforge.net/svnroot/motofit/trunk/"
+Go to the subversion repository 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+https://motofit.svn.sourceforge.net/svnroot/motofit/trunk/
+\end_layout
 
 \end_inset
 
@@ -733,10 +789,14 @@ Igor Procedures
 \begin_layout Enumerate
 Obtain the .xop files.
  These pre-compiled DLL's are necessary and make Motofit a lot faster.
- They can be downloaded from the 
-\begin_inset LatexCommand htmlurl
-name "IgorExchange"
-target "http://www.igorexchange.com"
+ They can be downloaded from the IgorExchange 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://www.igorexchange.com
+\end_layout
 
 \end_inset
 
@@ -831,7 +891,7 @@ wide false
 sideways false
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename dialogue.tiff
 	scale 70
@@ -842,10 +902,10 @@ status collapsed
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 \emph on
 Motofit
@@ -907,7 +967,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename Reflectivitygraph.tiff
 	scale 50
@@ -918,11 +978,12 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
-\begin_inset LatexCommand label
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
 name "cap:The-reflectivity-graph,"
 
 \end_inset
@@ -947,7 +1008,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename SLDgraph.pdf
 	scale 70
@@ -957,8 +1018,9 @@ status open
 
 \begin_inset Caption
 
-\begin_layout Standard
-\begin_inset LatexCommand label
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
 name "fig:The-scattering-length"
 
 \end_inset
@@ -971,7 +1033,7 @@ The scattering length density graph.
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 \end_layout
 
@@ -983,7 +1045,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename reflectivitypanel.tiff
 	scale 50
@@ -994,10 +1056,10 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 The reflectivity fit panel, setup for a two layer system.
  Note the presence of a slider at the bottom to vary the last selected parameter
 \end_layout
@@ -1021,7 +1083,8 @@ Model parameters
 \end_layout
 
 \begin_layout Standard
-\begin_inset LatexCommand label
+\begin_inset CommandInset label
+LatexCommand label
 name "sub:Model-Parameters"
 
 \end_inset
@@ -1035,7 +1098,7 @@ wide false
 sideways false
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename Model.png
 	scale 70
@@ -1046,10 +1109,10 @@ status collapsed
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 The 
 \emph on
 Motofit
@@ -1109,7 +1172,7 @@ wide false
 sideways false
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename layerparams.png
 	scale 80
@@ -1120,10 +1183,10 @@ status collapsed
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Parameters for each of the layers.
  The number at the far left hand side of the white box indicates the layer
  number.
@@ -1215,7 +1278,8 @@ All the real parts of the SLD are expressed as
 .
  Roughnesses are implemented in terms of an error function, according to
  Nevot+Croce
-\begin_inset LatexCommand cite
+\begin_inset CommandInset citation
+LatexCommand cite
 key "Nevot1980"
 
 \end_inset
@@ -1398,7 +1462,8 @@ There are two different ways of handling the resolution smearing.
 dq/q=5%
 \emph default
 , where dq is defined in 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "eq: resolution"
 
 \end_inset
@@ -1410,8 +1475,10 @@ reference "eq: resolution"
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-\left(\frac{\Delta Q}{Q}\right)^{2}=\left(\frac{\Delta\theta}{\theta}\right)^{2}+\left(\frac{\Delta\lambda}{\lambda}\right)^{2}\label{eq: resolution}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+\left(\frac{\Delta Q}{Q}\right)^{2}=\left(\frac{\Delta\theta}{\theta}\right)^{2}+\left(\frac{\Delta\lambda}{\lambda}\right)^{2}\label{eq: resolution}
+\end{equation}
 
 \end_inset
 
@@ -1420,7 +1487,8 @@ reference "eq: resolution"
 
 \begin_layout Standard
 In 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "eq: resolution"
 
 \end_inset
@@ -1585,7 +1653,8 @@ dataset
 
 \begin_layout Subsubsection
 Use constraints
-\begin_inset LatexCommand label
+\begin_inset CommandInset label
+LatexCommand label
 name "sub:Use-constraints"
 
 \end_inset
@@ -1777,7 +1846,8 @@ Output available from the fit
 \begin_layout Standard
 All output data from the fit is placed into the datafolder for that dataset.
  Please see 
-\begin_inset LatexCommand prettyref
+\begin_inset CommandInset ref
+LatexCommand formatted
 reference "sub:The-organisation-of"
 
 \end_inset
@@ -1877,7 +1947,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename Reflectivityfittingreport.jpg
 	scale 50
@@ -1887,10 +1957,10 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 A report is produced for each fit, so you can compare different approaches.
 \end_layout
 
@@ -1913,13 +1983,15 @@ This method is very efficient at finding global minima in the Chi2 function,
  even if the starting guesses are far from the final solution.
  The algorithm used in the program is a differential evolution technique
  from Wormington et al
-\begin_inset LatexCommand cite
+\begin_inset CommandInset citation
+LatexCommand cite
 key "Wormington1999"
 
 \end_inset
 
  and Storn and Price
-\begin_inset LatexCommand cite
+\begin_inset CommandInset citation
+LatexCommand cite
 key "Storn1995"
 
 \end_inset
@@ -2101,7 +2173,8 @@ Motofit
 \end_layout
 
 \begin_layout Subsubsection
-\begin_inset LatexCommand label
+\begin_inset CommandInset label
+LatexCommand label
 name "sub:Genetic-+-Monte"
 
 \end_inset
@@ -2113,7 +2186,8 @@ Genetic + Monte Carlo Error analysis
 Normally, when one uses the Levenberg Marquardt or Genetic Optimisation
  methods the parameter uncertainties are worked out from the covariance
  matrix
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "sub:What-is-a"
 
 \end_inset
@@ -2125,7 +2199,7 @@ reference "sub:What-is-a"
  Sometimes this assumption is incorrect.
  Alternatively, the technique used to obtain the covariance matrix may be
  unstable - the most used method requires the inversion of the Hessian matrix
- (the partial derivatives of 
+ (the second order partial derivatives of 
 \begin_inset Formula $\chi^{2}$
 \end_inset
 
@@ -2138,7 +2212,8 @@ reference "sub:What-is-a"
 \begin_layout Standard
 The best way of estimating the probability distribution of the fitted parameters
  is to use a Monte Carlo error analysis
-\begin_inset LatexCommand cite
+\begin_inset CommandInset citation
+LatexCommand cite
 key "Heinrich2009"
 
 \end_inset
@@ -2182,7 +2257,8 @@ Motofit
  automatically calculates these values, as well as working out the covariance
  matrix for all the parameters, as well as a plot showing the variation
  in scattering length density profiles
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "fig:Output-from-Monte"
 
 \end_inset
@@ -2204,7 +2280,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename montecarlofit.tiff
 	scale 40
@@ -2214,7 +2290,7 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename montecarlofit1.tiff
 	scale 40
@@ -2224,7 +2300,7 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename montecarlograph2.pdf
 	scale 40
@@ -2234,8 +2310,9 @@ status open
 
 \begin_inset Caption
 
-\begin_layout Standard
-\begin_inset LatexCommand label
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
 name "fig:Output-from-Monte"
 
 \end_inset
@@ -2252,7 +2329,7 @@ Output from Monte Carlo error analysis.
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 \end_layout
 
@@ -2289,7 +2366,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename FFToutput.tiff
 	scale 40
@@ -2300,7 +2377,7 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename FFToutput1.tiff
 	scale 40
@@ -2310,10 +2387,10 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Fourier transform of some neutron data.
  This data fitted to a 350A layer
 \end_layout
@@ -2382,8 +2459,10 @@ As the model is updated the
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-\chi^{2}=\sum_{n=1}^{L}\frac{1}{L-P}\left(\frac{y_{n,obs}-y_{n,calc}}{\sigma_{n,error}}\right)^{2}\label{eq:}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+\chi^{2}=\sum_{n=1}^{L}\frac{1}{L-P}\left(\frac{y_{n,obs}-y_{n,calc}}{\sigma_{n,error}}\right)^{2}\label{eq:}
+\end{equation}
 
 \end_inset
 
@@ -2424,7 +2503,8 @@ Reflectivity Graph
 
 \begin_layout Standard
 This plot shows the theoretical reflectivity curve (
-\begin_inset LatexCommand prettyref
+\begin_inset CommandInset ref
+LatexCommand formatted
 reference "cap:The-reflectivity-graph,"
 
 \end_inset
@@ -2505,7 +2585,8 @@ This plot shows the SLD profile corresponding to the theoretical model,
 
 \begin_layout Standard
 The SLD profile is calculated using 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "eq:SLDprofile"
 
 \end_inset
@@ -2523,8 +2604,10 @@ erf
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-\rho_{z}=\sum_{i=0}^{N}\frac{\rho_{i}-\rho_{i+1}}{2}\left(1+\textrm{erf}\left(\frac{z-z_{i}}{\sqrt{2}{\sigma_{i}}}\right)\right)\label{eq:SLDprofile}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+\rho_{z}=\sum_{i=0}^{N}\frac{\rho_{i}-\rho_{i+1}}{2}\left(1+\textrm{erf}\left(\frac{z-z_{i}}{\sqrt{2}{\sigma_{i}}}\right)\right)\label{eq:SLDprofile}
+\end{equation}
 
 \end_inset
 
@@ -2575,7 +2658,8 @@ If you have a graph already open (e.g.
 \end_layout
 
 \begin_layout Subsubsection
-\begin_inset LatexCommand label
+\begin_inset CommandInset label
+LatexCommand label
 name "sub:The-organisation-of"
 
 \end_inset
@@ -2729,7 +2813,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename corefinementpanel.tiff
 	scale 40
@@ -2740,7 +2824,7 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename corefinementpanel1.tiff
 	scale 40
@@ -2750,10 +2834,10 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 The corefinement panel.
  In the first tab you setup which datasets you want to co-refine and their
  linkages.
@@ -2788,7 +2872,7 @@ wide false
 sideways false
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename SLDdatabase.tiff
 	lyxscale 60
@@ -2798,11 +2882,12 @@ status collapsed
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
-\begin_inset LatexCommand label
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
 name "fig:The-scattering-length"
 
 \end_inset
@@ -2822,7 +2907,8 @@ The scattering length density database panel
 
 \begin_layout Standard
 Figure 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "fig:The-scattering-length"
 
 \end_inset
@@ -2885,25 +2971,34 @@ H(100)2O (there is no isotope of Hydrogen with weight of 100).
 
 \begin_layout Standard
 The SLD calculation is performed using the method described in Section 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "sub:How-do-I-cal-SLD"
 
 \end_inset
 
 .
- The calculator uses the neutron lengths tabulated at the 
-\begin_inset LatexCommand url
-name "NIST"
-target "http://www.ncnr.nist.gov/resources/n-lengths/"
+ The calculator uses the neutron lengths tabulated at the NIST 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://www.ncnr.nist.gov/resources/n-lengths/
+\end_layout
 
 \end_inset
 
  website.
  The X-ray scattering lengths were obtained from the scattering factors
- on the 
-\begin_inset LatexCommand url
-name "Lawrence Livermore"
-target "http://www-phys.llnl.gov/Research/scattering/asf.html"
+ on the Lawrence Livermore 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://www-phys.llnl.gov/Research/scattering/asf.html
+\end_layout
 
 \end_inset
 
@@ -2921,7 +3016,7 @@ wide false
 sideways false
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename SLDdatabasetab1.jpg
 	lyxscale 60
@@ -2932,10 +3027,10 @@ status collapsed
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 The SLD database holds a list of common chemicals
 \end_layout
 
@@ -2963,7 +3058,8 @@ Motofit
  Values from the SLD database can be automatically inserted into a structural
  model by right clicking in the SLD cells in the reflectivity panel (section
  
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "sub:Why-does-right"
 
 \end_inset
@@ -2997,36 +3093,78 @@ wide false
 sideways false
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+These datasets were fitted in <10 seconds
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename batchdata.jpg
 	lyxscale 40
 	keepAspectRatio
-	subcaption
-	subcaptionText "These datasets were fitted in <10 seconds"
 
 \end_inset
 
 
 \end_layout
 
-\begin_layout Standard
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+The output from the entire batch fit process
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename batchdataoutput.jpg
 	lyxscale 40
 	keepAspectRatio
-	subcaption
-	subcaptionText "The output from the entire batch fit process"
 
 \end_inset
 
 
 \end_layout
 
-\begin_layout Standard
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Batchfitting is easy in Motofit.
  The x-axis corresponds to the dataset number,.
  The y-axes are shown in reverse order (lowest parameter number is displayed
@@ -3147,7 +3285,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
  
 \begin_inset Graphics
 	filename chi2map.eps
@@ -3160,11 +3298,12 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
-\begin_inset LatexCommand label
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
 name "fig:Layer-thickness-Chi2"
 
 \end_inset
@@ -3204,7 +3343,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename 2dchi2map.eps
 	scale 70
@@ -3216,10 +3355,10 @@ status open
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Caption
 
-\begin_layout Standard
+\begin_layout Plain Layout
 A 2D chi2map of layer thickness and SLD
 \end_layout
 
@@ -3280,17 +3419,22 @@ Analysis -> Genetic curvefitting
  You will create a specific parameter wave for your model.
  You will then write a function that will take your parameter wave as input,
  create a specific wave (see 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "sub:Use-constraints"
 
 \end_inset
 
 ) which is used by the kernel that calculates the reflectivity, then calculate
  the reflectivity.
- Please contact 
-\begin_inset LatexCommand htmlurl
-name "me"
-target "mailto:andrew_nelson@users.sourceforge.net"
+ Please contact me 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+mailto:andrew_nelson@users.sourceforge.net
+\end_layout
 
 \end_inset
 
@@ -3367,7 +3511,8 @@ The easiest way is to use the inbuilt SLD calculator.
 \begin_layout Standard
 But you should also be able to calculate them for yourself.
  The formula for calculating a scattering length density is given in 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "eq:sldcalculation"
 
 \end_inset
@@ -3393,8 +3538,10 @@ n
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-\rho=\frac{\sum_{i=1}^{n}b_{c_{i}}}{V_{m}}\label{eq:sldcalculation}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+\rho=\frac{\sum_{i=1}^{n}b_{c_{i}}}{V_{m}}\label{eq:sldcalculation}
+\end{equation}
 
 \end_inset
 
@@ -3403,7 +3550,8 @@ n
 
 \begin_layout Standard
 You can also write this as 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "eq:altsldcalculation"
 
 \end_inset
@@ -3424,8 +3572,10 @@ reference "eq:altsldcalculation"
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-\rho=\frac{N_{a}\rho_{mass}}{M_{R}}\times\sum_{i=1}^{n}b_{c_{i}}\label{eq:altsldcalculation}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+\rho=\frac{N_{a}\rho_{mass}}{M_{R}}\times\sum_{i=1}^{n}b_{c_{i}}\label{eq:altsldcalculation}
+\end{equation}
 
 \end_inset
 
@@ -3437,8 +3587,13 @@ You can find a table of neutron scattering lengths at:
 \end_layout
 
 \begin_layout Itemize
-\begin_inset LatexCommand url
-target "http://www.ncnr.nist.gov/resources/n-lengths/"
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://www.ncnr.nist.gov/resources/n-lengths/
+\end_layout
 
 \end_inset
 
@@ -3448,7 +3603,8 @@ target "http://www.ncnr.nist.gov/resources/n-lengths/"
 \begin_layout Standard
 For X-rays you have to calculate the scattering length for each atom before
  doing the calculation, 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "eq:xrayscattlength"
 
 \end_inset
@@ -3457,8 +3613,10 @@ reference "eq:xrayscattlength"
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-b_{i}=\frac{e^{2}}{4\pi\epsilon_{0}mc^{2}}f_{1i}\label{eq:xrayscattlength}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+b_{i}=\frac{e^{2}}{4\pi\epsilon_{0}mc^{2}}f_{1i}\label{eq:xrayscattlength}
+\end{equation}
 
 \end_inset
 
@@ -3495,8 +3653,13 @@ i
 \end_layout
 
 \begin_layout Itemize
-\begin_inset LatexCommand url
-target "http://www-phys.llnl.gov/Research/scattering/asf.html"
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://www-phys.llnl.gov/Research/scattering/asf.html
+\end_layout
 
 \end_inset
 
@@ -3514,7 +3677,8 @@ This is an exact way of calculating
 \end_inset
 
 , a much quicker approximation is to use 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "eq:compton radius"
 
 \end_inset
@@ -3535,8 +3699,10 @@ is the Compton radius (
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \begin{equation}
-b_{i}=Zr_{e}\label{eq:compton radius}\end{equation}
+\begin_inset Formula 
+\begin{equation}
+b_{i}=Zr_{e}\label{eq:compton radius}
+\end{equation}
 
 \end_inset
 
@@ -3546,7 +3712,8 @@ b_{i}=Zr_{e}\label{eq:compton radius}\end{equation}
 \begin_layout Standard
 To find out how to enter the scattering length densities are entered into
  the program please see Section 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "sub:Model-Parameters"
 
 \end_inset
@@ -3579,10 +3746,17 @@ update to the latest version of IGOR.
 
 \begin_layout Itemize
 if all these steps fail then please email:
-\newline
+\begin_inset Newline newline
+\end_inset
+
  
-\begin_inset LatexCommand url
-target "mailto:Andrew_Nelson@users.sourceforge.net"
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+mailto:Andrew_Nelson@users.sourceforge.net
+\end_layout
 
 \end_inset
 
@@ -3716,7 +3890,8 @@ How are the parameter uncertainties calculated?
 
 \begin_layout Standard
 See 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "sub:What-is-a"
 
 \end_inset
@@ -3725,7 +3900,8 @@ reference "sub:What-is-a"
  Both Levenberg Marquardt and the Genetic Optimisation approach use a finite
  difference approach to estimate parameter uncertainty.
  For a more robust (but much slower) approach see 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "sub:Genetic-+-Monte"
 
 \end_inset
@@ -3734,7 +3910,8 @@ reference "sub:Genetic-+-Monte"
 \end_layout
 
 \begin_layout Subsection
-\begin_inset LatexCommand label
+\begin_inset CommandInset label
+LatexCommand label
 name "sub:What-is-a"
 
 \end_inset
@@ -3780,7 +3957,8 @@ There should be an inverse relationship between the second-order derivative
 \end_inset
 
  function is sharp with respect to a parameter (see 
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "fig:Layer-thickness-Chi2"
 
 \end_inset
@@ -3807,7 +3985,7 @@ reference "fig:Layer-thickness-Chi2"
 \end_layout
 
 \begin_layout Standard
-The Hessian matrix is calculated using a finite difference approximation,
+The Hessian matrix is calculated using a central difference approximation,
  then inverted to give the covariance matrix.
 \end_layout
 
@@ -3815,7 +3993,8 @@ The Hessian matrix is calculated using a finite difference approximation,
 In some cases the matrix inversion is unstable and may give incorrect values
  for the variance/standard deviation of the parameter estimate.
  In such cases use the Monte Carlo resampling technique (
-\begin_inset LatexCommand ref
+\begin_inset CommandInset ref
+LatexCommand ref
 reference "sub:Genetic-+-Monte"
 
 \end_inset
@@ -3925,7 +4104,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
  
 \begin_inset Graphics
 	filename logR.eps
@@ -3960,7 +4139,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
  
 \begin_inset Graphics
 	filename logRerror.eps
@@ -3989,7 +4168,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
  
 \begin_inset Graphics
 	filename RQ.eps
@@ -4023,7 +4202,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
  
 \begin_inset Graphics
 	filename RQerror.eps
@@ -4055,7 +4234,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
  
 \begin_inset Graphics
 	filename RQ1_R.eps
@@ -4089,7 +4268,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
  
 \begin_inset Graphics
 	filename RQ4.eps
@@ -4124,7 +4303,7 @@ wide false
 sideways false
 status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
  
 \begin_inset Graphics
 	filename RQ4error.eps
@@ -4193,10 +4372,17 @@ Send me details of any bugs and I'll fix them.
  If you have any suggestions on how to improve things/would like to help
  develop things then please email me.
  
-\newline
+\begin_inset Newline newline
+\end_inset
+
  
-\begin_inset LatexCommand url
-target "mailto:Andrew_Nelson@users.sourceforge.net"
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+mailto:Andrew_Nelson@users.sourceforge.net
+\end_layout
 
 \end_inset
 
@@ -4207,7 +4393,7 @@ target "mailto:Andrew_Nelson@users.sourceforge.net"
 \begin_inset ERT
 status collapsed
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 
 \backslash
@@ -4217,9 +4403,10 @@ bibliographystyle{plain}
 \end_inset
 
  
-\begin_inset LatexCommand bibtex
-options "plain"
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
 bibfiles "/Users/anz/Documents/Andy/reference"
+options "plain"
 
 \end_inset
 

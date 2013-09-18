@@ -314,7 +314,6 @@ Threadsafe Function downloader(url, directory, inputpathstr, userpasscombo, fnum
 	col=floor(V_value / rowsInWave)
 	row=V_value-col*rowsInWave
 	direct = directory[row][0]
-	print userpasscombo, url + direct
 	easyHttp/PROX=""/PASS=userpasscombo/File=inputpathStr + fname  url + direct
 	print "Got", fname
 	return 0
