@@ -899,3 +899,208 @@ Function/wave Pla_gen_binboundaries(lowlambda, highlambda, rebinpercent)
 	Wave W_rebinboundaries = W_rebinboundaries
 	return W_rebinboundaries
 End
+
+////////////////////////////////////////////////////////////////
+//highly detailed resolution kernel
+////////////////////////////////////////////////////////////////
+
+Function thetadist(theta, qwave, d1, d2, L12, nom_q, nom_theta)
+	
+	Wave theta, qwave
+	variable d1, d2, L12, nom_q, nom_theta
+	//work out the PDF for the angular component of the resolution function
+
+	variable beeta, alpha, gradient, intercept, areas, nom_lambda, thetarad
+
+	nom_lambda = 4*Pi*sin(nom_theta*Pi/180)/nom_q
+	thetarad = nom_theta * Pi / 180
+	
+	alpha = (d1 + d2) / 2 / L12
+	beeta = abs(d1-d2) / 2 / L12
+	
+	duplicate/free qwave, xtheta
+	xtheta = asin(qwave[p] * nom_lambda / 4 / Pi)
+	
+	theta = (xtheta[p] >= thetarad-beeta && xtheta[p] <= thetarad + beeta) ? 1 : 0
+	gradient = 1/(alpha - beeta)
+	intercept = alpha * gradient
+	theta = (xtheta[p] < thetarad-beeta) ? gradient * (xtheta[p]-thetarad) + alpha * gradient : theta
+	theta = (xtheta[p] > thetarad+beeta) ? -gradient * (xtheta[p]-thetarad) + alpha * gradient : theta
+	theta = (xtheta[p] < thetarad-alpha || xtheta[p] >= thetarad + alpha) ? 0 : theta
+
+	areas =  area(theta)
+	theta /= areas
+	
+	//now we have distribution as a function of theta
+	//transform with the jacobian
+	theta *= nom_lambda/4/Pi/cos(xtheta[p])
+	
+End
+
+Function lambdadist(lambdadist, qwave, nom_lambda, reso, nom_q)
+	Wave lambdadist, qwave
+	variable nom_lambda, reso, nom_q
+	//work out the PDF for the wavelength component of the resolution function. Burst time and rebinning.
+
+	variable areas, dl, K, loLambda, hiLambda, hiQ, loQ, nomtheta, lambda, pnt
+	
+	K = nom_q * nom_lambda		//4 * Pi * sin(theta)
+	dl = nom_lambda * reso/200
+
+	hiQ = K/(nom_lambda - dl)
+	loQ = K/(nom_lambda + dl)
+	
+	lambdadist = 0
+	//The rectangular distribution must undergo a Jacobian transformation
+	//into Q space
+	lambdadist = (qwave[p] >= loQ && qWave[p] <= hiQ) ? K/ 2 / dl / qwave[p]^2 : 0
+
+End
+
+Function crossingtimedist(lambdadist, qwave, nom_lambda, ss2vg, chod, radius, freq, nom_q)
+	Wave lambdadist, qwave
+	variable  nom_lambda, ss2vg, chod, radius, freq, nom_q
+	//work out the PDF for the wavelength component of the resolution function, crossing time component.
+	variable areas, tau, totalflight, temp2, temp, K, dl
+	
+	K = nom_q * nom_lambda		//4 * Pi * sin(theta)
+
+	totalflight = nom_lambda/3956*(chod/1000)
+	tau = ss2vg/radius/2/Pi/freq 
+	temp = 3956* (totalflight-tau / 2)/(chod/1000)
+	temp2 = 3956* (totalflight+tau / 2)/(chod/1000)
+
+	lambdadist = (K/qwave[p] >= temp && K/qwave[p] <= temp2) ? K / (temp2 - temp) / qwave[p]^2 : 0		
+End
+
+function/wave actualkernel(nomtheta, d1,d2,L12, nomq, reso, chod, radius, freq, specI, specL, DA)
+	Variable nomtheta, d1, d2, L12, nomq, reso, chod, radius, freq
+	Wave specI, specL
+	variable DA
+
+	variable qq, areas, nomlambda, K
+	make/d/n=501/free lambda, theta, qwave, lambda2, lambda3
+	duplicate/free qwave, xlambda, xtheta, tempkernel, spec_IQ, templambdakernel
+	
+	nomlambda = 4 * Pi * sin(nomtheta*Pi/180)/nomq
+//	print nomlambda
+	
+	qq = 4*Pi*sin(nomtheta *Pi/180)/nomlambda
+	setscale/I x, qq * (0.9), qq * 1.1, theta, lambda, lambda2, qwave, tempkernel, templambdakernel
+
+	qwave = x
+	xlambda[] = 4 * Pi * sin(nomtheta*Pi/180)/qwave[p] - nomlambda
+	xtheta[] = asin(qwave[p] /4 / Pi * nomlambda) - (nomtheta*Pi/180)
+
+	//angular component
+	thetadist(theta, qwave, d1,d2, L12, nomq, nomtheta); 
+	//burst time component
+	lambdadist(lambda, qwave, nomlambda, reso, nomq)
+	//rebinning component
+	lambdadist(lambda3, qwave, nomlambda, DA, nomq)
+	//crossing time component
+	crossingtimedist(lambda2, qwave, nomlambda, d2, chod, radius, freq, nomq)
+
+	//work out p(Q) for incidence beam spectrum
+	//don't forget to multiply with source distribution
+	K = nomq * nomlambda
+	variable jj
+	for(jj = 0 ; jj < numpnts(spec_IQ) ; jj += 1)
+		variable point = binarysearchinterp(specL,  K/qwave[jj])
+		if(numtype(point))
+			if(K/qwave[jj] < specL[0])
+				spec_IQ[jj] = specI[0]
+			else
+				spec_IQ[jj] = specI[numpnts(specI) - 1]			
+			endif
+		else
+			spec_IQ[jj] = K * specI[point]/qwave[jj]^2
+		endif
+	
+	endfor
+	//spec_IQ[] = K * specI[binarysearchinterp(specL,  K/qwave[p])]/qwave[p]^2
+
+//have both lambda terms.  Need to convolve both together and multiply with p(Q) of the incident beam spectrum
+	templambdakernel = lambda
+	
+	convolve/A lambda2, templambdakernel
+	templambdakernel *= deltax(templambdakernel)
+	
+	convolve/A lambda3, templambdakernel
+	templambdakernel *= deltax(templambdakernel)
+	
+	templambdakernel *= spec_IQ
+
+	areas = areaXY(qwave, templambdakernel)
+	templambdakernel /= areas
+
+//fold in the angular component
+	areas =  areaxy(qwave, theta)
+	theta /= areas
+
+	tempkernel = theta
+	convolve/A templambdakernel, tempkernel
+	tempkernel *=deltax(tempkernel)
+
+	make/n=(dimsize(tempkernel, 0), 2)/o/d kernel
+	copyscales tempkernel, kernel
+	kernel[][0] = qwave[p]	
+	kernel[][1] = tempkernel[p]
+	return kernel
+End
+
+Function assignActualKernel(refDF, directDF, W_q, specnum)
+	string refDF, directDF
+	Wave W_q
+	variable specnum
+	//calculates the full resolution kernel for reflectivity spectra
+	DFRef cDF = getdatafolderDFR()
+	variable ii
+	
+	setdatafolder refDF
+	
+	Wave d1 = $(refDF + ":instrument:slits:second:vertical:gap")
+	Wave d2 = $(refDF + ":instrument:slits:third:vertical:gap")
+	Wave omega = $(refDF + ":omega")
+	Wave M_lambdaD = $(directDF + ":M_lambda")
+	Wave M_specD = $(directDF + ":M_spec")
+	Wave chod = $(refDF + ":chod")
+	Wave D_CX = $(refDF + ":D_CX")
+	Wave phaseAngle = $(refDF + ":phaseAngle")
+	Wave frequency = $(refDF + ":instrument:disk_chopper:ch1speed")
+	Wave M_specTOFHIST = $(refDF + ":M_specTOFHIST")
+	Wave M_specTOF = $(refDF + ":M_specTOF")
+		
+	duplicate/r=[0, dimsize(W_q, 0) - 1][specnum, specnum]/free W_q, qq
+	duplicate/r=[0, dimsize(omega, 0) - 1][specnum][specnum]/free omega, omegas
+	duplicate/r=[0, dimsize(M_lambdaD, 0) - 1][0]/free M_lambdaD, specL
+	duplicate/r=[0, dimsize(M_specD, 0) - 1][0]/free M_specD, specI
+	
+	redimension/n=(-1, 0) specL, specI, qq, omegas
+	
+	make/n=(dimsize(qq, 0), 501, 2)/d/o resolutionkernel
+	
+	//reso, the burst time contribution
+	variable reso = 100 * D_CX[specnum]/chod[specnum]
+	
+	//collimation distance
+	Wave slit2_distance = $(refDF + ":instrument:parameters:slit2_distance")
+	Wave slit3_distance = $(refDF + ":instrument:parameters:slit3_distance")
+	variable L12 = slit3_distance[0] - slit2_distance[0]
+	
+	for(ii = 0 ; ii < numpnts(qq) ; ii+=1)
+		variable nomlambda = 4 * Pi * sin(omegas[ii]) / qq[ii]
+		//DA, the smearing due to broad timebins and/or rebinning
+		variable DA = 100 * (M_specTOFHIST[ii + 1][specnum] - M_specTOFHIST[ii][specnum]) / M_specTOF[ii][specnum]
+		
+		//reso2, resolution contribution to burst time due to phase opening of choppers
+		variable reso2 = 100 * (phaseAngle[specnum] * pi / 180) * 3956 / nomlambda / (chod[specnum] / 1000) / (2 * pi * frequency[0] / 60)
+
+		Wave kernel = actualkernel(omegas[ii] * 180 / pi, d1[specnum], d2[specnum], L12, qq[ii], reso + reso2, chod[specnum], 350, frequency[0]/60, specI, specL, DA)
+
+		resolutionkernel[ii][][0] = kernel[q][0]
+		resolutionkernel[ii][][1] = kernel[q][1]
+	endfor
+	
+	setdatafolder cDF
+End

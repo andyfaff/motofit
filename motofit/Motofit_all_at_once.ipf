@@ -1904,7 +1904,7 @@ End
 
 /// offspecular/diffuse conversions
 Function/C Moto_angletoQ(omega,twotheta,lambda)
-	//function converts omega and twotheta to Qz,Qx. Returns Q as a complex variable (so you can get both parts in)  
+	//function converts omega and twotheta to Qz,Qy. Returns Q as a complex variable (so you can get both parts in) , Qz first
 	Variable omega,twotheta,lambda
 	variable/C Q
 	omega = Pi*omega/180
@@ -1913,6 +1913,39 @@ Function/C Moto_angletoQ(omega,twotheta,lambda)
 	
 	return Q
 End
+
+//second offspecular-diffuse Q conversion
+ Function/wave Moto_angletoQ_2(omega,twotheta, xsi, lambda)
+	//convert angles and wavelength (lambda) to Q vector.
+	//coordinate system: 
+	//y - along beam direction (in small angle approximation)
+	//x - transverse to beam direction, in plane of sample
+	//z - normal to sample plane.
+	//the xy plane is equivalent to the sample plane.
+	//
+	//angle definitions
+	//omega - angle of incidence to sample (in xy plane)
+	//twotheta - angle between xy plane and reflected beam PLUS omega.
+	//xsi - angle between reflected beam and yz plane.
+	//
+	//returns a 3 point wave to represent a cartesian vector (Qx, Qy, Qz)
+	
+	Variable omega, twotheta, xsi, lambda
+
+	//convert to radians	
+	variable deg2rad = Pi / 180.
+	omega = deg2rad * omega
+	twotheta = deg2rad * twotheta
+	xsi = deg2rad * xsi
+	make/free/n=3/d QQ
+	print "twotheta - omega=", cos(twotheta - omega) * cos(xsi), cos(omega)
+	QQ[0] = 2*Pi / lambda * cos(twotheta - omega) * sin(xsi)
+	QQ[1] = 2 * Pi / lambda * (cos(twotheta - omega) * cos(xsi) - cos(omega))
+	QQ[2] = 2 * Pi / lambda * (sin(twotheta - omega) + sin(omega))
+	
+	return QQ
+End
+
 
 Function moto_bodgeangle(dataset, anglebodge, wavelength)
 	String dataset
