@@ -496,7 +496,11 @@ Function/s reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 		//now write the individual wave out to a file.  It is reverse sorted in q, sorted in lambda, and we want to keep that.
 		//therefore SORT->WRITE->REVERSE SORT
 		//
-		make/n=(dimsize(W_q, 0))/d/free qq = 0, RR = 0, dR = 0, dQ = 0
+		make/n=(dimsize(W_q, 0))/d/o $(angle0DF+ ":qq"), $(angle0DF+ ":RR"), $(angle0DF+ ":dR"), $(angle0DF+ ":dQ")
+		Wave qq = $(angle0DF+ ":qq")
+		Wave RR = $(angle0DF+ ":RR")
+		Wave dR = $(angle0DF+ ":dR")
+		Wave dQ = $(angle0DF+ ":dQ")
 		make/n=(dimsize(M_ref, 0), dimsize(M_ref, 1))/free/d qz2D, qy2D, RR2d, EE2d 
 		
 		for(ii = 0 ; ii < numspectra ; ii += 1)
@@ -2069,6 +2073,8 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 				if(numtype(REAL(compspliceFactor)))
 					print "ERROR while splicing into combineddataset (spliceFiles)";abort
 				endif
+				
+				print compSpliceFactor
 
 				//think the following is wrong! No need to errors in quadrature if scalefactor does not depend on wavelength
 				asdfghjkl2 = sqrt((real(compSplicefactor) * asdfghjkl2)^2 + (asdfghjkl1 * imag(compSplicefactor))^2)
@@ -2122,6 +2128,75 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 	endtry
 	setdatafolder $cDF
 	killdatafolder/z 	root:packages:platypus:data:reducer:temp
+	return err
+End
+
+Function spliceFiles2(filesToSplice, [factors])
+	string filesToSplice, factors
+	//this function splices different reduced files together. but it doesn't rebin afterwards
+	
+	string cDF = getdatafolder(1)
+	string df = "root:packages:platypus:data:Reducer:"
+	
+	variable fileID,ii,fileIDcomb, err=0, jj
+	variable/c compSplicefactor
+
+	try
+		newdatafolder/o root:packages
+		newdatafolder/o root:packages:platypus
+		newdatafolder/o root:packages:platypus:data
+		newdatafolder /o/s root:packages:platypus:data:reducer
+	 
+	 	make/o/n=0/d qq, rr, dr, dq, resolutionkernel
+	 	
+		//load in each of the files
+		for(ii = 0 ; ii < itemsinlist(filesToSplice) ; ii += 1)
+			print stringfromlist(ii, filesToSplice)
+			Wave tq = $(df + stringfromlist(ii, filesToSplice) + ":qq")
+			Wave tR = $(df + stringfromlist(ii, filesToSplice) + ":RR")
+			Wave tdR= $(df + stringfromlist(ii, filesToSplice) + ":dR")
+			Wave tdQ = $(df + stringfromlist(ii, filesToSplice) + ":dq")
+			Wave trk = $(df + stringfromlist(ii, filesToSplice) + ":resolutionkernel")
+			
+			sort tq, tq, tR, tdR, tdQ
+		 	Pla_catalogue#MDsort(trk, 0)
+			
+			if(ii == 0)
+				redimension/n=(0, dimsize(trk, 1), dimsize(trk, 2)) resolutionkernel
+				compsplicefactor = cmplx(1., 0.)			 
+			else
+				//splice with propagated error in the splice factor
+				if(paramisdefault(factors))
+					compSplicefactor = Pla_GetweightedScalingInoverlap(qq, rr, dR, tq, tr, tdr)		
+				else
+					if(itemsinlist(factors) <= ii)
+						compSplicefactor = cmplx(str2num(stringfromlist(ii-1, factors)), 0)
+					else
+						compSplicefactor = Pla_GetweightedScalingInoverlap(qq, rr, dR, tq, tr, tdr)								
+					endif
+				endif
+				if(numtype(REAL(compspliceFactor)))
+					print "ERROR while splicing into combineddataset (spliceFiles)";abort
+				endif
+				
+				print compSpliceFactor
+			endif
+			//think the following is wrong! No need to errors in quadrature if scalefactor does not depend on wavelength
+			tdr = sqrt((real(compSplicefactor) * tdr)^2 + (tr * imag(compSplicefactor))^2)
+			tr *= real(compSplicefactor)
+			
+			concatenate/NP {tr}, rr
+			concatenate/NP {tq}, qq
+			concatenate/NP { tdq}, dq
+			concatenate/NP { tdr}, dr
+			concatenate/NP=0 { trk}, resolutionkernel
+			
+			sort qq, qq, rr, dR, dq
+			Pla_catalogue#MDsort(resolutionkernel, 0)
+		endfor
+	catch
+	endtry
+	setdatafolder $cDF
 	return err
 End
 
