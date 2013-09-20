@@ -979,14 +979,14 @@ function/wave actualkernel(nomtheta, d1,d2,L12, nomq, reso, chod, radius, freq, 
 	variable DA
 
 	variable qq, areas, nomlambda, K
-	make/d/n=501/free lambda, theta, qwave, lambda2, lambda3
-	duplicate/free qwave, xlambda, xtheta, tempkernel, spec_IQ, templambdakernel
+	make/d/n=501/o/free lambda, theta, qwave, lambda2, lambda3
+	duplicate/free qwave, xlambda, xtheta, tempkernel,  templambdakernel, spec_IQ
 	
 	nomlambda = 4 * Pi * sin(nomtheta*Pi/180)/nomq
 //	print nomlambda
 	
 	qq = 4*Pi*sin(nomtheta *Pi/180)/nomlambda
-	setscale/I x, qq * (0.9), qq * 1.1, theta, lambda, lambda2, qwave, tempkernel, templambdakernel
+	setscale/I x, qq * (0.9), qq * 1.1, theta, lambda, lambda2, qwave, tempkernel, templambdakernel, lambda3, spec_IQ
 
 	qwave = x
 	xlambda[] = 4 * Pi * sin(nomtheta*Pi/180)/qwave[p] - nomlambda
@@ -1006,19 +1006,21 @@ function/wave actualkernel(nomtheta, d1,d2,L12, nomq, reso, chod, radius, freq, 
 	K = nomq * nomlambda
 	variable jj
 	for(jj = 0 ; jj < numpnts(spec_IQ) ; jj += 1)
-		variable point = binarysearchinterp(specL,  K/qwave[jj])
+		variable wavelength = K/qwave[jj]
+		variable point = binarysearchinterp(specL,  wavelength)
 		if(numtype(point))
 			if(K/qwave[jj] < specL[0])
-				spec_IQ[jj] = specI[0]
+				spec_IQ[jj] = K * specI[0]/qwave[jj]^2
 			else
-				spec_IQ[jj] = specI[numpnts(specI) - 1]			
+				spec_IQ[jj] = K * specI[numpnts(specI) - 1]/qwave[jj]^2
 			endif
 		else
 			spec_IQ[jj] = K * specI[point]/qwave[jj]^2
 		endif
 	
 	endfor
-	//spec_IQ[] = K * specI[binarysearchinterp(specL,  K/qwave[p])]/qwave[p]^2
+	
+//	spec_IQ[] = K * specI[binarysearchinterp(specL,  K/qwave[p])]/qwave[p]^2
 
 //have both lambda terms.  Need to convolve both together and multiply with p(Q) of the incident beam spectrum
 	templambdakernel = lambda
@@ -1101,6 +1103,8 @@ Function assignActualKernel(refDF, directDF, W_q, specnum)
 		resolutionkernel[ii][][0] = kernel[q][0]
 		resolutionkernel[ii][][1] = kernel[q][1]
 	endfor
+	
+	reverse/DIM=0 resolutionkernel
 	
 	setdatafolder cDF
 End
