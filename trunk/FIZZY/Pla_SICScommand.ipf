@@ -686,7 +686,7 @@ Function startSICS()
 	
 	//start the regular background task list going
 	//lets do it every 3 minutes.
-	startRegularTasks(180)
+	startRegularTasks(120)
 End
 
 Function enumerateHipadabapaths(filepath)
@@ -1333,7 +1333,7 @@ Function getLatestData()
 	
 		string newdisplaypossibilities = displayorderlist()
 		if(whichlistitem(currentdisplayorder,newdisplaypossibilities) != -1)//we can still display that kind of data
-			reDisplay(currentdisplayorder,isLog, justdata = 1)
+			reDisplay(currentdisplayorder,isLog)
 		else
 			reDisplay("",isLog)
 		endif
@@ -1412,6 +1412,7 @@ Function popup_changedisplayorder(pa) : PopupMenuControl
 			order=replacestring(":",popstr,";")
 			
 			getLatestData()
+			popupmenu/z displayorder_tab2, win=sicscmdpanel, userdata(olddisplay) = pa.popstr
 			
 		//	redisplay(popstr)
 			break
@@ -1574,8 +1575,9 @@ Function reDisplay(order,isLog, [justdata])
 	endif
 	
 	killwaves/z M_volumetranspose,M_sumplanes,hmm,w_sumrows,w_sumcols
-
-	if(justdata)
+	
+	//if you're not changing the display, then don't adjust the graphs.
+	if(stringmatch(order, replacestring(":", getuserdata("SicsCmdPanel", "displayorder_tab2", "olddisplay"), ";")))
 		return 0
 	endif
 	

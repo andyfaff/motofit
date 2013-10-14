@@ -55,7 +55,7 @@
 
 	//constants for creating a webpage with instrument updates.
 	//on Platypus this is an apache webserver running on DAV1.
-	StrConstant SAVELOC = "C:website:htdocs:"
+	StrConstant SAVELOC = "W:public:"
 	StrConstant HTTP_PROXY = "proxy.nbi.ansto.gov.au:3128"
 
 Function DefaultHistogram()
@@ -125,7 +125,7 @@ Function hHistogram()
 	//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
 	oat_table("X",54.5,-54.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq = 20)
+	oat_table("T",0,50,1000,freq = 24)
 End
 
 Function iHistogram() //Bills SAW, hslits(10,4,4,20)
@@ -1570,29 +1570,34 @@ Function Instrumentlayout_panel()
 	SetVariable tertiaryshutter,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable tertiaryshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/status/tertiary")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable mode,pos={521,185},size={130,16},title="mode", win=instrumentlayout
+	SetVariable mode,pos={521,172},size={130,16},title="mode", win=instrumentlayout
 	SetVariable mode,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable mode,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/mode")][1],noedit= 1, win=instrumentlayout
 
-	SetVariable omega,pos={521,205},size={130,16},title="omega", win=instrumentlayout
+	SetVariable omega,pos={521,192},size={130,16},title="omega", win=instrumentlayout
 	SetVariable omega,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable omega,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/omega")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable twotheta,pos={521,225},size={130,16},title="two theta", win=instrumentlayout
+	SetVariable twotheta,pos={521,213},size={130,16},title="two theta", win=instrumentlayout
 	SetVariable twotheta,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable twotheta,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/twotheta")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable sicsstatus,pos={468,246},size={200,16},title="SICS status", win=instrumentlayout
+	SetVariable sicsstatus,pos={468,233},size={200,16},title="SICS status", win=instrumentlayout
 	SetVariable sicsstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
 	SetVariable sicsstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:sicsstatus,noedit= 1, win=instrumentlayout
 	
-	SetVariable runscanstatus title="runscan status",valueBackColor=(0,52224,0), pos={468,267}, win=instrumentlayout
+	SetVariable runscanstatus title="runscan status",valueBackColor=(0,52224,0), pos={468,252}, win=instrumentlayout
 	SetVariable runscanstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout, size = {200,16}
 	SetVariable runscanstatus,limits={-inf,inf,0},value=  root:packages:platypus:SICS:hipadaba_paths[gethipapos("/commands/scan/runscan/feedback/status")][1],noedit= 1, win=instrumentlayout
 
 	SetVariable julabo,pos={90,253},size={90,16},title="Julabo temp", win=instrumentlayout,bodywidth=40
 	SetVariable julabo,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
 	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout
+	
+	SetVariable attenuatorstatus,pos={468,273},size={200,16},title="attenuator position"
+	SetVariable attenuatorstatus,labelBack=(65535,65535,65535),fSize=8
+	SetVariable attenuatorstatus,valueBackColor=(65535,65535,65535)
+	SetVariable attenuatorstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/attenuator/beam_attenuator")][1],noedit= 1
 
 	DrawRect/w=instrumentlayout 219,322,311,357
 	DrawRect/w=instrumentlayout 180,364,213,439
@@ -1748,6 +1753,7 @@ Function createHTML()
 		//write the time of file creation
 		text = "<P>"+date() + " " + time() + "\tCopyright 2008, Andrew Nelson + ANSTO</P>\r"
 		text += "<P> Instrument Cabin Phone: 9717 7048</P>\r"
+		text += "<P> Instrument Enclosure: 9717 3399</P>\r"
 		fbinwrite fileID, text
 		
 		text = "<P>Proposal: " + stringbykey("proposalCode", instrumentinfo) + " - " +stringbykey("principalSci",instrumentinfo)+ "</P>\r"
@@ -1785,6 +1791,7 @@ Function createHTML()
 		text +="<TR><TD>mode</TD><TD>"+ UpperStr(gethipaval("/instrument/parameters/mode")) + "</TD></TR>\r"
 		text +="<TR><TD>omega</TD><TD>"+ UpperStr(gethipaval("/instrument/parameters/omega")) + "</TD></TR>\r"
 		text +="<TR><TD>twotheta</TD><TD>"+ UpperStr(gethipaval("/instrument/parameters/twotheta")) + "</TD></TR>\r"
+		text +="<TR><TD>point progress</TD><TD>"+ num2str(pointProgress) + "</TD></TR>\r"
 
 //		Wave/z frame_deassert = root:packages:platypus:SICS:frame_deassert
 //		if(waveexists(frame_deassert))
