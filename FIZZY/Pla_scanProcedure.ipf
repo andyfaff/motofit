@@ -72,7 +72,7 @@ Function fpxStatus()
 	//2 = bkdtask
 	//3 = fpxstatemon
 	//4 = runscanstatus - /commands/scan/runscan/feedback/status
-	//5 = hmcontrol
+	//5 = HistogramMemory
 	//6 = hmscan
 	//FPX is a statemon addition, because sometimes it takes a while for the runscan status to change.
 	//use this as a guard to say the scan has started, but we're still waiting for the status to change to BUSY
@@ -92,7 +92,7 @@ Function fpxStatus()
 	if(stringmatch(gethipaval("/commands/scan/runscan/feedback/status"), "BUSY"))
 		running = running | 2^4
 	endif
-	if(statemonstatus("hmcontrol"))
+	if(statemonstatus("HistogramMemory"))
 		running = running | 2^5
 	endif
 	if(statemonstatus("hmscan"))
@@ -315,7 +315,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	string cmdTemplate, cmd
 	cmdTemplate = "autosave 30\nrunscan %s %e %e %d %s %f savetype %s force true"
 	sprintf cmd, cmdTemplate, motorName, start, stop, numpoints, mode, preset, saveStr
-//	print cmd
+	print cmd
 	//send it to SICS, and tell it to autosave
 	sics_cmd_cmd(cmd)
 	
@@ -423,7 +423,7 @@ Function scanBkgTask(s)
 	//2 = bkdtask
 	//3 = fpxstatemon
 	//4 = runscanstatus - /commands/scan/runscan/feedback/status
-	//5 = hmcontrol
+	//5 = HistogramMemory
 	//6 = hmscan
 	variable status = fpxstatus()
 	
