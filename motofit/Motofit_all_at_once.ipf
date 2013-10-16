@@ -23,6 +23,7 @@
 //GUI code starts from plotcalcref().
 //Actual reflectometry related code starts from Motofit()
 
+
 Menu "Motofit"
 	//this function sets up the user menus at the top of the main IGOR window.
 	"Fit Reflectivity data",plotCalcref()
