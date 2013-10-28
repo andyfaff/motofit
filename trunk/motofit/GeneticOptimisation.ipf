@@ -41,6 +41,7 @@
 #include <PopupWaveSelector>
 #include <Scatter Plot Matrix 2>
 
+
 Menu "Analysis"
 	"-"
 	"Genetic curvefitting /1", Genetic_curvefitting()
