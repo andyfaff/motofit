@@ -339,7 +339,7 @@ Function  reducerpanel() : Panel
 	variable/g root:packages:platypus:data:Reducer:lowLambda=2.8
 	variable/g root:packages:platypus:data:Reducer:highLambda=18
 	variable/g root:packages:platypus:data:Reducer:expected_centre=ROUGH_BEAM_POSITION
-	variable/g root:packages:platypus:data:Reducer:rebinpercent=5
+	variable/g root:packages:platypus:data:Reducer:rebinpercent=2
 	variable/g root:packages:platypus:data:Reducer:backgroundsbn=1
 	variable/g root:packages:platypus:data:Reducer:manualbeamfind=0
 	variable/g root:packages:platypus:data:Reducer:normalisebymonitor=1
