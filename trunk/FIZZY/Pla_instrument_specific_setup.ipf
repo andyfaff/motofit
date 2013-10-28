@@ -1746,7 +1746,7 @@ Function createHTML()
 		text += "</STYLE>\r"
 		text += "</HEAD>\r"
 		text += "<BODY STYLE=\"background:rgb(255,255,255)\">\r"
-		text += "<META HTTP-EQUIV=\"refresh\" CONTENT=\"120; URL=http://dav1-platypus.nbi.ansto.gov.au/status.html\">\r"
+		text += "<META HTTP-EQUIV=\"refresh\" CONTENT=\"120; URL=http://www.nbi.ansto.gov.au/platypus/public/status.html\">\r"
 
 		fbinwrite fileID, text
 		

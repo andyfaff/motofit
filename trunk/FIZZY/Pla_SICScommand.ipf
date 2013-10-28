@@ -442,6 +442,8 @@ Function startSICS()
 	print "LOADING HIPADABA PATHS"
 	string hipaxml = ""
 	hipaxml = sockitsendnrecvf(SOCK_interest, "getGumtreeXml / \n", 0, 3)
+	//kludge from syringe pump driver
+	hipaxml = replacestring(num2char(6), hipaxml, "")
 	hipaxml = replacestring("autosave 0", hipaxml, "")
 	
 	//save the hipadaba paths to file
@@ -452,6 +454,7 @@ Function startSICS()
 //	sockitsendnrecv/FILE=pathtoHipaDaba+"hipadaba.xml"/TIME=3 SOCK_interest, "getGumtreeXml / \n"
 	print "OBTAINED HIPADABA PATHS, now pruning", stopmstimer(timer)/1e6
 	timer = startmstimer
+	print pathtohipadaba
 	if(enumerateHipadabapaths(pathtoHipaDaba+"hipadaba.xml"))
 		print "Error while enumerating hipadaba paths (startSICS)"
 		sicsclose()
@@ -2855,3 +2858,18 @@ Function/t Pla_getExperimentInfo(instrument)
 	xmlclosefile(fileID, 0)
 	return retStr
 End
+
+Function dbg()
+//a function that can be called to figure out what fizzy is doing.
+
+SVAR sicsstatus = root:packages:platypus:SICS:sicsstatus
+Wave/t statemon = root:packages:platypus:SICS:statemon
+print "____________________________________________________________________________"
+print "Status of FIZZY"
+print "FPX status:", fpxstatus()
+print "SICS status:", sicsstatus
+print "statemon:", dimsize(statemon, 0), statemon
+print "Wait status:", waitstatus()
+print "____________________________________________________________________________"
+End
+
