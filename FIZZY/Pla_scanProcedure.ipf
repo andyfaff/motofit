@@ -149,7 +149,6 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	Wave counts = root:packages:platypus:data:scan:counts
 	NVAR currentpoint = root:packages:platypus:data:scan:currentpoint
 	NVAR initialposition =  root:packages:platypus:data:scan:initialPosition
-	NVAR motorprecision = root:packages:platypus:data:scan:motorprecision	
 	NVAR pointProgress = root:packages:platypus:data:scan:pointProgress
 	NVAR userPaused = root:packages:platypus:data:scan:userPaused
 	NVAR auto = root:packages:platypus:data:scan:auto				//says whether you are going to autofit and drive to the centre
@@ -477,8 +476,6 @@ Function finishScan(status)
 	SVAR sicsstatus = root:packages:platypus:SICS:sicsstatus
 	//whether you want to do an autopeakfit (=1), or manual (=0)
 	NVAR auto = root:packages:platypus:data:scan:auto 
-	//	do we want to save the data
-	NVAR dontSave = root:packages:platypus:data:scan:dontSave	
 	//	scan point that you are on
 	NVAR currentpoint = root:packages:platypus:data:scan:currentpoint
 	//     FIZscan number
