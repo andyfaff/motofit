@@ -41,7 +41,6 @@
 #include <PopupWaveSelector>
 #include <Scatter Plot Matrix 2>
 
-
 Menu "Analysis"
 	"-"
 	"Genetic curvefitting /1", Genetic_curvefitting()
@@ -1857,14 +1856,14 @@ Function GCF_dialog_hook(s)
 					Button button2, fColor=(32768,54615,65535),win=GCF_dialog
 					Button button0, fColor=(65535,65535,65535),win=GCF_dialog
 					SetWindow GCF_dialog, userdata(continue) = "cancel"
-				break
+					break
 				case 100:		//d for do fit
 					Button button0, fColor=(32768,54615,65535),win=GCF_dialog
 					Button button2, fColor=(65535,65535,65535),win=GCF_dialog
 					SetWindow GCF_dialog, userdata(continue) = "Do Fit"
-				break
+					break
 			endswitch	
-		// And so on . . .
+			// And so on . . .
 	endswitch
 	
 	return hookResult		// 0 if nothing done, else 1
@@ -1906,9 +1905,9 @@ ThreadSafe Function motoMCWorkerFunc1()
 			DFRef tdf  =ThreadGroupGetDFR(0,1000)	
 			if(!Datafolderrefstatus(tdf))
 				if( GetRTError(2) )	// New in 6.2 to allow this distinction:
-//					Print "worker closing down due to group release"
+					//					Print "worker closing down due to group release"
 				else
-//					Print "worker thread still waiting for input queue"
+					//					Print "worker thread still waiting for input queue"
 				endif
 			else
 				break
@@ -2087,9 +2086,9 @@ Function Moto_montecarlo(fn, w, yy, xx, ee, holdstring, Iters,[limits, cursA, cu
 					Gencurvefit/d=tempcorefinement/MC/q/n/hold=holdwave/X=xx/I=1/W=ee/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fn, yy, output, "", limits
 				endif	
 				print "done", ii, "of", iters
-	 			M_Montecarlo[ii][] = output[q]
+				M_Montecarlo[ii][] = output[q]
 	 			
-	 			if(verbose)
+				if(verbose)
 					allwaves = make2DScatter_plot_matrix(M_monteCarlo, holdstring)
 				endif
 				doupdate
@@ -2346,7 +2345,7 @@ Function gen_gcm(M_covar)
 	M_correlation = M_Covar[p][q]/sqrt(M_Covar[p][p]*M_Covar[q][q])
 End
 
-Function gen_Chi2_guess(fitfuncstr, coefs, ywave, xwave, ewave[, cursA, cursB])
+ threadsafe Function TSgen_Chi2_guess(fitfuncstr, coefs, ywave, xwave, ewave[, cursA, cursB])
 	//return the CHI2 value for an AAO fit function
 	string fitfuncstr
 	wave coefs,  ywave, xwave, ewave
@@ -2358,5 +2357,155 @@ Function gen_Chi2_guess(fitfuncstr, coefs, ywave, xwave, ewave[, cursA, cursB])
 	endif
 	FuncFit/n/q/o $fitfuncstr coefs  ywave[cursA, cursB] /X=xwave /W=ewave /I=1
 	return V_chisq
-	
 End
+
+ Function gen_Chi2_guess(fitfuncstr, coefs, ywave, xwave, ewave[, cursA, cursB])
+	//return the CHI2 value for an AAO fit function
+	string fitfuncstr
+	wave coefs,  ywave, xwave, ewave
+	variable cursA, cursB
+	variable v_fitoptions=4
+	if(paramisdefault(cursA) || paramisdefault(cursB))
+		cursA = 0
+		cursB = dimsize(ywave, 0) - 1
+	endif
+	FuncFit/n/q/o $fitfuncstr coefs  ywave[cursA, cursB] /X=xwave /W=ewave /I=1
+	return V_chisq
+End
+
+
+Function gen_chi2mapgenerator(fitfuncstr, ydata, xdata, edata, coefs, whichParam, searchArea, [granularity,  lhs, rhs])
+	string  fitfuncstr
+	Wave ydata, xdata, edata, coefs      //y data, x data, e data and coefficient wave
+	Wave whichParam, searchArea  //1D integer wave specifying which parameters to you want to vary, search area is how far from the original value do you want to search (%)
+	variable GRANULARITY, lhs, rhs    //GRANULARITY specifies how many points on each axis. lhs + rhs specify a region of interest in the data using a left hand side and right hand side.
+
+	if(paramisdefault(GRANULARITY))
+		GRANULARITY = 30
+	endif
+ 
+	variable ii, jj, kk, ll, originalvalue, range,  numdims, totalpnts, alreadymade, timer
+	timer = startmstimer
+	
+	duplicate/free coefs, tempcoefs
+			
+	if(numpnts(whichParam) != numpnts(searchArea))
+		abort "whichParam must have the same number of points as searchArea"
+	endif
+	if(numpnts(whichParam) > 4)
+		abort "can only study chi2 map in up to 4 dimensions"
+	endif
+
+	numdims = numpnts(whichParam)
+	switch(numdims)
+		case 4:
+			make/n=(GRANULARITY, GRANULARITY, GRANULARITY, GRANULARITY)/d/o chi2map
+			alreadymade = 1
+			originalvalue = coefs[whichparam[3]]
+			range = originalValue * searchArea[3]/100
+			setscale/I t,  originalvalue - range/2, originalvalue + range/2, chi2map
+		case 3:
+			if(!alreadymade)
+				make/n=(GRANULARITY, GRANULARITY, GRANULARITY)/d/o chi2map
+				alreadymade = 1
+			endif
+			originalvalue = coefs[whichparam[2]]
+			range = originalValue * searchArea[2]/100
+			setscale/I z,  originalvalue - range/2, originalvalue + range/2, chi2map
+		case 2:
+			if(!alreadymade)
+				make/n=(GRANULARITY, GRANULARITY)/d/o chi2map
+				alreadymade = 1
+			endif
+			originalvalue = coefs[whichparam[1]]
+			range = originalValue * searchArea[1]/100
+			setscale/I y,  originalvalue - range/2, originalvalue + range/2, chi2map
+		case 1:
+			if(!alreadymade)
+				make/n=(GRANULARITY)/d/o chi2map
+				alreadymade = 1
+			endif
+			originalvalue = coefs[whichparam[0]]
+			range = originalValue * searchArea[0]/100
+			setscale/I x,  originalvalue - range/2, originalvalue + range/2, chi2map
+	endswitch
+	
+	totalpnts = numpnts(chi2map)
+	
+	multithread chi2map = NaN
+	
+	duplicate/free ydata, theoretical_data, chi2_data
+	Wave theoretical_data, chi2_data
+ 
+	if(paramisdefault(lhs))
+		lhs = 0
+	endif
+	if(paramisdefault(rhs))
+		rhs = numpnts(ydata)
+	endif
+	
+	string isThreadsafe = stringbykey("THREADSAFE", functioninfo(fitfuncstr))
+	strswitch(isThreadsafe)
+	case "YES":
+			make/b/N=(totalpnts)/free placeholder
+			multithread placeholder[] = PARALLEL_chi2map_calculator(p, chi2map, whichparam, fitfuncstr, coefs, ydata, xdata, edata, cursA =lhs, cursb = rhs)
+	 	break
+	 	case "NO":
+			for(ii = 0 ; ii < totalpnts ; ii += 1)
+				Wave idxs = indices(ii, chi2map)
+				for(jj = 0 ; jj < numdims ; jj += 1)
+					tempcoefs[whichparam[jj]] = DimOffset(chi2map, jj) + idxs[jj] *DimDelta(chi2map, jj)
+				endfor
+				chi2map[ii] = gen_chi2_guess(fitfuncstr, tempcoefs, ydata, xdata, edata, cursA = lhs, cursb = rhs)
+			endfor
+		break	
+	endswitch
+ 	print stopmstimer(timer)/1e6
+	if(numdims == 1)
+		display/K=1 chi2map
+	endif
+End
+ 
+ Threadsafe Function PARALLEL_chi2map_calculator(idx, chi2map, whichparam, fitfuncstr, coefs, ydata, xdata, edata, [cursA , cursb])
+ 	variable idx
+ 	wave chi2map, whichparam
+ 	string fitfuncstr
+ 	wave coefs, ydata, xdata, edata
+ 	variable  cursA , cursb
+
+ 	variable jj, numdims
+ 	numdims = wavedims(chi2map)
+	
+	Wave idxs = indices(idx, chi2map)
+	duplicate/free coefs, tempcoefs
+	
+	for(jj = 0 ; jj < numdims ; jj += 1)
+		tempcoefs[whichparam[jj]] = DimOffset(chi2map, jj) + idxs[jj] *DimDelta(chi2map, jj)
+	endfor
+	chi2map[idx] = TSgen_chi2_guess(fitfuncstr, tempcoefs, ydata, xdata, edata, cursA = cursA, cursb = cursB)
+	return 1
+End
+	
+Threadsafe Function/wave indices(idx, array)
+	Variable idx
+	Wave array
+
+	variable sizeProduct = 1
+	variable ii, dims
+
+	make/free/n=(wavedims(array)) idxs
+	idxs = NaN
+	dims = wavedims(array)
+
+	for(ii = 1 ; ii < dims ; ii += 1)
+		sizeProduct *= dimsize(array, 0)
+	endfor
+	for(ii = 0 ; ii < dims ; ii += 1)
+		idxs[dims - ii - 1] = floor(idx / sizeProduct)
+		idx = mod(idx, sizeProduct)
+		if(ii + 1 < dims)
+			sizeProduct /= dimsize(array, ii + 1)
+		endif
+	endfor
+	return idxs
+End 
