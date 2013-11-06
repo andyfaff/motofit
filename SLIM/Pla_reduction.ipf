@@ -534,7 +534,7 @@ Function/s reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 			writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, "", user[0], samplename[0], angle0, reductionCmd)
 			
 			//calculate the actual PDF for the resolution function, for each point
-			assignActualKernel(angle0DF, directDF, W_q,  ii)
+//			assignActualKernel(angle0DF, directDF, W_q,  ii)
 									
 			//write a 2D XMLfile for the offspecular data
 			if(saveoffspec)
@@ -1073,7 +1073,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 				endfor
 				duplicate/o detector, detectorSD
 				multithread detectorSD = sqrt(detector + 1)	
-				killdatafolder /z $("root:packages:platypus:data:Reducer:streamer")
+				killdatafolder/z  $("root:packages:platypus:data:Reducer:streamer")
 				numSpectra = numTimeSlices
 				killwaves/z hmm
 				break

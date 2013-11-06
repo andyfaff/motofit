@@ -38,6 +38,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 	
 	//load in the entire file
 	binaryFileStr = folderStr + ":Dataset_" + num2istr(dataset) + ":EOS.bin"
+	//print binaryFileStr
 	
 	//try opening it first with the neutron unpacker
 	#if exists("neutronunpacker")
@@ -109,7 +110,7 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, sli
 	variable totalTime
 
 	variable numevents, period, ii, totalEvents, numTimeSlices
-	variable numxbins, numtbins, numybins, val
+	variable numxbins, numtbins, numybins, val, cutoff
 	string cDF, timeEachSliceStr
 	
 	cDF = getdatafolder(1)
@@ -119,7 +120,7 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, sli
 	//the frames will be sorted in time, so one can only do the events in the duration period.
 	period = 1 / framefrequency
 
-	Wave W_unpackedNeutronsF, W_unpackedNeutronsx, W_unpackedNeutronsy, W_unpackedNeutronst
+	Wave W_unpackedNeutronsF, W_unpackedNeutronsx, W_unpackedNeutronsy, W_unpackedNeutronst, W_unpackedneutronsV
 
 	duplicate/free slicebins, tempSlicebins
 	val = binarySearchInterp(tempSlicebins, totalTime)
@@ -140,14 +141,21 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, sli
 	detector = 0
 	
 	timeEachSlice = (tempslicebins[p+1] - tempslicebins[p]) / totalTime
-
+	
+	//lets remove the events after the slicebin finish
+	cutoff = binarysearch(W_unpackedneutronsF, slicebins[numpnts(slicebins) - 1] / period)
+	if(cutoff >= 0)
+		print W_unpackedneutronsF[cutoff]
+		deletepoints cutoff - 2,  dimsize(W_unpackedneutronsF, 0), W_unpackedneutronsF, W_unpackedneutronsY, W_unpackedneutronsX, W_unpackedneutronsT, W_unpackedneutronsV
+	endif
+	
 	numevents = dimsize(W_unpackedNeutronsy, 0)
 	
 	make/n=(numevents)/free/i/u xpos, ypos, tpos, slicepos, eventpos
 	multithread xpos = binarysearch(xbins, W_unpackedNeutronsX[p])
 	multithread ypos = binarysearch(ybins, W_unpackedNeutronsY[p])
 	multithread tpos = binarysearch(tbins, W_unpackedNeutronst[p])
-	multithread slicepos = binarysearch(tempslicebins,  W_unpackedNeutronsF[p] * period)
+	multithread slicepos = binarysearch(tempslicebins, W_unpackedNeutronsF[p] * period)
 	
 	multithread xpos = xpos[p] == numxbins ? xpos[p] - 1 : xpos[p]
 	multithread ypos = ypos[p] == numybins ? ypos[p] - 1 : ypos[p]
