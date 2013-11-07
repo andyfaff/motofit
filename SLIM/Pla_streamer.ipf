@@ -47,7 +47,7 @@ Function Pla_openStreamer(folderStr, [dataset])
 		setdatafolder cDF
 		return 1
 	#endif
-	if(V_flag)	// it was PACKEDBIN
+	if(!V_flag)	// it was PACKEDBIN
 		setdatafolder cDF
 		return 0
 	endif
