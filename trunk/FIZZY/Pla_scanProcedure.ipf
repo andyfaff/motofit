@@ -314,7 +314,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	string cmdTemplate, cmd
 	cmdTemplate = "autosave 30\nrunscan %s %e %e %d %s %f savetype %s force true"
 	sprintf cmd, cmdTemplate, motorName, start, stop, numpoints, mode, preset, saveStr
-	print cmd
+//	print cmd
 	//send it to SICS, and tell it to autosave
 	sics_cmd_cmd(cmd)
 	
@@ -526,7 +526,11 @@ Function finishScan(status)
 //	endif
 
 	//save the scan itself, not the overall data, just counts vs position
-	Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + Ind_Process#grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
+	string histostatus = grabAllHistoStatus()
+	variable bm1cts =  numberbykey("BM1_Counts", histostatus, ":", "\r") 
+
+	Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + Ind_Process#grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"+"BM1counts;"+num2str(bm1cts)+";"
+			
 	string fname =  "FIZscan" + num2str(getFIZscanNumberAndIncrement()) + ".itx"
 	save/o/t position, counts as PATH_TO_DATA + "FIZ:" + fname
 	print "FPXscan (position vs counts) saved to ", PATH_TO_DATA + "FIZ:" + fname
@@ -733,6 +737,10 @@ Function fillScanStats(position, w, full)
 	//		histostatus = grabAllHistoStatus()
 	//		w[point][0] = numberbykey("num_events_filled_to_histo",histostatus,": ","\r")			
 			//try getting the counts from the HDF file.
+			histostatus = grabAllHistoStatus()
+			variable bm1cts =  numberbykey("BM1_Counts", histostatus, ":", "\r") 
+		//	print "BM1counts", gethipaval("/experiment/file_name"), ":", scanpoint, " = ", bm1cts
+			
 			CopyFile/D /O/Z datafilenameandpath as specialdirpath("Temporary", 0, 0, 0)
 			if(V_flag)
 				//no HDF file
@@ -786,6 +794,7 @@ Function fillScanStats(position, w, full)
 			if(!V_flag)
 				Wave bm1_counts = $(stringfromlist(0, S_wavenames))
 				w[0, numpnts(bm1_counts) - 1][7] = bm1_counts[p]
+	//			w[scanpoint][7] = bm1cts
 			endif
 		
 			hdf5loaddata/o/q/z fileID, "/entry1/monitor/bm1_event_rate"

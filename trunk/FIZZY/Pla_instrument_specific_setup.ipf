@@ -125,7 +125,7 @@ Function hHistogram()
 	//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
 	oat_table("X",54.5,-54.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq = 24)
+	oat_table("T",0,40,1000,freq = 24)
 End
 
 Function iHistogram() //Bills SAW, hslits(10,4,4,20)
@@ -2624,9 +2624,10 @@ Function txtme(text)
 	string text
 	text = replacestring(" ", text, "+")
 	string cmd = ""
-	sprintf cmd, "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=r1vergod&to=" + getHipaVal("/user/phone") + "&text=%s", text
+	string phone = getHipaVal("/user/phone")
+	sprintf cmd, "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=none8fhx9b&to=%s&text=%s", phone, text
 	//	print cmd
-	easyhttp/PROX=HTTP_PROXY cmd
+	easyhttp/PROX cmd
 ENd
 
 Function TestTask(s)		// This is the function that will be called periodically
@@ -2755,37 +2756,56 @@ Function chopperRephaseArator(s)
 	return 0
 End
 
-Function pumpset(v0, r0, v1, r1, [mvp, inject])
-    variable v0, r0, v1, r1, mvp, inject
+Function pump(ratio, [volume, rate])
+    variable ratio, volume, rate
     string cmd = "", template
-    if(v0 < 0 || r0 < 0 || v1 < 0 || r1 < 0)
-        print "PUMPSET ERROR - all rates/volumes have to be > 0"
-        return 1
-    endif 
-    if(numtype(v0) || numtype(r0) || numtype(v1) || numtype (r1))
-        print "PUMPSET ERROR - all rates/volumes have to be > 0"
-        return 1
-    endif 
-    if(!paramisdefault(mvp))
-    	if(!numtype(mvp) && mvp > 0 && mvp < 7)
-    	    mvp = round(mvp)
-    	    template = "drive mvp_driveable %d\n"	
-    	    sprintf cmd, template, mvp
-    	    sics_cmd_interest(cmd)
-    	endif
-    endif
+    //injects liquid from dual syringe pump system towards hamilton syringe.
+    //ratio - the ratio of pump0 to pump1. 1 = 100% pump0, 0.6666 = 66.66%pump0:33.33%pump1, 0 = 100% pump1
+    //volume - the total volume of liquid injected. Defaults to 5ml
+    //rate - the total injection rate. Defaults to 1  ml/min
     
+    if(ratio < 0 || ratio > 1)
+        print "PUMPSET ERROR - ratio has to be in range [0, 1]"
+        return 1
+    endif 
+    
+    if(paramisdefault(volume))
+		volume = 5
+	endif
+	
+    if(paramisdefault(rate))
+		rate = 1
+	endif
+
+    variable v0, r0, v1, r1
+    
+    r0 = ratio * rate
+    r1 = (1 - ratio) * rate
+    v0 = ratio * volume
+    v1 = (1 - ratio) * volume
+
+    //fill out the rates and volumes and do the injection.
     template = "hset /sample/syr/pump0/Vol %3.3f\n"
     template += "hset /sample/syr/pump0/rat %3.3fMM\n"
     template += "hset /sample/syr/pump1/Vol %3.3f\n"
-    template += "hset /sample/syr/pump1/rat %3.3fMM"
+    template += "hset /sample/syr/pump1/rat %3.3fMM\n"
+    template += "drive syr_driveable 1\n"
     sprintf cmd, template, v0, r0, v1, r1
     sics_cmd_interest(cmd)
-    
-    if(!paramisdefault(inject) && inject)
-        sics_cmd_interest("drive syr_driveable 1")
-    endif
+
 End
+
+Function mvp(mvp)
+	variable mvp
+	//drives the hamilton mvp device to a set position
+	string template, cmd
+   	if(!numtype(mvp) && mvp > 0 && mvp < 7)
+   	    mvp = round(mvp)
+   	    template = "drive mvp_driveable %d\n"	
+   	    sprintf cmd, template, mvp
+   	    sics_cmd_interest(cmd)
+    	endif
+end
 
 Function flipperstatuspanel()
 	PauseUpdate; Silent 1		// building window...
@@ -2794,4 +2814,4 @@ Function flipperstatuspanel()
 	SetVariable analyser,value= root:packages:platypus:SICS:hipadaba_paths[55][1]
 	SetVariable polarizerflipper,pos={237,133},size={390,16},title="polariser flipper"
 	SetVariable polarizerflipper,value= root:packages:platypus:SICS:hipadaba_paths[46][1]
-	End
+End
