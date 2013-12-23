@@ -104,7 +104,8 @@ Function batchScanReadyForNextPoint()
 	SVAR sicsstatus = root:packages:platypus:SICS:sicsstatus
 	Wave/t statemon = root:packages:platypus:SICS:statemon
 	Wave/t list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
-	DoXOPIDLE	
+	//DoXOPIDLE	
+	
 	//	execute/p/q	"DoXOPIdle"
 	//		print "SICSSTATUS "+num2str(SICSstatus(msg))
 	//		print "FPXSTATUS "+num2str(fpxstatus())
@@ -119,14 +120,17 @@ Function batchScanReadyForNextPoint()
 	
 //	print status,msg, statemon
 	try
+		if(dimsize(statemon, 0))
+			return 1
+		endif
 		if(userPaused)
 			return 2
-		elseif(dimsize(statemon, 0) > 0 || fpxStatus() || statemonstatus("hmscan") || statemonstatus ("HistogramMemory") || waitStatus())
-			Execute/P/Q/Z "DoXOPIdle"
+		elseif(fpxStatus() || waitStatus())
+//			Execute/P/Q/Z "DoXOPIdle"
 			return 1
 		elseif(!stringmatch(sicsstatus, "Eager to execute commands"))
 			sics_cmd_interest("status")
-			Execute/P/Q/Z "DoXOPIdle"
+//			Execute/P/Q/Z "DoXOPIdle"
 	//		print time(), "DEBUG BATCH FPX:",fpxstatus()," hmm: ",statemonstatus("hmcontrol"), " STATEMON: ",dimsize(statemon,0), " SICS: ", status, msg, " CURRENT POINT: ", currentpoint
 			return 1
 		else
@@ -221,7 +225,7 @@ Function batchbkgtask(s)
 	endif
 	//see if we're ready for the next point.  This is defined as SICS not doing something, Histogram server
 	//not acquiring, fpx scan not running
-	if(batchScanReadyForNextPoint() == 1)
+	if(batchScanReadyForNextPoint())
 		return 0
 	endif
 	if(currentpoint >=0 && (sel_batchbuffer[currentpoint][2] & 2^4))
@@ -267,10 +271,15 @@ Function executenextbatchpoint(batchbuffer, currentpoint)
 
 	//this function executes a row of the batch buffer.  Will need to do some parsing here!!!!
 	//print batchbuffer[currentpoint][1]
+	//dbg()
 	if(strlen(batchbuffer[currentpoint][1])>0 && (sel_batchbuffer[currentpoint][2] & 2^4))
 		print "STARTED POINT: "+num2str(currentpoint)+" of batch Scan at:    ", Secs2Time(DateTime,2)
 		batchbuffer[currentpoint][3] = "Executing"
-		execute/P/Z batchbuffer[currentpoint][1]	
+		//can't put /P flag in execute command.  This is because
+		//that would post it to the operation queue.  If the batch background task
+		//gets called before the batch entry is executed, then you'll start skpping
+		//entries in the batch buffer.
+		execute/Z batchbuffer[currentpoint][1]	
 	endif
 End
 

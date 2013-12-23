@@ -118,7 +118,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	//points			-	the number of scan points >=0
 	//mode			-	time, unlimited, period, count, frame, MONITOR_1, MONITOR_2
 	//preset			-	the number of seconds for the scan >0
-	//saveOrNot		-	saves the results in a file if saveOrNot=0 (default), if saveOrNot=1, then don't save
+	//savetype		-	saves the results in a file if saveOrNot=0 (default), if saveOrNot=1, then don't save
 	//sampleTitle		-	if the results are going to be saved, then this will be the sample title
 	//automatic		-	automatic=0 - ask for user interaction
 	//					automatic=1 - no user interaction, automatically go to the peak
@@ -262,7 +262,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	stop = str2num(axeslist[row][2]) + rangeval / 2
 	
 	//change the samplename
-	if(!paramisDefault(samplename))
+	if(!paramisDefault(samplename) && strlen(samplename))
 		sics_cmd_interest("samplename " + samplename)
 	endif
 	
@@ -315,6 +315,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	cmdTemplate = "autosave 30\nrunscan %s %e %e %d %s %f savetype %s force true"
 	sprintf cmd, cmdTemplate, motorName, start, stop, numpoints, mode, preset, saveStr
 //	print cmd
+	
 	//send it to SICS, and tell it to autosave
 	sics_cmd_cmd(cmd)
 	

@@ -29,6 +29,19 @@ static function parseReply(msg,lhs,rhs)
 	return items
 end
 
+static Function INDstatemonclear(item)
+	string item
+	Wave/t statemon = root:packages:platypus:SICS:statemon
+	for(;;)
+		findvalue/TEXT=item/TXOP=4 statemon
+		if(V_Value == -1)
+			break
+		else
+			deletepoints V_Value, 1, statemon
+		endif
+	endfor
+End
+
 Function/t removeAllChars(str, char)
 	string str, char
 	string retStr = ""
@@ -97,7 +110,7 @@ Function interestProcessor(w,x)
 	//have to change the axeslist colour if the motor is moving.  THis is done by changing the value of the background col plane in selaxeslist
 	Wave/t axeslist = root:packages:platypus:SICS:axeslist
 	Wave selaxeslist = root:packages:platypus:sics:selAxesList
-	items = parseReply(w[x][0],str1,str2)
+	items = parseReply(w[x][0],str1, str2)
 	//	print x, "                ", w[x][0]
 	//this code should parse upper and lower limit changes, as well as position changes.
 	if(items==2)
@@ -124,10 +137,7 @@ Function interestProcessor(w,x)
 				endif
 				break
 			case "FINISH":		//this is listening to the statemon finishing an axis
-				Findvalue/Text=str2/TXOP=4 statemon
-				if(V_Value != -1)
-					deletepoints V_Value, 1, statemon
-				endif
+				INDstatemonclear(str2)
 				
 				//if its an motor axis we want to change the colour in the axeslist
 				Findvalue/Text=str2/TXOP=4 axeslist
