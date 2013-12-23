@@ -444,6 +444,8 @@ Function startSICS()
 	hipaxml = sockitsendnrecvf(SOCK_interest, "getGumtreeXml / \n", 0, 3)
 	//kludge from syringe pump driver
 	hipaxml = replacestring(num2char(6), hipaxml, "")
+	hipaxml = replacestring(num2char(2), hipaxml, "")
+
 	hipaxml = replacestring("autosave 0", hipaxml, "")
 	
 	//save the hipadaba paths to file
@@ -699,7 +701,8 @@ Function enumerateHipadabapaths(filepath)
 	variable ii, jj
 	string currentPath, searchstring,outputString
 	string cmd = ""
-
+	
+	
 	try
 		fileID = XMLopenfile(filepath)
 		if(fileID<1)
@@ -2606,24 +2609,29 @@ Function emailupdate(user,password,to,subject,body)
 	endif
 End
 
-Function acquire(mode,preset, samplename, [points])
-	string mode
+Function acquire(preset, [samplename, mode, points])
 	variable preset
-	string samplename
+	string samplename, mode
 	variable points
 
 	//starts the detector running, and will save the data that comes off
-	//mode is either :-  time, unlimited, period, count, frame, MONITOR_1, MONITOR_2
 	//preset is therefore either in seconds or monitor counts
 	//samplename changes the samplename for the run
 	//points will measure several different spectra, putting each one into the same NeXUS file
+	//mode is either :-  time, unlimited, period, count, frame, MONITOR_1, MONITOR_2
 	//
 	//example:
-	//acquire("time",1,"mysample",points=2)
+	//acquire(1,samplename = "mysample", points=2, mode = "time")
 	//
 	//does two acquisitions, each of 1 second each, with the sample title set as "mysample"
 	if(paramisDefault(points))
 		points = 1
+	endif
+	if(paramisdefault(mode))
+		mode = "time"
+	endif
+	if(paramisdefault(samplename))
+		samplename = ""
 	endif
 	if(fpx("dummy_motor",0,points,mode = mode, preset = preset,samplename = samplename, automatic = 2))
 		print "error while acquiring data (acquire)2"

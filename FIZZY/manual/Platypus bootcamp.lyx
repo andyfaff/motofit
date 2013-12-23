@@ -1,42 +1,60 @@
-#LyX 1.6.1 created this file. For more info see http://www.lyx.org/
-\lyxformat 345
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
 \begin_document
 \begin_header
 \textclass article
 \use_default_options false
+\maintain_unincluded_children false
 \language english
+\language_package default
 \inputencoding auto
+\fontencoding global
 \font_roman default
 \font_sans default
 \font_typewriter default
 \font_default_family default
+\use_non_tex_fonts false
 \font_sc false
 \font_osf false
 \font_sf_scale 100
 \font_tt_scale 100
 
 \graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
 \paperfontsize default
 \use_hyperref false
 \papersize default
 \use_geometry false
 \use_amsmath 1
 \use_esint 0
+\use_mhchem 1
+\use_mathdots 1
 \cite_engine basic
 \use_bibtopic false
+\use_indices false
 \paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
-\defskip medskip
+\paragraph_indentation default
 \quotes_language english
 \papercolumns 1
 \papersides 1
 \paperpagestyle default
 \tracking_changes false
 \output_changes false
-\author "" 
-\author "" 
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
 \end_header
 
 \begin_body
@@ -502,11 +520,11 @@ Here is a list of the motors and their explanations.
  towards the detector.
 \end_layout
 
-\begin_layout List
+\begin_layout Labeling
 \labelwidthstring 00.00.0000
 \begin_inset Tabular
 <lyxtabular version="3" rows="23" columns="3">
-<features>
+<features tabularvalignment="middle">
 <column alignment="center" valignment="top" width="0.75in">
 <column alignment="center" valignment="top" width="1.25in">
 <column alignment="center" valignment="top" width="2.5in">
@@ -1768,6 +1786,28 @@ bat send mg _lr`,lf`
 
 \begin_layout Standard
 If it is not on the limit switches both values are 1.
+\end_layout
+
+\begin_layout Subsubsection
+tracking - keep a record of position vs time for a given motor.
+\end_layout
+
+\begin_layout LyX-Code
+motor tracking on
+\end_layout
+
+\begin_layout LyX-Code
+motor tracking save /path/to/file.csv
+\end_layout
+
+\begin_layout LyX-Code
+motor tracking off
+\end_layout
+
+\begin_layout Standard
+This is useful if you want to move a motor and acquire at the same time.
+ e.g.
+ a raster scan.
 \end_layout
 
 \begin_layout Subsection
@@ -3719,7 +3759,7 @@ name "sub:acquire"
 
 \end_inset
 
-acquire(presettypeStr, presetVar, samplename, [points])
+acquire(preset, [mode, samplename, points])
 \end_layout
 
 \begin_layout Standard
@@ -3730,42 +3770,14 @@ Acquires data on the detector and saves it in a NeXUS file.
 \begin_layout Standard
 
 \noun on
-PresettypeStr 
-\noun default
-is either 
-\begin_inset Quotes eld
-\end_inset
-
-TIME
-\begin_inset Quotes erd
-\end_inset
-
- or 
-\begin_inset Quotes eld
-\end_inset
-
-MONITOR
-\begin_inset Quotes erd
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-
-\noun on
 preset 
 \noun default
-is linked to the presettype (e.g.
- 5 seconds).
-\end_layout
-
-\begin_layout Standard
-
+is linked to the 
 \noun on
-samplename
+mode
 \noun default
- is a string containing the name of the sample that is recorded in the datafile
+ (e.g.
+ 5 seconds).
 \end_layout
 
 \begin_layout Standard
@@ -3781,19 +3793,51 @@ points
 \end_layout
 
 \begin_layout Standard
+
+\noun on
+mode 
+\noun default
+is either 
+\begin_inset Quotes eld
+\end_inset
+
+time
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+MONITOR_1
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+samplename
+\noun default
+ is a string containing the name of the sample that is recorded in the datafile
+\end_layout
+
+\begin_layout Standard
 e.g.
 \end_layout
 
 \begin_layout LyX-Code
-acquire(
+acquire(10, mode = 
 \begin_inset Quotes eld
 \end_inset
 
-TIME
+time
 \begin_inset Quotes erd
 \end_inset
 
-, 10, 
+, samplename = 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3814,12 +3858,7 @@ Si wafer
 \end_inset
 
 .
- Note that when you use the optional parameter, 
-\emph on
-points
-\emph default
-, you have to specify the parameter name, this isn't necessary for required
- parameters.
+ 
 \end_layout
 
 \begin_layout Subsubsection
@@ -4144,62 +4183,6 @@ FOC
 
 \begin_layout LyX-Code
 omega_2theta(1.2, 2.4)
-\end_layout
-
-\begin_layout Subsubsection
-stopAndPrimeDetector(presettypeStr, preset)
-\end_layout
-
-\begin_layout Standard
-Sets the detector up to perform a 
-\begin_inset Quotes eld
-\end_inset
-
-freestyle
-\begin_inset Quotes erd
-\end_inset
-
- detector acquisition, i.e.
- you don't care about saving the data, etc.
-\end_layout
-
-\begin_layout Standard
-e.g.
-\end_layout
-
-\begin_layout LyX-Code
-stopAndPrimeDetector(
-\begin_inset Quotes eld
-\end_inset
-
-TIME
-\begin_inset Quotes erd
-\end_inset
-
-, 5)
-\end_layout
-
-\begin_layout Standard
-stops the detector and sets it up to measure for 5secs, but doesn't actually
- start the detector.
- Use acquire() - 
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "sub:acquire"
-
-\end_inset
-
-, when you wish to start the detector in a batch run.
-\end_layout
-
-\begin_layout Subsubsection
-stopDetector()
-\end_layout
-
-\begin_layout Standard
-stops the detector acquiring.
- It speaks directly to the histogram server.
- This has the effect of stopping any other scans you might be doing.
 \end_layout
 
 \begin_layout Subsubsection
@@ -5036,8 +5019,10 @@ The actual angle of incidence is printed out in the IGOR command window.
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula \[
-\Omega=0.5\times\arctan\left(\frac{\left(ref_{px}-db_{px}\right)\times1.168}{dy}\right)\]
+\begin_inset Formula 
+\[
+\Omega=0.5\times\arctan\left(\frac{\left(ref_{px}-db_{px}\right)\times1.168}{dy}\right)
+\]
 
 \end_inset
 
@@ -5829,6 +5814,7 @@ Nuclear Instruments and Methods in Physics Research A
 \begin_layout Standard
 \begin_inset CommandInset index_print
 LatexCommand printindex
+type "idx"
 
 \end_inset
 

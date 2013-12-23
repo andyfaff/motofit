@@ -27,7 +27,7 @@
 	Constant 	MOXA2serverPort = 4002
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
-	StrConstant PATH_TO_DATA = "\\\\Filer\\experiments:platypus:data:"
+	StrConstant PATH_TO_DATA = "\\\\storage\\nbi_experiment_data:platypus:data:"
 	StrConstant PATH_TO_HSDATA = "\\\\Filer\\experiments:platypus:hsdata:"
 	strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
 
@@ -55,7 +55,7 @@
 
 	//constants for creating a webpage with instrument updates.
 	//on Platypus this is an apache webserver running on DAV1.
-	StrConstant SAVELOC = "W:public:"
+	StrConstant SAVELOC = "V:public:"
 	StrConstant HTTP_PROXY = "proxy.nbi.ansto.gov.au:3128"
 
 Function DefaultHistogram()
@@ -147,6 +147,13 @@ Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
 	sics_cmd_interest("chopperController status")
 End
 
+Function lHistogram()		//suitable for hslits(40,25,25,40) "MT"/"POL"
+	oat_table("X",26.5,-26.5,1)
+	oat_table("Y",110.5,109.5,221)
+	oat_table("T",0,30,1000,freq=33)
+	sics_cmd_interest("chopperController status")
+End
+
 Function hnotify_registration()
 	//the purpose of this function is to ask SICS to notify FIZZY when anything changes on the instrument.
 	//normally one can use hnotify / , which notifies us of all changes.  However, when the attenuator is oscillating
@@ -214,7 +221,7 @@ Function vslits(s1,s2,s3,s4)
 	cmd += "ss4d "+num2str(-s4/2)+" "
 	cmd += "ss1u "+num2str(s1/2)+" "
 	cmd += "ss1d "+num2str(-s1/2)+"\n"
-	
+	appendstatemon("ss2u")
 	SOCKITsendmsg sock_interest,cmd
 	if(V_flag)
 		print "Error while positioning (slits)"
@@ -313,8 +320,58 @@ Function omega_2theta(omega, twotheta, [s1, s2, s3, s4])
 	if(numtype(omega) || numtype(twotheta) )//|| omega<0 || twotheta<0)
 		print "ERROR: omega and twotheta NOT be NaN or Inf"
 	endif
+	appendStatemon("om2th")
 	sprintf cmd, "::exp_mode::omega_2theta %3.3f %3.3f %3.3f %3.3f %3.3f %3.3f", omega, twotheta, s1, s2, s3, s4
 	sics_cmd_interest(cmd)
+End
+
+Function aoautoslit(angle, footprint, resolution)
+	//automatically sets the slits AND omega_2theta based on angle, footprint and resolution.
+	//it uses the slit calculator at http://refcalc.appspot.com/slits
+	variable angle, footprint, resolution
+	
+	wave slits = autoslit(angle, footprint, resolution)
+	if(numpnts(slits) != 4)
+		return 1
+	endif	
+	if(!(numtype(slits[0]) || numtype(slits[1]) || numtype(slits[2]) || numtype(slits[3])))
+		omega_2theta(angle, 2 * angle, s1 = slits[0], s2 = slits[1], s3 = slits[2], s4 = slits[3])
+	endif
+	print "aoautoslit set omega_2theta(", angle, ",", 2 * angle,") and vslits(", slits[0], ",", slits[1], ",", slits[2], ",", slits[3],")"
+	return 0
+End
+
+Function/wave autoslit(angle, footprint, resolution)
+	//calculate the slits based on angle, footprint and resolution, does no moving
+	//it uses the slit calculator at http://refcalc.appspot.com/slits
+	variable angle, footprint, resolution
+	string result = ""
+	variable s1, s2, s3, s4, L12, LS4, L2S, LpreS1
+	//instrument distances
+	L12 = str2num(gethipaval("/instrument/parameters/slit3_distance")) - str2num(gethipaval("/instrument/parameters/slit2_distance"))
+	L2S = str2num(gethipaval("/instrument/parameters/sample_distance")) - str2num(gethipaval("/instrument/parameters/slit3_distance"))
+	LS4 = str2num(gethipaval("/instrument/parameters/slit4_distance")) - str2num(gethipaval("/instrument/parameters/sample_distance"))
+	LpreS1 = str2num(gethipaval("/instrument/parameters/slit2_distance")) - str2num(gethipaval("/instrument/parameters/slit1_distance"))
+	make/t/free setup = {{"a1", "footprint", "resolution", "L12", "L2S", "LS4", "LpreS1"}, {num2str(angle), num2str(footprint), num2str(resolution), num2str(L12), num2str(L2S), num2str(LS4), num2str(LpreS1)}}
+	
+	make/n=0/free/d slits
+	
+	easyHttp/TIME=5/form=setup "http://refcalc.appspot.com/singleslit", result
+	if(V_flag)
+		return slits
+	endif
+	
+	sscanf result, "(%f, %f, %f, %f)", s1, s2, s3, s4
+	if(V_flag == 4 && !(numtype(s1) || numtype(s2) || numtype(s3) || numtype(s4)))
+		redimension/n=4 slits
+		s1 = s1 * 1.3 + 4
+		s4 = s4 * 1.3 + 4
+		print "autoslit calculates: vslits(", s1, ",", s2, ",", s3, ",", s4,")"
+		slits = {s1, s2, s3, s}
+		return slits
+	else
+		return slits
+	endif
 End
 
 Function attenuate(pos)
@@ -465,7 +522,7 @@ Function Instrument_Specific_Setup()
 //	make/n=(0,2)/o root:packages:platypus:SICS:frame_deassert
 	
 	//start streaming the detector image
-	ind_process#startStreamingImage()
+	//ind_process#startStreamingImage()
 	
 	return err
 End
@@ -606,7 +663,7 @@ Function regularTasks(s)
 	
 	//update the webpage status
 	createHTML()
-	
+
 	return 0
 End
 
@@ -2027,12 +2084,12 @@ Function/t createFizzyCommand(type)
 			if(V_Flag)
 				return ""
 			endif
-			sprintf cmd, "acquire(\"%s\",%g, \"%s\")", presettype, timer, samplename
+			sprintf cmd, "acquire(%g, mode = \"%s\", samplename = \"%s\")", timer, presettype, samplename
 			break
 		case "omega_2theta":
 			prompt omega, "angle of incidence:"
 			prompt twotheta, "total scattering angle (2theta):"
-			doprompt "Please enter the acquisition length", omega, twotheta
+			doprompt "Please enter the the omega and two theta values you want", omega, twotheta
 			if(V_Flag)
 				return ""
 			endif
@@ -2198,6 +2255,7 @@ Function positioner(posNum)
        cmd += " sphi " + num2str(desiredposition)
 
        print cmd
+       appendstatemon("sth")
        sics_cmd_cmd(cmd)
 
 End
@@ -2760,6 +2818,7 @@ Function pump(ratio, [volume, rate])
     variable ratio, volume, rate
     string cmd = "", template
     //injects liquid from dual syringe pump system towards hamilton syringe.
+    //ROUNDS RATIO TO 2DP!!!!!!!!!!!!
     //ratio - the ratio of pump0 to pump1. 1 = 100% pump0, 0.6666 = 66.66%pump0:33.33%pump1, 0 = 100% pump1
     //volume - the total volume of liquid injected. Defaults to 5ml
     //rate - the total injection rate. Defaults to 1  ml/min
@@ -2768,6 +2827,7 @@ Function pump(ratio, [volume, rate])
         print "PUMPSET ERROR - ratio has to be in range [0, 1]"
         return 1
     endif 
+    ratio = round(ratio *1000)/1000
     
     if(paramisdefault(volume))
 		volume = 5
@@ -2783,17 +2843,27 @@ Function pump(ratio, [volume, rate])
     r1 = (1 - ratio) * rate
     v0 = ratio * volume
     v1 = (1 - ratio) * volume
-
+ //   print v0, r0, v1, r1
+    
+    r0 = round(1000 * (r0)) / 1000
+    r1 = round(1000 * (r1)) / 1000
+    v0 = round(1000* (v0)) / 1000
+    v1 = round(1000 * (v1)) / 1000
+    print v0, r0, v1, r1
+        
     //fill out the rates and volumes and do the injection.
-    template = "hset /sample/syr/pump0/Vol %3.3f\n"
-    template += "hset /sample/syr/pump0/rat %3.3fMM\n"
-    template += "hset /sample/syr/pump1/Vol %3.3f\n"
-    template += "hset /sample/syr/pump1/rat %3.3fMM\n"
-    template += "drive syr_driveable 1\n"
-    sprintf cmd, template, v0, r0, v1, r1
-    sics_cmd_interest(cmd)
+    template = "hset /sample/syr/pump0/Vol %.5s\n"
+    template += "hset /sample/syr/pump0/rat %.5sMM\n"
+    template += "hset /sample/syr/pump1/Vol %.5s\n"
+    template += "hset /sample/syr/pump1/rat %.5sMM\n"
+   template += "drive syr_driveable 1\n"
+    sprintf cmd, template, num2str(v0), num2str(r0), num2str(v1), num2str(r1)
+    print cmd, r0/(r0+r1), v0/(v0+v1), v0+v1, r0+r1
+   sics_cmd_interest(cmd)
 
 End
+
+
 
 Function mvp(mvp)
 	variable mvp
