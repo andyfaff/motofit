@@ -768,7 +768,7 @@ static Function Moto_Reflectivitypanel() : Panel
 	plot_selwave[][5] = 2^5
 	plot_selwave[][6] = 2^5 | 2^4
 	
-	ListBox plot_tab3, pos={26,96},size={535,345},proc=motofit#moto_GUI_listbox
+	ListBox plot_tab3, pos={26,96},size={535,345},proc=motofit#moto_GUI_listbox, userColumnResize = 1
 	ListBox plot_tab3,listWave=root:packages:motofit:reflectivity:plot_listwave
 	ListBox plot_tab3,selWave=root:packages:motofit:reflectivity:plot_selwave, mode=5
 
@@ -2096,7 +2096,7 @@ static Function/s Moto_loadReffile(filenameStr)
 	
 	//get nice name for file.
 	dataname = cleanupname(ParseFilePath(3, filenameStr, ":", 0, 0), 0)
-	dataname = dataname[0, 30 - 7]
+	dataname = dataname[0, 30 - 3]
 	
 	plotyp = str2num(getmotofitoption("plotyp"))
 	if(numtype(plotyp))
@@ -3095,7 +3095,10 @@ static Function moto_GUI_listbox(LBS) : ListboxControl
 						listwave[0][1]=num2istr(oldlayers)
 						return 0
 					endif
-			
+					if(oldlayers == 0)
+						to = 0
+					endif
+					
 					insertpoints (to + 1), (howmany), layerparams,layerparams_selwave
 					for(ii = 0 ; ii < howmany ; ii+=1)
 						layerparams[ii + to + 1][1] = "0"
