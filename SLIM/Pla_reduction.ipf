@@ -1179,7 +1179,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 			// -59 and vice versa.
 			//  Thus a positive phase offset for chopper 4, such as 0.23 degrees, one would operate the choppers at -59.79 degrees.  
 			// If a phase opening of 2 degrees is required then would operate at -60+0.23+2 = -57.79.
-			freq  = frequency[scanpoint] / 60
+			freq  = abs(frequency[scanpoint] / 60)
 			pairing = 0
 
 			//perhaps you've swapped the encoder discs around and you want to use a different pairing
@@ -1990,6 +1990,23 @@ Function delrefpoints(inputPathStr, filename, pointlist)
 	if(fileID>0)
 		xmlclosefile(fileID,1)
 	endif
+End
+
+Function/s buildsplicelist(start, ending)
+	//build a list of consecutive filenames, in such a fashion that these consecutive files
+	//can be spliced by the spliceFiles function.
+	
+	//e.g. buildsplicelist(13000, 13003)
+	//returns:
+	//  "PLP0013000;PLP0013001;PLP0013002;PLP0013003"
+	variable start, ending
+	string list = "", temp = ""
+	variable ii
+	for(ii = start ; ii < ending + 1 ; ii += 1)
+		expandStrIntoPossibleFileName(num2istr(ii), temp)
+		list += temp + ";"
+	endfor
+	return list
 End
 
 Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
