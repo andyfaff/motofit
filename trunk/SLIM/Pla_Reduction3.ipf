@@ -82,25 +82,22 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 			abort
 		endif
 	endif
-				
+	
+	user = "platypus"
+	
 	for(;;)
 		prompt user, "User name"
 		prompt password, "Password"
-		prompt outsideAnsto, "Are you on the ANSTO network?", popup, "Yes;No"
-		Doprompt "Enter your credentials for scp.nbi.ansto.gov.au", user, password, outsideAnsto
+		Doprompt "Enter your credentials for scp.nbi.ansto.gov.au", user, password
 		if(V_Flag)
 			return 1
 		else
 			break
 		endif
 	endfor
-	outsideAnsto -= 1
-	if(outsideAnsto)
-		URL = "sftp://scp.nbi.ansto.gov.au/experiments/platypus/hsdata/"
-	else
-		URL = "sftp://custard.nbi.ansto.gov.au/experiments/platypus/hsdata/"
-	endif
 	
+	url = "sftp://scp.nbi.ansto.gov.au/experiments/platypus/hsdata/"
+		
 	for(jj = 0 ; jj < itemsinlist(DAQfileListStr) ; jj += 1)
 		//create the folder in the input directory
 		DAQfilestr = stringfromlist(jj, DAQfileListStr)
@@ -112,7 +109,7 @@ Function downloadPlatypusStreamedFile(DAQfileListStr[, inputPathStr])
 		killpath/z PLA_temppath_dPD
 	
 		print "Starting to download Platypus data."
-		easyHttp/PROX=""/PASS=user+":"+password/FILE=folder + "CFG.xml" URL + DAQfileStr + "/CFG.xml"
+		easyHttp/PASS=user+":"+password/FILE=folder + "CFG.xml" URL + DAQfileStr + "/CFG.xml"
 		if(V_Flag)
 			print "Error while downloading Platypus data (downloadPlatypusStreamedFile)"
 			return 1
@@ -246,7 +243,7 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 	string inputPathStr
 	variable lowFi, hiFi
 	string user= "", password="", fname, direct, url
-	variable ii, col, row, rowsinwave, outsideANSTO
+	variable ii, col, row, rowsinwave
 	if(paramisdefault(inputPathStr))
 		newpath/o/c/q/z/M="Where would you like to store your Platypus data?" PLA_temppath_dPD
 		if(V_Flag)
@@ -262,14 +259,15 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 			abort
 		endif
 	endif
-					
+	
+	user = "platypus"
+	
 	for(;;)
 		prompt lowFi, "start file"
 		prompt hiFI, "end file"
 		prompt user, "User name"
 		prompt password, "Password"
-		prompt outsideANSTO, "Are you inside ANSTO?", popup, "Yes;No"
-		Doprompt "Enter your credentials for nbi.ansto.gov.au", user, password, outsideANSTO, lowFi, hiFi
+		Doprompt "Enter your credentials for nbi.ansto.gov.au", user, password, lowFi, hiFi
 		if(V_Flag)
 			return 1
 		endif
@@ -280,7 +278,6 @@ Function downloadPlatypusData([inputPathStr, lowFi, hiFi])
 		endif
 		
 	endfor
-	outsideANSTO -= 1
 	
 	url = "sftp://scp.nbi.ansto.gov.au"
 	
@@ -314,7 +311,7 @@ Threadsafe Function downloader(url, directory, inputpathstr, userpasscombo, fnum
 	col=floor(V_value / rowsInWave)
 	row=V_value-col*rowsInWave
 	direct = directory[row][0]
-	easyHttp/PROX=""/PASS=userpasscombo/File=inputpathStr + fname  url + direct
+	easyHttp/PASS=userpasscombo/File=inputpathStr + fname  url + direct
 	print "Got", fname
 	return 0
 End

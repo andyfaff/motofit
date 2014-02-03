@@ -121,7 +121,7 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, sli
 	period = 1 / framefrequency
 
 	Wave W_unpackedNeutronsF, W_unpackedNeutronsx, W_unpackedNeutronsy, W_unpackedNeutronst, W_unpackedneutronsV
-
+	
 	duplicate/free slicebins, tempSlicebins
 	val = binarySearchInterp(tempSlicebins, totalTime)
 	if(!numtype(val))
@@ -151,8 +151,8 @@ Function/wave Pla_streamedDetectorImage(xbins, ybins, tbins, frameFrequency, sli
 	
 	numevents = dimsize(W_unpackedNeutronsy, 0)
 	
-	make/n=(numevents)/free/i/u xpos, ypos, tpos, slicepos, eventpos
-	multithread xpos = binarysearch(xbins, W_unpackedNeutronsX[p])
+	make/n=(numevents)/free/i xpos, ypos, tpos, slicepos, eventpos
+	 xpos = binarysearch(xbins, W_unpackedNeutronsX[p])
 	multithread ypos = binarysearch(ybins, W_unpackedNeutronsY[p])
 	multithread tpos = binarysearch(tbins, W_unpackedNeutronst[p])
 	multithread slicepos = binarysearch(tempslicebins, W_unpackedNeutronsF[p] * period)
