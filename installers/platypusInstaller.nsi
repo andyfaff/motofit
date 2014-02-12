@@ -41,10 +41,13 @@ StrLen $0 $1
 ${If} $0 = 0
 Abort "You don't appear to have IGOR installed"
 ${EndIf}
-		
+
 	;get rid of previous versions of motofit
 	Delete "$1\User Procedures\motofit\*"
 	RMDir /r "$1\User Procedures\motofit"
+
+	SetOutPath "$INSTDIR\User Procedures\motofit\"
+	File "..\motofit\*"
 	
 	SetOutPath "$INSTDIR\User Procedures\motofit\platypus"
 	File "..\SLIM\*"
