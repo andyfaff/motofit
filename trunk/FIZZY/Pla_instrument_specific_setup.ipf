@@ -28,6 +28,7 @@
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
 	StrConstant PATH_TO_DATA = "\\\\storage\\nbi_experiment_data:platypus:data:"
+	StrConstant PATH_TO_DATA2 = "\\\\Filer\\experiments:platypus:data:"
 	StrConstant PATH_TO_HSDATA = "\\\\Filer\\experiments:platypus:hsdata:"
 	strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
 
@@ -148,9 +149,16 @@ Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
 End
 
 Function lHistogram()		//suitable for hslits(40,25,25,40) "MT"/"POL"
-	oat_table("X",26.5,-26.5,1)
+	oat_table("X",28.5,-28.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,30,1000,freq=33)
+	oat_table("T",0,40,1000,freq=24)
+	sics_cmd_interest("chopperController status")
+End
+
+Function mHistogram()		//suitable for hslits(30,15,12,30) "
+	oat_table("X",13.5,-13.5,1)
+	oat_table("Y",110.5,109.5,221)
+	oat_table("T",0,40,1000,freq=24)
 	sics_cmd_interest("chopperController status")
 End
 
@@ -356,7 +364,7 @@ Function/wave autoslit(angle, footprint, resolution)
 	
 	make/n=0/free/d slits
 	
-	easyHttp/TIME=5/form=setup "http://refcalc.appspot.com/singleslit", result
+	easyHttp/TIME=5/form=setup/prox "refcalc.appspot.com/singleslit", result
 	if(V_flag)
 		return slits
 	endif
@@ -367,7 +375,7 @@ Function/wave autoslit(angle, footprint, resolution)
 		s1 = s1 * 1.3 + 4
 		s4 = s4 * 1.3 + 4
 		print "autoslit calculates: vslits(", s1, ",", s2, ",", s3, ",", s4,")"
-		slits = {s1, s2, s3, s}
+		slits = {s1, s2, s3, s4}
 		return slits
 	else
 		return slits
@@ -1647,10 +1655,18 @@ Function Instrumentlayout_panel()
 	SetVariable runscanstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout, size = {200,16}
 	SetVariable runscanstatus,limits={-inf,inf,0},value=  root:packages:platypus:SICS:hipadaba_paths[gethipapos("/commands/scan/runscan/feedback/status")][1],noedit= 1, win=instrumentlayout
 
-	SetVariable julabo,pos={90,253},size={90,16},title="Julabo temp", win=instrumentlayout,bodywidth=40
-	SetVariable julabo,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
-	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout
-	
+//	SetVariable julabo,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
+//	SetVariable julabo,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+//Julabo
+//	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout
+//Lakeshore
+//	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueD")][1],noedit= 1, win=instrumentlayout
+//	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/setpoint1")][1],noedit= 1, win=instrumentlayout
+//	SetVariable julaboset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
+//	SetVariable julabo1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueC")][1],noedit= 1, win=instrumentlayout
+//	SetVariable julabo1,pos={90,293},size={90,16},title="temp C", win=instrumentlayout,bodywidth=40
+			
+		
 	SetVariable attenuatorstatus,pos={468,273},size={200,16},title="attenuator position"
 	SetVariable attenuatorstatus,labelBack=(65535,65535,65535),fSize=8
 	SetVariable attenuatorstatus,valueBackColor=(65535,65535,65535)
@@ -2022,11 +2038,11 @@ Function/t createFizzyCommand(type)
 	strswitch(type)
 		case "":
 			break
-		case "tempbath":
-			variable temperature = 25, waitforequil
-			prompt temperature, "what temperature do you want to set the julabo to?"
+		case "temperature":
+			variable temperature = 313, waitforequil
+			prompt temperature, "what setpoint temperature?"
 			prompt waitforequil, "Did you want to wait for equilibration?", popup, "YES;NO"
-			Doprompt "Water bath", temperature, waitforequil
+			Doprompt "Sepoint temperature", temperature, waitforequil
 			if(V_flag)
 				return ""
 			endif
@@ -2035,7 +2051,7 @@ Function/t createFizzyCommand(type)
 			else
 				waitforequil = 1
 			endif
-			sprintf cmd, "tempbath(%3.2f, wait=%d)", temperature, waitforequil
+			sprintf cmd, "temperature(%3.2f, wait=%d)", temperature, waitforequil
 			break
 		case "txtme":
 			string text = ""
@@ -2196,7 +2212,7 @@ Function positioner(posNum)
        Variable posnum
        Wave/t/z position_listwave = root:packages:platypus:SICS:position_listwave
        Wave/z position_selwave = root:packages:platypus:SICS:position_selwave
-       string cmd = "drive"
+       string cmd = ""
        variable isRelative, desiredposition
        if(!waveexists(position_listwave) || !waveexists(position_selwave))
                return 1
@@ -2205,7 +2221,14 @@ Function positioner(posNum)
                return 1
        endif
        posnum = trunc(posnum)
-
+	
+	//samplename
+	if(strlen(position_listwave[posnum][9]))
+		cmd = "samplename " + position_listwave[posnum][9] + "\r"
+	endif
+	
+	cmd += "drive "
+	
        //sx
        isrelative = 2^4 & position_selwave[posnum][2]
        if(isRelative)
@@ -2256,7 +2279,7 @@ Function positioner(posNum)
 
        print cmd
        appendstatemon("sth")
-       sics_cmd_cmd(cmd)
+      sics_cmd_cmd(cmd)
 
 End
 
@@ -2273,8 +2296,8 @@ Function positionlist(numpositions)
        Wave/z position_selwave
 
        if(!waveexists(position_listwave))
-               make/t/o/n=(numpositions, 9) position_listwave
-               make/o/n=(numpositions, 9) position_selwave = 2
+               make/t/o/n=(numpositions, 10) position_listwave
+               make/o/n=(numpositions, 10) position_selwave = 2
                position_selwave[][2] =  2^5
                position_selwave[][4] =  2^5
                position_selwave[][6] =  2^5
@@ -2286,6 +2309,7 @@ Function positionlist(numpositions)
                position_selwave[][3] = 2
                position_selwave[][5] = 2
                position_selwave[][7] = 2
+               position_selwave[][9] = 2
                for(ii = oldpositions ; ii < numpositions ; ii += 1)
                        position_selwave[ii][2] =  2^5
                        position_selwave[ii][4] =  2^5
@@ -2295,6 +2319,7 @@ Function positionlist(numpositions)
                        position_listwave[ii][3] = "0"
                        position_listwave[ii][5] = "0"
                        position_listwave[ii][7] = "0"
+                       position_listwave[ii][9] =  ""
                endfor
        endif
 
@@ -2310,6 +2335,7 @@ Function positionlist(numpositions)
        setdimlabel 1, 6, relative, position_listwave
        setdimlabel 1, 7, sphi, position_listwave
        setdimlabel 1, 8, relative, position_listwave
+	setdimlabel 1, 9, samplename, position_listwave
 
        setdatafolder $cDF
 End
@@ -2334,12 +2360,12 @@ Function positions_panel() : Panel
        Dowindow/k position_panel
        //creates a window to setup pre-defined positions
        PauseUpdate; Silent 1           // building window...
-       NewPanel /K=1/N=position_panel/W=(442,111,1011,410) as "Position Panel"
+       NewPanel /K=1/N=position_panel/W=(442,111,1211,275) as "Position Panel"
        positionlist(0)
-       ListBox position_list,pos={6,34},size={552,255}, win=position_panel
+       ListBox position_list,pos={6,34},size={752,115}, win=position_panel
        ListBox position_list,listWave=root:packages:platypus:SICS:position_listwave, win=position_panel
        ListBox position_list,selWave=root:packages:platypus:SICS:position_selwave, win=position_panel
-       ListBox position_list,mode= 5,editStyle= 1, win=position_panel
+       ListBox position_list,mode= 5,editStyle= 1, win=position_panel, usercolumnresize = 1, widths = {10,20,10,20,10, 20,10, 20, 10, 40}
        Button position_button, title="set positions", pos={221,6},size={320,22}
        SetVariable numpositions,pos={9,8},size={200,15},proc=numpositions_setVarProc,title="Number of positions", win=position_panel
        SetVariable numpositions,limits={1,10,1},value= _NUM:0, win=position_panel
@@ -2464,6 +2490,40 @@ Function numangles_setVarProc(sva) : SetVariableControl
 
        return 0
 End
+
+Function autosetangles_buttonproc(s): buttonControl
+	STRUCT WMButtonAction &s
+	Wave/t/z angler_listwave = root:packages:platypus:SICS:angler_listwave
+      
+	switch(s.eventcode)
+		case 2:
+			variable footprint = 50, resolution = 0.033
+			variable ii, angle
+			prompt footprint "footprint of sample (mm)"
+			prompt resolution, "enter dtheta/theta resolution"
+			doprompt "Sample settings", footprint, resolution
+			if(V_flag)
+				return 0
+			endif
+      	
+			for(ii = 0 ; ii < dimsize(angler_listwave, 0) ; ii += 1)
+				angle = str2num(angler_listwave[ii][1])
+				Wave slits = autoslit(angle, footprint, resolution)
+				if(numpnts(slits) != 4)
+					return 0
+				endif
+				if(slits[0] > 20)
+					slits[0] = 22
+				endif
+				angler_listwave[ii][2] = num2str(slits[0])
+				angler_listwave[ii][3] = num2str(slits[1])
+				angler_listwave[ii][4] = num2str(slits[2])
+				angler_listwave[ii][5] = num2str(slits[3])
+			endfor
+			break
+	endswitch      	
+End
+
 Function angler_listboxproc(s) : ListboxControl
 	STRUCT WMListboxAction &s
 	switch(s.eventcode)
@@ -2483,13 +2543,14 @@ Function anglers_panel() :panel
        Dowindow/k angler_panel
        //creates a window to setup pre-defined positions
        PauseUpdate; Silent 1           // building window...
-       NewPanel /K=1/N=angler_panel/W=(740,174,1135,325) as "Angles Panel"
+       NewPanel /K=1/N=angler_panel/W=(740,174,1335,325) as "Angles Panel"
        anglerlist(0)
-       ListBox angle_list,pos={6,34},size={379,110}, win=angler_panel, proc = angler_listboxproc
+       ListBox angle_list,pos={6,34},size={579,110}, win=angler_panel, proc = angler_listboxproc
        ListBox angle_list,listWave=root:packages:platypus:SICS:angler_listwave, win=angler_panel
        ListBox angle_list,selWave=root:packages:platypus:SICS:angler_selwave, win=angler_panel
        ListBox angle_list,mode= 5,editStyle= 1, win=angler_panel
        Button angle_button, title="set angles", pos={221,6},size={170,22}, win=angler_panel
+       Button autoset_angle_button, title="autoset angles", pos={401,6},size={170,22}, win=angler_panel, proc = autosetangles_buttonproc
        SetVariable numangles,pos={9,8},size={200,15},proc=numangles_setVarProc,title="Number of angles", win=angler_panel
        SetVariable numangles,limits={1,10,1},value= _NUM:0, win=angler_panel
 End
@@ -2545,16 +2606,16 @@ End
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-//			JULABO/THERMOHAAKE water bath for Platypus
+//			tc1 setpoint for Platypus
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-function tempbath(temperature, [wait])
+function temperature(temperature, [wait])
 	variable temperature, wait
 	string cmd = ""
 	if(wait)
 		sprintf cmd, "drive tc1_driveable %3.2f", temperature
 	else
-		sprintf cmd, "run tc1_driveable %3.2f", temperature
+		sprintf cmd, "hset /sample/tc1/sensor/setpoint1 %3.2f", temperature
 	endif
 	sics_cmd_interest(cmd)	
 end

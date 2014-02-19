@@ -19,6 +19,7 @@ Function/c findthecentre(position,tempY,tempE)
 	
 	variable V_fiterror = 0
 	//can easily change to lorentzian
+//	print position, tempy, tempE
 	try
 		curvefit/n/q/w=0 gauss tempy /X=position/W=tempE/I=1; ABORTONRTE
 	catch
@@ -533,8 +534,8 @@ Function finishScan(status)
 	Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + Ind_Process#grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"+"BM1counts;"+num2str(bm1cts)+";"
 			
 	string fname =  "FIZscan" + num2str(getFIZscanNumberAndIncrement()) + ".itx"
-	save/o/t position, counts as PATH_TO_DATA + "FIZ:" + fname
-	print "FPXscan (position vs counts) saved to ", PATH_TO_DATA + "FIZ:" + fname
+	save/o/t position, counts as PATH_TO_DATA2 + "FIZ:" + fname
+	print "FPXscan (position vs counts) saved to ", PATH_TO_DATA2 + "FIZ:" + fname
 	print "file saved as: ", gethipaval("/experiment/file_name")
 	
 	//display the scan in an easy to killgraph
@@ -542,7 +543,8 @@ Function finishScan(status)
 	make/o/d/n=(numpnts(position)) tempY, tempE
 	Wave tempY, tempE
 	tempY = counts[p][0]
-	tempE = counts[p][1]
+	tempE = sqrt(counts[p][0] + 0.75)
+//	tempE = counts[p][1]
 		
 	//the following waves are to put a vertical line on the fpxscangraph to mark the centroid/gauss centres.
 	make/o/d/n=(3),root:packages:platypus:data:scan:tagcentroid,root:packages:platypus:data:scan:taggauss,root:packages:platypus:data:scan:tagyy
@@ -668,7 +670,7 @@ End
 Function getFIZscanNumberAndIncrement()
 	variable fileID, fizscannumber = 0
 	string theLine = ""
-	open/z fileID as PATH_TO_DATA + "FIZ:fizscannumber"
+	open/z fileID as PATH_TO_DATA2 + "FIZ:fizscannumber"
 	if(V_flag != 0)
 		return -1
 	endif
