@@ -218,7 +218,8 @@ Function interestProcessor(w,x)
 						//if the softlimits have changed, need to update positions, as a notify isn't always sent.
 						//send on the interest channel.  SHould just be able to send the short axis name
 						//this will make this processor function slightly recursive
-						sockitsendmsg/time=1 sock_interest,axeslist[row][0]+"\n"
+						sockitsendmsg/time=1 sock_interest, axeslist[row][0] + "\n"
+						sockitsendmsg/time=1 sock_interest, "hget " + axeslist[row][1] + "\n"
 					endif
 				endif
 				break

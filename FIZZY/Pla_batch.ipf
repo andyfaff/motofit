@@ -68,7 +68,7 @@ Function batchScan(batchfile)
 	variable/g root:packages:platypus:data:batchscan:userPaused = 0		//says whether you are currently in a user paused situation
 	
 	//start the scan task
-	CtrlNamedBackground  batchScan period=150, proc=batchbkgtask,  dialogsOK =0, burst = 0
+	CtrlNamedBackground  batchScan period=50, proc=batchbkgtask,  dialogsOK =0, burst = 0
 	CtrlNamedBackground  batchScan start
 	print "______________________________________________________"
 	print "STARTING BATCH MODE"

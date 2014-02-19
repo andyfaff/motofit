@@ -314,7 +314,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 1: //mouse down
 			if(lba.eventmod & 2^4)
-				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;angler;txtme;tempbath;setpos"
+				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;angler;txtme;temperature;setpos"
 				listwave[row][col] = createFizzyCommand(S_Selection)
 			endif
 			break
@@ -652,7 +652,7 @@ Function startSICS()
 		ListBox buffer_tab3,listWave=root:packages:platypus:data:batchScan:list_batchbuffer
 		ListBox buffer_tab3,selWave=root:packages:platypus:data:batchScan:sel_batchbuffer
 		ListBox buffer_tab3,row= 1,mode= 7,editStyle= 2,widths={10,90,13,24,34}, fsize=14
-		ListBox buffer_tab3,userColumnResize= 0,proc=RebuildBatchListBoxProc
+		ListBox buffer_tab3,userColumnResize= 1,proc=RebuildBatchListBoxProc
 		Button runbatch_tab3,pos={510,53},size={101,101},title=""
 		Button runbatch_tab3,picture= ProcGlobal#go_pict, proc=button_SICScmdpanel
 		Button stopbatch_tab3,pos={511,53},size={101,101},title="",disable=1
