@@ -19,8 +19,11 @@ Function FitRefToListOfWaves()
 		//the data will be contained in the MOTOFIT_batchfits datafolder
 		setdatafolder root:packages:motofit:MOTOFIT_batchfits
 	
-		//this command sends all the wave names beginning with batchwave to the string thelist
-		String thelist = Wavelist("batchwave*_R",";","")		
+		//this command sends all the wave names to the string thelist
+		String thelist = Wavelist("*_R",";","")
+		//you may have already done fits, remove the fits from the list to be fitted.
+		thelist = greplist(thelist, "^fit_", 1)
+		thelist = SortList(thelist, ";", 16)
 	
 		//setupholdstring, all the hold checkboxes are numbered in order h0,h1,h2, etc.
 		//USE THE Motofit box for easy access
@@ -66,16 +69,17 @@ Function FitRefToListOfWaves()
 		variable/g Vmulrep = str2num(motofit#getmotofitoption("Vmulrep"))
 					
 		for(ii = 0; ii < itemsinlist(theList) ; ii += 1)
-			Wave RR = $("batchwave" + num2istr(ii) + "_R")
-			wave qq = $("batchwave" + num2istr(ii) + "_q")
-			wave/z dR = $("batchwave" + num2istr(ii) + "_E")
-			wave/z dq = $("batchwave" + num2istr(ii) + "_dq")
+			string stub = removeending(stringfromlist(ii, thelist))
+			Wave RR = $(stub + "R")
+			wave qq = $(stub + "q")
+			wave/z dR = $(stub + "E")
+			wave/z dq = $(stub + "dq")
 		
 			//make an outputwave
-			make/o/n=(numpnts(RR))/d $("fit_batchwave" + num2istr(ii) + "_R")
-			make/o/n=(numpnts(RR))/d $("fit_batchwave" + num2istr(ii) + "_q")
-			Wave outputRR = $("fit_batchwave" + num2istr(ii) + "_R")
-			Wave outputqq = $("fit_batchwave" + num2istr(ii) + "_q")
+			make/o/n=(numpnts(RR))/d $("fit_" + stub + "R")
+			make/o/n=(numpnts(RR))/d $("fit_" + stub + "q")
+			Wave outputRR = $("fit_" + stub + "R")
+			Wave outputqq = $("fit_" + stub + "q")
 			outputqq = qq	
 		
 			string traces = tracenamelist("batchdata",";",1)
@@ -298,8 +302,7 @@ Function LoadAndGraphAll (pathname)
 			endif
 		
 			//append the data
-			string batchwavename = "batchwave"
-			batchwavename="batchwave" + num2istr(ii)
+			string batchwavename = cleanupname(filename, 0)
 			duplicate/o $StringFromList (0, S_Wavenames, ";"), $(batchwavename + "_q")
 			duplicate/o $StringFromList (1, S_Wavenames, ";"), $(batchwavename + "_R")
 			Wave qq = $(batchwavename + "_q")

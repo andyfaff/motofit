@@ -1382,6 +1382,7 @@ Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loL
 		M_lambda[][] = 0.5 * (M_lambdaHIST[p][q] + M_lambdaHIST[p + 1][q])
 		M_spectof[][] = 0.5 * (M_specTOFHIST[p][q] + M_specTOFHIST[p + 1][q])
 		
+		//multiply by the bin width so we can compare spectra between different rebinnings.
 		detector[][][] /= M_lambdaHIST[p+1][r] - M_lambdaHIST[p][r]
 		detectorSD[][][] /= M_lambdaHIST[p+1][r] - M_lambdaHIST[p][r]
 
