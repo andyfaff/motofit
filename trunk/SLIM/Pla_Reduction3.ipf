@@ -10,6 +10,7 @@
 Menu "Platypus"
 	Submenu "SLIM"
 		"Reduction", reducerpanel()
+		"Plot scan data/[", SLIM_plot_scans()
 		"Download Platypus Data", downloadPlatypusData()
 		"Download DAQ Streamed File", grabStreamFromCatalogue()
 		"MADD - Add files together", addFilesTogether()
@@ -647,10 +648,10 @@ Function SLIM_buttonproc(ba) : ButtonControl
 					string thePathstring = ""
 					if(V_flag == 1)
 						thePathstring = inputpathStr
-						fileFilterStr = "HDF files (.hdf):.hdf;XML files (.xml):.xml;ITX files (.itx):.itx;spectrum files (.spectrum):.spectrum;"
+						fileFilterStr = "HDF files (.hdf):.hdf;XML files (.xml):.xml;spectrum files (.spectrum):.spectrum;"
 					elseif(V_flag == 2)
 						thePathstring = outputpathStr
-						fileFilterStr = "XML files (.xml):.xml;HDF files (.hdf):.hdf;ITX files (.itx):.itx;spectrum files (.spectrum):.spectrum;"
+						fileFilterStr = "XML files (.xml):.xml;HDF files (.hdf):.hdf;spectrum files (.spectrum):.spectrum;"
 					endif
 					
 					GetFileFolderInfo/q/z thePathstring
@@ -756,14 +757,6 @@ Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, 
 			return 0
 		endif
 		
-		if(stringmatch(".itx",tempfilenamestr[strlen(tempfilenamestr)-4,strlen(tempfilenamestr)-1]))
-			if(SLIM_plot_scans(inputPathStr, filenames))
-				print "ERROR while trying to plot reduced data (SLIM_PLOT)"
-				return 1
-			endif
-			return 0
-		endif
-
 		if(stringmatch(".spectrum", tempfilenamestr[strlen(tempfilenamestr) - 9, strlen(tempfilenamestr) - 1]))	
 			if(SLIM_plot_spectrum(inputPathStr, filenames))
 				print "ERROR while trying to plot spectrum data (SLIM_PLOT)"
@@ -847,67 +840,69 @@ Function SLIM_plot(inputpathStr, outputPathStr, fileNames,lowlambda,highLambda, 
 	endif
 End
 
-Function SLIM_plot_scans(inputpathStr,filenames)
-	String inputpathStr, fileNames
-	print "SLIM_plot_scans("+inputpathStr+","+filenames+")"
-	variable ii, fnumber
-	string cDF, tempStr1,tempStr, slimplotstring
+Function SLIM_plot_scans()
+	//produces a plot of total_counts vs the scan variable for a given nexusfile
+	variable temp
+	string filter
+	SVAR/z inputpath = root:packages:platypus:data:Reducer:inputpathStr
+	if(SVar_exists(inputpath))
+		newpath/o/q/z nexusdata, inputpath
+	else
+		pathinfo nexusdata
+		if(!V_flag)
+			newpath/M="nexus data location"/o/q/z nexusdata
+		endif
+	endif
 	
+	filter = "Nexus Files (*.nx.hdf):.hdf;"
+	open/d/r/f=filter/p=nexusdata temp as ""
+	if(!strlen(S_fileName))
+		return 0
+	endif
+	String inputpathStr, fileName
+	filename = ParseFilePath(0, S_filename, ":", 1, 0)
+	inputpathStr = ParseFilePath(1, S_filename, ":", 1, 0)
+	SLIM_scans(inputpathStr,filename)
+End
+
+Function SLIM_scans(inputpathStr,filename)
+	//produces a plot of total_counts vs the scan variable for a given nexusfile
+	String inputpathStr, fileName
+	string cDF, slimplotstring
 	cDF = getdatafolder(1)
+	
+	Wave data = getScanData(inputpathStr, fileName)
 
 	newdatafolder/o root:packages
 	newdatafolder/o root:packages:platypus
 	newdatafolder/o root:packages:platypus:data
 	newdatafolder/o root:packages:platypus:data:Reducer
 	newdatafolder/o/s root:packages:platypus:data:Reducer:SLIM_plot
-	
-	GetFileFolderInfo/q/z inputpathStr
-	if(V_flag)//path doesn't exist
-		print "ERROR please give valid path (SLIM_plot_scans)"
-		return 1
-	endif
-	newpath/o/q/z pla_temppath_SLIM_plot_scans, inputpathStr
-	
-	try
-		dowindow/k SLIM_PLOTwin
-		display/K=1 as "SLIM plot (C) Andrew Nelson + ANSTO 2008"
-		dowindow/c SLIM_PLOTwin
-		//		controlbar/W=SLIM_PLOTwin 30
-		//		button refresh,win=SLIM_PLOTwin, proc=button_SLIM_PLOT,title="Refresh",size={100,20}, fColor=(0,52224,26368)
-		
-		sprintf slimplotstring, "SLIM_plot(\"%s\", \"%s\", \"%s\", 0, 0, 0)", inputpathStr, inputpathStr, fileNames
-		setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
-		setwindow SLIM_PLOTwin, userdata(filenames) = filenames
-		setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr
-		
-		for(ii=0 ; ii<itemsinlist(filenames) ; ii+=1)
-			string fname = stringfromlist(ii,filenames)
-			loadWave/o/q/T/P=pla_temppath_SLIM_plot_scans, fname
-			sscanf fname, "FIZscan%d%*[.]itx", fnumber
-			Wave wav0 = $(stringfromlist(0, S_wavenames))
-			Wave wav1 = $(stringfromlist(1, S_wavenames))
-			duplicate/o wav0, $(stringfromlist(0, S_wavenames)+ num2istr(fnumber))
-			Wave asd0 = $(stringfromlist(0, S_wavenames)+ num2istr(fnumber))
-			duplicate/o wav1, $(stringfromlist(1, S_wavenames)+ num2istr(fnumber))
-			Wave asd1 = $(stringfromlist(1, S_wavenames)+ num2istr(fnumber))	
 
-			killwaves/z wav0,wav1
-			
-			appendtograph/w=SLIM_PLOTwin asd1[][0] vs asd0
-			modifygraph mode=4
-		endfor
-		CommonColors("SLIM_PLOTwin")
-		Legend/C/N=text0/A=MC
-		cursor/A=1/W=SLIM_PLOTwin/H=1/F/P A $(stringfromlist(0,tracenamelist("SLIM_PLOTwin",";",1))) 0.5,0.5
-		showinfo
-		setdatafolder $cDF
-		killpath/z pla_temppath_SLIM_plot_scans
-		return 0
-	catch
-		killpath/z pla_temppath_SLIM_plot_scans
-		setdatafolder $cDF
-		return 0
-	endtry
+	make/n=(dimsize(data, 0))/d/o total_counts, scan_variable
+	scan_variable = data[p][0]
+	total_counts = data[p][1]
+	
+	setdatafolder $cDF
+	
+	dowindow/k SLIM_PLOTwin
+	display/K=1 as "SLIM plot (C) Andrew Nelson + ANSTO 2008"
+	dowindow/c SLIM_PLOTwin
+		
+	sprintf slimplotstring, "SLIM_plot_scans(\"%s\", \"%s\")", inputpathStr, fileName
+	setwindow SLIM_PLOTwin, userdata(slimplotstring) = slimplotstring
+	setwindow SLIM_PLOTwin, userdata(filename) = filename
+	setwindow SLIM_PLOTwin, userdata(pathStr) = inputpathStr
+	
+	appendtograph/w=SLIM_PLOTwin total_counts vs scan_variable
+	TextBox/C/N=text0/A=MC filename
+	label bottom note(data)
+	note/K scan_variable, note(data)
+	label left "total_counts"
+	modifygraph mode=4, marker = 8
+
+	cursor/A=1/W=SLIM_PLOTwin/H=1/F/P A $(stringfromlist(0,tracenamelist("SLIM_PLOTwin",";",1))) 0.5,0.5
+	showinfo
 End
 
 Function SLIM_plot_reduced(inputPathStr, filenames)

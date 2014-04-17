@@ -12,22 +12,6 @@ Menu "Platypus"
 	"Catalogue FIZ data", catalogueFIZdata()
 End
 
-Function catalogueFIZdata()
-	newpath/o/z/q/M="Where are the FIZ files?" PATH_TO_DATAFILES
-	if(V_flag)
-		print "ERROR path to data is incorrect (catalogueFIZdata)"
-		return 1
-	endif
-	pathinfo PATH_TO_DATAFILES
-	variable start=1,finish=100000
-	prompt start,"start"
-	prompt finish,"finish"
-	Doprompt "Enter the start and end files",start, finish
-	If(V_flag)
-		abort
-	endif
-	catalogueFIZ(S_path,start=start,finish=finish)	
-End
 	
 Function catalogueNexusdata()
 	newpath/o/z/q/M="Where are the NeXUS files?" PATH_TO_DATAFILES
@@ -484,113 +468,6 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 			abort
 		endif 
 	endif
-End
-
-Function catalogueFIZ(pathName[, start, finish])
-	String pathName
-	variable start, finish
-
-	string cDF = getdatafolder(1)
-	string fizfiles,tempStr
-	variable temp,ii,jj,firstfile, lastfile, fnum
-
-	newdatafolder/o root:packages
-	newdatafolder/o root:packages:platypus
-	newdatafolder/o/s root:packages:platypus:catalogue
-	
-	if(paramisdefault(start))
-		start = 1
-	endif
-
-	try
-		newpath/o/z/q PATH_TO_DATAFILES, pathname
-		if(V_flag)
-			print "ERROR path to data is incorrect (catalogueFIZ)"
-			abort
-		endif
-	
-		fizfiles = sortlist(indexedfile(PATH_TO_DATAFILES,-1,".itx"),";",16)
-		fizfiles = replacestring(".itx", fizfiles,"")
-		fizfiles = greplist(fizfiles, "^FIZscan")
-		
-		sscanf stringfromlist(0, fizfiles), "FIZscan%d%*[.]itx", firstfile
-		sscanf stringfromlist(itemsinlist(fizfiles)-1, fizfiles),"FIZscan%d%*[.]itx",lastfile
-		if(paramisdefault(finish))
-			finish = lastfile
-		endif
-	
-		jj = 0
-
-//Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"
-
-		make/o/t/N=(0, 6) runlist
-		for(ii = 0 ; ii < itemsinlist(fizfiles) ; ii+=1)
-			sscanf stringfromlist(ii, fizfiles), "FIZscan%d%*[.]itx", fnum
-			if(fnum >= firstfile && fnum <= lastfile && fnum >= start && fnum <= finish)
-			else
-				continue
-			endif
-			loadWave/o/q/T/P=PATH_TO_DATAFILES, stringfromlist(ii, fizfiles) + ".itx"
-
-			Wave wav0 = $(stringfromlist(0, S_wavenames))
-			Wave wav1 = $(stringfromlist(1, S_wavenames))
-			
-			string theNote = note(wav0)			
-			redimension/n=(dimsize(runlist, 0) + 1, -1) runlist						
-			runlist[ii][0] = num2str(fnum)
-			runlist[ii][1] = num2istr(dimsize(wave0, 0))
-			runlist[ii][2] = stringbykey("data", theNote)
-			runlist[ii][3] = stringbykey("DAQ", theNote)
-			runlist[ii][4] = stringbykey("DATE", theNote)
-			runlist[ii][5] = stringbykey("TIME", theNote)
-		endfor
-		setdimlabel 1,0,run_number, runlist
-		setdimlabel 1,1,num_points, runlist
-		setdimlabel 1, 2, datefilename, runlist
-		setdimlabel 1,3, DAQfolder, runlist
-		setdimlabel 1,4,theDate, runlist
-		setdimlabel 1,5,theTime, runlist
-		edit/k=1/N=Platypus_run_list runlist.ld as "Platypus Run List"
-	catch
-	endtry
-
-	Killpath/z PATH_TO_DATAFILES
-
-	setdatafolder $cDF
-End
-
-Function parseFIZlog(filename, hipadabapaths)
-	string filename, hipadabapaths
-	variable ii, jj, theTime, theEntry
-	make/free/t/n=0/o W_relevantlines
-	make/free/t/n=(0)/o W_output
-	for(ii = 0 ; ii < itemsinlist(hipadabapaths) ; ii+=1)
-		grep/E=(stringfromlist(ii, hipadabapaths)) filename as W_relevantlines
-		if(V_Flag)
-			abort
-		endif
-		if(dimsize(W_relevantlines, 0) > dimsize(W_output, 0))
-			redimension/n=(dimsize(W_relevantlines, 0), dimsize(W_output, 1) + 1) W_output
-		else
-			redimension/n=(-1, dimsize(W_output, 1) + 1) W_output		
-		endif
-		W_output[][ii] = W_relevantlines[p]
-	endfor
-	//now find out the times and insert them into a log
-	make/n=(0, dimsize(W_output, 1) + 1)/T/o M_logEntries
-	for(ii = 0 ; ii < dimsize(W_output, 1) ; ii +=1 )
-		for(jj = 0 ; jj < dimsize(W_output, 0) ; jj+=1)
-			if(strlen(W_output[jj][ii]))
-				redimension/n=(dimsize(M_logEntries, 0) + 1, -1) M_logentries
-				M_logentries[dimsize(M_logtime, 0) - 1][0] = stringfromlist(0, W_output[jj][ii], "\t")			
-				M_logentries[dimsize(W_logtime, 0) - 1][ii + 1] = stringfromlist(2, W_output[jj][ii], "\t")
-			endif
-		endfor
-	endfor
-	MDsort(M_logentries, 0)
-	make/n=(dimsize(M_logentries, 0))/d/o W_logtime = NaN
-	W_logtime[] = str2num(M_logentries[p][0])
-	deletepoints/M=1 0, 1, M_logentries
 End
 
 static Function MDsort(w,keycol, [reversed])

@@ -3855,4 +3855,21 @@ Function moto_removemultilayer()
 End
 
 
-
+Function penetration_depth(qq, RHO)
+	Wave qq
+	variable/c RHO
+	//calculate the penetration depth for GISANS.
+	//QQ = qvalues
+	//RHO = complex SLD
+	//creates a wave with the penetration depth in A)
+	//not sure if it works for complex rho yet.
+	
+	make/n=(dimsize(qq, 0))/o/d penetration
+	make/n=(dimsize(qq, 0))/free/c/d temp, kk
+	
+	kk = 0.25 * QQ^2
+	kk -= 4 * pi * rho
+	
+	temp = sqrt(kk)
+	penetration = abs(1 / imag(temp))
+End

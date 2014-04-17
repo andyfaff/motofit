@@ -790,6 +790,64 @@ Function doesNexusfileExist(inputPathStr, filename)
 	endif
 End
 
+Function/wave getScanData(inputPathStr, filename)
+//gets data of total_counts vs the scan variable for a given nexusfile
+	String inputpathStr, fileName
+	variable HDFref
+	string cDF
+	
+	cDF = getdatafolder(1)
+	
+	GetFileFolderInfo/q/z inputpathStr
+	if(V_flag)//path doesn't exist
+		print "ERROR please give valid path (getScanData)"
+		abort
+	endif
+	newpath/o/q/z pla_temppath_SLIM_plot_scans, inputpathStr
+
+	DFREF tempDFR = newfreedatafolder()
+	setdatafolder tempDFR
+	
+	try		
+		HDF5openfile/p=pla_temppath_SLIM_plot_scans/z/r HDFref as filename
+		if(V_flag)
+			print "ERROR while opening HDF5 file (getScanData)"
+			abort
+		endif
+		hdf5loaddata/z/q/o hdfref, "/entry1/data/total_counts"
+		Wave total_counts = $(stringfromlist(0, S_wavenames))
+		
+		hdf5loaddata/z/q/o/A="axes" hdfref, "/entry1/data/hmm"
+		Wave/t axes = $(stringfromlist(0, S_wavenames))
+		string scanvariable = stringfromlist(0, axes[0], ":")
+
+		hdf5loaddata/z/q/o hdfref, "/entry1/data/" + scanvariable
+		Wave axisWav = $(stringfromlist(0, S_wavenames))
+		
+		setdatafolder $cDF
+		make/n=(numpnts(total_counts), 3)/free/d scan
+		scan[][0] = axisWav[p]
+		scan[][1] = total_counts[p]
+		scan[][2] = sqrt(total_counts[p])
+		note scan, scanvariable
+				
+		if(HDFref)
+			HDF5closefile/z HDFref
+			killpath/z pla_temppath_SLIM_plot_scans
+		endif		
+		setdatafolder $cDF
+		killpath/z pla_temppath_SLIM_plot_scans
+		return scan
+	catch
+		if(HDFref)
+			HDF5closefile/z HDFref
+			killpath/z pla_temppath_SLIM_plot_scans
+		endif
+		setdatafolder $cDF
+	endtry
+End
+
+
 Function processNeXUSfile(inputPathStr, outputPathStr, filename, background, loLambda, hiLambda[, water, scanpointrange, timeslices, isDirect, expected_peak, actual_peak, omega, two_theta,manual, saveSpectrum, rebinning, normalise,verbose, backgroundMask, dontoverwrite])
 	string inputPathStr, outputPathStr, fileName
 	variable background, loLambda, hiLambda
