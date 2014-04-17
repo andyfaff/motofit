@@ -30,17 +30,15 @@ Wave w, yy, xx
 //w[22] = A_rep (amplitude of oscillation)
 //w[23] = l_rep (period)
 //w[24] = phi
+//w[25] = decay length
 
 variable N_rep = abs(round(w[20]))
 variable zed, ii, rho
 
-//variable nlayers = 5 + SLABS_PER_PERIOD * N_rep
-//make/n=(nlayers*4+6)/d/o funcoefs
-//funcoefs[0] = nlayers
+variable nlayers = 5 + SLABS_PER_PERIOD * N_rep
+make/n=(nlayers*4+6)/d/o funcoefs
 
-make/n=((5+SLABS_PER_PERIOD) *4+6)/d/o funcoefs
-
-funcoefs[0] = 5
+funcoefs[0] = nlayers
 funcoefs[1] = w[0]
 funcoefs[2] = w[1]
 funcoefs[3] = w[2]
@@ -72,23 +70,10 @@ funcoefs[23] = w[18]
 funcoefs[24] = 0
 funcoefs[25] = w[19]
 
-//for(ii = 0 ; ii< SLABS_PER_PERIOD * N_rep ; ii+=1)
-//	zed = (ii+0.5) * w[23] / SLABS_PER_PERIOD
-//	funcoefs[4*(ii+5)+6] = w[23]/SLABS_PER_PERIOD
-//	funcoefs[4*(ii+5)+7] = w[21] + w[22]*sin((2*Pi*zed/w[23])+w[24])
-//	funcoefs[4*(ii+5)+8] = 0
-//	funcoefs[4*(ii+5)+9] = 0
-//endfor
-
-variable/g Vmulrep=N_Rep
-variable/g Vmullayers=SLABS_PER_PERIOD
-variable/g Vappendlayer=5
-
-for(ii = 0 ; ii< SLABS_PER_PERIOD ; ii+=1)
+for(ii = 0 ; ii< SLABS_PER_PERIOD * N_rep ; ii+=1)
 	zed = (ii+0.5) * w[23] / SLABS_PER_PERIOD
-	
 	funcoefs[4*(ii+5)+6] = w[23]/SLABS_PER_PERIOD
-	funcoefs[4*(ii+5)+7] = w[21] + w[22]*sin((2*Pi*zed/w[23])+w[24])
+	funcoefs[4*(ii+5)+7] = w[21] + w[22]*sin((2*Pi*zed/w[23])+w[24]) * exp(-zed/w[25])
 	funcoefs[4*(ii+5)+8] = 0
 	funcoefs[4*(ii+5)+9] = 0
 endfor
@@ -96,5 +81,5 @@ endfor
 //AbelesAll(funcoefs, yy, xx)
 //yy = log(yy)
 motofit(funcoefs,yy,xx)
-killvariables/z Vmulrep, Vmullayers, Vappendlayer
+//killvariables/z Vmulrep, Vmullayers, Vappendlayer
 End
