@@ -62,7 +62,7 @@
 Function DefaultHistogram()
 	oat_table("X",210.5,209.5,421)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50000,1,freq=20)
+	oat_table("T",0,40000,1,freq=24)
 End
 
 Function DefaultHistogram2()
@@ -103,7 +103,7 @@ Function dHistogram()	//suitable for 40mm HG with FOC + 50mm St4vt
 End
 
 Function eHistogram()		//suitable for 25mm HG with FOC
-	oat_table("X",21,-19,1)
+	oat_table("X",56.5,-56.5,1)
 	oat_table("Y",110.5,109.5,221)
 	oat_table("T",0,30,1000,freq=33)
 	//for 33Hz, change to 30us.  For 20Hz use 50.
@@ -122,11 +122,11 @@ Function gHistogram()		//suitable for 7mm HG with FOC
 End
 
 Function hHistogram()	
-	//suitable for hslits(44,40,37,44) which gives a 40mm widebeam onto sample with FOC guide.
+	//suitable for hslits(49,48,33,45) which gives a 40mm widebeam onto sample with FOC guide.
 	//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
-	oat_table("X",54.5,-54.5,1)
+	oat_table("X",56.5, -56.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,40,1000,freq = 24)
+	oat_table("T",0,40, 1000, freq = 24)
 End
 
 Function iHistogram() //Bills SAW, hslits(10,4,4,20)
@@ -151,7 +151,7 @@ End
 Function lHistogram()		//suitable for hslits(40,25,25,40) "MT"/"POL"
 	oat_table("X",28.5,-28.5,1)
 	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,40,1000,freq=24)
+	oat_table("T",0,30,1000,freq=33)
 	sics_cmd_interest("chopperController status")
 End
 
@@ -221,14 +221,18 @@ Function vslits(s1,s2,s3,s4)
 	if(checkDrive("ss1vg",s1) || checkDrive("ss2vg",s2) || checkDrive("ss3vg",s3)	|| checkDrive("ss4vg",s4))
 		abort "One of the requested slit positions is not within the limits (slits)" 		
 	endif
+	//do drive in 2 sets to try and prevent encoder noise from slits causing gradual loss of position
+	//not so worried about ss1vg, so lets do that in one go.
 	cmd = "drive ss2u "+num2str(s2/2)+" "
-	cmd += "ss2d "+num2str(-s2/2)+" "
-	cmd += "ss3u "+num2str(s3/2)+" "
 	cmd += "ss3d "+num2str(-s3/2)+" "
 	cmd += "ss4u "+num2str(s4/2)+" "
+	cmd += "ss1d "+num2str(-s1/2)+" "
+	cmd += "ss1u "+num2str(s1/2)+"\n"
+
+	cmd += "drive ss3u "+num2str(s3/2)+" "
 	cmd += "ss4d "+num2str(-s4/2)+" "
-	cmd += "ss1u "+num2str(s1/2)+" "
-	cmd += "ss1d "+num2str(-s1/2)+"\n"
+	cmd += "ss2d "+num2str(-s2/2)+"\n"
+
 	appendstatemon("ss2u")
 	SOCKITsendmsg sock_interest,cmd
 	if(V_flag)
@@ -380,6 +384,14 @@ Function/wave autoslit(angle, footprint, resolution)
 	else
 		return slits
 	endif
+End
+
+Function LIQss3vg(requested, angle)
+	variable requested, angle
+	//work out the actual slit opening for ss3vg to account for parallax
+	//error for free liquids.  4.5 is roughly the distance between the slit blades
+	variable angrad = angle * pi /180
+	return (requested - 4.5 * tan(angrad)) / cos(angrad)
 End
 
 Function attenuate(pos)
@@ -1655,18 +1667,23 @@ Function Instrumentlayout_panel()
 	SetVariable runscanstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout, size = {200,16}
 	SetVariable runscanstatus,limits={-inf,inf,0},value=  root:packages:platypus:SICS:hipadaba_paths[gethipapos("/commands/scan/runscan/feedback/status")][1],noedit= 1, win=instrumentlayout
 
+//Lakeshore
+	SetVariable lakeshore,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
+	SetVariable lakeshore,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable lakeshore,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueC")][1],noedit= 1, win=instrumentlayout
+
+	SetVariable lakeshoreset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/setpoint1")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshoreset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
+	SetVariable lakeshore1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueD")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshore1,pos={90,293},size={90,16},title="temp D", win=instrumentlayout,bodywidth=40
+
+//Julabo
 //	SetVariable julabo,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
 //	SetVariable julabo,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
-//Julabo
-//	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout
-//Lakeshore
-//	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueD")][1],noedit= 1, win=instrumentlayout
-//	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/setpoint1")][1],noedit= 1, win=instrumentlayout
+//	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout	
+//	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/setpoint")][1],noedit= 1, win=instrumentlayout
 //	SetVariable julaboset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
-//	SetVariable julabo1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueC")][1],noedit= 1, win=instrumentlayout
-//	SetVariable julabo1,pos={90,293},size={90,16},title="temp C", win=instrumentlayout,bodywidth=40
-			
-		
+	
 	SetVariable attenuatorstatus,pos={468,273},size={200,16},title="attenuator position"
 	SetVariable attenuatorstatus,labelBack=(65535,65535,65535),fSize=8
 	SetVariable attenuatorstatus,valueBackColor=(65535,65535,65535)
@@ -1865,6 +1882,7 @@ Function createHTML()
 		text +="<TR><TD>omega</TD><TD>"+ UpperStr(gethipaval("/instrument/parameters/omega")) + "</TD></TR>\r"
 		text +="<TR><TD>twotheta</TD><TD>"+ UpperStr(gethipaval("/instrument/parameters/twotheta")) + "</TD></TR>\r"
 		text +="<TR><TD>point progress</TD><TD>"+ num2str(pointProgress) + "</TD></TR>\r"
+		text +="<TR><TD>sensorvalueA</TD><TD>"+ UpperStr(gethipaval("/sample/tc1/sensor/sensorValueA")) + "</TD></TR>\r"
 
 //		Wave/z frame_deassert = root:packages:platypus:SICS:frame_deassert
 //		if(waveexists(frame_deassert))
@@ -2195,6 +2213,22 @@ Function/t createFizzyCommand(type)
 				return ""
 			endif
 			sprintf cmd, "angler(%g)",s1
+			break
+		case "mvp":
+			prompt s1, "Which mvp port to pump in?"
+			doprompt "Please enter the (integer) mvp port to select", s1
+			if(V_Flag)
+				return ""
+			endif
+			sprintf cmd, "mvp(%g)",s1
+			break
+		case "pump":
+			prompt s1, "What ratio (pump0/pump1) to inject (1 = 100%pump0)?"
+			doprompt "Ratio", s1
+			if(V_Flag)
+				return ""
+			endif
+			sprintf cmd, "pump(%g)",s1
 			break
 		case "_none_":
 		default:
@@ -2615,7 +2649,10 @@ function temperature(temperature, [wait])
 	if(wait)
 		sprintf cmd, "drive tc1_driveable %3.2f", temperature
 	else
-		sprintf cmd, "hset /sample/tc1/sensor/setpoint1 %3.2f", temperature
+		//Lakeshore
+		//sprintf cmd, "hset /sample/tc1/sensor/setpoint1 %3.2f", temperature
+		//Julabo
+		sprintf cmd, "hset /sample/tc1/setpoint %3.2f", temperature
 	endif
 	sics_cmd_interest(cmd)	
 end
@@ -2881,7 +2918,7 @@ Function pump(ratio, [volume, rate])
     //injects liquid from dual syringe pump system towards hamilton syringe.
     //ROUNDS RATIO TO 2DP!!!!!!!!!!!!
     //ratio - the ratio of pump0 to pump1. 1 = 100% pump0, 0.6666 = 66.66%pump0:33.33%pump1, 0 = 100% pump1
-    //volume - the total volume of liquid injected. Defaults to 5ml
+    //volume - the total volume of liquid injected. Defaults to 3ml
     //rate - the total injection rate. Defaults to 1  ml/min
     
     if(ratio < 0 || ratio > 1)
@@ -2891,7 +2928,7 @@ Function pump(ratio, [volume, rate])
     ratio = round(ratio *1000)/1000
     
     if(paramisdefault(volume))
-		volume = 5
+		volume = 3
 	endif
 	
     if(paramisdefault(rate))

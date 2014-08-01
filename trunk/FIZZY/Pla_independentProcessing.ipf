@@ -9,7 +9,7 @@
 // SVN ID:      $Id$
 
 	static strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
-	static StrConstant PATH_TO_PLATYPUS = "\\\\Filer\\experiments:platypus:"
+	static StrConstant PATH_TO_PLATYPUS_HSDATA = "\\\\storage\\nbi_experiment_hsdata:platypus:hsdata:"
 	static constant BUFSIZE = 8192
 	static Strconstant DASserverIP = "137.157.202.140"
 	static Constant DASserverPort = 8080
@@ -399,7 +399,7 @@ Function startStreamingImage()
 	//get the daq filename
 	string/g DAQdirectory = grabHistoStatus("DAQ_dirname")
 	variable/g datanumber = str2num(grabHistoStatus("DATASET_number"))
-	string/g EOSfileStr = PATH_TO_PLATYPUS + "hsdata:" + DAQdirectory + ":DATASET_" + num2istr(datanumber) + ":EOS.bin"
+	string/g EOSfileStr = PATH_TO_PLATYPUS_HSDATA + DAQdirectory + ":DATASET_" + num2istr(datanumber) + ":EOS.bin"
 	//grab the config file for the bins.
 	NVAR/z EOSfileID, endoflastevent
 	if(NVAR_exists(EOSfileID))
@@ -413,7 +413,7 @@ Function startStreamingImage()
 	endif
 	endoflastevent = 127
 
-	variable cfgfileID = xmlopenfile(PATH_TO_PLATYPUS + "hsdata:" + DAQdirectory + ":CFG.xml")
+	variable cfgfileID = xmlopenfile(PATH_TO_PLATYPUS_HSDATA + DAQdirectory + ":CFG.xml")
 	if(cfgfileID < 1)
 //		print "ERROR, could not find config file, cannot update streamed detector image"
 		setdatafolder saveDFR

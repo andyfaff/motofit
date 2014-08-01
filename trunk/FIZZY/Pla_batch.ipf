@@ -25,6 +25,7 @@ Function batchScan(batchfile)
       msg = removeending(msg, "\n")
      	if(str2num(stringfromlist(1, msg, "="))  > 1)
 		doalert 1, "WARNING, beam attenuator appears to be running, do you want to continue?"
+		beep
 		if(V_Flag==2)
 			abort
 		endif

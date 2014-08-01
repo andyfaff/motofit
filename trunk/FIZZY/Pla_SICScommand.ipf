@@ -314,7 +314,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 1: //mouse down
 			if(lba.eventmod & 2^4)
-				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;angler;txtme;temperature;setpos"
+				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;angler;txtme;temperature;setpos;mvp;pump"
 				listwave[row][col] = createFizzyCommand(S_Selection)
 			endif
 			break
@@ -2633,7 +2633,7 @@ Function acquire(preset, [samplename, mode, points])
 	if(paramisdefault(samplename))
 		samplename = ""
 	endif
-	if(fpx("dummy_motor",0,points,mode = mode, preset = preset,samplename = samplename, automatic = 2))
+	if(fpx("dummy_motor",1,points,mode = mode, preset = preset,samplename = samplename, automatic = 2))
 		print "error while acquiring data (acquire)2"
 		return 1
 	endif
