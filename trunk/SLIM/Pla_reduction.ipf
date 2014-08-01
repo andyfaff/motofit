@@ -39,7 +39,7 @@
 	constant C_CHOPPER3_DISTANCE = 359
 	constant C_CHOPPER4_DISTANCE = 808
 	constant C_SLIT2_DISTANCE = 1909.9
-	constant C_SLIT3_DISTANCE = 4767.9
+	constant C_SLIT3_DISTANCE = 4846.4
 	constant C_GUIDE1_DISTANCE = NaN
 	constant C_GUIDE2_DISTANCE = NaN
 	constant C_SAMPLE_DISTANCE = 5045.4
@@ -52,7 +52,7 @@
 	//the constants below may change frequently
 	Constant Y_PIXEL_SPACING = 1.175	//in mm
 	Constant CHOPFREQ = 23		//Hz
-	Constant ROUGH_BEAM_POSITION = 150		//Rough direct beam position
+	Constant ROUGH_BEAM_POSITION = 110		//Rough direct beam position
 	constant ROUGH_BEAM_WIDTH = 10
 	Constant CHOPPAIRING = 3
 		

@@ -334,8 +334,8 @@ Function  reducerpanel() : Panel
 	string/g root:packages:platypus:data:Reducer:inputpathStr
 	string/g root:packages:platypus:data:Reducer:outputpathStr
 	
-	variable/g root:packages:platypus:data:Reducer:lowLambda=2.8
-	variable/g root:packages:platypus:data:Reducer:highLambda=18
+	variable/g root:packages:platypus:data:Reducer:lowLambda=2.5
+	variable/g root:packages:platypus:data:Reducer:highLambda=19
 	variable/g root:packages:platypus:data:Reducer:expected_centre=ROUGH_BEAM_POSITION
 	variable/g root:packages:platypus:data:Reducer:rebinpercent=2
 	variable/g root:packages:platypus:data:Reducer:backgroundsbn=1
