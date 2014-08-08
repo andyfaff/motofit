@@ -2096,7 +2096,7 @@ static Function/s Moto_loadReffile(filenameStr)
 	
 	//get nice name for file.
 	dataname = cleanupname(ParseFilePath(3, filenameStr, ":", 0, 0), 0)
-	dataname = dataname[0, 30 - 3]
+	dataname = dataname[0, 30 - 7]
 	
 	plotyp = str2num(getmotofitoption("plotyp"))
 	if(numtype(plotyp))
@@ -3290,7 +3290,7 @@ static Function Moto_AboutPanel()
 	DrawText 11,216,"Analysis of multiple contrast X-ray and"
 	DrawText 11,236,"Neutron Reflectometry data."
 	
-	DrawText 11,256,"Motofit mode: " + " $Rev: 409 $"
+	DrawText 11,256,"Motofit mode: " + " $Revision: 409 $"
 	DrawPict 270,110,1,1,Procglobal#motofit#moto
 	
 end
