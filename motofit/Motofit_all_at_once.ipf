@@ -1368,10 +1368,18 @@ static Function moto_change_plotyp(plotyp)
 	switch(plotyp)
 		default:
 			ModifyGraph/z/w=reflectivitygraph log(left)=0
+			Label/W=reflectivitygraph left "R"
 			break
 		case 3:
+			Label/W=reflectivitygraph left "RQ\S4\M"
+			ModifyGraph/z/w=reflectivitygraph log(left)=1
+			break
 		case 4:
+			Label/W=reflectivitygraph left "RQ\S2\M"
+			ModifyGraph/z/w=reflectivitygraph log(left)=1
+			break
 		case 2:
+			Label/W=reflectivitygraph left "R"
 			ModifyGraph/z/w=reflectivitygraph log(left)=1
 			break
 	endswitch
