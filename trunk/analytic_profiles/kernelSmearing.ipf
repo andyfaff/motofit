@@ -28,6 +28,11 @@ Function kernelSmearedMotofit(s) : FitFunc
 	Wave xx =  s.x[0]
 	Wave resolutionKernel = s.ffsWaves[0]
 	
+	//resolution kernel has dimensions [qpoints][kernelpoints][2]
+	//Each row in the first layer contains the 'x' points for the probability distribution.
+	//The values in the second layer contains the corresponding probability for the PDF.
+	//numpnts(xx) == dimsize(resolutionkernel, 0) == numpnts(yy)
+	
 	variable qpoints, kernelpoints
 	qpoints = dimsize(resolutionKernel, 0)
 	kernelpoints = dimsize(resolutionKernel, 1)
@@ -38,7 +43,7 @@ Function kernelSmearedMotofit(s) : FitFunc
 	AbelesAll(w, ytemp, qtemp)
 	redimension/n=(qpoints , kernelPoints) ytemp
 	
-	//multiply by the resolution kernel
+	//multiply by the resolution kernel probability
 	multithread ytemp[][] *= resolutionkernel[p][q][1]
 	
 	//now do simpson integration of the weighted intensities.
@@ -70,11 +75,19 @@ Wave s.ffsWaves[0] = resolutionKernel
 kernelSmearedMotofit(s)
 End
 
-Function main()
-	Wave rr, qq, dr, dq
-		
-	Wave Gencurvefitlimits
+Function main(datasetname, [justsim])
+	String datasetname
+	variable justsim
+	//a function to simplify doing a resolution kernel fit/simulation
+	Wave rr = $(datasetname + "_R")
+	Wave qq = $(datasetname + "_q")
+	Wave dr = $(datasetname + "_E")
+	Wave dq = $(datasetname + "_dq")
+	Wave coefs = $("coef_" + datasetname + "_R")
+			
+	//you should already have specified the following waves in the current datafolder.
 	Wave resolutionkernel
+	
 	// initialise the structure you will use
 	struct fitfuncStruct s
 
@@ -85,14 +98,21 @@ Function main()
 	// this must be correct, or Gencurvefit won't run.
 	s.numVarMD=1		
 
-	Wave coefs, wave0, fit_rr
 	Wave s.ffsWaves[0] = resolutionkernel
 	Wave s.w = coefs
-	Wave s.y = rr
 	Wave s.x[0] = qq
 
-	Gencurvefit /D=fit_rr/L=(numpnts(rr))/N=1/W=dr/I=1/hold=wave0/strc=s/TOL=0.05/K={2000,10,0.7,0.5}/X=qq kernelSmearedMotofit, rr, coefs,"",Gencurvefitlimits
-
+	make/d/o/n=(numpnts(rr)) $("fit_" + datasetname + "_R")
+	Wave fit_RR = $("fit_" + datasetname + "_R")
+	
+	if(justsim)
+		s.y = fit_RR
+		kernelSmearedMotofit(s)
+	else
+		Wave holdwave
+		Wave Gencurvefitlimits
+		Gencurvefit /D=fit_rr/L=(numpnts(rr))/N=1/W=dr/I=1/hold=holdwave/strc=s/TOL=0.05/K={2000,10,0.7,0.5}/X=qq kernelSmearedMotofit, rr, coefs,"",Gencurvefitlimits
+	endif
 End
 
 Function munge(coefs, y_obs, y_calc, s_obs)

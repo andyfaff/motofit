@@ -68,11 +68,6 @@ Function catalogueHDF(pathName[, start, finish])
 		endif
 		
 		pathInfo PATH_TO_DATAFILES
-		xmlref = xmlcreatefile(S_path+"catalogue.xml","catalogue","","")
-		if(xmlref < 1)
-			print "ERROR while creating XML file (catalogue)"
-			abort
-		endif
 		
 		jj = 0
 		for(ii = 0 ; ii<itemsinlist(nexusfiles) ; ii+=1)
@@ -111,10 +106,6 @@ Function catalogueHDF(pathName[, start, finish])
 		endif
 	endtry
 
-	if(xmlref > 0)
-		xmlclosefile(xmlref,1)
-	endif
-
 	Killpath/z PATH_TO_DATAFILES
 
 	setdatafolder $cDF
@@ -130,7 +121,7 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 	
 	string tempStr
 	variable row,fnum
-	if(HDFref<1 || xmlref<1)
+	if(HDFref<1)
 		print "ERROR while cataloging, one or more file references incomplete (appendCataloguedata)"
 		abort
 	endif
@@ -140,14 +131,8 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 	redimension/n=(fileNum+1,-1) vgaps, hgaps
 	row = dimsize(runlist,0)
 	
-	if(xmladdnode(xmlref,"//catalogue","","nexus","",1))
-		abort
-	endif
 	
 	//filename
-	if(xmlsetattr(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]","","file",filename))
-		abort
-	endif
 	sscanf filename, "PLP%d",fnum
 	runlist[row][0] = num2istr(fnum)
 	
@@ -156,72 +141,41 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 	hdf5loaddata/z/q/o hdfref,"/entry1/start_time"
 	if(!V_flag)
 		Wave/t start_time = $(stringfromlist(0, S_wavenames))
-		if(xmlsetattr(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]","","date",start_time[0]))
-			abort
-		endif
 	endif
 	runlist[row][1] = start_time[0]
  
-	//user
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]","","user","",1))
-		abort
-	endif
 
 	hdf5loaddata/z/q/o hdfref,"/entry1/user/name"
 	if(!V_flag)
 		Wave/t name = $(stringfromlist(0, S_wavenames))
-		if(xmlsetattr(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/user","","name",name[0]))
-			abort
-		endif
 	endif
  
 	hdf5loaddata/z/q/o hdfref,"/entry1/user/email"
 	if(!V_flag)
 		Wave/t email = $(stringfromlist(0, S_wavenames))
-		if(xmlsetattr(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/user","","email",email[0]))
-			abort
-		endif
 	endif
  
 	hdf5loaddata/z/q/o hdfref,"/entry1/user/phone"
 	if(!V_flag)
 		Wave/t phone = $(stringfromlist(0, S_wavenames))
-		if(xmlsetattr(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/user","","phone",phone[0]))
-			abort
-		endif
 	endif
  
 	//experiment
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]","","experiment","",1))
-		abort
-	endif
 	hdf5loaddata/z/q/o hdfref,"/entry1/experiment/title"
 	if(!V_flag)
 		Wave/t title = $(stringfromlist(0, S_wavenames))
-		if(xmlsetattr(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/experiment","","title",title[0]))
-			abort
-		endif
 	endif
 	
 	//sample
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]","","sample","",1))
-		abort
-	endif
  
 	hdf5loaddata/z/q/o hdfref,"/entry1/sample/description"
 	if(!V_flag)
 		Wave/t description = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/sample","","description",description[0],1))
-			abort
-		endif
 	endif
 
 	hdf5loaddata/z/q/o hdfref,"/entry1/sample/name"
 	if(!V_flag)
 		Wave/t name = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/sample","","name",name[0],1))
-			abort
-		endif
 		runlist[row][2] = name[0]
 	endif
 
@@ -229,70 +183,19 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 	hdf5loaddata/z/q/o hdfref,"/entry1/sample/title"
 	if(!V_flag)
 		Wave/t title = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/sample","","title",title[0],1))
-			abort
-		endif
 	endif
  
 	hdf5loaddata/z/q/o hdfref,"/entry1/sample/sth"
 	if(!V_flag)
 		Wave sth = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/sample","","sth",num2str(sth[0]),1))
-			abort
-		endif
 	endif
 	
 	//instrument
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]","","instrument","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument","","slits","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","first","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first","","vertical","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first","","horizontal","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","second","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second","","vertical","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second","","horizontal","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","third","",1))
-		abort
-	endif
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third","","vertical","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third","","horizontal","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits","","fourth","",1))
-		abort
-	endif
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth","","vertical","",1))
-		abort
-	endif
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth","","horizontal","",1))
-		abort
-	endif
  
  	tempstr = ""
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/first/horizontal/gap"
 	if(!V_flag)
 		Wave gap = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first/horizontal","","gap",num2str(gap[0]),1))
-			abort
-		endif
 		hgaps[row][0] = gap[0]
 	endif
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/first/vertical/gap"
@@ -300,17 +203,11 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 		Wave gap = $(stringfromlist(0, S_wavenames))
 		tempStr += num2str(gap[0])+", "
 		vgaps[row][0] = gap[0]
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/first/vertical","","gap",num2str(gap[0]),1))
-			abort
-		endif
 	endif
 	 
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/second/horizontal/gap"
 	if(!V_flag)
 		Wave gap = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second/horizontal","","gap",num2str(gap[0]),1))
-			abort
-		endif
 		hgaps[row][1] = gap[0]
 	endif
 
@@ -319,17 +216,11 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 		Wave gap = $(stringfromlist(0, S_wavenames))
 		tempStr += num2str(gap[0])+", "
 		vgaps[row][1] = gap[0]
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/second/vertical","","gap",num2str(gap[0]),1))
-			abort
-		endif
 	endif
 	 
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third/horizontal/gap"
 	if(!V_flag)
 		Wave gap = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third/horizontal","","gap",num2str(gap[0]),1))
-			abort
-		endif
 		hgaps[row][2] = gap[0]
 	endif
 	
@@ -338,24 +229,15 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 		Wave gap = $(stringfromlist(0, S_wavenames))
 		tempStr += num2str(gap[0])+", "
 		vgaps[row][2] = gap[0]
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third/vertical","","gap",num2str(gap[0]),1))
-			abort
-		endif
 	endif
  
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/third/vertical/st3vt"
 	if(!V_flag)
 		Wave st3vt = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/third/vertical","","st3vt",num2str(st3vt[0]),1))
-			abort
-		endif
 	endif  
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth/horizontal/gap"
 	if(!V_flag)
 		Wave gap = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth/horizontal","","gap",num2str(gap[0]),1))
-			abort
-		endif
 		hgaps[row][3] = gap[0]
 	endif
 
@@ -364,17 +246,11 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 		Wave gap = $(stringfromlist(0, S_wavenames))
 		tempStr += num2str(gap[0])
 		vgaps[row][3] = gap[0]
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth/vertical","","gap",num2str(gap[0]),1))
-			abort
-		endif
 	endif
 
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/slits/fourth/vertical/st4vt"
 	if(!V_flag)
 		Wave st4vt = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/slits/fourth/vertical","","st4vt",num2str(st4vt[0]),1))
-			abort
-		endif
 	endif 
 //	sprintf tempstr,"%0.2f, %0.2f, %0.2f, %0.2f",first_vertical_gap[0], second_vertical_gap[0], third_vertical_gap[0], fourth_vertical_gap[0]
 //	tempStr = "("+num2str(first_vertical_gap[0])+","
@@ -386,30 +262,18 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/detector/daq_dirname"
 	if(!V_flag)
 		Wave/t name = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument","","daq_dirname",name[0],1))
-			abort
-		endif
 		runlist[row][8] = name[0]
 		daqfiles += name[0] + ";"
 	endif
 	
 	//parameters
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument","","parameters","",1))
-		abort
-	endif
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/parameters/mode"
 	if(!V_flag)
 		Wave/t mode = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/parameters","","mode",mode[0],1))
-			abort
-		endif
 	endif
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/parameters/omega"
 	if(!V_flag)
 		Wave omega = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/parameters","","omega",num2str(omega[0]),1))
-			abort
-		endif
 		runlist[row][4] = num2str(omega[0])
 	endif
 
@@ -417,57 +281,56 @@ Function appendCataloguedata(HDFref,xmlref,fileNum,filename, runlist, vgaps, hga
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/parameters/twotheta"
 	if(!V_flag)
 		Wave twotheta = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/parameters","","twotheta",num2str(twotheta[0]),1))
-			abort
-		endif
 	endif
  
 	//detector
-	if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument","","detector","",1))
-		abort
-	endif
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/detector/longitudinal_translation"
 	if(!V_flag)
 		Wave longitudinal_translation = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/detector","","longitudinal_translation",num2str(longitudinal_translation[0]),1))
-			abort
-		endif
 	endif
 
 	hdf5loaddata/z/q/o/n=timer hdfref,"/entry1/instrument/detector/time"
 	if(!V_flag)
 		Wave timer = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/detector","","time",num2str(timer[0]),1))
-			abort
-		endif
 		runlist[row][5] = num2str(timer[0])
 	endif
 	
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/detector/total_counts"
 	if(!V_flag)
 		Wave total_counts = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/detector","","total_counts",num2str(total_counts[0]),1))
-			abort
-		endif
 		runlist[row][6] = num2str(total_counts[0])
 	endif
 	
 	hdf5loaddata/z/q/o hdfref,"/entry1/monitor/bm1_counts"
 	if(!V_flag)
 		Wave bm1_counts = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/detector","","total_counts",num2str(bm1_counts[0]),1))
-			abort
-		endif
 		runlist[row][7] = num2str(bm1_counts[0])
 	endif
 	 
 	hdf5loaddata/z/q/o hdfref,"/entry1/instrument/detector/vertical_translation"
 	if(!V_flag)
 		Wave vertical_translation = $(stringfromlist(0, S_wavenames))
-		if(xmladdnode(xmlref,"//catalogue/nexus["+num2istr(filenum+1)+"]/instrument/detector","","vertical_translation",num2str(vertical_translation[0]),1))
-			abort
-		endif 
 	endif
+End
+
+static Function MDindexsort(w, index)
+	Wave w, index 
+	variable type
+ 
+	type = Wavetype(w) 
+ 
+	if(type == 0)
+		Wave/t indirectSource = w
+		duplicate/free indirectSource, M_newtoInsert
+		Wave/t output = M_newtoInsert
+	 	output[][][] = indirectSource[index[p]][q][r]
+	 	indirectSource = output
+	else
+		Wave indirectSource2 = w
+		duplicate/free indirectSource2, M_newtoInsert
+	 	multithread M_newtoinsert[][][] = indirectSource2[index[p]][q][r]
+		multithread indirectSource2 = M_newtoinsert
+ 	endif 
 End
 
 static Function MDsort(w,keycol, [reversed])
@@ -500,11 +363,11 @@ static Function MDsort(w,keycol, [reversed])
 	if(type == 0)
 		duplicate/free indirectSource, M_newtoInsert
 		Wave/t output = M_newtoInsert
-	 	output[][] = indirectSource[valindex[p]][q]
+	 	output[][][] = indirectSource[valindex[p]][q][r]
 	 	indirectSource = output
 	else
 		duplicate/free indirectSource2, M_newtoInsert
-	 	multithread M_newtoinsert[][] = indirectSource2[valindex[p]][q]
+	 	multithread M_newtoinsert[][][] = indirectSource2[valindex[p]][q][r]
 		multithread indirectSource2 = M_newtoinsert
  	endif 
 End

@@ -534,7 +534,15 @@ Function/s reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 			writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, "", user[0], samplename[0], angle0, reductionCmd)
 			
 			//calculate the actual PDF for the resolution function, for each point
-//			assignActualKernel(angle0DF, directDF, W_q,  ii)
+			assignActualKernel(angle0DF, directDF, W_q,  ii)
+			Wave resolutionkernel = $(angle0DF + ":resolutionkernel")
+			
+			//write an HDF file for a single file
+			fname = cutfilename(angle0)
+			if(dontoverwrite)
+				fname = uniqueFileName(outputPathStr, fname, ".h5")
+			endif
+			writeSpecRefH5_1D(outputPathStr, fname, qq, RR, dR, dQ, resolutionkernel)
 									
 			//write a 2D XMLfile for the offspecular data
 			if(saveoffspec)
@@ -608,7 +616,9 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 			if(spliceFiles(outputPathStr, fname, toSplice, rebin = rebin))
 				print "ERROR while splicing (reduce)";abort
 			endif
-		endif		
+		endif
+		
+		//once you've written the spliced file try to write it into an HDF file.
 	catch
 		
 		Print "ERROR: an abort was encountered in (reduce)"
@@ -1683,6 +1693,24 @@ Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda,
 	Killwaves/z W_extractedCol
 End
 
+Function writeSpecRefH5_1D(outputPathStr, fname, qq, RR, dR, dQ, resolutionkernel)
+	String outputPathStr, fname
+	wave qq, RR, dR, dQ, resolutionkernel
+	
+	variable fileID
+	
+	try
+		hdf5createFile/z/o fileID as outputPathStr + fname + ".h5"
+		hdf5savedata  qq, fileID, "Q"
+		hdf5savedata RR, fileID, "R"
+		hdf5savedata dR, fileID, "E"
+		hdf5savedata dq, fileID, "dq"
+		hdf5savedata resolutionkernel, fileID, "resolutionkernel"
+	catch
+	endtry
+	HDF5closefile/z fileID
+End
+
 Function writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, exptitle, user, samplename, runnumbers, rednnote)
 	String outputPathStr, fname
 	wave qq, RR, dR, dQ
@@ -1948,7 +1976,7 @@ End
 
 Function delReducedPoints()
 	variable theFile
-	Open/R/D/M="Please select the XML file to remove points from."/T=".xml" theFile
+	Open/R/D/M="Please select the h5 file to remove points from."/T=".h5" theFile
 	if(strlen(S_filename) > 0)
 		string inputPathStr = ParseFilePath(1, S_filename, ":", 1, 0)
 		string fileInStr = ParseFilePath(0, S_filename, ":", 1, 0)
@@ -1969,43 +1997,33 @@ Function delrefpoints(inputPathStr, filename, pointlist)
 	variable fileID,ii, numtoremove, lower, upper
 
 	try
-		fileID = xmlopenfile(inputPathStr + filename)
-		if(fileID < 1)
-			print "ERROR couldn't open XML file";abort
-		endif
+		hdf5openfile fileID as inputPathStr + filename + ".h5"
 		pointlist = sortlist(pointlist, ";", 3)
 		pointlist = lowerstr(pointlist)
 		if(grepstring(pointlist, "[a-z]+"))
 			print "ERROR list of points should only contain numbers";abort
 		endif
 		
-		xmlwavefmXPATH(fileID, "//REFdata[1]/Qz", "", "")
-		Wave/t M_xmlcontent
-		make/o/d/n=(dimsize(M_xmlcontent, 0)) asdfghjkl0
-		asdfghjkl0 = str2num(M_xmlcontent[p][0])
-			
-		xmlwavefmXPATH(fileID, "//REFdata[1]/R","","")
-		Wave/t M_xmlcontent
-		make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl1
-		asdfghjkl1 = str2num(M_xmlcontent[p][0])
+		hdf5loaddata/z/o/q fileID, "R"
+		Wave RR = $(stringfromlist(0, S_wavenames))
+		
+		hdf5loaddata/z/o/q fileID, "Q"
+		Wave qq = $(stringfromlist(0, S_wavenames))
+		
+		hdf5loaddata/z/o/q fileID, "E"
+		Wave EE = $(stringfromlist(0, S_wavenames))
 
-		xmlwavefmXPATH(fileID, "//REFdata[1]/dR", "", "")
-		Wave/t M_xmlcontent
-		make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl2
-		asdfghjkl2 = str2num(M_xmlcontent[p][0])
+		hdf5loaddata/z/o/q fileID, "dq"
+		Wave dq = $(stringfromlist(0, S_wavenames))
 
-		xmlwavefmXPATH(fileID, "//REFdata[1]/dQz", "", "")
-		Wave/t M_xmlcontent
-		make/o/d/n=(dimsize(M_xmlcontent, 0)) asdfghjkl3
-		asdfghjkl3 = str2num(M_xmlcontent[p][0])
-			
-		sort asdfghjkl0, asdfghjkl0, asdfghjkl1, asdfghjkl2, asdfghjkl3
+		hdf5loaddata/z/o/q fileID, "resolutionkernel"
+		Wave resolutionkernel = $(stringfromlist(0, S_wavenames))
 		
 		for(ii = 0 ; ii < itemsinlist(pointlist) ; ii += 1)
 			temp=stringfromlist(ii, pointlist)
 			numtoremove = str2num(stringfromlist(ii, pointlist ,";"))
 			if(!numtype(numtoremove) && strsearch(temp, "-", 0) == -1)
-				deletepoints numtoremove, 1, asdfghjkl0, asdfghjkl1, asdfghjkl2, asdfghjkl3
+				deletepoints/M=0 numtoremove, 1, qq, RR,  EE,  dq, resolutionkernel
 			else	
 				sscanf temp, "%d-%d",lower,upper
 				if(V_Flag!=2)
@@ -2017,38 +2035,24 @@ Function delrefpoints(inputPathStr, filename, pointlist)
 					upper = numtoremove
 				endif
 				numtoremove = upper-lower+1
-				deletepoints lower, numtoremove, asdfghjkl0, asdfghjkl1, asdfghjkl2, asdfghjkl3
+				deletepoints/M=0 lower, numtoremove, QQ, RR, EE, dq, resolutionkernel
 			endif
 		endfor
 		
-		data = ""
-		SOCKITwavetoString/TXT asdfghjkl0, data
-		xmlsetnodestr(fileID, "//REFdata[1]/Qz", "", data)
-	
-		data = ""
-		SOCKITwavetoString/TXT asdfghjkl1, data
-		xmlsetnodestr(fileID, "//REFdata[1]/R", "", data)
-
-		data = ""
-		SOCKITwavetoString/TXT asdfghjkl2, data
-		xmlsetnodestr(fileID, "//REFdata[1]/dR", "", data)
-
-		data = ""
-		SOCKITwavetoString/TXT asdfghjkl3, data
-		xmlsetnodestr(fileID, "//REFdata[1]/dQz", "", data)
-
+		hdf5savedata/z RR, fileID, "R"
+		hdf5savedata/z QQ, fileID, "Q"
+		hdf5savedata/z EE, fileID, "E"
+		hdf5savedata/z dq, fileID, "dq"
+		hdf5savedata/z resolutionkernel, fileID, "resolutionkernel"
+		
 	catch
-		if(fileID>0)
-			xmlclosefile(fileID,0)
-			fileID=0
-		endif
+		hdf5closefile/z fileID
+		fileID=0
 	endtry
-	killwaves/z asdfghjkl0, asdfghjkl1, asdfghjkl2, asdfghjkl3, M_xmlcontent, W_xmlcontentnodes
+	killwaves/z RR, qq, EE, dq, resolutionkernel
 	
 	print "NOW please remember to resplice individual angles (delRefpoints)"
-	if(fileID>0)
-		xmlclosefile(fileID,1)
-	endif
+	hdf5closefile/z fileID
 End
 
 Function/s buildsplicelist(start, ending)
@@ -2096,54 +2100,48 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 					
 		//load in each of the files
 		for(ii = 0 ; ii < itemsinlist(filesToSplice) ; ii += 1)
-			fileID = xmlopenfile(outputPathStr + stringfromlist(ii, filesToSplice) + ".xml")
-			if(fileID < 1)
-				print "ERROR couldn't open individual file (spliceFiles)";abort
-			endif
+			hdf5openfile/R/z fileID as outputPathStr + stringfromlist(ii, filesToSplice) + ".h5"
+			hdf5loaddata/z/o/q fileID, "R"
+			Wave RR = $(stringfromlist(0, S_wavenames))
 			
-			xmlwavefmXPATH(fileID,"//REFdata[1]/Qz","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl0
-			asdfghjkl0 = str2num(M_xmlcontent[p][0])
+			hdf5loaddata/z/o/q fileID, "Q"
+			Wave qq = $(stringfromlist(0, S_wavenames))
 			
-			xmlwavefmXPATH(fileID,"//REFdata[1]/R","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl1
-			asdfghjkl1 = str2num(M_xmlcontent[p][0])
+			hdf5loaddata/z/o/q fileID, "E"
+			Wave EE = $(stringfromlist(0, S_wavenames))
 
-			xmlwavefmXPATH(fileID,"//REFdata[1]/dR","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl2
-			asdfghjkl2 = str2num(M_xmlcontent[p][0])
+			hdf5loaddata/z/o/q fileID, "dq"
+			Wave dq = $(stringfromlist(0, S_wavenames))
 
-			xmlwavefmXPATH(fileID,"//REFdata[1]/dQz","","")
-			Wave/t M_xmlcontent
-			make/o/d/n=(dimsize(M_xmlcontent,0)) asdfghjkl3
-			asdfghjkl3 = str2num(M_xmlcontent[p][0])
+			hdf5loaddata/z/o/q fileID, "resolutionkernel"
+			Wave resolutionkernel = $(stringfromlist(0, S_wavenames))
 			
-			sort asdfghjkl0,asdfghjkl0,asdfghjkl1,asdfghjkl2,asdfghjkl3 
+			make/free/n=(numpnts(qq)) indx
+			makeindex qq, indx
+			
+			Pla_catalogue#MDindexsort(resolutionkernel, indx)
+			sort qq, qq, RR, EE, dq
 			
 			if(ii == 0)
-				make/o/d/n=(numpnts(asdfghjkl0)) tempQQ, tempRR, tempDR, tempDQ
-				Wave tempQQ, tempRR, tempDR, tempDQ
-				tempQQ=asdfghjkl0
-				tempRR=asdfghjkl1
-				tempDR=asdfghjkl2
-				tempDQ=asdfghjkl3
+				make/o/d/n=(numpnts(qq)) tempQQ, tempRR, tempDR, tempDQ
+				duplicate/o resolutionkernel, tempResKernel
 				
-				samplename = xmlstrfmXpath(fileID, "//REFsample/ID", "", "")
-				user = xmlstrfmXpath(fileID, "//REFentry[1]/User", "", "")
-				rednnote = xmlstrfmXpath(fileID,"//REFroot/REFentry[1]/REFdata[1]/Run[1]/reductionnote","","")
-				compsplicefactor = cmplx(1., 1.)			 
+				Wave tempQQ, tempRR, tempDR, tempDQ, tempResKernel
+				tempQQ = qq
+				tempRR = RR
+				tempDR = EE
+				tempDQ = dq
+				compsplicefactor = cmplx(1., 1.)
+
 			else
 				//splice with propagated error in the splice factor
 				if(paramisdefault(factors))
-					compSplicefactor = Pla_GetweightedScalingInoverlap(tempQQ, tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)		
+					compSplicefactor = Pla_GetweightedScalingInoverlap(tempQQ, tempRR, tempDR, qq, RR, EE)		
 				else
 					if(itemsinlist(factors) <= ii)
 						compSplicefactor = cmplx(str2num(stringfromlist(ii-1, factors)), 0)
 					else
-						compSplicefactor = Pla_GetweightedScalingInoverlap(tempQQ,tempRR, tempDR, asdfghjkl0,asdfghjkl1,asdfghjkl2)								
+						compSplicefactor = Pla_GetweightedScalingInoverlap(tempQQ,tempRR, tempDR, qq, RR, EE)								
 					endif
 				endif
 				if(numtype(REAL(compspliceFactor)))
@@ -2153,30 +2151,35 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 				print compSpliceFactor
 
 				//think the following is wrong! No need to errors in quadrature if scalefactor does not depend on wavelength
-				asdfghjkl2 = sqrt((real(compSplicefactor) * asdfghjkl2)^2 + (asdfghjkl1 * imag(compSplicefactor))^2)
-				asdfghjkl1 *= real(compSplicefactor)
+				EE = sqrt((real(compSplicefactor) * EE)^2 + (RR * imag(compSplicefactor))^2)
+				RR *= real(compSplicefactor)
 				
-				concatenate/NP {asdfghjkl1},tempRR
-				concatenate/NP {asdfghjkl0},tempQQ
-				concatenate/NP { asdfghjkl3},tempDQ
-				concatenate/NP {asdfghjkl2},tempDR
+				concatenate/NP {RR}, tempRR
+				concatenate/NP {QQ}, tempQQ
+				concatenate/NP { dQ}, tempDQ
+				concatenate/NP {EE}, tempDR
+				concatenate/NP=0 {resolutionkernel}, tempResKernel
 				
+				make/free/n=(numpnts(tempQQ)) indx
+				makeindex tempQQ, indx
+				Pla_catalogue#MDindexsort(tempResKernel, indx)
+			
 				sort tempQQ,tempQQ,tempRR,tempDR,tempDQ 
 			endif
-			//close the XML file
-			xmlsetattr(fileID, "//REFroot/REFentry[1]/REFdata/Run", "", "scale", num2str(real(compsplicefactor)))
-			xmlclosefile(fileID, 1)
+			
+			killwaves/z qq, RR, EE, dq, resolutionkernel
+			hdf5closefile/q fileID
 			fileID=0
 		endfor
 		
-		if(!paramisdefault(rebin) && rebin > 0 && rebin < 15)
-			Pla_rebin_afterwards(tempQQ, tempRR, tempDR, tempDQ, rebin, tempQQ[0] - 0.00005, tempQQ[numpnts(tempQQ) - 1]+0.00005)
-			Wave W_Q_rebin, W_R_rebin, W_E_rebin, W_dq_rebin
-			duplicate/o W_Q_rebin, tempQQ
-			duplicate/o W_R_rebin, tempRR
-			duplicate/o W_E_rebin, tempDR
-			duplicate/o W_dq_rebin, tempDQ
-		endif
+//		if(!paramisdefault(rebin) && rebin > 0 && rebin < 15)
+//			Pla_rebin_afterwards(tempQQ, tempRR, tempDR, tempDQ, rebin, tempQQ[0] - 0.00005, tempQQ[numpnts(tempQQ) - 1]+0.00005)
+//			Wave W_Q_rebin, W_R_rebin, W_E_rebin, W_dq_rebin
+//			duplicate/o W_Q_rebin, tempQQ
+//			duplicate/o W_R_rebin, tempRR
+//			duplicate/o W_E_rebin, tempDR
+//			duplicate/o W_dq_rebin, tempDQ
+//		endif
 		
 		newpath/z/o/q pla_temppath_write, outputpathStr
 		open/P=PLA_temppath_write/z=1 fileIDcomb as  fname + ".dat"
@@ -2192,18 +2195,21 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 		
 		//now write a spliced XML file
 		writeSpecRefXML1D(outputPathStr, fname, tempQQ, tempRR, tempDR, tempDQ, "", user, samplename, filestosplice, rednnote)
+		
+		//now write a spliced HDF file
+		writeSpecRefH5_1D(outputPathStr, fname, tempQQ, tempRR, tempdR, tempdQ, tempResKernel)
 
 	catch
 		if(fileID)
-			xmlclosefile(fileID,0)
-		endif
-		if(fileID)
-			close fileID
+			hdf5closefile/z fileID
 		endif
 		err=1
 	endtry
+		if(fileID)
+			hdf5closefile/z fileID
+		endif
 	setdatafolder $cDF
-	killdatafolder/z 	root:packages:platypus:data:reducer:temp
+	killdatafolder/z  root:packages:platypus:data:reducer:temp
 	return err
 End
 
