@@ -2112,6 +2112,7 @@ static Function/s Moto_loadReffile(filenameStr)
 		setmotofitoption("plotyp", "1")
 	endif
 	
+	newdatafolder/o root:data
 	newdatafolder/o/s $("root:data:" + dataname)
 	
 	try
@@ -2133,7 +2134,31 @@ static Function/s Moto_loadReffile(filenameStr)
 					abort "the file does not seem to be of the right type"
 				endif			
 			endfor
-		else	
+		elseif(stringmatch(filenameStr,"*.h5"))
+			make/o/d/n=(0,0) originaldata
+			hdf5openfile/R fileID as filenameStr
+			
+			hdf5loaddata fileID, "R"
+			Wave RR = $(stringfromlist(0, S_wavenames))
+			hdf5loaddata fileID, "Q"
+			Wave QQ = $(stringfromlist(0, S_wavenames))
+			hdf5loaddata fileID, "E"
+			Wave EE = $(stringfromlist(0, S_wavenames))
+			hdf5loaddata fileID, "dq"
+			Wave dq = $(stringfromlist(0, S_wavenames))
+			hdf5loaddata fileID, "resolutionkernel"
+			Wave resolutionkernel = $(stringfromlist(0, S_wavenames))
+			
+			redimension/n=(numpnts(qq), 4) originaldata
+			originaldata[][0] = QQ[p]
+			originaldata[][1] = RR[p]
+			originaldata[][2] = EE[p]
+			originaldata[][3] = dq[p]
+			
+			killwaves/z RR, QQ, EE, dQ
+			Waveclear RR, QQ, EE, dQ
+			hdf5closefile/z fileID
+		else
 			LoadWave/Q/M/G/D/N=originaldata filenameStr
 			//if you're not loading 2,3 or 4 column data then there may be something wrong.
 			Wave/z originaldata0
