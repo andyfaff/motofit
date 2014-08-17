@@ -23,7 +23,7 @@ Function grabData(data,axes,axis_sizes,[axesrequested])
 	
 	string cmd, histostatus
 
-	histostatus = graballhistostatus()
+	histostatus = Ind_process#graballhistostatus()
 	if(strlen(histostatus) == 0)
 		Print "Error while grabbing histostatus (grabData)"
 		return 1
@@ -110,24 +110,6 @@ Function currentacquisitionStatus(msg)
 	endswitch
 	
 	return status
-End
-
-
-
-Function/t grabAllHistoStatus()
-	//this function returns the status of the Histogram server from it's text status
-	string retStr,cmd
-	
-	sprintf cmd,"http://%s:%d/admin/textstatus.egi",DASserverIP,DASserverport
-	easyHttp/PROX=""/PASS="manager:ansto" cmd
-	
-	if(V_Flag)
-		Print "Error while speaking to Histogram Server (grabAllHistoStatus)"
-		return ""
-	endif
-	retStr = S_getHttp
-	retStr = replacestring("\n",retStr,"\r")
-	return retstr
 End
 
 Function printHistoStatus()
