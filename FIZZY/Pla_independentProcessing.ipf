@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma IndependentModule=Ind_Process
-//#pragma ModuleName=Ind_Process
+//#pragma IndependentModule=Ind_Process
+#pragma ModuleName=Ind_Process
 
 // SVN date:    $Date$
 // SVN author:  $Author$
@@ -88,14 +88,6 @@ Function interestProcessor(w,x)
 	//current datafilename
 	SVAR samplename = root:packages:platypus:SICS:sampleStr
 	
-	//for streameddetector
-	NVAR/z EOSfileID = root:packages:platypus:data:RAW:EOSfileID
-	NVAR/z endoflastevent = root:packages:platypus:data:RAW:endoflastevent
-	Wave/z streamedDetector = root:packages:platypus:data:RAW:streamedDetector
-	Wave/z tbins = root:packages:platypus:data:RAW:tbins
-	Wave/z ybins = root:packages:platypus:data:RAW:ybins
-	Wave/z xbins = root:packages:platypus:data:RAW:xbins
-
 	variable num,col,row,items,pos, temp
 	string str,str1,str2
 	Struct WMBackgroundStruct s
@@ -132,9 +124,6 @@ Function interestProcessor(w,x)
 						selaxeslist[row][][1] = 1
 					endif
 				endif
-				if(stringmatch(str2, "hmcontrol") || stringmatch(str2, "HistogramMemory"))
-					startStreamingImage()
-				endif
 				break
 			case "FINISH":		//this is listening to the statemon finishing an axis
 				INDstatemonclear(str2)
@@ -147,16 +136,7 @@ Function interestProcessor(w,x)
 					if(col==1 || col==0)
 						selaxeslist[row][][1] = 0
 					endif
-				endif
-				if(stringmatch(str2, "hmcontrol") || stringmatch(str2, "HistogramMemory"))
-					temp = endoflastevent 
-					if(sum(streameddetector) != str2num(str2))
-						nunpack_intodet(EOSfileID, temp, streamedDetector, tbins, ybins, xbins)
-						endoflastevent = temp
-					endif
-					stopStreamingImage()
-				endif
-				
+				endif				
 				//cause any scans to see if they need updating
 				//				execute/P/Q "DoXOPIdle"
 				//				execute/P/Q "ProcGlobal#Platypus#forceScanBkgTask()"
@@ -197,11 +177,6 @@ Function interestProcessor(w,x)
 				sampleName = str2
 				break
 			case "/instrument/detector/total_counts":
-				temp = endoflastevent 			
-				if(sum(streameddetector) != str2num(str2))
-					nunpack_intodet(EOSfileID, temp, streamedDetector, tbins, ybins, xbins)
-					endoflastevent = temp
-				endif
 				break
 			default:
 				Findvalue/Text=str1/TXOP=4 axeslist
@@ -239,153 +214,81 @@ Function interestProcessor(w,x)
 End
 
 Function log_close()
-	NVAR/z logID = root:packages:platypus:SICS:logID
-	fstatus logID
-	if(V_flag)
-		close logID
-	endif
+//	NVAR/z logID = root:packages:platypus:SICS:logID
+//	fstatus logID
+//	if(V_flag)
+//		close logID
+//	endif
 ENd
 
 Threadsafe Function log_msg(msg)
-	string msg
-	NVAR/z logID = root:packages:platypus:SICS:logID
-
-	string fname, msg2
-
-	if(!NVAR_exists(logID))
-		variable/g root:packages:platypus:SICS:logID = 0
-		NVAR/z logID = root:packages:platypus:SICS:logID
-	endif
-	fstatus logID
-	if(!V_flag || (V_Flag && V_logEOF> 52800000))
-		if (V_Flag && V_logEOF> 52800000)
-			close logID
-			logID = 0
-		endif
-		fname = "FIZlog"+Secs2Date(DateTime,-2,"-")
-		fname += "T" + replacestring(":", Secs2Time(DateTime,3), "")
-		open logID as log_path + fname
-		print "opened FIZlog as", log_path+fname, logID
-	endif
-	msg2 = num2istr(datetime) + "\t" + msg + "\n"
-	fbinwrite logID, msg2
+string msg
+//	string msg
+//	NVAR/z logID = root:packages:platypus:SICS:logID
+//
+//	string fname, msg2
+//
+//	if(!NVAR_exists(logID))
+//		variable/g root:packages:platypus:SICS:logID = 0
+//		NVAR/z logID = root:packages:platypus:SICS:logID
+//	endif
+//	fstatus logID
+//	if(!V_flag || (V_Flag && V_logEOF> 52800000))
+//		if (V_Flag && V_logEOF> 52800000)
+//			close logID
+//			logID = 0
+//		endif
+//		fname = "FIZlog"+Secs2Date(DateTime,-2,"-")
+//		fname += "T" + replacestring(":", Secs2Time(DateTime,3), "")
+//		open logID as log_path + fname
+//		print "opened FIZlog as", log_path+fname, logID
+//	endif
+//	msg2 = num2istr(datetime) + "\t" + msg + "\n"
+//	fbinwrite logID, msg2
 End
 
-Function processBMON3rate(w,x)
-	Wave/t w
-	variable x
-	//a SOCKIT processor function for the messages coming back from the open TCPIP connection to beam monitor 3.
-	//the whole point of this is to make sure that the detector isn't overwhelmed.
-	//	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
-	//	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
-		
-	NVAR bmon3_rate = root:packages:platypus:SICS:bmon3_rate
-	NVAR bmon3_counts = root:packages:platypus:SICS:bmon3_counts
-	string rateStr
-	
-	if(strsearch(w[x][0], num2char(0), 0) > -1 )
-		print "GOT THE NULL", w[x][0]
-		w[x][0] = replacestring(num2char(0), w[x][0], "")
-	endif
-
-	
-	rateStr = w[x][0]
-	variable val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
-	sscanf rateStr,"%d:%d:%g ( %g), %d (%d),%g ( %g, %g, %g)" , val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
-	bmon3_rate = round(val6)
-
-	//	if(bmon3_rate > 20000 &&  val4 >= bmon3_counts)
-	//		sockitsendmsg sock_interupt,"INT1712 3\n"
-	//		doxopidle
-	//		sleep/t 20
-	//		sockitsendmsg SOCK_interest,"bat send oscd=0\n"
-	//		sockitsendmsg SOCK_interest,"run ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\n"
-	//		sockitsendmsg SOCK_interest,"run bz 250\n"
-	//		print "DETECTOR RATE IS TOO HIGH, CLOSING SLITS, inserting ATTENUATOR (processBMON3rate)"
-	//	endif
-	bmon3_counts = val4
-	return 0
-End
-
-Threadsafe Function DetectorSentinel()
-	variable sock_sics, sock_bmon3, ii
-	variable val0,val1,val2,val3,val4,val5,val6,val7,val8,val9, bmon3_rate, bmon3_counts, lastrate = 0
-	string msg,temp
-	
-	sock_sics=sockitopenconnectionF("137.157.202.139",60003,10)
-	sock_bmon3=sockitopenconnectionF("137.157.202.140",30002,10)
-	
-	if(sockitisitopen(sock_sics)==-1 || sockitisitopen(sock_bmon3)==-1)
-		print "ERROR couldn't open sentinel sockets"
-	endif
-	
-	sockitsendmsgF(sock_SICS,"manager ansto\n")
-	sockitsendmsgF(sock_bmon3,"REPORT ON\n")
-	bmon3_counts = 0
-	print "Detector Sentinel started"
-	
-	do
-		temp = SOCKITPeek(sock_sics)
-		msg = SOCKITpeek(sock_bmon3)
-		for(ii=0 ; ii<itemsinlist(msg, "\n") ; ii+=1)
-			sscanf stringfromlist(ii, msg, "\n"), "%d:%d:%g ( %g), %d (%d),%g ( %g, %g, %g)" , val0,val1,val2,val3,val4,val5,val6,val7,val8,val9
-			bmon3_rate = val6
-			//			print bmon3_rate, val4, bmon3_counts
-			if((bmon3_rate > 12000 && lastrate > 12000))
-				sockitsendmsgF(sock_sics,"INT1712 3\n")
-				temp = ThreadGroupGetDF(0, 200 )
-				sockitsendmsgf(sock_sics,"bat send oscd=0\ndrive ss1vg 0 ss2vg 0 ss3vg 0 ss4vg 0 bz 250\n")
-				log_msg("COUNTRATETOOHIGH")
-				print "DETECTOR RATE IS TOO HIGH, CLOSING SLITS, inserting ATTENUATOR (DetectorSentinel)"
-				temp = ThreadGroupGetDF(0, 5000 )
-			endif
-			lastrate = bmon3_rate
-			bmon3_counts = val4
-		endfor
-		temp = ThreadGroupGetDF(0, 1000 )
-		
-		if(sockitisitopen(sock_sics)==-1)
-			sock_sics=sockitopenconnectionF("137.157.202.139",60003,10)
-			if(sock_sics==-1)
-				print "ERROR sentinel socket closed"
-				return 1
-			endif
-		endif
-		if(sockitisitopen(sock_bmon3)==-1)
-			sock_bmon3=sockitopenconnectionF("137.157.202.140",30002,10)
-			if(sock_bmon3==-1)
-				print "ERROR sentinel socket closed"
-				return 1
-			endif
-		endif
-	while(1)
-
-	sockitcloseconnection(sock_SICS)
-	sockitcloseconnection(sock_bmon3)
-	return 0
-End
-
-Function/t grabHistoStatus(keyvalue)
-	string keyvalue
+Function/t grabAllHistoStatus()
 	//this function returns the status of the Histogram server from it's text status
 	string retStr,cmd
-
+	
 	sprintf cmd,"http://%s:%d/admin/textstatus.egi",DASserverIP,DASserverport
 	easyHttp/PROX=""/PASS="manager:ansto" cmd
-
+	
 	if(V_Flag)
-		Print "Error while speaking to Histogram Server (grabHistoStatus)"
+		Print "Error while speaking to Histogram Server (grabAllHistoStatus)"
 		return ""
 	endif
 	retStr = S_getHttp
 	retStr = replacestring("\n",retStr,"\r")
-	retstr = stringbykey(keyvalue,retStr,":","\r")
-	if(!cmpstr(retstr[0]," "))
-		retstr = retstr[1,inf]		
-	endif
+	
+	SOCKITstringtowave/FREE/DEST=temp/TOK="\r:" 0, retStr
+	Wave/t temp2 = temp
+	make/o/t/n=(dimsize(temp, 0)/2, 2)  root:packages:platypus:SICS:histostatusWave
+	Wave/t histostatusWave = root:packages:platypus:SICS:histostatusWave
+	histostatuswave[] = temp2[2*p + q]
+
+	SVAR/z histostatusStr = root:packages:platypus:SICS:histostatusStr
+	histostatusStr = retStr
 	return retstr
 End
 
+Function gethistoPos(path)
+	string path
+	//returns the row number of the hipadaba path in the
+	//textwave that contains all the child hipadaba nodes.
+	Wave/t histostatusWave = root:packages:platypus:SICS:histostatusWave
+	findvalue/text=path/txop=4/z histostatusWave
+	return v_value
+ENd
+
+Function/t grabHistoStatus(keyvalue)
+	string keyvalue
+	//this function returns the status of the Histogram server from it's text status
+	grabAllHistoStatus()
+	Wave/t histostatusWave = root:packages:platypus:SICS:histostatusWave
+	string val = histostatusWave[gethistopos(keyValue)][1]
+	return replacestring(" ", val, "")
+End
 
 Function startStreamingImage()
 	//setup the datafolders

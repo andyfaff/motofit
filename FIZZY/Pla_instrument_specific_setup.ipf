@@ -29,8 +29,8 @@
 	Constant 	MOXA4serverPort = 4004
 	StrConstant PATH_TO_DATA = "\\\\storage\\nbi_experiment_data:platypus:data:"
 	StrConstant PATH_TO_DATA2 = "\\\\Filer\\experiments:platypus:data:"
-	StrConstant PATH_TO_HSDATA = "\\\\Filer\\experiments:platypus:hsdata:"
-	strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
+	StrConstant PATH_TO_HSDATA = "\\\\storage\\nbi_experiment_hsdata:platypus:hsdata:"
+S	strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
 
 	
 	Constant ChopperN_delay = 2.491		// a time delay between the first chopper pulse and chopper N
@@ -409,12 +409,14 @@ Function attenuate(pos)
 			break
 		case 0:
 			sockitsendmsg sock_sync,"bat send oscd=0\n"
+			wait(5)
 			if(V_Flag)
 				return V_Flag
 			endif
 			break
 		case 1:
 			sockitsendmsg sock_sync,"bat send oscd=1\n"
+			wait(5)
 			if(V_Flag)
 				return V_Flag
 			endif
@@ -446,23 +448,17 @@ End
 
 Function Instrumentdefinedclose()
 	//called when FIZZY shuts down (SICSclose())
-	NVAR SOCK_bmon3 = root:packages:platypus:SICS:SOCK_bmon3
 	NVAR SOCK_chopper = root:packages:platypus:SICS:SOCK_chopper
 	NVAR SOCK_MOXA1 = root:packages:platypus:SICS:SOCK_MOXA1
 	NVAR SOCK_MOXA2 = root:packages:platypus:SICS:SOCK_MOXA2
 	NVAR SOCK_MOXA3 = root:packages:platypus:SICS:SOCK_MOXA3
 	NVAR SOCK_MOXA4 = root:packages:platypus:SICS:SOCK_MOXA4
 	
-	NVAR detectorSentinelThreadID = root:packages:platypus:SICS:detectorSentinelThreadID
-	
-	sockitcloseconnection(SOCK_bmon3)
 	sockitcloseconnection(SOCK_chopper)
 	sockitcloseconnection(SOCK_MOXA1)
 	sockitcloseconnection(SOCK_MOXA2)
 	sockitcloseconnection(SOCK_MOXA3)
 	sockitcloseconnection(SOCK_MOXA4)
-	Ind_process#stopstreamingimage()
-	variable temp = threadgrouprelease(detectorSentinelThreadID)
 End
 
 Function Instrument_Specific_Setup()
@@ -472,43 +468,20 @@ Function Instrument_Specific_Setup()
 	//updated positions for everything.
 	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	string cmd = ""
-	
-	//setup a sockit connection to get the current anode pulse rate from the detector.
-	variable/g root:packages:platypus:SICS:SOCK_bmon3
-	
+		
 	//setup sockit connections for the MOXA box at the sample area
 	variable/g root:packages:platypus:SICS:SOCK_MOXA1 = 0
 	variable/g root:packages:platypus:SICS:SOCK_MOXA2 = 0
 	variable/g root:packages:platypus:SICS:SOCK_MOXA3 = 0
 	variable/g root:packages:platypus:SICS:SOCK_MOXA4 = 0
 	
-	variable/g root:packages:platypus:SICS:bmon3_rate
-	variable/g root:packages:platypus:SICS:bmon3_counts  = 0
-	variable/g root:packages:platypus:SICS:detectorSentinelThreadID = 0
 	variable/g root:packages:platypus:SICS:SOCK_chopper
 	
-	NVAR SOCK_bmon3 = root:packages:platypus:SICS:SOCK_bmon3
-	NVAR bmon3_rate = root:packages:platypus:SICS:bmon3_rate
-	NVAR bmon3_counts = root:packages:platypus:SICS:bmon3_counts
 	NVAR SOCK_chopper = root:packages:platypus:SICS:SOCK_chopper
 	NVAR SOCK_MOXA1 = root:packages:platypus:SICS:SOCK_MOXA1
 	NVAR SOCK_MOXA2 = root:packages:platypus:SICS:SOCK_MOXA2
 	NVAR SOCK_MOXA3 = root:packages:platypus:SICS:SOCK_MOXA3
 	NVAR SOCK_MOXA4 = root:packages:platypus:SICS:SOCK_MOXA4
-	NVAR detectorSentinelThreadID = root:packages:platypus:SICS:detectorSentinelThreadID
-
-	//start a thread up to monitor the detector
-	detectorSentinelThreadID = threadgroupcreate(1)
-	ThreadStart detectorSentinelThreadID, 0, Ind_Process#detectorsentinel()
-
-	//listen to and process the detector rate.
-	make/t/o root:packages:platypus:SICS:bmon3_buffer
-	Wave/t bmon3_buffer = root:packages:platypus:SICS:bmon3_buffer
-	sockitopenconnection/time=2/q SOCK_bmon3, DASserverIP, DASserverPort_bmon3, bmon3_buffer
-	if(SOCK_bmon3>0)
-		sockitsendmsg SOCK_bmon3,"REPORT ON\n"
-		sockitregisterprocessor(SOCK_bmon3,"Ind_process#processbmon3rate")
-	endif
 
 	//speak to the MOXA box at the sample area.
 	make/t/o root:packages:platypus:SICS:MOXAbuf
@@ -540,9 +513,6 @@ Function Instrument_Specific_Setup()
 	
 	//make a wave to track the frame deasset time, AKA the chopper delay in ms.
 //	make/n=(0,2)/o root:packages:platypus:SICS:frame_deassert
-	
-	//start streaming the detector image
-	//ind_process#startStreamingImage()
 	
 	return err
 End
@@ -614,25 +584,11 @@ Function experimentDetailsWizard()
 	endif
 End
 
-Function restartBMON3()
-	//setup a sockit connection to get the current anode pulse rate from the detector.
-	variable/g root:packages:platypus:SICS:SOCK_bmon3
+Function histostatusTask(s)
+	STRUCT WMBackgroundStruct &s
+	Ind_process#grabAllHistoStatus()
 	
-	variable/g root:packages:platypus:SICS:bmon3_rate
-	variable/g root:packages:platypus:SICS:bmon3_buffer
-	NVAR SOCK_bmon3 = root:packages:platypus:SICS:SOCK_bmon3
-	NVAR bmon3_rate = root:packages:platypus:SICS:bmon3_rate
-	NVAR bmon3_counts = root:packages:platypus:SICS:bmon3_counts
-
-	make/t/o root:packages:platypus:SICS:bmon3_buffer
-	Wave/t bmon3_buffer = root:packages:platypus:SICS:bmon3_buffer
-	
-	sockitcloseconnection(sock_bmon3)
-	sockitopenconnection/time=2/q SOCK_bmon3, DASserverIP, DASserverPort_bmon3, bmon3_buffer
-	if(sockitisitopen(SOCK_bmon3))
-		sockitsendmsg SOCK_bmon3,"REPORT ON\n"
-		sockitregisterprocessor(SOCK_bmon3,"Ind_process#processbmon3rate")
-	endif	
+	return 0
 End
 
 Function regularTasks(s)
@@ -640,12 +596,7 @@ Function regularTasks(s)
 	//ADD your own user functions in here.
 	STRUCT WMBackgroundStruct &s
 
-	//make sure the detector rate monitor is connected
-	NVAR SOCK_bmon3 = root:packages:platypus:SICS:SOCK_bmon3
 	NVAR/z sentChopperSMS = root:packages:platypus:SICS:sentChopperSMS
-	if(!SOCKITisitopen(SOCK_bmon3))
-		restartbmon3()
-	endif
 	
 	//get reactor info
 //	string reactorInfo = Pla_getReactorInfo()
@@ -1758,8 +1709,9 @@ Function Instrumentlayout_panel()
 	SetVariable ss4hg_l,pos={609,408},size={74,13},title="ss4hg", win=instrumentlayout
 	SetVariable ss4hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
 	SetVariable ss4hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/fourth/horizontal/gap")][1],noedit= 1, win=instrumentlayout
-		
-	valdisplay bmon3, value = #"root:packages:platypus:SICS:bmon3_rate", limits={0, FSD,0}, title = "Detector\rRate", win=instrumentlayout
+	
+	Wave/t histostatuswave = root:packages:platypus:SICS:histostatuswave
+	valdisplay bmon3, value=#"str2num(root:packages:platypus:SICS:histostatuswave[gethistopos(\"BM3_event_rate\")][1])", limits={0, FSD,0}, title = "Detector\rRate", win=instrumentlayout
 	ValDisplay bmon3 mode=3,barmisc={14,50}, size={280,50},fsize=14, valueBackColor=(51456,44032,58880), win=instrumentlayout
 	ValDisplay bmon3 lowColor= (65280,16384,16384), pos = {425,13}, frame=2, format="%d", win=instrumentlayout
 	
@@ -1806,7 +1758,6 @@ Function createHTML()
 	Wave/z sel_batchbuffer = root:packages:platypus:data:batchScan:sel_batchbuffer
 	Wave/t/z axeslist = root:packages:platypus:SICS:axeslist
 	SVAR/z sicsstatus = root:packages:platypus:SICS:sicsstatus
-	NVAR/z bmon3_rate = root:packages:platypus:SICS:bmon3_rate
 	NVAR/z pointProgress = root:packages:platypus:data:scan:pointProgress
 	NVAR/z preset = root:packages:platypus:data:scan:preset
 	SVAR/z presettype = root:packages:platypus:data:scan:presettype
@@ -1862,10 +1813,9 @@ Function createHTML()
 		text +="<TR><TD>CNS temp (K)</TD><TD>"+ gethipaval("/instrument/source/cns_inlet_temp") +"</TD></TR>\r"
 		text +="<TR><TD>Secondary Shutter</TD><TD>"+ UpperStr(gethipaval("/instrument/status/secondary")) + "</TD></TR>\r"
 		text +="<TR><TD>Tertiary Shutter</TD><TD>"+ UpperStr(gethipaval("/instrument/status/tertiary")) + "</TD></TR>\r"
-	
-		if(NVAR_exists(bmon3_rate))
-			text +="<TR><TD>Rough Detector Rate (Hz)</TD><TD> "+ num2str(bmon3_rate) + "</TD></TR>\r"
-		endif
+		
+		Wave/t histostatusWave = root:packages:platypus:SICS:histostatusWave
+		text +="<TR><TD>Rough Detector Rate </TD><TD> "+ histostatuswave[gethistopos("BM3_event_rate")][1] + "</TD></TR>\r"
 	
 		if(fpxStatus())
 			text +="<TR><TD>Acquisition</TD><TD>ACTIVE</TD></TR>\r"
@@ -2791,7 +2741,7 @@ Function TestTask(s)		// This is the function that will be called periodically
 	Wave phaseoffset, timer, theticks, wasNoise
 	Wave/t chopperInfo
 	NVAR chopperConn = root:chopperConn
-	string msg = grabAllHistoStatus()
+	string msg = Ind_process#grabAllHistoStatus()
 	string value = ""
 	variable entry = dimsize(phaseoffset,0)
 	redimension/n=(entry + 1, -1) phaseoffset, timer, theticks, wasNoise, chopperInfo

@@ -116,7 +116,6 @@ Function setUpGlobalVariables()
 	
 	string/g root:packages:platypus:data:RAW:dataAxes = ""
 	variable/g root:packages:platypus:data:RAW:HDF_Current
-	variable/g root:packages:platypus:data:RAW:integratedCounts
 	string/g root:packages:platypus:data:RAW:displayed:order = ""
 
 	variable/g root:packages:platypus:data:batchScan:currentpoint = -1
@@ -394,8 +393,10 @@ Function startSICS()
 	user = sicsuser
 	
 	//socket for sending vanilla sics commands from user
-	NewPath/o/z/q logpath, LOG_PATH
-	sockitopenconnection/LOG=logpath/TIME=2/Q/TOK="\n" SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
+//	NewPath/o/z/q logpath, LOG_PATH
+//	sockitopenconnection/LOG=logpath/TIME=2/Q/TOK="\n" SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
+	sockitopenconnection/TIME=2/Q/TOK="\n" SOCK_cmd,ICSserverIP,ICSserverPort,cmd_buffer
+
 
 	if(V_flag)
 		abort "Could'nt open a connection to SICS"
@@ -411,7 +412,9 @@ Function startSICS()
 	sockitsendnrecv/time=3/SMAL SOCK_interupt, sicsuser + " "+sicspassword+"\n"
 	
 	//socket for receiving status messages and for sending messages you don't want to appear in the command buffer
-	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=logpath SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
+//	sockitopenconnection/Q/TIME=2/TOK="\n"/LOG=logpath SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
+	sockitopenconnection/Q/TIME=2/TOK="\n" SOCK_interest, ICSserverIP, ICSserverPort, interest_buffer
+
 	if(V_flag)
 		abort "Could'nt open a connection to SICS"
 	endif
@@ -466,13 +469,12 @@ Function startSICS()
 	Wave/t hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
 	
 	DoXOPIdle
-
 	//get all the values in the hipadaba tree
 	print "Getting current hipadaba values"
 	timer = startmstimer
 	getCurrentHipaVals()
 	print "Finished getting current hipadaba values", stopmstimer(timer)/1e6
-
+	
 	//ok, now get current list of SICS axis positions, then register the interestProcessor on the socket.
 	//this function creates root:packages:platypus:SICS:axeslist
 	print "Creating Axis List"
@@ -581,9 +583,6 @@ Function startSICS()
 		ListBox currentAxisPos_tab0,mode= 2,selRow= 0,editStyle= 1,widths={2,0,2,0,2,0,2}, fsize=14
 		ListBox currentAxisPos_tab0 listwave=:packages:platypus:SICS:axeslist
 		ListBox currentAxisPos_tab0,userColumnResize= 0,selwave = root:packages:platypus:sics:selAxesList,mode = 2, colorWave=root:packages:platypus:SICS:cwAxes
-		//		SetVariable histostatus_tab1,pos={62,146},size={402,16},title="histostatus"
-		//		SetVariable histostatus_tab1,fSize=10
-		//		SetVariable histostatus_tab1,limits={-inf,inf,0},value= root:packages:platypus:SICS:histostatusStr,bodyWidth= 350
 		SetVariable sicsstatus_tab0,pos={40,705},size={286,20},title="SICS status"
 		SetVariable sicsstatus_tab0,fSize=14,disable=2
 		SetVariable sicsstatus_tab0,limits={-inf,inf,0},value= root:packages:platypus:SICS:sicsstatus,bodyWidth= 237
@@ -630,7 +629,7 @@ Function startSICS()
 		PopupMenu displayorder_tab2,title="     displayorder",fSize=10,pos={26,41}
 		PopupMenu displayorder_tab2,mode=1,value= #"displayorderlist()",proc = popup_changedisplayorder,bodywidth=120
 		SetVariable integratedCounts_tab2 title="Integrated Counts",size={200,20},disable=2,pos = {351,43}
-		SetVariable integratedCounts_tab2 value=:packages:platypus:data:RAW:integratedCounts
+		SetVariable integratedCounts_tab2 value=root:packages:platypus:SICS:histostatuswave[gethistopos("num_events_inside_oat_xyt")][1]
 		SetVariable integratedCounts_tab2 limits={-inf,inf,0},fSize=10,disable=2
 		Button popgraph_tab2 pos={566,31}
 		Button popgraph_tab2 fSize=12,proc=spawngraph
@@ -793,7 +792,7 @@ Function getHipaPos(path)
 	findvalue/text=path/txop=4/z hipadaba_paths
 	return v_value
 ENd
-
+ 
 Function/t getHipaVal(path)
 	string path
 	//looks up the value of a specific hipadaba node in the enumerated list.
@@ -1465,8 +1464,6 @@ Function reDisplay(order,isLog, [justdata])
 	duplicate/o rawdetector, root:packages:platypus:data:RAW:displayed:hmm
 	Wave hmm = root:packages:platypus:data:RAW:displayed:hmm
 	
-	nvar integratedcounts = root:packages:platypus:data:RAW:integratedCounts
-
 	string temp,tempx,tempy,swap0,swap1,swap2,swap3,swap4,swap5
 
 	variable dims = wavedims(rawdetector)
@@ -1484,7 +1481,6 @@ Function reDisplay(order,isLog, [justdata])
 	switch (dims)
 		case 1:
 			duplicate/o hmm, root:packages:platypus:data:RAW:displayed:display1Dord
-			integratedcounts = sum(display1Dord,-inf,inf)
 			break
 		case 2:
 			if(cmpstr(order,dataaxes) == 0)
@@ -1494,8 +1490,6 @@ Function reDisplay(order,isLog, [justdata])
 				Wave displayed2D = root:packages:platypus:data:RAW:displayed:displayed2D
 				matrixtranspose displayed2D
 			endif
-
-			integratedcounts = 	sum(root:packages:platypus:data:RAW:displayed:displayed2D)
 			
 			imagetransform sumallcols  root:packages:platypus:data:RAW:displayed:displayed2D
 			imagetransform sumallrows  root:packages:platypus:data:RAW:displayed:displayed2D
@@ -1553,8 +1547,6 @@ Function reDisplay(order,isLog, [justdata])
 			imagetransform sumplanes M_volumetranspose
 			Wave M_sumplanes
 			duplicate/o M_sumplanes,root:packages:platypus:data:RAW:displayed:displayed2D
-
-			integratedcounts = 	sum(root:packages:platypus:data:RAW:displayed:displayed2D)
 			
 			imagetransform sumallcols  root:packages:platypus:data:RAW:displayed:displayed2D
 			imagetransform sumallrows  root:packages:platypus:data:RAW:displayed:displayed2D
@@ -2384,11 +2376,14 @@ Function startRegularTasks(times)
 	//the regularTasks procedure is called at this periodic rate
 	CtrlNamedBackground regularTasks, period = 60*times, proc  = regularTasks
 	CtrlNamedBackground regularTasks, start
+	CtrlNamedBackground histostatusTask, period = 60, proc  = histostatusTask
+	CtrlNamedBackground histostatusTask, start
 End
 
 Function stopRegularTasks()
 	//this function stops the regular background task. (see startRegularTasks())
 	CtrlNamedBackground regularTasks, stop
+	CtrlNamedBackground histostatusTask, stop
 End
 
 Function checkDrive(motor,desiredPosition)
@@ -2713,10 +2708,10 @@ Function getCurrentHipaVals()
 	Wave/t  hipadaba_paths = root:packages:platypus:SICS:hipadaba_paths
 	NVAR  SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	string cmd=""
-	string msg = "", lhs, rhs
+	string msg = "", lhs, rhs, reply
 	variable ii = 0, numleaves
-	
 	numleaves = dimsize(hipadaba_paths,0) 
+
 	for(ii = 0; ii < numleaves ; ii += 1)
 		cmd = "hget " + hipadaba_paths[ii][0] + "\n"
 		msg = sockitsendnrecvf(SOCK_INTEREST, cmd, 1, 1)

@@ -415,7 +415,8 @@ Function scanBkgTask(s)
 	
 	variable scanpoint = str2num(getHipaval("/commands/scan/runscan/feedback/scanpoint"))
 	variable numpoints = str2num(getHipaval("/commands/scan/runscan/numpoints"))
-	variable timer = str2num(getHipaval("/instrument/detector/time"))
+      variable timer = str2num(Ind_Process#grabHistoStatus("acq_dataset_active_sec"))
+	//variable timer = str2num(getHipaval("/instrument/detector/time"))
 	variable preset = str2num(getHipaval("/instrument/detector/preset"))
 	pointProgress =  scanpoint * preset
 
@@ -528,14 +529,14 @@ Function finishScan(status)
 //	endif
 
 	//save the scan itself, not the overall data, just counts vs position
-	string histostatus = grabAllHistoStatus()
+	string histostatus = Ind_process#grabAllHistoStatus()
 	variable bm1cts =  numberbykey("BM1_Counts", histostatus, ":", "\r") 
 
 	Note/K position, "data:" + getHipaVal("/experiment/file_name") + ";DAQ:" + Ind_Process#grabhistostatus("DAQ_dirname")+";DATE:"+Secs2Date(DateTime,-1) + ";TIME:"+Secs2Time(DateTime,3)+";"+"BM1counts;"+num2str(bm1cts)+";"
 			
-	string fname =  "FIZscan" + num2str(getFIZscanNumberAndIncrement()) + ".itx"
-	save/o/t position, counts as PATH_TO_DATA2 + "FIZ:" + fname
-	print "FPXscan (position vs counts) saved to ", PATH_TO_DATA2 + "FIZ:" + fname
+//	string fname =  "FIZscan" + num2str(getFIZscanNumberAndIncrement()) + ".itx"
+//	save/o/t position, counts as PATH_TO_DATA2 + "FIZ:" + fname
+//	print "FPXscan (position vs counts) saved to ", PATH_TO_DATA2 + "FIZ:" + fname
 	print "file saved as: ", gethipaval("/experiment/file_name")
 	
 	//display the scan in an easy to killgraph
@@ -714,9 +715,13 @@ Function fillScanStats(position, w, full)
 		case 0:
 			position[scanpoint] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
 			//time
-			times = str2num(gethipaval("/instrument/detector/time"))
+			times = str2num(Ind_Process#grabHistoStatus("acq_dataset_active_sec"))
+			//times = str2num(gethipaval("/instrument/detector/time"))
+			
 			//counts
-			w[scanpoint][0] = str2num(gethipaval("/instrument/detector/total_counts"))
+			w[scanpoint][0] = str2num(Ind_Process#grabHistoStatus("num_events_filled_to_histo"))
+			//w[scanpoint][0] = str2num(gethipaval("/instrument/detector/total_counts"))
+			
 			//max detector count rate
 			w[scanpoint][3] =  str2num(gethipaval("/instrument/detector/max_binrate"))
 	
@@ -726,6 +731,8 @@ Function fillScanStats(position, w, full)
 		break
 		case 1:
 			position[scanpoint] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
+			//now fall through into case2 to get the updated counts.
+			
 //			string DAQname = PATH_TO_HSDATA + replacestring(" ", gethipaval("/instrument/detector/daq_dirname"), "") + ":DATASET_"+num2istr(scanpoint)+":EOS.bin"
 //			neutronunpacker/z DAQname
 //			if(V_flag)
