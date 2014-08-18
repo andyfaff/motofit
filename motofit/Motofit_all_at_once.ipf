@@ -2135,6 +2135,7 @@ static Function/s Moto_loadReffile(filenameStr)
 				endif			
 			endfor
 		elseif(stringmatch(filenameStr,"*.h5"))
+#if exists("hdf5openfile")
 			make/o/d/n=(0,0) originaldata
 			hdf5openfile/R fileID as filenameStr
 			
@@ -2158,6 +2159,7 @@ static Function/s Moto_loadReffile(filenameStr)
 			killwaves/z RR, QQ, EE, dQ
 			Waveclear RR, QQ, EE, dQ
 			hdf5closefile/z fileID
+#endif
 		else
 			LoadWave/Q/M/G/D/N=originaldata filenameStr
 			//if you're not loading 2,3 or 4 column data then there may be something wrong.
