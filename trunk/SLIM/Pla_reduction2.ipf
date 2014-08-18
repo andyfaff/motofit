@@ -1,8 +1,8 @@
 #pragma rtGlobals=3		// Use modern global access method.
 //background offset is the separation between the specridge and the region taken to be background.
-	constant BACKGROUNDOFFSET = 2
+	constant BACKGROUNDOFFSET = 1
 //the value you multiply the FWHM by to get the foregroundwidth
-	constant INTEGRATEFACTOR = 1.7
+	constant INTEGRATEFACTOR = 1.6
 
 	// SVN date:    $Date$
 	// SVN author:  $Author$
@@ -57,7 +57,7 @@ Function topAndTail(measurement, measurementSD, peak_Centre,peak_FWHM,background
 		
 		//do the background subtraction
 		if(background)
-			backgroundWidth = INTEGRATEFACTOR * peak_FWHM
+			backgroundWidth = peak_FWHM * 0.5
 		else
 			backgroundwidth = 0
 		endif
@@ -436,10 +436,10 @@ Function Pla_linbkg(image, imageSD, loPx, hiPx, backgroundwidth, [backgroundMask
 	string tempStr=""
 	variable temp
 	
-	y0 = round( loPx - backgroundwidth - BACKGROUNDOFFSET  - 1)
-	y1 = round(loPx - BACKGROUNDOFFSET - 1)
-	y2 = round(hiPx + BACKGROUNDOFFSET + 1)
-	y3 = round(hiPx + BACKGROUNDOFFSET + 1 + backgroundwidth)
+	y0 = round( loPx - backgroundwidth - BACKGROUNDOFFSET  )
+	y1 = round(loPx - BACKGROUNDOFFSET )
+	y2 = round(hiPx + BACKGROUNDOFFSET )
+	y3 = round(hiPx + BACKGROUNDOFFSET + backgroundwidth)
 	
 	//fits a linear background to an image
 	//linear fits are along vertical y direction.
