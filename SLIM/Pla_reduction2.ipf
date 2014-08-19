@@ -1051,6 +1051,42 @@ function/wave actualkernel(nomtheta, d1,d2,L12, nomq, reso, chod, radius, freq, 
 	return kernel
 End
 
+Function reduceResolutionKernel(resolutionkernel)
+	Wave resolutionkernel
+	//Reduces the size of the resolution kernel, still keeping it in a square shape
+	//works by calculating the cumulative PDF, figuring out where the majority of
+	//the distribution is.  It goes through line by line to figure out where these levels
+	//kick in, using the lowest and highest points found so far as the limit.
+	variable CUTOFFLEVEL = 1e-6
+	variable ii, lowP, highP, lp, hp
+
+	lowP =  dimsize(resolutionkernel, 1)
+	highP = 0
+
+	make/free/d/n=(dimsize(resolutionkernel, 1)) pq, qq
+	make/free/d/n=(dimsize(resolutionkernel, 1) + 1) areas
+
+
+	for(ii = 0 ; ii < dimsize(resolutionkernel, 0) ; ii += 1)
+		pq[] = resolutionkernel[ii][p][1]
+		qq[] = resolutionkernel[ii][p][0]
+		areas = 0
+		areas[] = area(pq, 0, p)
+		areas *= qq[1] - qq[0]
+		lp = binarysearch(areas, CUTOFFLEVEL)
+		hp = binarysearch(areas, 1 - CUTOFFLEVEL)
+		if(lp < lowP)
+			lowP = lp
+		endif
+		if(hp > highP)
+			highP = hp
+		endif
+	endfor
+	deletepoints/M=1 highP, dimsize(resolutionkernel, 0), resolutionkernel
+	deletepoints/M=1 0, lowP + 1, resolutionkernel
+
+End
+
 Function assignActualKernel(refDF, directDF, W_q, specnum)
 	string refDF, directDF
 	Wave W_q

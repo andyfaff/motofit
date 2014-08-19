@@ -1002,7 +1002,7 @@ static Function Moto_do_a_fit()
 				NVAR k_m = root:packages:motofit:old_genoptimise:k_m
 				NVAR fittol = root:packages:motofit:old_genoptimise:fittol				
 				//do the fit
-				Gencurvefit/D=outputRR/I=1/Q/MAT=1/R/W=dR/X=inputQQ/K={iterations, popsize, k_m, recomb}/TOL=(fittol) $fitfunc, RR[leftP, rightP], coef, holdstring, limits
+				Gencurvefit/D=outputRR/I=1/Q/MAT=1/R/W=dR/X=inputQQ/K={iterations, popsize, k_m, recomb}/DITH={0.7, 1.5}/TOL=(fittol) $fitfunc, RR[leftP, rightP], coef, holdstring, limits
 				break
 			case "Levenberg-Marquardt":
 				if(useconstraint)
