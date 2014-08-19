@@ -2197,8 +2197,9 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 		writeSpecRefXML1D(outputPathStr, fname, tempQQ, tempRR, tempDR, tempDQ, "", user, samplename, filestosplice, rednnote)
 		
 		//now write a spliced HDF file
+		//but we can reduce the size of the resolution kernel to make the calculation MUCH faster.
+		reduceResolutionKernel(tempResKernel)
 		writeSpecRefH5_1D(outputPathStr, fname, tempQQ, tempRR, tempdR, tempdQ, tempResKernel)
-
 	catch
 		if(fileID)
 			hdf5closefile/z fileID

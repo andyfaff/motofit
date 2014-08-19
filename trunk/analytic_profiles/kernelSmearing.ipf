@@ -40,7 +40,7 @@ Function kernelSmearedMotofit(s) : FitFunc
 	duplicate/free/r=[0, qpoints - 1][0, kernelPoints - 1][0, 0] resolutionKernel, ytemp, qtemp
 	
 	redimension/n=(qpoints * kernelPoints) ytemp, qtemp
-	AbelesAll(w, ytemp, qtemp)
+	Abeles_imagAll(w, ytemp, qtemp)
 	redimension/n=(qpoints , kernelPoints) ytemp
 	
 	//multiply by the resolution kernel probability
@@ -59,7 +59,7 @@ Function kernelSmearedMotofit(s) : FitFunc
 	
 	multithread yy[] += summ[p]
 	multithread yy[] *= (resolutionKernel[p][1][0] - resolutionKernel[p][0][0]) / 3
-	yy = log(yy)
+//	yy = log(yy)
 //	yy *=xx^4
 End
 
@@ -106,12 +106,12 @@ Function main(datasetname, [justsim])
 	Wave fit_RR = $("fit_" + datasetname + "_R")
 	
 	if(justsim)
-		s.y = fit_RR
+		Wave s.y = fit_RR
 		kernelSmearedMotofit(s)
 	else
 		Wave holdwave
 		Wave Gencurvefitlimits
-		Gencurvefit /D=fit_rr/L=(numpnts(rr))/N=1/W=dr/I=1/hold=holdwave/strc=s/TOL=0.05/K={2000,10,0.7,0.5}/X=qq kernelSmearedMotofit, rr, coefs,"",Gencurvefitlimits
+		Gencurvefit /D=fit_rr/L=(numpnts(rr))/W=dr/I=1/hold=holdwave/strc=s/TOL=0.05/K={2000,10,0.7,0.5}/DITH={0.7, 1.5}/X=qq kernelSmearedMotofit, rr, coefs,"",Gencurvefitlimits
 	endif
 End
 
@@ -121,24 +121,3 @@ Function munge(coefs, y_obs, y_calc, s_obs)
 	diff = ((y_obs-y_calc)/s_obs)^2
 	return sum(diff)
 end
-
-Function reduceResolutionKernel(resolutionkernel, pts)
-Wave resolutionkernel
-variable pts
-
-variable ii
-
-make/n=(dimsize(resolutionkernel, 1))/free/d kernel, kernelx
-make/n=(pts)/free/d interpo
-
-make/n=(dimsize(resolutionkernel, 0), pts, 2)/o/d reducedKernel
-
-for(ii = 0 ; ii < dimsize(resolutionkernel, 0) ; ii+=1)
-kernel = resolutionkernel[ii][p][1]
-kernelx = resolutionkernel[ii][p][0]
-Interpolate2/T=2/N=(pts)/E=2/Y=interpo kernelx, kernel
-reducedkernel[ii][][0] = pnt2x(interpo, q)
-reducedkernel[ii][][1] = interpo[q]
-endfor
-
-End
