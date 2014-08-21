@@ -2030,11 +2030,11 @@ Function moto_lindata_to_plotyp(plotyp, qq, RR[, dr, dq, removeNonFinite])
 		if(!waveexists(dq))
 			duplicate/free RR, dq
 		endif
-		for(ii = numpnts(RR) - 1 ; ii >= 0 ; ii -= 1)
-			if(numtype(RR[ii]) || numtype(dR[ii]))
-				deletepoints/M=0 ii, 1, qq, RR, dR, dq
-			endif
-		endfor
+//		for(ii = numpnts(RR) - 1 ; ii >= 0 ; ii -= 1)
+//			if(numtype(RR[ii]) || numtype(dR[ii]))
+//				deletepoints/M=0 ii, 1, qq, RR, dR, dq
+//			endif
+//		endfor
 	endif
 End
 
