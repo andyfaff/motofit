@@ -140,7 +140,7 @@ Chopper system
 \end_layout
 
 \begin_layout Standard
-The chopper system pulses the neutron, at around 20Hz.
+The chopper system pulses the neutron, at around 24Hz.
  There are many neutron wavelengths (energies) contained in each pulse.
  As the neutron pulse is allowed through a stopwatch is started on the data
  acquisition computer, via a signal from the choppers.
@@ -171,8 +171,8 @@ Cooling water
 
 \begin_layout Standard
 The cooling water should be being supplied at ~16 degrees at a rate of ~4l/min.
- Check that the flow rate is high enough on the dc-1 computer in the instrument
- cabin.
+ Check that the flow rate is high enough on the dc1-platypus computer in
+ the instrument cabin.
  Check that there are no leaks and that there is enough water in the reservoir.
 \end_layout
 
@@ -470,7 +470,7 @@ To gain access to the SICS command line:
 \end_layout
 
 \begin_layout LyX-Code
-socat READLINE,history=history tcp4:127.0.0.1:server-platypus,crlf
+sicsclient
 \end_layout
 
 \begin_layout Standard
@@ -523,7 +523,7 @@ Here is a list of the motors and their explanations.
 \begin_layout Labeling
 \labelwidthstring 00.00.0000
 \begin_inset Tabular
-<lyxtabular version="3" rows="23" columns="3">
+<lyxtabular version="3" rows="22" columns="3">
 <features tabularvalignment="middle">
 <column alignment="center" valignment="top" width="0.75in">
 <column alignment="center" valignment="top" width="1.25in">
@@ -1204,7 +1204,7 @@ moves the detector longitudinally (horizontally)
 </cell>
 </row>
 <row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1215,7 +1215,7 @@ dz
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1224,42 +1224,11 @@ detector z
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-moves the detector transversely (vertically)
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\noun on
-bz
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-beamshade z
-\end_layout
-
-\end_inset
-</cell>
 <cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
-moves the beamshade in front of the detector
+moves the detector transversely (vertically)
 \end_layout
 
 \end_inset
@@ -1296,21 +1265,31 @@ run
 \end_layout
 
 \begin_layout Standard
-Change the vertical gap of slit 3 to 10mm, don't allow any other SICS commands
+Change the vertical gap of slit1 to 2mm, don't allow any other SICS commands
  be entered while you are moving:
 \end_layout
 
 \begin_layout LyX-Code
-drive ss3vg 10
+drive ss1vg 2
 \end_layout
 
 \begin_layout Standard
-Change the vertical gap of slit 3 to 10mm, allow any other SICS commands
+Change the vertical gap of slit 1 to 2mm, allow any other SICS commands
  be entered while you are moving:
 \end_layout
 
 \begin_layout LyX-Code
-run ss3vg 10
+run ss1vg 2
+\end_layout
+
+\begin_layout Standard
+Change the vertical gap of slit 1 to 2mm and the sample tilt angle to 0.5
+ degrees, at the same time, don't allow other motors to be driven at the
+ same time:
+\end_layout
+
+\begin_layout LyX-Code
+drive ss1vg 2 sth 0.5
 \end_layout
 
 \begin_layout Standard
@@ -1519,14 +1498,6 @@ ss1u homerun 1
 \end_layout
 
 \begin_layout LyX-Code
-drive ss1vg -1
-\end_layout
-
-\begin_layout LyX-Code
-drive ss2vg -1
-\end_layout
-
-\begin_layout LyX-Code
 ss3u homerun 0
 \end_layout
 
@@ -1535,11 +1506,7 @@ ss3u homerun 1
 \end_layout
 
 \begin_layout LyX-Code
-drive ss3vg -1
-\end_layout
-
-\begin_layout LyX-Code
-drive ss4vg -1
+drive ss1u 0 ss1d 0 ss2u 0 ss2d 0 ss3u 0 ss3d 0 ss4u 0 ss4d 0
 \end_layout
 
 \begin_layout Standard
@@ -1630,7 +1597,7 @@ setpos
 softzero
 \noun default
 .
- This is often more useful than the 
+ This is more useful than the 
 \noun on
 softzero
 \noun default
@@ -2049,7 +2016,7 @@ oat_table
 \end_layout
 
 \begin_layout LyX-Code
-oat_table -set Y {-110.5 -109.5} NYC 221 
+oat_table -set Y {110.5 109.5} NYC 221 
 \end_layout
 
 \begin_layout LyX-Code
@@ -2261,7 +2228,7 @@ When you alter the chopper speed or phasing you need to get SICS to update
 \end_layout
 
 \begin_layout LyX-Code
-chopperController status
+::chopper::ready?
 \end_layout
 
 \begin_layout Subsubsection
@@ -2665,6 +2632,7 @@ FIZZY must be started after SICS starts.
 \noun default
 You are then prompted for a SICS username and password, the instrument scientist
  will give these to you.
+ However, they are normally written above the instrument console.
 \end_layout
 
 \begin_layout Subsubsection
@@ -3049,7 +3017,9 @@ pause
 pause
 \noun default
  if you need to go into the Platypus enclosure to check your sample.
- 
+ If you can't remember which commands are possible you can right click in
+ the listbox and a prompt will appear with a list of commands that you can
+ use.
 \end_layout
 
 \begin_layout Standard
@@ -3120,7 +3090,7 @@ Instrument layout
 \begin_layout Standard
 In this window you can check on several important parameters at once.
  Such as the current count rate (don't allow the count rate to go above
- 20000), the positions of the more important motors, the reactor power,
+ 10 000), the positions of the more important motors, the reactor power,
  cold source temp, shutter status, 
 \noun on
 SICS
@@ -3361,11 +3331,11 @@ Viewing instrument status via the web
 \begin_layout Standard
 The status of Platypus can also be viewed from the web, 
 \begin_inset Flex URL
-status collapsed
+status open
 
 \begin_layout Plain Layout
 
-http://dav1-platypus.nbi.ansto.gov.au/status.html
+http://www.nbi.ansto.gov.au/platypus/public/status.html
 \end_layout
 
 \end_inset
@@ -4490,8 +4460,8 @@ catalogue(pathStr [,start, stop])
 goes through all the NeXUS datafiles in the folder pointed to by pathStr.
  One can control where the cataloging starts and finishes using the optional
  start and finish variables.
- It puts the catalogue into an XML file in the same path and also produces
- an IGOR table, which can be printed out and put in the log book.
+ It puts the catalogue into an IGOR table, which can be printed out and
+ put in the log book.
 \end_layout
 
 \begin_layout Standard
@@ -4758,11 +4728,11 @@ Set the phone number by using:
 \end_layout
 
 \begin_layout LyX-Code
-hset /user/phone 04xxxxxxxx
+hset /user/phone 614xxxxxxxx
 \end_layout
 
 \begin_layout Standard
-where 04xxxxxxxx is the mobile number.
+where 614xxxxxxxx is the mobile number.
 \end_layout
 
 \begin_layout Section
@@ -5147,33 +5117,16 @@ Access to your data
 You have access to your data whilst you are at ANSTO.
  You can take your data in many ways, such as emailing it to yourself, burning
  a CD, memory stick, etc.
- However, data is also available for downloading via a webpage: 
-\begin_inset Flex URL
-status collapsed
-
-\begin_layout Plain Layout
-
-http://dav1-platypus.nbi.ansto.gov.au/cgi-bin/getData.cgi
-\end_layout
-
-\end_inset
-
+ At the moment you are best off doing this with 
+\noun on
+Filezilla, 
+\noun default
+an SFTP client
+\noun on
 .
- This webpage requires authentication.
- If you would like a login for this method please see an instrument scientist.
- You can also download data using 
-\noun on
-SLIM,
+
 \noun default
- which is the 
-\noun on
-Platypus
-\noun default
- data reduction program.
- This uses the same web based method for downloading the data, so you will
- need a login for this method as well.
- The SLIM is the easiest way.
- The only thing you need to remember are the run numbers for your data files.
+ Take all your data with you before you go.
 \end_layout
 
 \begin_layout Section
@@ -5224,31 +5177,19 @@ can reduce data in real time (i.e.
 \end_layout
 
 \begin_layout Standard
-SLIM is part of more recent Motofit distributions, which can either be obtained
+SLIM is part of more recent Motofit distributions, which can be obtained
  from 
 \begin_inset Flex URL
 status collapsed
 
 \begin_layout Plain Layout
 
-http://motofit.sourceforge.net
+http://sourceforge.net/projects/motofit/files/latest/download
 \end_layout
 
 \end_inset
 
- or 
-\begin_inset Flex URL
-status collapsed
-
-\begin_layout Plain Layout
-
-http://dav1-platypus.nbi.ansto.gov.au
-\end_layout
-
-\end_inset
-
- (this is the more up to date version).
- 
+.
 \end_layout
 
 \begin_layout Standard
