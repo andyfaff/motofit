@@ -542,7 +542,7 @@ Function/s reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 			if(dontoverwrite)
 				fname = uniqueFileName(outputPathStr, fname, ".h5")
 			endif
-			writeSpecRefH5_1D(outputPathStr, fname, qq, RR, dR, dQ, resolutionkernel)
+			writeSpecRefH5_1D(outputPathStr, fname, qq, RR, dR, dQ, resolutionkernel = resolutionkernel)
 									
 			//write a 2D XMLfile for the offspecular data
 			if(saveoffspec)
@@ -609,7 +609,7 @@ Function reduce(inputPathStr, outputPathStr, scalefactor,runfilenames, lowlambda
 			fname = "c_" + stringfromlist(0, toSplice)
 		endif	
 
-		if(itemsinlist(toSplice) > 1)
+		if(itemsinlist(toSplice) > 0)
 			sprintf cmd, "splicefiles(\"%s\",\"%s\",\"%s\",rebin = %g)", outputPathStr, fname, toSplice, rebin
 			print cmd
 		
@@ -1693,9 +1693,10 @@ Function writeSpectrum(outputPathStr, fname, runnumber, II, dI, lambda, dlambda,
 	Killwaves/z W_extractedCol
 End
 
-Function writeSpecRefH5_1D(outputPathStr, fname, qq, RR, dR, dQ, resolutionkernel)
+Function writeSpecRefH5_1D(outputPathStr, fname, qq, RR, dR, dQ, [resolutionkernel])
 	String outputPathStr, fname
-	wave qq, RR, dR, dQ, resolutionkernel
+	wave qq, RR, dR, dQ
+	Wave/z resolutionkernel
 	
 	variable fileID
 	
@@ -1705,7 +1706,9 @@ Function writeSpecRefH5_1D(outputPathStr, fname, qq, RR, dR, dQ, resolutionkerne
 		hdf5savedata RR, fileID, "R"
 		hdf5savedata dR, fileID, "E"
 		hdf5savedata dq, fileID, "dq"
-		hdf5savedata resolutionkernel, fileID, "resolutionkernel"
+		if(!paramisdefault(resolutionkernel) && waveexists(resolutionkernel))
+			hdf5savedata resolutionkernel, fileID, "resolutionkernel"
+		endif
 	catch
 	endtry
 	HDF5closefile/z fileID
@@ -2114,19 +2117,26 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 			Wave dq = $(stringfromlist(0, S_wavenames))
 
 			hdf5loaddata/z/o/q fileID, "resolutionkernel"
-			Wave resolutionkernel = $(stringfromlist(0, S_wavenames))
-			
+			if(!V_flag)
+				Wave/z resolutionkernel = $(stringfromlist(0, S_wavenames))
+			endif
+					
 			make/free/n=(numpnts(qq)) indx
 			makeindex qq, indx
 			
-			Pla_catalogue#MDindexsort(resolutionkernel, indx)
+			if(waveexists(resolutionkernel))
+				Pla_catalogue#MDindexsort(resolutionkernel, indx)
+			endif
 			sort qq, qq, RR, EE, dq
 			
 			if(ii == 0)
 				make/o/d/n=(numpnts(qq)) tempQQ, tempRR, tempDR, tempDQ
-				duplicate/o resolutionkernel, tempResKernel
-				
-				Wave tempQQ, tempRR, tempDR, tempDQ, tempResKernel
+				if(waveexists(resolutionkernel))
+					duplicate/o resolutionkernel, tempResKernel
+				endif
+				Wave/z tempResKernel
+							
+				Wave tempQQ, tempRR, tempDR, tempDQ
 				tempQQ = qq
 				tempRR = RR
 				tempDR = EE
@@ -2158,12 +2168,14 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 				concatenate/NP {QQ}, tempQQ
 				concatenate/NP { dQ}, tempDQ
 				concatenate/NP {EE}, tempDR
-				concatenate/NP=0 {resolutionkernel}, tempResKernel
+		
+				if(waveexists(resolutionkernel))
+					concatenate/NP=0 {resolutionkernel}, tempResKernel
+					make/free/n=(numpnts(tempQQ)) indx
+					makeindex tempQQ, indx
+					Pla_catalogue#MDindexsort(tempResKernel, indx)
+				endif
 				
-				make/free/n=(numpnts(tempQQ)) indx
-				makeindex tempQQ, indx
-				Pla_catalogue#MDindexsort(tempResKernel, indx)
-			
 				sort tempQQ,tempQQ,tempRR,tempDR,tempDQ 
 			endif
 			
@@ -2198,8 +2210,10 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 		
 		//now write a spliced HDF file
 		//but we can reduce the size of the resolution kernel to make the calculation MUCH faster.
-		reduceResolutionKernel(tempResKernel)
-		writeSpecRefH5_1D(outputPathStr, fname, tempQQ, tempRR, tempdR, tempdQ, tempResKernel)
+		if(waveexists(resolutionkernel))
+			reduceResolutionKernel(tempResKernel)
+		endif
+		writeSpecRefH5_1D(outputPathStr, fname, tempQQ, tempRR, tempdR, tempdQ, resolutionkernel = tempResKernel)
 	catch
 		if(fileID)
 			hdf5closefile/z fileID

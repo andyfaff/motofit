@@ -9,7 +9,6 @@
 
 Menu "Platypus"
 	"Catalogue HDF data",catalogueNexusdata()
-	"Catalogue FIZ data", catalogueFIZdata()
 End
 
 	

@@ -11,6 +11,7 @@ Menu "Platypus"
 	Submenu "SLIM"
 		"Reduction", reducerpanel()
 		"Plot scan data/[", SLIM_plot_scans()
+		"Splice datasets/]", spliceRefFiles()
 		"Download Platypus Data", downloadPlatypusData()
 		"Download DAQ Streamed File", grabStreamFromCatalogue()
 		"MADD - Add files together", addFilesTogether()
@@ -539,25 +540,25 @@ Function SLIM_buttonproc(ba) : ButtonControl
 						return 0	
 					endif
 					if(streamedReduction)
-							prompt temp, "time each bin (s)"
-							prompt maxtime, "ending time (s)"
-							prompt mintime, "starting time (s)"
-							maxtime = 3600
-							mintime = 0
-							temp = 60
-							Doprompt "What timescales did you want for the streamed reduction?", mintime, maxtime, temp
-							if(V_flag)
-								abort
-							endif
-							streamedReduction = temp
+						prompt temp, "time each bin (s)"
+						prompt maxtime, "ending time (s)"
+						prompt mintime, "starting time (s)"
+						maxtime = 3600
+						mintime = 0
+						temp = 60
+						Doprompt "What timescales did you want for the streamed reduction?", mintime, maxtime, temp
+						if(V_flag)
+							abort
+						endif
+						streamedReduction = temp
 							
-							make/n=(ceil((maxtime - mintime) / temp) + 1)/free/d timeslices
-							timeslices = temp * p + mintime
-							if(timeslices[numpnts(timeslices) - 1] > maxtime)
-								timeslices[numpnts(timeslices) - 1] = maxtime
-							endif
+						make/n=(ceil((maxtime - mintime) / temp) + 1)/free/d timeslices
+						timeslices = temp * p + mintime
+						if(timeslices[numpnts(timeslices) - 1] > maxtime)
+							timeslices[numpnts(timeslices) - 1] = maxtime
+						endif
 							
-							dontoverwrite = 1
+						dontoverwrite = 1
 					endif
 					
 					//did you want to rebin?
@@ -1886,6 +1887,33 @@ Function SLIM_plot_offspec(inputPathStr, filenames)
 	endtry
 End
 
+Function spliceRefFiles()
+	//a convenience function to splice files together.
+	variable dummy
+	string filter = "HDF5 reflectivity files:.h5;"
+	open/Mult=1/D/R/M="Select reflectivity files to splice"/F=filter dummy
+
+	if(!strlen(S_filename))
+		return 1
+	endif
+
+	//where are the file stored
+	string dirpath
+	dirpath = ParseFilePath(1, stringfromlist(0, S_filename, "\r"), ":", 1, 0)
+
+	//build a list of files
+	string filelist = "", file
+	variable ii
+	for(ii = 0 ; ii < itemsinlist(S_filename, "\r") ; ii += 1)
+		file = ParseFilePath(3, stringfromlist(ii , S_filename, "\r"), ":", 0, 0)
+		filelist += file + ";"
+	endfor
+	filelist = sortlist(filelist, ";", 16)
+
+	//got filenames to splice, now go and do it.
+	spliceFiles(dirpath, "c_" + stringfromlist(0, filelist), filelist)
+
+End
 
 //#pragma rtGlobals=1		// Use modern global access method.
 //Function offspec_XRMLmap()
