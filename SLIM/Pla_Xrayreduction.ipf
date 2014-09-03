@@ -268,6 +268,8 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 		open saveID as directory + base + ".txt"
 		wfprintf saveID, "%g \t %g \t %g \t %g \n", qq, rr, dr, dq	 //this prints the wave to file.
 		close saveID	
+		Wave/z dummyres
+		writeSpecRefH5_1D(directory, base, qq, RR, dR, dQ, resolutionkernel = dummyres)
 	endif
 
 	setdatafolder $cDF
