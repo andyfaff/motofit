@@ -309,6 +309,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	print "Beginning scan"
 	//start the scan task
 	appendstatemon("FPX")
+	SetVariable/Z statemonstatus win=instrumentlayout, valueBackColor=(65280, 0, 0)
 		
 	//create the SICS command to start the scan
 	//runscan scan_variable start stop numpoints time||unlimited||period||count||frame||MONITOR_1||MONITOR_2 savetype save||nosave force true||false
@@ -519,7 +520,7 @@ Function finishScan(status)
 		print "Stopped scan for some reason (finishScan)"
 	endif
 	
-	print "scan finished"
+	print "SCAN FINISHED", time(), date()
 
 	//if you want to save, then we must save the data.
 //	if(SAWDEVICE)

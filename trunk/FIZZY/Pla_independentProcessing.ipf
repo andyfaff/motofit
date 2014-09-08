@@ -124,9 +124,15 @@ Function interestProcessor(w,x)
 						selaxeslist[row][][1] = 1
 					endif
 				endif
+				SetVariable/Z sicsstatus_tab0 win=SICScmdPanel, valueBackColor=(65280,0,0)
+				SetVariable/Z statemonstatus win=instrumentlayout, valueBackColor=(65280, 0, 0)
+				
 				break
 			case "FINISH":		//this is listening to the statemon finishing an axis
 				INDstatemonclear(str2)
+				if(!dimsize(statemon, 0))
+					SetVariable/Z statemonstatus win=instrumentlayout, valueBackColor=(0,65280,0)
+				endif
 				
 				//if its an motor axis we want to change the colour in the axeslist
 				Findvalue/Text=str2/TXOP=4 axeslist

@@ -378,7 +378,7 @@ Function/wave autoslit(angle, footprint, resolution)
 		redimension/n=4 slits
 		s1 = s1 * 1.3 + 4
 		s4 = s4 * 1.3 + 4
-		print "autoslit calculates: vslits(", s1, ",", s2, ",", s3, ",", s4,")"
+		print "autoslit calculates: vslits(", s1, ",", s2, ",", s3, ",", s4,"), angle", angle, ", footprint", footprint,", dtheta/theta:", resolution
 		slits = {s1, s2, s3, s4}
 		return slits
 	else
@@ -391,7 +391,7 @@ Function LIQss3vg(requested, angle)
 	//work out the actual slit opening for ss3vg to account for parallax
 	//error for free liquids.  4.5 is roughly the distance between the slit blades
 	variable angrad = angle * pi /180
-	return (requested - 4.5 * tan(angrad)) / cos(angrad)
+	return  requested / cos(angrad) - 4.5 * tan(angrad)
 End
 
 Function attenuate(pos)
@@ -1582,41 +1582,51 @@ Function Instrumentlayout_panel()
 	SetVariable dy_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable dy_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/detector/longitudinal_translation")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable CNStemp,pos={521,105},size={130,16},title="CNS temp", win=instrumentlayout
+	SetVariable CNStemp,pos={521,95},size={130,16},title="CNS temp", win=instrumentlayout
 	SetVariable CNStemp,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable CNStemp,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/cns_inlet_temp")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable ReactorPower,pos={521,83},size={130,16},title="Reactor power", win=instrumentlayout
+	SetVariable ReactorPower,pos={521,73},size={130,16},title="Reactor power", win=instrumentlayout
 	SetVariable ReactorPower,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable ReactorPower,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/power")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable secondaryshutter,pos={521,127},size={130,16},title="secondary shutter", win=instrumentlayout
+	SetVariable secondaryshutter,pos={521,117},size={130,16},title="secondary shutter", win=instrumentlayout
 	SetVariable secondaryshutter,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable secondaryshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/status/secondary")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable tertiaryshutter,pos={521,149},size={130,16},title="tertiary shutter", win=instrumentlayout
+	SetVariable tertiaryshutter,pos={521,139},size={130,16},title="tertiary shutter", win=instrumentlayout
 	SetVariable tertiaryshutter,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable tertiaryshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/status/tertiary")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable mode,pos={521,172},size={130,16},title="mode", win=instrumentlayout
+	SetVariable mode,pos={521,162},size={130,16},title="mode", win=instrumentlayout
 	SetVariable mode,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable mode,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/mode")][1],noedit= 1, win=instrumentlayout
 
-	SetVariable omega,pos={521,192},size={130,16},title="omega", win=instrumentlayout
+	SetVariable omega,pos={521,182},size={130,16},title="omega", win=instrumentlayout
 	SetVariable omega,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable omega,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/omega")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable twotheta,pos={521,213},size={130,16},title="two theta", win=instrumentlayout
+	SetVariable twotheta,pos={521,203},size={130,16},title="two theta", win=instrumentlayout
 	SetVariable twotheta,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
 	SetVariable twotheta,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/twotheta")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable sicsstatus,pos={468,233},size={200,16},title="SICS status", win=instrumentlayout
+	SetVariable sicsstatus,pos={468,223},size={200,16},title="SICS status", win=instrumentlayout
 	SetVariable sicsstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
 	SetVariable sicsstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:sicsstatus,noedit= 1, win=instrumentlayout
 	
-	SetVariable runscanstatus title="runscan status",valueBackColor=(0,52224,0), pos={468,252}, win=instrumentlayout
+	SetVariable runscanstatus title="runscan status",valueBackColor=(0,52224,0), pos={468,242}, win=instrumentlayout
 	SetVariable runscanstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout, size = {200,16}
 	SetVariable runscanstatus,limits={-inf,inf,0},value=  root:packages:platypus:SICS:hipadaba_paths[gethipapos("/commands/scan/runscan/feedback/status")][1],noedit= 1, win=instrumentlayout
+	
+	SetVariable statemonstatus,pos={468,260},size={200,16},title="statemon"
+	SetVariable statemonstatus,labelBack=(65535,65535,65535),fSize=8
+	SetVariable statemonstatus,valueBackColor=(65535,65535,65535), limits={-inf,inf,0}
+	SetVariable statemonstatus,value=root:packages:platypus:SICS:statemon[0],noedit= 1
+		
+	SetVariable attenuatorstatus,pos={468,280},size={200,16},title="attenuator position"
+	SetVariable attenuatorstatus,labelBack=(65535,65535,65535),fSize=8
+	SetVariable attenuatorstatus,valueBackColor=(65535,65535,65535)
+	SetVariable attenuatorstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/attenuator/beam_attenuator")][1],noedit= 1
 
 //Lakeshore
 	SetVariable lakeshore,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
@@ -1634,11 +1644,6 @@ Function Instrumentlayout_panel()
 //	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout	
 //	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/setpoint")][1],noedit= 1, win=instrumentlayout
 //	SetVariable julaboset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
-	
-	SetVariable attenuatorstatus,pos={468,273},size={200,16},title="attenuator position"
-	SetVariable attenuatorstatus,labelBack=(65535,65535,65535),fSize=8
-	SetVariable attenuatorstatus,valueBackColor=(65535,65535,65535)
-	SetVariable attenuatorstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/attenuator/beam_attenuator")][1],noedit= 1
 
 	DrawRect/w=instrumentlayout 219,322,311,357
 	DrawRect/w=instrumentlayout 180,364,213,439
@@ -2482,10 +2487,12 @@ Function autosetangles_buttonproc(s): buttonControl
 	switch(s.eventcode)
 		case 2:
 			variable footprint = 50, resolution = 0.033
+			string freeliquid = ""
 			variable ii, angle
 			prompt footprint "footprint of sample (mm)"
 			prompt resolution, "enter dtheta/theta resolution"
-			doprompt "Sample settings", footprint, resolution
+			prompt freeliquid, "Is this a free liquid setup?", popup "No;Yes"
+			doprompt "Sample settings", footprint, resolution, freeliquid
 			if(V_flag)
 				return 0
 			endif
@@ -2498,6 +2505,11 @@ Function autosetangles_buttonproc(s): buttonControl
 				endif
 				if(slits[0] > 20)
 					slits[0] = 22
+				endif
+				//have to correct for free liquids parallax error in slit3
+				if (stringmatch(freeliquid, "Yes"))
+					variable newss3vg = liqss3vg(slits[2], angle)
+					slits[2] = newss3vg
 				endif
 				angler_listwave[ii][2] = num2str(slits[0])
 				angler_listwave[ii][3] = num2str(slits[1])
@@ -2533,8 +2545,8 @@ Function anglers_panel() :panel
        ListBox angle_list,listWave=root:packages:platypus:SICS:angler_listwave, win=angler_panel
        ListBox angle_list,selWave=root:packages:platypus:SICS:angler_selwave, win=angler_panel
        ListBox angle_list,mode= 5,editStyle= 1, win=angler_panel
-       Button angle_button, title="set angles", pos={221,6},size={170,22}, win=angler_panel
-       Button autoset_angle_button, title="autoset angles", pos={401,6},size={170,22}, win=angler_panel, proc = autosetangles_buttonproc
+       Button angle_button, title="set angles", pos={219,6},size={135,22}, win=angler_panel
+       Button autoset_angle_button, title="autoset angles", pos={365, 6},size={135,22}, win=angler_panel, proc = autosetangles_buttonproc
        SetVariable numangles,pos={9,8},size={200,15},proc=numangles_setVarProc,title="Number of angles", win=angler_panel
        SetVariable numangles,limits={1,10,1},value= _NUM:0, win=angler_panel
 End
