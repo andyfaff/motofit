@@ -33,6 +33,7 @@
 //A free demo version of IGOR is available from WaveMetrics Inc. These experiments and procedures were created using IGOR Pro 5.04
 //The routines have not been tested on earlier versions of IGOR.
 
+static constant XRR_BEAMWIDTH_SD = 0.019449 //mm
 
 static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 	string ref_fname, bkg1, bkg2
@@ -152,7 +153,6 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 		ratio = str2num(xmlstrfmxpath(fileID,"//xrdml:ratioKAlpha2KAlpha1/text()",namespace," "))
 		CuKa = (CuKa1+ratio*CuKa2)/(1+ratio)
 
-		//correction taken from Gibaud et al., Acta Crystallographica, A49, 642-648
 		if(paramisdefault(footprint))
 			doalert 2,"Perform a footprint correction (assumes 1/32 slit + no knife edge)?"
 			switch(V_Flag)
@@ -178,12 +178,11 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 			if(footprint <0 || footprint>100)
 				print "ERROR footprint value is crazy (reduceXpertPro)"
 			endif	
-			variable correctionfactor
+			variable probability
 			make/d/o w_gausscoefs = {1, 0, T_r/2}
 			for(ii=0 ; ii<numpnts(qq); ii+=1)
-				correctionfactor = erf(footprint * sin(qq[ii] * Pi / 180) / (2 * t_m))
-				RR[ii] /= correctionfactor
-				dR[ii] /= correctionfactor
+				RR[] /= footprint_correction(qq[p], XRR_BEAMWIDTH_SD, footprint)
+				dR[] /= footprint_correction(qq[p], XRR_BEAMWIDTH_SD, footprint)
 			endfor
 		endif
 		
@@ -232,17 +231,17 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 				RR /= scalefactor
 				dR /= scalefactor
 				allGood = 1
-//				Setaxis/A
-//				Doupdate
-//				//you can continually adjust the lvel until you are happy with it.
-//				Doalert 1,"Is it good?"
-//				if(V_flag==1)
-//					allgood=1
-//				endif
-//				if(V_flag==3)
-//					Dowindow/K Setcriticaledge
-//					abort
-//				Endif
+				//				Setaxis/A
+				//				Doupdate
+				//				//you can continually adjust the lvel until you are happy with it.
+				//				Doalert 1,"Is it good?"
+				//				if(V_flag==1)
+				//					allgood=1
+				//				endif
+				//				if(V_flag==3)
+				//					Dowindow/K Setcriticaledge
+				//					abort
+				//				Endif
 			while(allgood==0)
 			Dowindow/K Setcriticaledge
 			print "Scalefactor for ", base, " is ", scalefactor
@@ -280,31 +279,19 @@ static Function myga(xx)
 	variable xx
 	Wave W_gausscoefs
 	return W_gausscoefs[0]*exp(-0.5*((xx-W_gausscoefs[1])/W_gausscoefs[2])^2)
-
 End
 
-static Function analyseInstrument(w, x):fitfunc
-	Wave w
-	variable x
-	//w[0] = bkg        a background
-	//w[1] = I0	    the peak intensity
-	//w[2] = L            length of the sample in mm
-	//w[3] = T            height of the beam
-	//w[4] = td           height of the detector
-	//w[5] = alpha offset
+Function footprint_correction(angle, beamwidth_sd, sample_length)
+	variable angle, beamwidth_sd, sample_length
+	//angle - angle of incidence in degrees
+	//beamwidth_sd - sd of a gaussian distributed beam
+	//sample_length - length of sample
+	//you must use the same units for beamwidth_sd and sample_length
 
-	variable result, ts, numerator, denominator,alpha
-	make/n=3/o/d W_gausscoefs={1, 0, w[3]/2}
-	
-	alpha = x - w[5]
-	
-	ts = 0.5 * w[2] * abs(sin(alpha * Pi/180))
-	numerator = integrate1D(myga, 0, ts)
-	denominator = integrate1D(myga, 0, w[4]/2)
-
-	result = w[0] + (w[1]/2) * (1-(numerator/denominator))
-
-	return result
+	variable sample_height, probability
+	sample_height = sample_length * sin(angle * pi / 180.)
+	probability = 2 * (statsnormalcdf(sample_height / 2, 0, beamwidth_sd) - 0.5)
+	return probability
 End
 
 static Function UserCursorAdjust(grfName)
