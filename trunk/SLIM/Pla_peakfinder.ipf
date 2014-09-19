@@ -195,14 +195,14 @@ Function/wave Pla_halfheight(yy, xx, ee)
 	//w[3] = sd of decay
 	
 	//To get the absolute plateau value calculate w[0] + w[1]
-	//To get half height between plateau and background calculate w[0] + 0.5 * w[1]
+	//To get half height between plateau and background calculate w[0] + 0.5 * w[1]	
 	Wave yy, xx, ee
 
 	make/n=4/d/free coefs
 	make/n=(4, 2)/d/free limits
 
 	Wavestats/q yy
-	limits[0][0] = V_min
+	limits[0][0] = 0
 	limits[0][1] = V_max
 	limits[1][0] = V_min
 	limits[1][0] = V_max
@@ -216,6 +216,24 @@ Function/wave Pla_halfheight(yy, xx, ee)
 
 	gencurvefit/I=1/W=ee/Q/N/K={200, 10, 0.7, 0.5}/x=xx/DITH= {0.5, 2}/tol=0.03 Pla_halfheight_func, yy, coefs,"0000",limits
 	return coefs
+End
+
+Function Pla_heightscan()
+	//functionality purely for FIZZY operation of Platypus
+	//calculate the half height location of a half height scan
+	//places the calculated value in root:V_halfheightloc
+	Wave position = root:packages:platypus:data:scan:position
+	Wave counts = root:packages:platypus:data:scan:counts
+
+	make/n=(numpnts(position))/free/d yy, ee
+	yy[] = counts[p][0]
+	ee[] = sqrt(yy[p])
+	Wave coefs = Pla_halfheight(yy, position, ee)
+
+	print "Half Height Loc: ", coefs[2]
+	variable/g root:V_halfheightloc
+	Nvar V_halfheightloc = root:V_halfheightloc
+	V_halfheightloc = coefs[2]
 End
 
 
