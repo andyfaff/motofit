@@ -177,5 +177,45 @@ Threadsafe Function Pla_peakCentroid(xwave,ywave,[x0,x1])
 	return retval
 End
 
+Function Pla_halfheight_func(w, yy, xx):fitfunc
+	Wave w, yy, xx
+	//w[0] = background value
+	//w[1] = plateau value (in absence of background)
+	//w[2] = location of point of inflection
+	//w[3] = sd of decay
+	yy = w[1] * 0.5 * erfc((xx - w[2])/w[3]) + w[0]
+End
+
+Function/wave Pla_halfheight(yy, xx, ee)
+	//fit an error function scan ("halfheight scan")
+	//The values are returned in a wave
+	//w[0] - the background value
+	//w[1] - the plateau value (in absence of background)
+	//w[2] = location of point of inflection
+	//w[3] = sd of decay
+	
+	//To get the absolute plateau value calculate w[0] + w[1]
+	//To get half height between plateau and background calculate w[0] + 0.5 * w[1]
+	Wave yy, xx, ee
+
+	make/n=4/d/free coefs
+	make/n=(4, 2)/d/free limits
+
+	Wavestats/q yy
+	limits[0][0] = V_min
+	limits[0][1] = V_max
+	limits[1][0] = V_min
+	limits[1][0] = V_max
+
+	Wavestats/q xx
+	limits[2][0] = V_min
+	limits[2][1] = V_max
+
+	limits[3][0] = 0.0000000000001
+	limits[3][1] = V_max
+
+	gencurvefit/I=1/W=ee/Q/N/K={200, 10, 0.7, 0.5}/x=xx/DITH= {0.5, 2}/tol=0.03 Pla_halfheight_func, yy, coefs,"0000",limits
+	return coefs
+End
 
 
