@@ -39,14 +39,17 @@ Function/c findthecentre(position,tempY,tempE)
 	return centre
 End
 
-Function fpxStop()
+Function fpxStop([killtask])
+	variable killtask
 	//stop the fpx scan running
 	CtrlNamedBackground  scanTask status
 	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
 	if(numberbykey("RUN",S_info))	//if the scan is running, stop it, and finish
-		CtrlNamedBackground  scanTask kill = 1
 		sockitsendmsg SOCK_interupt, "INT1712 2\n"
-		finishscan(1)
+		if(killtask)
+			CtrlNamedBackground  scanTask kill = 1
+			finishscan(1)
+		endif
 		sics_cmd_interest("statemon stop FPX")
 	endif
 End

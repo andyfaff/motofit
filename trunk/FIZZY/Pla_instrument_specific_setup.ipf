@@ -442,7 +442,7 @@ Function UserDefinedEstopBehaviour()
 	//	sockitsendmsg SOCK_interest,"run ss1vg 0\nrun ss2vg 0\nrun ss3vg 0\nrun ss4vg 0\n"
 	//	sockitsendmsg SOCK_interest,"run bz 250\n"
 	print "performing Estop - stopping motors, stopping acquisitions, closing slits, putting attenuator in"
-	fpxstop()
+	fpxstop(killtask = 1)
 	batchScanStop()
 End
 
@@ -2431,8 +2431,7 @@ Function anglerlist(numangles)
        setdimlabel 1, 2, ss1vg, angler_listwave
        setdimlabel 1, 3, ss2vg, angler_listwave
        setdimlabel 1, 4, ss3vg, angler_listwave
-       setdimlabel 1, 5, ss4vg, angler_listwave
-       
+
        setdatafolder $cDF
 End
 
