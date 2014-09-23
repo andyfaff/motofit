@@ -52,13 +52,7 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 	Newdatafolder /o/s root:packages:Xpert
 
 	try
-		//xmlopenfile has to take a UNIX path
-		if(cmpstr(igorinfo(2),"Macintosh")==0)
-			base = parsefilepath(3, ref_fname, ":", 0, 0)
-		else
-			base = parsefilepath(3, ref_fname, "\\", 0, 0)
-		endif
-		
+		base = parsefilepath(3, ref_fname, ":", 0, 0)
 		base = cleanupname(base, 0)
 		
 		directory = ParseFilePath(1, ref_fname, ":", 1, 0)
@@ -178,12 +172,10 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 			if(footprint <0 || footprint>100)
 				print "ERROR footprint value is crazy (reduceXpertPro)"
 			endif	
-			variable probability
-			make/d/o w_gausscoefs = {1, 0, T_r/2}
-			for(ii=0 ; ii<numpnts(qq); ii+=1)
-				RR[] /= footprint_correction(qq[p], XRR_BEAMWIDTH_SD, footprint)
-				dR[] /= footprint_correction(qq[p], XRR_BEAMWIDTH_SD, footprint)
-			endfor
+			make/n=(numpnts(qq))/d/free probability
+			probability = footprint_correction(qq[p], XRR_BEAMWIDTH_SD, footprint)
+			RR[] /= probability[p]
+			dR[] /= probability[p]
 		endif
 		
 		//make the dq wave
@@ -264,7 +256,7 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 	endif
 	
 	if(!err)
-		open saveID as directory + base + ".txt"
+		open saveID as directory + base + ".dat"
 		wfprintf saveID, "%g \t %g \t %g \t %g \n", qq, rr, dr, dq	 //this prints the wave to file.
 		close saveID	
 		Wave/z dummyres
@@ -336,36 +328,6 @@ static Function UserCursorAdjust_ContButtonProc(B_Struct) : ButtonControl
 	if(B_Struct.eventcode == 2)
 		DoWindow/K tmp_PauseforCursor		// Kill self
 	endif
-End
-
-static Function SaveXraydata(tempy)
-	String tempy
-	string fname
-
-	String w0,w1,w2,w3
-	w0 = CleanupName((tempy + "_q"),0)
-	w1 = CleanupName((tempy + "_R"),0)
-	w2 = CleanupName((tempy + "_e"),0)
-	w3 = CleanupName((tempy + "_dQ"),0)
-
-	//the idea is that you can print to a wave, even if you don't have the full version of IGOR.
-	//this gets the filename for writing. but doesn't actually open it.
-	fname=DoSaveFileDialog_Xrayredn(tempy)
-	if(strlen(fname)==0)
-		ABORT
-	endif
-	variable refnum
-	open refnum as fname
-
-	wave dQ=$w3
-
-	if(waveexists(dQ))
-		wfprintf refnum, "%g \t %g \t %g \t %g \n",$w0,$w1,$w2,$w3	 //this prints the wave to file.
-	else
-		wfprintf refnum, "%g \t %g \t %g \n",$w0,$w1,$w2	//this prints the coefwave to file.
-	endif
-
-	close refnum
 End
 
 static Function/S DoSaveFileDialog_Xrayredn(name)

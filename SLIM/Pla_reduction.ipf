@@ -2499,11 +2499,7 @@ Function reduceManyXrayFiles()
 			aFile = Stringfromlist(ii, theFiles, "\r")
 			print "reducing: ", aFile
 			
-			if(cmpstr(igorinfo(2),"Macintosh")==0)
-				base = parsefilepath(3, aFile, ":", 0, 0)
-			else
-				base = parsefilepath(3, aFile, "\\", 0, 0)
-			endif	
+			base = parsefilepath(3, aFile, ":", 0, 0)
 			base = cleanupname(base, 0)
 			
 			do
@@ -2514,13 +2510,7 @@ Function reduceManyXrayFiles()
 			while(itemsinlist(S_filename)>2)
 		
 			//if there is no problem reducing it, then try to save it
-			if(!Pla_Xrayreduction#reduceXpertPro(afile, bkg1=stringfromlist(0, S_filename, "\r"), bkg2 = stringfromlist(1, S_filename, "\r")))
-				Pla_Xrayreduction#SaveXraydata(base)		
-			else
-				//someone somewhere aborted the whole thing
-				print "ERROR aborted in (reduceManyXrayFiles)"
-				abort
-			endif
+			Pla_Xrayreduction#reduceXpertPro(afile, bkg1=stringfromlist(0, S_filename, "\r"), bkg2 = stringfromlist(1, S_filename, "\r"))
 		endfor
 	catch
 		err = 1
