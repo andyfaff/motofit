@@ -2844,10 +2844,10 @@ static Function moto_GUI_button(B_Struct): buttoncontrol
 			break
 		case "dofit_tab0":
 			//start a report notebook for the fitting
-			string notebooklist = Winlist("Reflectivityfittingreport",";","Win:16")
-			if(itemsinlist(notebooklist)==0)
-				Moto_initialiseReportNotebook()
-			endif
+//			string notebooklist = Winlist("Reflectivityfittingreport",";","Win:16")
+//			if(itemsinlist(notebooklist)==0)
+//				Moto_initialiseReportNotebook()
+//			endif
 			
 			Moto_do_a_fit()	
 					
