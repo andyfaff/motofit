@@ -13,7 +13,7 @@ Function parabola(w, yy, xx):fitfunc
 	//Iain E. Dunlop, Robert K. Thomas, Simon Titmus, Victoria Osborne, Steve Edmondson, Wilhelm T.S. Huck, and Jacob Klein
 	//dx.doi.org/10.1021/la204655h | Langmuir 2012, 28, 3187?3193
 
-	//THERE ARE 19 parameters in total.
+	//THERE ARE 18 parameters in total.
 
 	//w[0] = reflectivity SCALE factor
 	//w[1] = SLD fronting (e.g. Si)
@@ -36,8 +36,8 @@ Function parabola(w, yy, xx):fitfunc
 
 	//w[14] = \Gamma, adsorbed amount
 	//w[15] = h
-	//w[17] = \sigma_{b}
-	//w[18] = I_{\sigma} [0, 1]
+	//w[16] = \sigma_{b}
+	//w[17] = I_{\sigma} [0, 1]
 
 	variable nlayers = NUMSLICES + 3 //NUMSLICES, SiO2, surface1, surface2
 	variable phi, prefactor, h, sigma_n, sigma_b, I_sigma, ii, distance
@@ -72,8 +72,8 @@ Function parabola(w, yy, xx):fitfunc
 	W_forreflectivity[17] = w[13]
 
 	h = w[15]
-	I_sigma = w[18]
-	sigma_b = w[17]
+	I_sigma = w[17]
+	sigma_b = w[16]
 	prefactor = 3 * w[14] / 2 / (h^3)
 
 	for(ii = 0 ; ii < NUMSLICES ; ii += 1)
