@@ -534,9 +534,18 @@ Function/s reduceASingleFile(inputPathStr, outputPathStr, scalefactor,runfilenam
 			writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, "", user[0], samplename[0], angle0, reductionCmd)
 			
 			//calculate the actual PDF for the resolution function, for each point
-			assignActualKernel(angle0DF, directDF, W_q,  ii)
-			Wave resolutionkernel = $(angle0DF + ":resolutionkernel")
-			
+			if(paramisdefault(timeslices))
+				//you are not event streaming, so there will be numspectra entries for slit info (etc) in the HDF file
+				assignActualKernel(angle0DF, directDF, W_q,  ii)
+				Wave resolutionkernel = $(angle0DF + ":resolutionkernel")
+			else
+				//there aren't numspectra entries in the HDF file for slit info (etc), should give assignactualkernel
+				//the actual scan point being used.  In the absence of using the scan point range (faff to calculate it),
+				//just use the first scan point
+				assignActualKernel(angle0DF, directDF, W_q,  0)
+				Wave resolutionkernel = $(angle0DF + ":resolutionkernel")			
+			endif
+				
 			//write an HDF file for a single file
 			fname = cutfilename(angle0)
 			if(dontoverwrite)

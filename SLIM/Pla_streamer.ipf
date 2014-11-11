@@ -37,11 +37,12 @@ Function Pla_openStreamer(folderStr, [dataset])
 	endif	
 	
 	//load in the entire file
-	binaryFileStr = folderStr + ":Dataset_" + num2istr(dataset) + ":EOS.bin"
+	binaryFileStr = folderStr + ":DATASET_" + num2istr(dataset) + ":EOS.bin"
 	//print binaryFileStr
 	
 	//try opening it first with the neutron unpacker
 	#if exists("neutronunpacker")
+		print binaryfileStr
 		neutronunpacker binaryFileStr
 	#else
 		setdatafolder cDF
