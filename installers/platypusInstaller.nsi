@@ -35,9 +35,9 @@ Section "platypus" Section1
 
 	; Set Section properties
 	SetOverwrite on
-	
+
 ReadRegStr $1 HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Igor.exe" "Path"
-StrLen $0 $1 
+StrLen $0 $1
 ${If} $0 = 0
 Abort "You don't appear to have IGOR installed"
 ${EndIf}
@@ -48,57 +48,57 @@ ${EndIf}
 
 	SetOutPath "$INSTDIR\User Procedures\motofit\"
 	File "..\motofit\*"
-	
+
 	SetOutPath "$INSTDIR\User Procedures\motofit\platypus"
 	File "..\SLIM\*"
 
 	SetOutPath "$INSTDIR\Igor Procedures"
 	File "..\Pla_loadpackage.ipf"
-	
+
 	;INSTALL ALL THE XOPs
 	SetOutPath "$INSTDIR\Igor Extensions"
-	
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\Abeles\trunk\win\Abeles.xop"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\Abeles\trunk\win\Abeles Help.ihf"
 
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\win\GenCurveFit.xop"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\ExampleExperiment.pxp"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\GenCurveFit Help.ihf"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\ReleaseNotes.txt"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\Structurefitexample.pxp"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\license.txt"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\Abeles\trunk\win\Abeles.xop"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\Abeles\trunk\win\Abeles Help.ihf"
 
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\easyHttp\trunk\win\easyHttp.xop"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\easyHttp\trunk\win\easyHttp Help.ihf"
-	
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\multiopenfiles\trunk\win\multiopenfiles.xop"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\multiopenfiles\trunk\win\multiopenfiles Help.ihf"
-		
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\SOCKIT\trunk\win\SOCKIT.xop"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\SOCKIT\trunk\win\SOCKIT Help.ihf"
-	
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\XMLutils\trunk\win\XMLutils.xop"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\XMLutils\trunk\win\XMLutils Help.ihf"
-	
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\neutronunpacker\trunk\win\neutronunpacker.xop"
-	
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\ZIP\trunk\win\ZIP.xop"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\ZIP\trunk\win\ZIP Help.ihf"
-	
+	File "..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\win\GenCurveFit.xop"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\ExampleExperiment.pxp"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\GenCurveFit Help.ihf"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\ReleaseNotes.txt"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\Structurefitexample.pxp"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\MultiDimensionalGenCurvefit\trunk\extra\license.txt"
+
+	File "..\..\XOP Toolkit 6\IgorXOPs6\easyHttp\trunk\win\easyHttp.xop"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\easyHttp\trunk\win\easyHttp Help.ihf"
+
+	File "..\..\XOP Toolkit 6\IgorXOPs6\multiopenfiles\trunk\win\multiopenfiles.xop"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\multiopenfiles\trunk\win\multiopenfiles Help.ihf"
+
+	File "..\..\XOP Toolkit 6\IgorXOPs6\SOCKIT\trunk\win\SOCKIT.xop"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\SOCKIT\trunk\win\SOCKIT Help.ihf"
+
+	File "..\..\XOP Toolkit 6\IgorXOPs6\XMLutils\trunk\win\XMLutils.xop"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\XMLutils\trunk\win\XMLutils Help.ihf"
+
+	File "..\..\XOP Toolkit 6\IgorXOPs6\neutronunpacker\trunk\win\neutronunpacker.xop"
+
+	File "..\..\XOP Toolkit 6\IgorXOPs6\ZIP\trunk\win\ZIP.xop"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\ZIP\trunk\win\ZIP Help.ihf"
+
     CreateShortCut "Shortcut to HDF5.lnk" "$1\More Extensions\File Loaders\HDF5.xop"
 
 	ReadRegStr $1 HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Igor.exe" "Path"
-	
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\pthreads_win\lib\pthreadVC2.dll"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\pthreads_win\lib\COPYING.txt"
-	File "..\..\..\XOP Toolkit 6\IgorXOPs6\pthreads_win\lib\COPYING.lib"
 
-	
+	File "..\..\XOP Toolkit 6\IgorXOPs6\pthreads_win\lib\pthreadVC2.dll"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\pthreads_win\lib\COPYING.txt"
+	File "..\..\XOP Toolkit 6\IgorXOPs6\pthreads_win\lib\COPYING.lib"
+
+
 SectionEnd
 
 Function .onInit
  ReadRegStr $1 HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Igor.exe" "Path"
-StrLen $0 $1 
+StrLen $0 $1
 ${If} $0 = 0
 Abort "You don't appear to have IGOR installed"
 ${EndIf}
