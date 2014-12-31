@@ -1331,7 +1331,16 @@ Function/t reducepol(inputPathStr, outputPathStr, scalefactorI00, scalefactorI01
 					writeSpecRefXML1D(outputPathStr, fname, qq, RR, dR, dQ, "", user[0], samplename[0], theAngle, reductionCmd)
 					fnamepolcorr = fname + "PolCorr"
 					writeSpecRefXML1D(outputPathStr, fnamepolcorr, qq, RRPolCorr, dRPolCorr, dQ, "", user[0], samplename[0], theAngle, reductionCmd)
-						
+					
+					//write an HDF file for a single file
+					fname = cutfilename(theAngle)
+					if(dontoverwrite)
+						fname = uniqueFileName(outputPathStr, fname, ".h5")
+					endif
+					fnamepolcorr = fname + "PolCorr"
+					writeSpecRefH5_1D(outputPathStr, fname, qq, RR, dR, dQ)
+					writeSpecRefH5_1D(outputPathStr, fnamepolcorr, qq, RRPolCorr, dRPolCorr, dQ)
+
 					//write a 2D XMLfile for the offspecular data
 					if(saveoffspec)
 						Multithread qz2D[][] = M_qz[p][q][aa]
@@ -1960,22 +1969,12 @@ Function SLIMPOL_buttonprocpol(ba) : ButtonControl //SLIM_buttonproc
 					if(V_Flag!=0)
 						return 0
 					endif
-
-					string pathSep
-					strswitch(UpperStr(IgorInfo(2)))
-						case "MACINTOSH":
-							pathSep = ":"
-							break
-						case "WINDOWS":
-							pathSep = "\\"
-							break
-					endswitch
-										
-					thePathstring = Parsefilepath(1, Stringfromlist(0, S_filename, "\r"), pathSep, 1, 0)					
+		
+					thePathstring = S_path			
 					filenames = ""
 
 					for(ii=0 ; ii<itemsinlist(S_filename, "\r") ; ii+=1)
-						filenames += ParseFilePath(0, stringfromlist(ii, S_filename, "\r"), pathSep, 1, 0)+";"
+						filenames += ParseFilePath(0, stringfromlist(ii, S_filename, "\r"), ":", 1, 0)+";"
 					endfor
 					
 					if(itemsinlist(filenames, "\r")==0)

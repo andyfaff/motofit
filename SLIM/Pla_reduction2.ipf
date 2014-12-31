@@ -708,6 +708,7 @@ Function correct_for_gravity(data, dataSD, lambda, trajectory, lowLambda, highLa
 		W_mask = W_mask > highLambda ? NaN : W_mask[p]
 		W_mask = W_mask < 2 ? NaN : W_mask[p]
 		W_mask = W_mask > 18 ? NaN : W_mask[p]
+		W_mask = numtype(M_centrewavelength) ? NaN : W_mask[p]
 
 		//if the centre isn't within a reasonable range of detector pixels ignore it.
 		make/n=(3, dimsize(data, 2)) /o/d M_gravCorrCoefs = 0
