@@ -32,6 +32,8 @@ end
 static Function INDstatemonclear(item)
 	string item
 	Wave/t statemon = root:packages:platypus:SICS:statemon
+	item = replacestring(" ", item, "")
+	
 	for(;;)
 		findvalue/TEXT=item/TXOP=4 statemon
 		if(V_Value == -1)
@@ -113,7 +115,7 @@ Function interestProcessor(w,x)
 				endif
 				
 				redimension/n=(numpnts(statemon)+1) statemon
-				statemon[numpnts(statemon) - 1] = str2
+				statemon[numpnts(statemon) - 1] = replacestring(" ", str2, "")
 				
 				//if its a motor axis we want to change the colour in the panel.
 				Findvalue/Text=str2/TXOP=4 axeslist

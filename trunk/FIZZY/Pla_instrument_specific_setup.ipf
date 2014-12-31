@@ -30,7 +30,7 @@
 	StrConstant PATH_TO_DATA = "\\\\storage\\nbi_experiment_data:platypus:data:"
 	StrConstant PATH_TO_DATA2 = "\\\\Filer\\experiments:platypus:data:"
 	StrConstant PATH_TO_HSDATA = "\\\\storage\\nbi_experiment_hsdata:platypus:hsdata:"
-S	strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
+	strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
 
 	
 	Constant ChopperN_delay = 2.491		// a time delay between the first chopper pulse and chopper N
@@ -359,16 +359,19 @@ Function/wave autoslit(angle, footprint, resolution)
 	variable angle, footprint, resolution
 	string result = ""
 	variable s1, s2, s3, s4, L12, LS4, L2S, LpreS1
+	string request, template
 	//instrument distances
 	L12 = str2num(gethipaval("/instrument/parameters/slit3_distance")) - str2num(gethipaval("/instrument/parameters/slit2_distance"))
 	L2S = str2num(gethipaval("/instrument/parameters/sample_distance")) - str2num(gethipaval("/instrument/parameters/slit3_distance"))
 	LS4 = str2num(gethipaval("/instrument/parameters/slit4_distance")) - str2num(gethipaval("/instrument/parameters/sample_distance"))
 	LpreS1 = str2num(gethipaval("/instrument/parameters/slit2_distance")) - str2num(gethipaval("/instrument/parameters/slit1_distance"))
-	make/t/free setup = {{"a1", "footprint", "resolution", "L12", "L2S", "LS4", "LpreS1"}, {num2str(angle), num2str(footprint), num2str(resolution), num2str(L12), num2str(L2S), num2str(LS4), num2str(LpreS1)}}
-	
+
+	template = "a1=%f&footprint=%f&resolution=%f&L12=%f&L2S=%f&LS4=%f&LpreS1=%f"
+	sprintf request, template, angle, footprint, resolution, L12, L2S, LS4, LpreS1
+
 	make/n=0/free/d slits
-	
-	easyHttp/TIME=5/form=setup/prox "refcalc.appspot.com/singleslit", result
+	easyHttp/TIME=5/prox/post=request "http://refcalc.appspot.com/singleslit", result
+
 	if(V_flag)
 		return slits
 	endif
@@ -385,6 +388,7 @@ Function/wave autoslit(angle, footprint, resolution)
 		return slits
 	endif
 End
+
 
 Function LIQss3vg(requested, angle)
 	variable requested, angle
@@ -1584,7 +1588,7 @@ Function Instrumentlayout_panel()
 	
 	SetVariable CNStemp,pos={521,95},size={130,16},title="CNS temp", win=instrumentlayout
 	SetVariable CNStemp,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
-	SetVariable CNStemp,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/cns_inlet_temp")][1],noedit= 1, win=instrumentlayout
+	SetVariable CNStemp,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/cns_out")][1],noedit= 1, win=instrumentlayout
 	
 	SetVariable ReactorPower,pos={521,73},size={130,16},title="Reactor power", win=instrumentlayout
 	SetVariable ReactorPower,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
@@ -1815,7 +1819,7 @@ Function createHTML()
 		
 		text +="<TR><TD>datafilename</TD><TD>"+ gethipaval("/experiment/file_name") + "</TD></TR>\r"
 		text +="<TR><TD>Reactor Power (MW)</TD><TD>"+ gethipaval("/instrument/source/power") + "</TD></TR>\r"	
-		text +="<TR><TD>CNS temp (K)</TD><TD>"+ gethipaval("/instrument/source/cns_inlet_temp") +"</TD></TR>\r"
+		text +="<TR><TD>CNS temp (K)</TD><TD>"+ gethipaval("/instrument/source/cns_out") +"</TD></TR>\r"
 		text +="<TR><TD>Secondary Shutter</TD><TD>"+ UpperStr(gethipaval("/instrument/status/secondary")) + "</TD></TR>\r"
 		text +="<TR><TD>Tertiary Shutter</TD><TD>"+ UpperStr(gethipaval("/instrument/status/tertiary")) + "</TD></TR>\r"
 		
@@ -2004,7 +2008,7 @@ Function/t createFizzyCommand(type)
 	string cmd=""
 
 	string motor="",motors="", samplename="", sicscmd="",mode
-	variable position=0, ii, timer = 0, omega=0.5, twotheta=1, s1=0,s2=0,s3=0,s4=0
+	variable position=0, ii, timer = 0, omega=0.5, twotheta=1, s1=0,s2=0,s3=0,s4=0, s5, s6
 
 	motors = motorlist()
 	
@@ -2176,6 +2180,32 @@ Function/t createFizzyCommand(type)
 				return ""
 			endif
 			sprintf cmd, "mvp(%g)",s1
+			break
+		case "hplc":
+			s1 = 100
+			prompt s1, "A"
+			prompt s2, "B"
+			prompt s3, "C"
+			prompt s4, "D"
+			s5 = 1
+			s6 = 5
+			prompt s5, "rate"
+			prompt s6, "vol"
+			Doprompt "Ratios for HPLC", s1, s2, s3, s4, s5, s6
+			if(V_Flag)
+				return ""
+			endif
+			if(s5 > 9.999 || s5 < 0)
+				abort "Rate should be 0<rate<9.999"
+			ENdif
+			if(s6 < 0 || s6>100)
+				abort "Rate should be 0<vol<100"
+			endif
+			if(s1 + s2 + s3 + s4 != 100 || s1< 0 || s2<0 || s3<0 || s4<0)
+				abort "All pump ratios must be integer, be between 0 and 100 and all add up to 100"
+			endif
+						
+			sprintf cmd, "hplc(%d, %d, %d, %d, rate=%1.3f, vol = %10.2f)", s1, s2, s3, s4, s5, s6
 			break
 		case "pump":
 			prompt s1, "What ratio (pump0/pump1) to inject (1 = 100%pump0)?"
@@ -2611,9 +2641,9 @@ function temperature(temperature, [wait])
 		sprintf cmd, "drive tc1_driveable %3.2f", temperature
 	else
 		//Lakeshore
-		//sprintf cmd, "hset /sample/tc1/sensor/setpoint1 %3.2f", temperature
+		sprintf cmd, "hset /sample/tc1/sensor/setpoint1 %3.2f", temperature
 		//Julabo
-		sprintf cmd, "hset /sample/tc1/setpoint %3.2f", temperature
+		//sprintf cmd, "hset /sample/tc1/setpoint %3.2f", temperature
 	endif
 	sics_cmd_interest(cmd)	
 end
@@ -2742,7 +2772,7 @@ Function txtme(text)
 	text = replacestring(" ", text, "+")
 	string cmd = ""
 	string phone = getHipaVal("/user/phone")
-	sprintf cmd, "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=none8fhx9b&to=%s&text=%s", phone, text
+	sprintf cmd, "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=nanjeminya1&to=%s&text=%s", phone, text
 	//	print cmd
 	easyhttp/PROX cmd
 ENd
@@ -2943,4 +2973,56 @@ Function flipperstatuspanel()
 	SetVariable analyser,value= root:packages:platypus:SICS:hipadaba_paths[55][1]
 	SetVariable polarizerflipper,pos={237,133},size={390,16},title="polariser flipper"
 	SetVariable polarizerflipper,value= root:packages:platypus:SICS:hipadaba_paths[46][1]
+End
+
+
+Function hplc(A, B, C, D,[ vol, rate, wait])
+	variable A, B, C, D, vol, rate, wait
+	string template = "", runmode = "drive", cmd = ""
+	if(paramisdefault(vol))
+		vol = 5
+	endif
+	if(paramisdefault(rate))
+		rate = 1.
+	endif
+	if(paramisdefault(wait))
+		wait = 1
+	endif
+	if (vol > 100 || vol < 0)
+		print "HPLC: volume too high"
+		abort
+	endif
+	if (rate < 0 || rate > 9.999)
+		print "HPLC rate too high"
+		abort
+	endif
+	if (!wait)
+		runmode = "run"
+	endif
+	if(a < 0 || b < 0 || c < 0 || d < 0)
+		print "HPLC: all ratio values must be positive"
+		abort
+	endif
+	A = floor(abs(a))
+	B = floor(abs(b))
+	C = floor(abs(c))
+	D = floor(abs(d))
+
+	if (a + b + c + d != 100)
+		print "HPLC: ratios must add up to 100"
+		abort
+	endif
+
+	template = "hset /sample/hplc/pump/remote 1\n"
+	template += "hset /sample/hplc/pump/flow/setp %1.3f\n"
+	template += "hset /sample/hplc/pump/ratio/setp %d/%d/%d/%d\n"
+	template += "%s hplc_pump_volume_setp %g\n"
+
+	sprintf cmd, template, rate, A, B, C, D, runmode, vol
+
+	if(sics_cmd_cmd(cmd))
+		print "Error while sending HPLC request (HPLC)"
+		return 1
+	endif	
+
 End

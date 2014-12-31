@@ -45,6 +45,12 @@ Function fpxStop([killtask])
 	CtrlNamedBackground  scanTask status
 	NVAR SOCK_interupt = root:packages:platypus:SICS:SOCK_interupt
 	if(numberbykey("RUN",S_info))	//if the scan is running, stop it, and finish
+		NVAR/z userPaused = root:packages:platypus:data:scan:userPaused
+		if(userPaused)
+			print "WARNING: histmem was paused: unpausing then stopping scan"
+			sockitsendmsg SOCK_interupt, "histmem veto off\n"
+			userPaused = 0
+		endif
 		sockitsendmsg SOCK_interupt, "INT1712 2\n"
 		if(killtask)
 			CtrlNamedBackground  scanTask kill = 1
@@ -317,10 +323,9 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	//create the SICS command to start the scan
 	//runscan scan_variable start stop numpoints time||unlimited||period||count||frame||MONITOR_1||MONITOR_2 savetype save||nosave force true||false
 	string cmdTemplate, cmd
-	cmdTemplate = "autosave 30\nrunscan %s %e %e %d %s %f savetype %s force true"
+	cmdTemplate = "autosave 30\nrunscan %s %e %e %d %s %d savetype %s force true"
 	sprintf cmd, cmdTemplate, motorName, start, stop, numpoints, mode, preset, saveStr
 //	print cmd
-	
 	//send it to SICS, and tell it to autosave
 	sics_cmd_cmd(cmd)
 	

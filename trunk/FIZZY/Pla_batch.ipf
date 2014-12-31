@@ -68,6 +68,8 @@ Function batchScan(batchfile)
 	variable/g root:packages:platypus:data:batchScan:currentpoint = -1		//-1 initialisation, because batchbkgtask adds one to get to the next point
 	variable/g root:packages:platypus:data:batchscan:userPaused = 0		//says whether you are currently in a user paused situation
 	
+	killdatafolder/z root:packages:platypus:data:batchscan:labels
+	
 	//start the scan task
 	CtrlNamedBackground  batchScan period=50, proc=batchbkgtask,  dialogsOK =0, burst = 0
 	CtrlNamedBackground  batchScan start
@@ -329,12 +331,13 @@ Function goto(labelsStr, loopNum)
 	NVAR currentpoint = root:packages:platypus:data:batchScan:currentpoint
 	Wave/t list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
 	Wave sel_batchbuffer = root:packages:platypus:data:batchScan:sel_batchbuffer
+	newdatafolder/o root:packages:platypus:data:batchscan:labels
 
-	NVAR/z labeller = $("root:packages:platypus:data:batchScan:"+labelsStr)
+	NVAR/z labeller = $("root:packages:platypus:data:batchScan:labels"+labelsStr)
 
 	if(!NVAR_exists(labeller))
-		variable/g $("root:packages:platypus:data:batchScan:"+labelsStr)
-		NVAR/z labeller = $("root:packages:platypus:data:batchScan:"+labelsStr)
+		variable/g $("root:packages:platypus:data:batchScan:labels:"+labelsStr)
+		NVAR/z labeller = $("root:packages:platypus:data:batchScan:labels:"+labelsStr)
 		labeller = 0
 	endif
 
@@ -351,6 +354,6 @@ Function goto(labelsStr, loopNum)
 		endif
 	else
 		labeller=inf
-		killvariables/z $("root:packages:platypus:data:batchScan:"+labelsStr)
+		killvariables/z $("root:packages:platypus:data:batchScan:labels"+labelsStr)
 	endif
 End

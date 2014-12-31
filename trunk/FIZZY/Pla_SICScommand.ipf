@@ -313,7 +313,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 1: //mouse down
 			if(lba.eventmod & 2^4)
-				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;angler;txtme;temperature;setpos;mvp;pump"
+				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;angler;txtme;temperature;setpos;mvp;hplc"
 				listwave[row][col] = createFizzyCommand(S_Selection)
 			endif
 			break
@@ -472,7 +472,7 @@ Function startSICS()
 	//get all the values in the hipadaba tree
 	print "Getting current hipadaba values"
 	timer = startmstimer
-	getCurrentHipaVals()
+//	getCurrentHipaVals()
 	print "Finished getting current hipadaba values", stopmstimer(timer)/1e6
 	
 	//ok, now get current list of SICS axis positions, then register the interestProcessor on the socket.
@@ -709,13 +709,19 @@ Function enumerateHipadabapaths(filepath)
 			abort
 		endif
 
+		xmllistxpath(fileid,"//component[@id]","")
+		Wave/t M_listXpath
+		make/t/free/n=(dimsize(M_listxpath,0)) values
+		values[] = xmlstrfmxpath(fileid, M_listxpath[p][0] + "/value","hipadaba=http://www.psi.ch/sics/hipadaba", "")
+
 		xmllistxpath(fileid,"//component/@id","")
 		Wave/t M_listXpath
 		M_listXPath[][0] = replacestring("hipadaba:SICS", M_listXPath[p][0],"*")
 	 
 		make/o/n=(dimsize(M_listxpath,0),2)/t hipadaba_paths
+		
 		hipadaba_paths[][0] = xmlstrfmxpath(fileID, M_listXPath[p][0],"","")
-	
+		
 		M_listXPath[][0] = replacestring("/*", M_listXPath[p][0],"")
 		M_listXPath[][0] = replacestring("/@id", M_listXPath[p][0],"")
 		hipadaba_paths[][0] = replacestring(" ", hipadaba_paths[p][0],"")
@@ -734,7 +740,7 @@ Function enumerateHipadabapaths(filepath)
 		endfor
 
 		hipadaba_paths[][0] = hipadaba_paths[p][1]
-		hipadaba_paths[][1] = ""
+		hipadaba_paths[][1] = values[p]
 	catch
 		retval=1
 	endtry
