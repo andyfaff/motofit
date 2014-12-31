@@ -214,7 +214,7 @@ Function/wave Pla_halfheight(yy, xx, ee)
 	limits[3][0] = 0.0000000000001
 	limits[3][1] = V_max
 
-	gencurvefit/I=1/W=ee/Q/N/K={200, 10, 0.7, 0.5}/x=xx/DITH= {0.5, 2}/tol=0.03 Pla_halfheight_func, yy, coefs,"0000",limits
+	gencurvefit/I=1/W=ee/Q/N/K={200, 10, 0.7, 0.5}/x=xx/tol=0.03 Pla_halfheight_func, yy, coefs,"0000",limits
 	return coefs
 End
 
