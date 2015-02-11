@@ -1,147 +1,150 @@
-#pragma rtGlobals=1		// Use modern global access method.
-//chebyshevapproximator(wave0, fit_c_PLP0008682_R, root:data:c_PLP0008682:c_PLP0008682_q);moto_SLDplot(coef_forreflectivity, root:data:theoretical:SLD_theoretical_R)
-//gencurvefit /X=$(dat + "q")/K={100,20,0.7,0.5}/HOLD=wave2/TOL=0.001/D=root:fit_c_PLP0008682_R/W=$(dat + "E")/I=1 Chebyshevapproximator, $(dat + "R"),root:wave0,"",root:wave1
-
-//chebyshevapproximator(root:data:c_PLP0008698:Coef_c_PLP0008698_R, fit_c_PLP0008698_R, root:data:c_PLP0008698:c_PLP0008698_q);moto_SLDplot(coef_forreflectivity, root:data:c_PLP0008698:SLD_c_PLP0008698_R)
-//chebyshevapproximator(root:data:c_PLP0008682:Coef_c_PLP0008682_R, fit_c_PLP0008682_R, root:data:c_PLP0008682:c_PLP0008682_q);moto_SLDplot(coef_forreflectivity, root:data:c_PLP0008682:SLD_c_PLP0008682_R)
-
-static constant NUMSTEPS = 40
-constant DELRHO = 0.05
-constant lambda = 10
-
-Function Chebyshevapproximator(w, yy, xx): fitfunc
+#pragma rtGlobals=3		// Use modern global access method and strict wave access.
+Function cheby_fit(w, yy, xx): fitfunc
 	Wave w, yy, xx
+	//a fitfunction for fitting with a basis set of Chebyshev polynomials.
+	//the polynomial degree is controlled by the length of w.
+	//Let [numpnts(w) - 1] = n
+	//n  is from 0 to INF.
+	//n = 1 is linear fit
+	//n = 2 is quadratic
+	//n = 3 is cubic
+	//n = 4 is quartic, etc
+	//yy[] = w[0] * T_0(xx) + ... + w[n] * T_n(xx)
 
-	createCoefs_ForReflectivity(w)
-	Wave coef_forReflectivity
-//	motofit(coef_forreflectivity, yy, xx)
-	Abelesall(coef_forReflectivity, yy, xx)
-	multithread yy = log(yy)
+	variable n = numpnts(w) - 1
+	//have to place xx in [-1, 1]
+	make/n=(numpnts(xx))/free/d tempxx
+	variable vmin = Wavemin(xx)
+	variable vmax = Wavemax(xx)
+	multithread tempxx = cheby_range_transform(xx[p], vmin, vmax)
 	
-End
-
-Function createCoefs_ForReflectivity(w)
-	wave w
-	
-	variable ii, jj, xmod, multiplier
-	variable lastz, lastSLD, numlayers = 0, MAX_LENGTH
-	variable chebcoefs = dimsize(w, 0) - (w[0] * 3 + 6)
-	MAX_LENGTH = w[w[0] * 3 + 5]
-
-	//make the wave to calculate the reflectivity
-	make/d/o/n=5 coef_forReflectivity = w
-	redimension/n=6 coef_forreflectivity
-	lastz = -MAX_LENGTH/(NUMSTEPS - 1)
-	numlayers = 0
-		
-	//add in the number of layers that already exist
-	redimension/d/n=(dimsize(coef_forreflectivity,0) + 4 * w[0]) coef_forreflectivity
-	for(ii = 0 ; ii < w[0] ; ii+=1)
-		coef_forreflectivity[4 * ii + 6] = w[3 * ii + 5]
-		coef_forreflectivity[4 * ii + 7] = w[3 * ii + 6]
-		coef_forreflectivity[4 * ii + 8] = 0
-		coef_forreflectivity[4 * ii + 9] = w[3 * ii + 7]
-		numlayers += 1
-		coef_forreflectivity[0] = numlayers
-	endfor
-	
-	if(chebcoefs < 1)
-		return 0
-	endif
-		
-	//now add in the chebyshev
-	//work out the interpolation points, this is the same as the number of chebyshev coefs.
-	//a_n are the chebyshev coefficients.
-	//chebNodes are the Chebyshev abscissa.
-	//it may be better to fit the SLD at those nodes rather than chebyshev coefs.
-	make/d/n=(chebcoefs )/free chebNodes, a_n	
-	chebnodes = -cos(p *Pi/(chebcoefs-1))
-	
-	for(ii = 0 ; ii < chebcoefs ; ii+=1)
-		for(jj = 0 ; jj < chebcoefs ; jj+=1)
-			if(!jj  || jj == chebcoefs -1 )
-				multiplier = 0.5
-			else
-				multiplier = 1
-			endif
-			variable data = w[(w[0] * 3 + 6) + jj]
-			a_n[ii] += multiplier * w[(w[0] * 3 + 6) + jj] * Chebyshev(ii, chebnodes[jj])
-		endfor
-	endfor
-	a_n *= 2/(chebcoefs - 1)
-	
-	make/d/n=(NUMSTEPS)/free chebSLD
-	setscale/I x, 0, MAX_LENGTH, chebSLD
-	
-	//this is an interpolated SLD profile thro' the cheb nodes
-	multithread chebSLD = calcCheb(a_n, 2 * (x / MAX_LENGTH) - 1)
-	
-	
-	if(numlayers == 0)
-		lastSLD = w[2]
+	//cache the results, you may call this function a lot
+	Wave/z M_cheby2 = root:packages:cheby:M_cheby
+	Wave/z tempxx2 = root:packages:cheby:xx
+	if(waveexists(tempxx2) && waveexists(M_cheby2) && equalwaves(tempxx2, tempxx, 1, 0) && dimsize(M_cheby2, 1) == n + 1)
+		Wave/z M_cheby = root:packages:cheby:M_cheby
 	else
-		lastSLD = w[3* (w[0]-1) + 7]
+		newdatafolder/o root:packages
+		newdatafolder/o root:packages:cheby
+		duplicate/o tempxx, root:packages:cheby:xx
+		make/o/d/n=(numpnts(xx), n + 1) root:packages:cheby:M_cheby
+		Wave M_cheby = root:packages:cheby:M_cheby
+		M_cheby[][] = chebyshev(q, tempxx[p])
 	endif
-	for(ii = 0 ; ii < dimsize(chebSLD, 0) ; ii+=1)
-		if(abs(chebSLD[ii] - lastSLD) > delrho)
-			redimension/n=(dimsize(coef_forReflectivity, 0) + 4) coef_forReflectivity
-			coef_forReflectivity[4 * numlayers + 6] = MAX_LENGTH/(NUMSTEPS - 1)
-			coef_forReflectivity[4 * numlayers + 7] = (chebSLD[ii])
-			coef_forReflectivity[4 * numlayers + 8] = 0
-			coef_forReflectivity[4 * numlayers + 9] = 0.2
-			
-			lastSLD = chebSLD[ii]
-			numlayers += 1
-			coef_forReflectivity[0] = numlayers
-		elseif(numlayers > 0)
-			coef_forReflectivity[4 * (numlayers - 1) + 6] += MAX_LENGTH/(NUMSTEPS - 1)
-		endif
-		lastz = pnt2x(chebsld, ii)
-	endfor
 
+	matrixop/free/NTHR=0 output = M_cheby x w
+	multithread yy = output
 End
 
-Threadsafe Function calcCheb(a_n, x)
-wave a_n
-variable x
+Function cheby_guess_params(N, yy, xx)
+	//guess parameters required for a Chebyshev non-linear least squares fit.
+	//polynomial order is N
+	//these will be the actual fit parameters if there is no error
+	//weighting
+	//creates a wave called W_coefs
+	variable N
+	wave yy, xx
 
-variable ii, summ = 0, multiplier = 1
-for(ii = 0 ; ii < numpnts(a_n) ; ii+=1)
-	if(ii == 0 || ii == numpnts(a_n)-1)
-		multiplier = 0.5
+	make/n=(numpnts(xx))/free/d tempxx
+	variable vmin = Wavemin(xx)
+	variable vmax = Wavemax(xx)
+	multithread tempxx = cheby_range_transform(xx[p], vmin, vmax)
+	
+	make/n=(numpnts(xx), N + 1)/d/free M_cheby
+	M_cheby = chebyshev(q, tempxx[p])
+	
+	matrixlls M_cheby, yy
+	Wave M_b, M_a
+	make/n=(N + 1)/d/o W_coefs
+	W_coefs[] = M_b[p][0]
+	killwaves/z M_b, M_a
+End
+
+Threadsafe Function cheby_range_transform(xx, vmin, vmax)
+	variable xx, vmin, vmax
+	//converts a point x, lying in the range [vmin, vmax] into a value
+	//lying in the range [-1, 1]
+	return (2 * xx - (vmin + vmax))/(vmax - vmin)
+End
+
+Threadsafe Function cheby_range_untransform(val, vmin, vmax)
+	variable val, vmin, vmax
+	//converts a point val, lying in the range [-1, 1] into a value
+	//lying in the range [vmin, vmax]
+	if (abs(val) > 1)
+		print "val is supposed to be [-1, 1]"
+	endif
+	return ((vmax - vmin) * val + (vmax + vmin)) / 2
+End
+
+Function/wave cheby_interp_nodes(N)
+	variable N
+	//These values are used as nodes in polynomial interpolation because
+	//the resulting interpolation polynomial minimizes the effect of Runge's phenomenon
+	//N is the order of the Chebyshev polynomial.
+
+	make/free/d/n=(N ) W_chebnodes
+	W_chebnodes = 0
+	W_chebnodes = cos(Pi / 2 / N * (2 * (p + 1) - 1))
+	reverse W_chebnodes
+	return W_chebnodes
+End
+
+Function cheby_interpolation(f, N, xmin, xmax, [xx])
+	Funcref polyinterp f
+	variable N, xmin, xmax
+	Wave/z xx
+	//provides a Chebyshev interpolating polynomial for a given function, f.  The interpolation is
+	//done with an N'th order polynomial.
+	//creates the W_chebinterp wave that contains the interpolating coefficients
+	//creates the W_func wave that contains the polynomial evaluated over the range
+	//[xmin, xmax]. THe default is 100 equally spaced points.  If the xx wave is specified
+	//then W_func is evaluated at those points.
+
+	//calculate the interpolating nodes first.
+	Wave W_chebnodes = cheby_interp_nodes(N + 1)
+	make/n=(numpnts(W_chebnodes))/free/d funcvals
+	funcvals[] = f(cheby_range_untransform(W_chebnodes[p], xmin, xmax))
+
+	//now calculate chebyshev polynomials at those nodes
+	make/n=(N + 1)/d/free M_cheby
+	M_cheby[][] = chebyshev(q, W_chebnodes[p])
+
+	//now calculate the best coefficients, a_n
+	//f(x) = a_0 * T_0(x) + ... + a_n * T_n(x)
+	if(N == 0)
+		make/n=1/d/o M_b
+		M_b = funcvals[0]
 	else
-		multiplier = 1
+		matrixlls M_cheby, funcvals
+		Wave M_a, M_b
 	endif
-	summ += multiplier * a_n[ii] * Chebyshev(ii, x)
-endfor
-return summ
+	make/n=(N + 1)/d/o W_chebinterp
+	W_chebinterp[] = M_b[p][0]
+
+	if(!paramisdefault(xx) && waveexists(xx))
+		make/n=(numpnts(xx))/d/o W_func
+		cheby_fit(W_chebinterp, W_func, xx)
+	else
+		make/n=100/d/o W_func
+		setscale/I x, xmin, xmax, W_func
+		duplicate/free W_func, tempxx
+		tempxx[] = pnt2x(W_func, p)
+		cheby_fit(W_chebinterp, W_func, tempxx)
+	endif
+
+	killwaves/z M_b, M_a
 End
 
-//Function smoother(coefs, y_obs, y_calc, s_obs)
-//	Wave coefs, y_obs, y_calc, s_obs
-//
-//	variable retval, betas = 0, ii
-//	
-//	make/n=(numpnts(y_obs))/free/d diff
-//	multithread diff = ((y_obs-y_calc)/s_obs)^2
-//	retval = sum(diff)
-//	
-//	Wave coef_forreflectivity = createCoefs_ForReflectivity(coefs)
-//	for(ii = 0 ; ii < coef_forreflectivity[0] + 1 ; ii+=1)
-//		if(ii == 0)
-//			betas += (coef_forreflectivity[2] - coef_forreflectivity[7])^2
-//		elseif(ii == coef_forreflectivity[0])
-//			betas += (coef_forreflectivity[3] - coef_forreflectivity[(4 * (ii - 1)) + 7])^2
-//			if(abs(coef_forreflectivity[3] - coef_forreflectivity[(4 * (ii - 1)) + 7]) > 0.5)
-//				retval *= 10
-//			endif
-//		else
-//			betas += (coef_forreflectivity[4 * (ii-1) + 7] - coef_forreflectivity[4 * ii  + 7])^2
-//		endif
-//		if(coef_forreflectivity[4 * (ii-1) + 7] < -0.1) 
-//			retval*=10
-//		endif
-//	endfor	
-//
-//	return retval + lambda * betas
-//end
+Function polyinterp(x)
+	variable x
+	print "You are calling the polynomial interpolation FUNCREF by mistake"
+End
+
+Function runge(x)
+	variable x
+	//the Runge function
+	//cheby_interpolation(runge, 25, -1, 1)
+	return 1 / (1 + 25 * x * x)
+End
+
