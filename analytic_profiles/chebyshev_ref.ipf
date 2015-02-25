@@ -5,8 +5,9 @@
 //chebyshevapproximator(root:data:c_PLP0008698:Coef_c_PLP0008698_R, fit_c_PLP0008698_R, root:data:c_PLP0008698:c_PLP0008698_q);moto_SLDplot(coef_forreflectivity, root:data:c_PLP0008698:SLD_c_PLP0008698_R)
 //chebyshevapproximator(root:data:c_PLP0008682:Coef_c_PLP0008682_R, fit_c_PLP0008682_R, root:data:c_PLP0008682:c_PLP0008682_q);moto_SLDplot(coef_forreflectivity, root:data:c_PLP0008682:SLD_c_PLP0008682_R)
 
+//gencurvefit /X=:data:e361r:e361r_q/K={5000,10,0.7,0.5}/TOL=0.00001/HOLD=hold/D=root:res/W=:data:e361r:e361r_E/I=1/L=200 Chebyshevapproximator,:data:e361r:e361r_R,root:wave0,"",root:packages:motofit:gencurvefit:gen_limits
+
 static constant NUMSTEPS = 40
-constant DELRHO = 0.05
 constant lambda = 10
 
 Function Chebyshevapproximator(w, yy, xx): fitfunc
@@ -18,9 +19,9 @@ Function Chebyshevapproximator(w, yy, xx): fitfunc
 	//w[3] - SLD backing
 	//w[4] - bkg
 	//w[5] - roughness of last initial slab / start of chebyshev period
-	//w[3 * ii + 6] - thickness of initial slab
-	//w[3 * ii + 7] - SLD of initial slab
-	//w[3 * ii + 8] - roughness of initial slab
+	//w[3 * (w[0] - 1) + 6] - thickness of initial slab
+	//w[3 * (w[0] - 1) + 7] - SLD of initial slab
+	//w[3 * (w[0] - 1) + 8] - roughness of initial slab
 	//w[3 * w[0]+ 6] - total extent of chebyshev layer
 	//w[3 * w[0]+ 6 + N] - SLD of chebyhev nodes
 	
@@ -45,6 +46,7 @@ Function createCoefs_ForReflectivity(w)
 
 	//make the wave to calculate the reflectivity
 	make/d/o/n=6 coef_forReflectivity = w
+	coef_forreflectivity[5] = 2
 		
 	//add in the number of layers that already exist and those for the chebyshev part
 	redimension/d/n=(dimsize(coef_forreflectivity,0) + 4 * (w[0] + NUMSTEPS)) coef_forreflectivity

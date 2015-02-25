@@ -1077,8 +1077,9 @@ static Function build_combined_dataset([fitcursors])
 		Wave sepyy = $("root:data:" + datasets[ii] + ":" + datasets[ii] + "_R")
 		Wave/z sepee = $("root:data:" + datasets[ii] + ":" + datasets[ii] + "_E")
 		Wave/z  sepdx= $("root:data:" + datasets[ii] + ":" + datasets[ii] + "_dq")
+
 		for(jj = 0 ; jj < numpnts(sepxx) ; jj += 1)
-			if(sepxx[jj] >= loQ && sepxx[jj] <= hiQ)
+			if(sepxx[jj] >= loQ && sepxx[jj] <= hiQ && !numtype(sepxx[jj]) && !numtype(sepyy[jj]) && !numtype(sepee[jj]))
 				entry = dimsize(xx, 0) 
 				redimension/n=(entry + 1) xx, yy, dy, dx
 				xx[entry] = sepxx[jj]
