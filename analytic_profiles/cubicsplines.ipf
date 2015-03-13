@@ -9,18 +9,34 @@ Function lagrangeSmoother(coefs, yobs, ycalc, sobs)
 	wave coefs, yobs, ycalc, sobs
 	
 	variable numknots, Nc, A1, A2, ii, knotoffset, knotmean
-	numknots = numpnts(coefs) - 6 - 3 * coefs[0]
-	knotoffset = 3 * coefs[0] + 6
+	numknots = numpnts(coefs) - 7 - 3 * coefs[0]
+	knotoffset = 3 * coefs[0] + 7
 	
 	duplicate/free/r=[knotoffset, knotoffset + numknots] coefs, knots	
-	knotmean = mean(knots)
-	
+
+//	//add in start and end SLD points for continuity purposes
+//	//end knot has to be SLD of backing medium
+//	redimension/n=(numpnts(knots) + 1) knots
+//	knots[numpnts(knots) - 1] = coefs[3]
+//	
+//	insertpoints 0, 1, knots
+//	//if there are initial layers set the first point to be the SLD of the last initial layer
+//	//else set it to be the SLD of the fronting medium
+//	if(coefs[0])
+//		knots[0] = coefs[3 * coefs[0] + 4]
+//	else
+//		knots[0] = coefs[2]
+//	endif
+//	numknots = numpnts(knots)
+
+	knotmean = mean(knots)	
 	A1 = 0
 	A2 = 0
 	for(ii = 0 ; ii < numknots - 1 ; ii+=1)
-		A1 +=  (knots[ii + 1] - knots[ii])^2 + WSMOOTH1 * knots[0]^2
+		A1 +=  (knots[ii + 1] - knots[ii])^2
 		A2 += (knots[ii] - knotmean)^2
 	endfor
+	A1 += WSMOOTH1 * knots[0]^2
 	
 	Nc = ((1-WSMOOTH) * A1 * (numknots + 2) + WSMOOTH * 150 * A2 / (numknots + 2)) * numpnts(yobs)
 
@@ -37,13 +53,14 @@ Function cubicSplineRefFitter(w, yy, xx):fitfunc
 	//w[2] = SLD fronting
 	//w[3] = SLD backing
 	//w[4] = bkg
-	//w[5] = thickness 1st prexisting layer
-	//w[6] = SLD 1st preexisting layer
-	//w[7] = roughness 1st preexisting layer
+	//w[5] = roughness between cubicspline region and last preexisting layer
+	//w[6] = thickness 1st prexisting layer
+	//w[7] = SLD 1st preexisting layer
+	//w[8] = roughness 1st preexisting layer
 	//........
-	//w[5 + 3*w[0]] = max thickness of cubic spline region
-	//w[5 + 3*w[0] + 1] = aj of first knot
-	//w[5 + 3*w[0] + n] = aj of nth knot
+	//w[6 + 3*w[0]] = max thickness of cubic spline region
+	//w[6 + 3*w[0] + 1] = aj of first knot
+	//w[6 + 3*w[0] + n] = aj of nth knot
 	Wave coef_forReflectivity = cubicspline#createCoefs_ForReflectivity(w)
 	AbelesALl(coef_forReflectivity, yy, xx)
 	yy = log(yy)
@@ -56,7 +73,7 @@ Static Function/Wave createCoefs_forReflectivity(w)
 	variable lastz, lastSLD, numlayers = 0, thicknessoflastlayer=0, zmax
 	variable stepsize
 	
-	zmax = w[w[0] * 3 + 5]
+	zmax = w[w[0] * 3 + 6]
 	
 	make/d/free/n=(NUMSTEPS + 1) cubicSLD, zed
 	zed = p * zmax / (NUMSTEPS)
@@ -64,7 +81,7 @@ Static Function/Wave createCoefs_forReflectivity(w)
 
 //	make/free/n=(numpnts(w) - 4 - 3 * w[0])/d cubicAJ
 //	cubicAJ[1, numpnts(cubicAJ) - 2] = w[p + 6 + 3 * w[0]]
-	duplicate/free/r=[5 + 3*w[0] + 1, numpnts(w) - 1] w, cubicAJ
+	duplicate/free/r=[6 + 3*w[0] + 1, numpnts(w) - 1] w, cubicAJ
 //	insertpoints 0, 1, cubicAJ
 //	if(w[0] == 0)
 //		cubicAJ[0] = w[2]
@@ -78,13 +95,13 @@ Static Function/Wave createCoefs_forReflectivity(w)
 	
 	//add in the number of layers that already exist
 	make/d/o/n=(4 * w[0] + 6) coef_forReflectivity = w	
-	coef_forReflectivity[5] = 0
+	coef_forReflectivity[5] = 2
 	
 	for(ii = 0 ; ii < w[0] ; ii+=1)
-		coef_forreflectivity[4 * ii + 6] = w[3 * ii + 5]
-		coef_forreflectivity[4 * ii + 7] = w[3 * ii + 6]
+		coef_forreflectivity[4 * ii + 6] = w[3 * ii + 6]
+		coef_forreflectivity[4 * ii + 7] = w[3 * ii + 7]
 		coef_forreflectivity[4 * ii + 8] = 0
-		coef_forreflectivity[4 * ii + 9] = w[3 * ii + 7]
+		coef_forreflectivity[4 * ii + 9] = w[3 * ii + 8]
 	endfor
 	numlayers = w[0]
 	
@@ -94,8 +111,11 @@ Static Function/Wave createCoefs_forReflectivity(w)
 			coef_forReflectivity[4 * ii + 4 * w[0] + 6] = stepsize
 			coef_forReflectivity[4 * ii + 4 * w[0]  + 7] = cubicSLD[ii + 0.5]
 			coef_forReflectivity[4 * ii + 4 * w[0]  + 8] = 0
-			coef_forReflectivity[4 * ii + 4 * w[0]  + 9] = 0
-			
+			if(!ii)
+				coef_forReflectivity[4 * ii + 4 * w[0]  + 9] = w[5]
+			else
+				coef_forReflectivity[4 * ii + 4 * w[0]  + 9] = 0
+			endif		
 			coef_forReflectivity[0] += 1
 	endfor
 

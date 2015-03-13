@@ -15,9 +15,10 @@ Function autofit(yw, xw, ew, fresnelInfo, maxLength, numKnots, minSLD, maxSLD, l
 	//SLDfronting -fresnelinfo[1]
 	//SLDbacking -fresnelinfo[2]
 	//background	-fresnelinfo[3]
-	//thickness layer M - fresnelinfo[3*M + 4]
-	//SLD M - fresnelinfo[3*M + 5]
-	//roughness M - fresnelinfo[3*M + 6]
+	//rough 		-fresnelinfo[4] (roughness between spline region and last known layer)
+	//thickness layer M - fresnelinfo[3*M + 5]
+	//SLD M - fresnelinfo[3*M + 6]
+	//roughness M - fresnelinfo[3*M + 7]
 	//these known layers are closest to the fronting medium. The spline region is closest to the backing medium
 	
 	//if you want to hold one of those parameters you should make the lower and upper limits equal
@@ -47,10 +48,10 @@ Function autofit(yw, xw, ew, fresnelInfo, maxLength, numKnots, minSLD, maxSLD, l
 
 	Wavestats/q/z xw
 
-	numKnownLayers = (dimsize(fresnelInfo, 0) - 4)/3
+	numKnownLayers = (dimsize(fresnelInfo, 0) - 5)/3
 
-	make/free/d/n=(5 + numKnots + 3 * numKnownLayers) tempcoefs, holdwave
-	make/free/d/n=(5 + numKnots + 3 * numKnownLayers, 2) limits
+	make/free/d/n=(7 + numKnots + 3 * numKnownLayers) tempcoefs, holdwave
+	make/free/d/n=(7 + numKnots + 3 * numKnownLayers, 2) limits
 	make/d/o/n=(dimsize(tempcoefs, 0), dimsize(lambdavals, 0)) coefs
 	make/d/o/n=(dimsize(lambdavals, 0)) chi2
 	duplicate/o yw, fitted
@@ -60,23 +61,23 @@ Function autofit(yw, xw, ew, fresnelInfo, maxLength, numKnots, minSLD, maxSLD, l
 
 	//set up the limits
 	limits = 0
-	limits[1, 4 + 3 * numKnownLayers][0] = fresnelinfo[p - 1][0]
-	limits[1, 4 + 3 * numKnownLayers][1] = fresnelinfo[p - 1][1]
+	limits[1, 5 + 3 * numKnownLayers][0] = fresnelinfo[p - 1][0]
+	limits[1, 5 + 3 * numKnownLayers][1] = fresnelinfo[p - 1][1]
 
 	for(ii = 0 ; ii < numKnots ; ii+= 1)
-		limits[ii + 6 + 3 * numKnownLayers][0] = minSLD
-		limits[ii + 6 + 3 * numKnownLayers][1] = maxSLD
+		limits[ii + 7 + 3 * numKnownLayers][0] = minSLD
+		limits[ii + 7 + 3 * numKnownLayers][1] = maxSLD
 	endfor
 
 	//set up tempcoefs
 	tempcoefs = 0
 	tempcoefs[0] = numKnownLayers
-	tempcoefs[5 + 3 * numKnownLayers] = maxlength
+	tempcoefs[6 + 3 * numKnownLayers] = maxlength
 
 	//now set up holdwave
 	holdwave = 0
 	holdwave[0] = 1
-	holdwave[5 + 3 * numKnownLayers] = 1
+	holdwave[6 + 3 * numKnownLayers] = 1
 	
 	display/k=1 chi2 vs lambdavals
 	ModifyGraph log(bottom)=1
@@ -84,7 +85,7 @@ Function autofit(yw, xw, ew, fresnelInfo, maxLength, numKnots, minSLD, maxSLD, l
 	for(ii = 0 ; ii < dimsize(lambdavals, 0) ; ii += 1)
 		variable/g lambda
 		lambda = lambdavals[ii]
-		gencurvefit/MINF=lagrangesmoother/q/X=xw/hold=holdwave/D=fitted/W=ew/I=1/K={500,10,0.7,0.5}/TOL=0.01 cubicSplineRefFitter,yw,tempcoefs,"",limits
+		gencurvefit/MINF=lagrangesmoother/q/X=xw/hold=holdwave/D=fitted/W=ew/I=1/K={500,10,0.7,0.5}/TOL=0.05 cubicSplineRefFitter,yw,tempcoefs,"",limits
 		coefs[][ii] = tempcoefs[p]
 
 		//need to work out proper chi2
