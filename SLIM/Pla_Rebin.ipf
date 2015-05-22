@@ -86,6 +86,79 @@ Threadsafe Function/DF Pla_2DintRebinWorker(x_init, data, dataSD, x_rebin, qq, l
 	return dfFree	
 End
 
+//Function Pla_intRebin2(x_init, y_init, s_init, x_rebin)
+//	Wave x_init, y_init, s_init,x_rebin
+//	//Rebins histogrammed data into boundaries set by x_rebin.
+//	//makes the waves W_rebin and W_RebinSD.
+//
+//	//it uses linear interpolation to work out the proportions of which original cells should be placed
+//	//in the new bin boundaries.
+//
+//	// Precision will normally be lost.  
+//	// It does not make sense to rebin to smaller bin boundaries.
+//	
+//	//when we calculate the standard deviation on the intensity carry the variance through the calculation
+//	//and convert to SD at the end.
+//	variable ii = 0, pnts_init, pnts_final	
+//	pnts_init = dimsize(x_init, 0) - 1
+//	pnts_final = dimsize(x_rebin, 0) - 1
+//	make/free/d/n=(pnts_init) var_init = s_init^2, y_temp, var_temp, mask
+//
+//	make/n=(pnts_final)/d/o W_rebin, W_rebinSD
+//	W_rebin = 0
+//	W_rebinSD = 0
+//	
+//	make/free/d/n=(pnts_init, pnts_final) y_temp, var_temp, mask
+//	y_temp[][] = y_init[p]
+//	var_temp[][] = var_init[p]
+//	mask = 0
+//	
+//	make/n=(pnts_final)/free/d p_lo, p_hi, p_hiI, p_loI
+//	p_lo = binarysearchinterp(x_init, x_rebin[p])
+//	p_hi = binarysearchinterp(x_init, x_rebin[p + 1])
+//	p_loI = binarysearch(x_init, x_rebin[p])
+//	p_hiI = binarysearch(x_init, x_rebin[p + 1])
+//	
+//	
+//	for(ii = 0 ; ii < pnts_final; ii += 1)		
+//		// new bin out of x_init range
+//		if(p_hiI[ii] == -1 || p_loI[ii] == -2)
+//			mask[][ii] = 0
+//			continue
+//		endif
+//		// new bin totally covers x_init range
+//		if(p_loI[ii] == -1 && p_hiI[ii] == -2)
+//			mask[][ii] = 1
+//			continue
+//		endif
+//		// new bin overlaps lower boundary
+//		if(p_loI[ii] == -1)
+//			p_lo[ii] = 0
+//			p_loI[ii] = 0
+//		endif
+//		// new bin overlaps upper boundary
+//		if(p_hiI[ii] == -2 || p_hiI[ii] == pnts_init)
+//			p_hi[ii] = pnts_init
+//			p_hiI[ii] = p_hi[ii] - 1
+//		endif
+//		
+//		mask[][ii] = (p >= ceil(p_lo[ii]) && p < floor(p_hi[ii])) ? 1 : 0
+//		if(p_loI[ii] == p_hiI[ii])
+//			mask[p_loI[ii]][ii] = p_hi[ii] - p_lo[ii]
+//		else
+//			mask[p_loI[ii]][ii] = 1 - (p_lo[ii] - p_loI[ii])
+//			mask[p_hiI[ii]][ii] = p_hi[ii] - p_hiI[ii]	
+//		endif
+//	endfor
+//
+//	matrixop/free/o/nthr=0 outp = sumcols(y_temp * mask)
+//	W_rebin = outp
+//	matrixop/free/o/nthr=0 outp = sumcols(var_temp * mask * mask)
+//	W_rebinSD = outp
+//
+//	W_rebinSD = sqrt(W_rebinSD)
+//End	
+
 Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
 	Wave x_init, y_init, s_init,x_rebin
 	//Rebins histogrammed data into boundaries set by x_rebin.
@@ -99,130 +172,238 @@ Threadsafe Function Pla_intRebin(x_init, y_init, s_init, x_rebin)
 	
 	//when we calculate the standard deviation on the intensity carry the variance through the calculation
 	//and convert to SD at the end.
-	variable ii = 0
-	make/free/d/n=(dimsize(x_rebin, 0)) pos
+	variable ii = 0, frac, frac2
+	make/free/d/n=(dimsize(x_rebin, 0)) pos, posI
 	make/free/d/n=(dimsize(s_init, 0)) var_init = s_init^2
 	
 	pos = binarysearchinterp(x_init, x_rebin)
-	for(ii = 0 ; ii < dimsize(pos, 0) && numtype(pos[ii]); ii+=1)
+	posI = binarysearch(x_init, x_rebin)
+	for(ii = 0 ; ii < dimsize(pos, 0); ii+=1)
+		if(posI[ii] == -1)
+			posI[ii] = 0
 			pos[ii] = 0
+		endif
 	endfor
-	
-	for(ii = dimsize(pos, 0) - 1; ii >=0 && numtype(pos[ii]); ii -=1)
+
+	for(ii = 0 ; ii < dimsize(pos, 0); ii+=1)
+		if(posI[ii] == -2)
+			posI[ii] = dimsize(x_init, 0) - 1
 			pos[ii] = dimsize(x_init, 0) - 1
+		endif
 	endfor
-	
 	make/d/n=(dimsize(y_init, 0))/free cumsum, cumsumVar
 	cumsum = sum(y_init, 0, p)
 	cumsumVar = sum(var_init, 0, p)
-	
+
 	insertpoints 0, 1, cumsum, cumsumVar
 
 	make/n=(dimsize(x_rebin, 0) - 1)/d/o W_rebin, W_rebinSD
 	W_rebin = 0
 	W_rebinSD = 0
-	
+
 	W_rebin[] = cumsum[pos[p + 1]] - cumsum[pos[p]] 
-	//TODO, get rid of abs....
-	W_rebinSD[] = abs((cumsumVar[pos[p+1]] - cumsumVar[pos[p]]))
+
+	for (ii = 0 ; ii < dimsize(x_rebin, 0) - 1 ; ii += 1)
+		//now add on fractional bits
+		//fractional parts in same bin
+		if(floor(pos[ii]) == floor(pos[ii + 1]))
+			frac = pos[ii + 1] - pos[ii]
+			W_rebinSD[ii] += frac^2 * (cumsumVar[ceil(pos[ii + 1])] - cumsumVar[floor(pos[ii])])
+		//fractional parts in different bins
+		else
+			W_rebinSD[ii] += cumsumVar[floor(pos[ii + 1])] - cumsumVar[ceil(pos[ii])]
+			frac = ceil(pos[ii]) - pos[ii]
+			frac2 = pos[ii + 1] - floor(pos[ii + 1])
+			
+			W_rebinSD[ii] += frac^2 * (cumsumVar[ceil(pos[ii])] - cumsumVar[floor(pos[ii])])
+			W_rebinSD[ii] += frac2^2 * (cumsumVar[ceil(pos[ii + 1])] - cumsumVar[floor(pos[ii + 1])])
+		endif
+	endfor
 
 	W_rebinSD = sqrt(W_rebinSD)
 End	
 
-//Threadsafe Function Pla_rb(x_init, y_init, s_init, x_rebin)
-//	Wave x_init, y_init, s_init,x_rebin
-//
-//	//Rebins histogrammed data into boundaries set by x_rebin.
-//	//makes the waves W_rebin and W_RebinSD.
-//
-//	//it uses linear interpolation to work out the proportions of which original cells should be placed
-//	//in the new bin boundaries.
-//
-//	// Precision will normally be lost.  
-//	// It does not make sense to rebin to smaller bin boundaries.
-//	
-//	//when we calculate the standard deviation on the intensity carry the variance through the calculation
-//	//and convert to SD at the end.
-//			
-//	
-//	if(wavedims(X_init)!=1 || wavedims(y_init)!=1 || wavedims(s_init)!=1 || wavedims(X_rebin)!=1)
-//		print "All supplied waves must be 1D (Pla_intrebin)"	
-//		return 1
-//	endif
-//	
-//	if(numpnts(X_init)-1!= numpnts(y_init) || numpnts(y_init)!=numpnts(s_init))
-//		print "y_init and s_init must have one less point than x_init (Pla_intRebin)"
-//		return 1
-//	endif
-//
-//	
-//	make/o/d/n =(numpnts(x_rebin)-1) W_rebin=0,W_RebinSD=0
-//	
-//	variable ii=0, kk = 0
-//	variable lowlim,upperlim, lowcelloc, uppercelloc
-//	
-//	for(ii=0; ii< numpnts(x_rebin)-1 ; ii+=1)
-//		//this gives the approximate position of where the new bin would start in the old bin		
-//		lowlim = binarysearchinterp(x_init,x_rebin[ii])
-//		upperlim = binarysearchinterp(x_init,x_rebin[ii+1])	
-//		
-//		//if your rebin x boundaries are set outisde those of the initial data then you won't get any counts.
-//		if(numtype(lowlim) && numtype(upperlim))
-//			W_rebin[ii] = 0
-//			W_RebinSD[ii] = 0
-//			continue
-//		endif
-//		
-//		//lower limit for your rebinned data may be outside the original histogram boundary
-//		//set it to the lowest point in this case
-//		if(numtype(lowlim))
-//			lowlim = 0
-//		endif
-//
-//		//upperlimit has escaped, so set to the highest from the original data.		
-//		if(numtype(upperlim))
-//			upperlim = numpnts(x_init) - 1
-//		endif
-//		
-//		lowcelloc = trunc(lowlim)
-//		uppercelloc = trunc(upperlim)
-//		if(lowcelloc > numpnts(y_init) -1 )
-//			lowcelloc = numpnts(y_init) -1
-//		endif
-//		if(uppercelloc > numpnts(y_init) -1)
-//			uppercelloc = numpnts(y_init) -1
-//		endif
-//		
-//		//now need to add the counts together
-//		
-//		//both upperlimit and lower limit rebin boundaries aren't the same unbinned cell
-//		//need to take a proportion of a lower and upper cell 
-//		if(lowcelloc != uppercelloc)
-//			W_rebin[ii]  =  y_init[lowcelloc]*(ceil(lowlim) - lowlim)
-//			W_rebin[ii] += y_init[uppercelloc]*(upperlim - trunc(upperlim))
-//			
-//			W_RebinSD[ii]  = (s_init[lowcelloc]*(ceil(lowlim) - lowlim))^2
-//			W_RebinSD[ii] += (s_init[uppercelloc]*(upperlim - trunc(upperlim)))^2
-//		else
-//			//the upper and lower limits are in the same binned cell.  Need to work out
-//			//what proportion of the original cell is occupied by the difference between the limits
-//			W_rebin[ii] =	y_init[lowcelloc] * (upperlim - lowlim)
-//			W_RebinSD[ii] =	(s_init[lowcelloc]*(upperlim - lowlim))^2
-//		endif
-//		
-//		//if the upper and lower limits span several of the original data, then you need to add counts 
-//		//from each individual cell.
-//		if((ceil(lowlim) < trunc(upperlim)) && (trunc(upperlim) - ceil(lowlim) >= 1))
-//			for(kk = 0 ; kk < trunc(upperlim) - ceil(lowlim) ;kk += 1)
-//				W_rebin[ii] += y_init[ceil(lowlim) + kk]
-//				W_RebinSD[ii] += (s_init[ceil(lowlim) + kk])^2
-//			endfor
-//		endif
-//				
-//	endfor
-//	W_RebinSD = sqrt(W_RebinSD)
-//End
+Function test_Pla_intRebin()
+	variable timer = startmstimer
+	//basic test
+	make/d/free a = {0,1,2,3,4,5,6.6}
+	make/d/free b = {2,3,4,5,5,4}
+	make/d/free/n=6 c
+	make/d/free d = {-0.2, 0.8, 1.5, 2.5, 3.5, 8}
+	make/n=5/d/free result, resultSD
+	c = sqrt(b)
+	result = {1.6, 1.9, 3.5, 4.5, 11.5}
+	resultSD = {1.131370849898, 0.9110433579144, 1.322875655532, 1.5, 3.201562118716}
 
+	Pla_intRebin(a,b,c,d)
+	Wave W_rebin, W_rebinSD	
+	if(EqualWaves(W_rebin, result, 1) != 1 || EqualWaves(W_rebinSD, resultSD, 1) != 1)
+		print "Fail0 - test_pla_intRebin"
+		abort
+	endif
+	
+	//test that unaltered bins give same result
+	duplicate/free/o a, d
+	Pla_intrebin(a,b,c,d)
+	if(EqualWaves(W_rebin, b, 1) != 1 || EqualWaves(W_rebinSD, c, 1) != 1)
+		print  "Fail1 - test_pla_intRebin"
+		abort
+	endif
+	
+	// first bin is outside the range
+	make/d/free a = {0,1,2,3,4,5,6.6}
+	make/d/free b = {2,3,4,5,5,4}
+	make/d/free/n=6 c
+	make/d/free d = {-1.0, -0.2, 0.8, 1.5, 2.5, 3.5, 8}
+	make/n=(numpnts(d) - 1)/d/free result, resultSD
+	c = sqrt(b)
+	result = {0, 1.6, 1.9, 3.5, 4.5, 11.5}
+	resultSD = {0, 1.131370849898, 0.9110433579144, 1.322875655532, 1.5, 3.201562118716}
+
+	Pla_intRebin(a,b,c,d)
+	Wave W_rebin, W_rebinSD	
+	if(EqualWaves(W_rebin, result, 1) != 1 || EqualWaves(W_rebinSD, resultSD, 1) != 1)
+		print "Fail2 - test_pla_intRebin"
+		abort
+	endif
+	
+	// last bin is outside the range
+	make/d/free a = {0,1,2,3,4,5,6.6}
+	make/d/free b = {2,3,4,5,5,4}
+	make/d/free/n=6 c
+	make/d/free d = {-0.2, 0.8, 1.5, 2.5, 3.5, 8, 10}
+	make/n=(numpnts(d) - 1)/d/free result, resultSD
+	c = sqrt(b)
+	result = {1.6, 1.9, 3.5, 4.5, 11.5, 0}
+	resultSD = {1.131370849898, 0.9110433579144, 1.322875655532, 1.5, 3.201562118716, 0}
+
+	Pla_intRebin(a,b,c,d)
+	Wave W_rebin, W_rebinSD	
+	if(EqualWaves(W_rebin, result, 1) != 1 || EqualWaves(W_rebinSD, resultSD, 1) != 1)
+		print "Fail2.1 - test_pla_intRebin"
+		abort
+	endif
+	
+	// rebinning encompasses the entire range
+	make/d/free a = {0,1,2,3,4,5,6.6}
+	make/d/free b = {2,3,4,5,5,4}
+	make/d/free/n=6 c
+	make/d/free d = {-1.0, 8}
+	make/n=(numpnts(d))/d/free result, resultSD
+	c = sqrt(b)
+	result = {23}
+	resultSD = {4.79583}
+
+	Pla_intRebin(a,b,c,d)
+	Wave W_rebin, W_rebinSD	
+	if(EqualWaves(W_rebin, result, 1) != 1 || EqualWaves(W_rebinSD, resultSD, 1) != 1)
+		print "Fail3 - test_pla_intRebin"
+		abort
+	endif
+
+	// test4
+	make/d/free a = {0,1,2,3,4,5,6.6}
+	make/d/free b = {2,3,4,5,5,4}
+	make/d/free/n=6 c
+	make/d/free d = {-1.0, 5.1, 8}
+	make/n=(numpnts(d))/d/free result, resultSD
+	c = sqrt(b)
+	result = {19.25, 3.75}
+	resultSD = {4.360690886, 1.875}
+
+	Pla_intRebin(a,b,c,d)
+	Wave W_rebin, W_rebinSD	
+	if(EqualWaves(W_rebin, result, 1) != 1 || EqualWaves(W_rebinSD, resultSD, 1) != 1)
+		print "Fail4 - test_pla_intRebin"
+		abort
+	endif
+
+	// test5
+	make/d/free a = {0,1,2,3,4,5,6.6}
+	make/d/free b = {2,3,4,5,5,4}
+	make/d/free/n=6 c
+	make/d/free d = {0.2, 1.1, 8}
+	make/n=(numpnts(d))/d/free result, resultSD
+	c = sqrt(b)
+	result = {1.9, 20.7}
+	resultSD = {1.144552314, 4.519955752}
+
+	Pla_intRebin(a,b,c,d)
+	Wave W_rebin, W_rebinSD	
+	if(EqualWaves(W_rebin, result, 1) != 1 || EqualWaves(W_rebinSD, resultSD, 1) != 1)
+		print "Fail5 - test_pla_intRebin"
+		abort
+	endif
+
+	// test6
+	make/d/free a = {0,1,2,3,4,5,6.6}
+	make/d/free b = {2,3,4,5,5,4}
+	make/d/free/n=6 c
+	make/d/free d = {0.2, 1.1, 8}
+	make/n=(numpnts(d))/d/free result, resultSD
+	c = sqrt(b)
+	result = {1.9, 20.7}
+	resultSD = {1.144552314, 4.519955752}
+
+	Pla_intRebin(a,b,c,d)
+	Wave W_rebin, W_rebinSD	
+	if(EqualWaves(W_rebin, result, 1) != 1 || EqualWaves(W_rebinSD, resultSD, 1) != 1)
+		print "Fail6 - test_pla_intRebin"
+		abort
+	endif
+	
+	// test7
+	make/d/free a = {0,1,2,3,4,5,6.6}
+	make/d/free b = {2,3,4,5,5,4}
+	make/d/free/n=6 c
+	make/d/free d = {0.2, 1.1, 6.6}
+	make/n=(numpnts(d))/d/free result, resultSD
+	c = sqrt(b)
+	result = {1.9, 20.7}
+	resultSD = {1.144552314, 4.519955752}
+
+	Pla_intRebin(a,b,c,d)
+	Wave W_rebin, W_rebinSD	
+	if(EqualWaves(W_rebin, result, 1) != 1 || EqualWaves(W_rebinSD, resultSD, 1) != 1)
+		print "Fail7 - test_pla_intRebin"
+		abort
+	endif
+	
+	// test8
+	make/d/free a = {0,1,2,3,4,5,6.6}
+	make/d/free b = {2,3,4,5,5,4}
+	make/d/free/n=6 c
+	make/d/free d = {0.2, 1.1, 6.5}
+	make/n=(numpnts(d))/d/free result, resultSD
+	c = sqrt(b)
+	result = {1.9, 20.45}
+	resultSD = {1.144552314, 4.466052508}
+
+	Pla_intRebin(a,b,c,d)
+	Wave W_rebin, W_rebinSD	
+	if(EqualWaves(W_rebin, result, 1) != 1 || EqualWaves(W_rebinSD, resultSD, 1) != 1)
+		print "Fail8 - test_pla_intRebin"
+		abort
+	endif
+		
+	// test9
+	make/d/free a = {0,1,2,3,4,5,6.6}
+	make/d/free b = {2,3,4,5,5,4}
+	make/d/free/n=6 c
+	make/d/free d = {6.4, 6.5}
+	make/n=(numpnts(d))/d/free result, resultSD
+	c = sqrt(b)
+	result = {.25}
+	resultSD = {0.125}
+
+	Pla_intRebin(a,b,c,d)
+	Wave W_rebin, W_rebinSD	
+	if(EqualWaves(W_rebin, result, 1) != 1 || EqualWaves(W_rebinSD, resultSD, 1) != 1)
+		print "Fail9 - test_pla_intRebin"
+		abort
+	endif
+	print "Pass - test_pla_intRebin", stopmstimer(timer)
+End
 
 Function Pla_histogram(W_bins, W_q, W_R, W_Rsd)
 	Wave W_bins, W_q, W_R, W_Rsd
@@ -325,9 +506,15 @@ variable rebin, lowerQ, upperQ
 	W_dq_rebin[] /= Q_sw[p]
 	
 	for(ii = numpnts(W_q_rebin) - 1 ; ii >= 0 ; ii -= 1)
+
 		if(numtype(W_q_Rebin[ii]))
+
 			deletepoints ii, 1, W_q_rebin, W_R_rebin, W_E_rebin, W_dq_rebin
+
 		endif
+
 	endfor
+
+
 
 End

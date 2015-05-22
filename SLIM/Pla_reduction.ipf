@@ -2169,8 +2169,9 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 				
 				print compSpliceFactor
 
-				//think the following is wrong! No need to errors in quadrature if scalefactor does not depend on wavelength
-				EE = sqrt((real(compSplicefactor) * EE)^2 + (RR * imag(compSplicefactor))^2)
+				//possibly propagate error in scale factor.
+				//EE = sqrt((real(compSplicefactor) * EE)^2 + (RR * imag(compSplicefactor))^2)
+				EE *= real(compSplicefactor)
 				RR *= real(compSplicefactor)
 				
 				concatenate/NP {RR}, tempRR
