@@ -249,18 +249,15 @@ Function Moto_Savedatabase(ctrlName) : ButtonControl
 	DFREF saveDF = getdatafolderDFR()
 	Setdatafolder root:packages:motofit:reflectivity:SLDdatabase
 	string name=""
-	String fname
 	Wave/t chemical, chemical_composition
 	Wave SLD_neutrons, SLD_X_rays, Mass_density
-//	fname=Moto_DoSaveFileDialog(name)
-	if(strlen(fname)==0)
-		ABORT
-	endif
+
 	variable refnum
-	open/z refnum as fname
-	if(V_flag)
+	open/d refnum
+	if(!strlen(S_filename))
 		return 0
 	endif
+	open refnum as S_filename
 	fprintf refnum, "chemical,chemical_composition,SLD_neutrons,SLD_X_rays,Mass_density\r"
 	wfprintf refnum, "%s\t%s\t%g\t%g\t%g\r", chemical,chemical_composition,SLD_neutrons,SLD_X_rays,Mass_Density
 	close refnum

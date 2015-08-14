@@ -35,9 +35,9 @@
 
 static constant XRR_BEAMWIDTH_SD = 0.019449 //mm
 
-static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
+static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint, attenuation])
 	string ref_fname, bkg1, bkg2
-	variable scalefactor, footprint
+	variable scalefactor, footprint, attenuation
 
 	string base, w0,w1,w2, w3	, directory=""
 	string cDF = getdatafolder(1)
@@ -78,9 +78,25 @@ static Function reduceXpertPro(ref_fname, [bkg1,bkg2, scalefactor, footprint])
 		Wave/t M_xmlcontent
 		make/o/d/n=(dimsize(M_xmlcontent,0)) $w0, $w1, $w2, $w3, bkg_I=0, bkg_SD=0
 		Wave qq = $w0, RR = $w1, dR = $w2, dq = $w3
-	
+
 		RR = str2num(M_xmlcontent)
-		dR = sqrt(RR)
+		
+		// correct auto attenuation factors, attenuator is slightly wrong
+		if (!paramisdefault(attenuation))
+			if(xmlwavefmxpath(fileID,"//xrdml:beamAttenuationFactors",namespace," \n\r\t"))
+				print "ERROR while loading intensities, is this an XRDML file?  (reduceXpertPro)"
+				abort
+			endif
+			Wave/t M_xmlcontent
+			make/free/d/n=(dimsize(M_xmlcontent,0)) beamAttenuationFactors
+			beamAttenuationFactors = str2num(M_xmlcontent)
+			
+			//correct beam attenuation factors
+			beamAttenuationFactors = beamAttenuationFactors[p] > 10 ? beamAttenuationFactors[p] / attenuation : 1
+			RR *= beamAttenuationFactors
+		endif
+		
+		dR = sqrt(RR)		
 		countTime = str2num(XMLstrFmXpath(fileID,"//xrdml:commonCountingTime",namespace,""))
 		RR /= countTime
 		dR /=countTime

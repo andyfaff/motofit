@@ -6,8 +6,8 @@
 //chebyshevapproximator(root:data:c_PLP0008682:Coef_c_PLP0008682_R, fit_c_PLP0008682_R, root:data:c_PLP0008682:c_PLP0008682_q);moto_SLDplot(coef_forreflectivity, root:data:c_PLP0008682:SLD_c_PLP0008682_R)
 
 //gencurvefit /X=:data:e361r:e361r_q/K={5000,10,0.7,0.5}/TOL=0.00001/HOLD=hold/D=root:res/W=:data:e361r:e361r_E/I=1/L=200 Chebyshevapproximator,:data:e361r:e361r_R,root:wave0,"",root:packages:motofit:gencurvefit:gen_limits
-
-static constant NUMSTEPS = 40
+//chebyshevapproximator(wave0, rr, qq);moto_sldplot(coef_forreflectivity, sld)
+static constant NUMSTEPS = 200
 constant lambda = 10
 
 Function Chebyshevapproximator(w, yy, xx): fitfunc

@@ -2491,8 +2491,8 @@ End
 
 //A wrapper script to reduce many X-ray files
 
-Function reduceManyXrayFiles()
-
+Function reduceManyXrayFiles([attenuation])
+	variable attenuation
 	variable err, ii, jj, refnum
 	string cDF = getdatafolder(1)
 	string aFile, theFiles, base
@@ -2519,8 +2519,11 @@ Function reduceManyXrayFiles()
 				endif
 			while(itemsinlist(S_filename)>2)
 		
+			if(paramisdefault(attenuation))
+				attenuation = 148
+			endif
 			//if there is no problem reducing it, then try to save it
-			Pla_Xrayreduction#reduceXpertPro(afile, bkg1=stringfromlist(0, S_filename, "\r"), bkg2 = stringfromlist(1, S_filename, "\r"))
+			Pla_Xrayreduction#reduceXpertPro(afile, bkg1=stringfromlist(0, S_filename, "\r"), bkg2 = stringfromlist(1, S_filename, "\r"), attenuation=attenuation)
 		endfor
 	catch
 		err = 1
