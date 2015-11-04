@@ -1,12 +1,16 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma ModuleName=cubicspline
 
-Constant NUMSTEPS = 60
+// gencurvefit /HOLD=holdwave/X=root:data:e361r:e361r_q/K={2000,10,0.7,0.5}/TOL=0.05/L=200/W=root:data:e361r:e361r_E/I=1 cubicSplineRefFitter,root:data:e361r:e361r_R,root:spliney,"",root:gen_limits
+
+Constant NUMSTEPS = 100
 Constant WSMOOTH = 0.0
 Constant WSMOOTH1 = 0.0
 
 Function lagrangeSmoother(coefs, yobs, ycalc, sobs)
 	wave coefs, yobs, ycalc, sobs
+	
+	//a global variable lambda has to exist for this function to work.
 	
 	variable numknots, Nc, A1, A2, ii, knotoffset, knotmean
 	numknots = numpnts(coefs) - 7 - 3 * coefs[0]
