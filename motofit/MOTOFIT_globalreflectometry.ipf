@@ -1914,15 +1914,14 @@ Function parse_motoMPI([fileStr])
 	
 	variable chi2
 	if(!paramisdefault(fileStr))
-		LoadWave/J/M/D/A=wave/K=0/V={"\t, "," $",0,0} fileStr
+		LoadWave/J/M/D/A=wave/K=1/L={0, 1, 0, 0, 0}/V={"\t, "," $",0,0} fileStr
 	else
-		Loadwave/J/M/D/A=wave/K=0/V={"\t, "," $",0,0}
+		Loadwave/J/M/D/A=wave/K=1/L={0, 1, 0, 0, 0}/V={"\t, "," $",0,0}
 	endif
 	if(!V_flag)
 		return 1
 	endif
 	Wave theMonteCarlo = $(stringfromlist(0, S_wavenames))
-	deletepoints/M=1 0, 1, theMontecarlo
 	
 	//process the output
 	chi2 = processGlobalMonteCarlo(themontecarlo)
@@ -1985,6 +1984,8 @@ Function ingest_motoMPI_input([folderStr])
 				abort
 			endif
 			//two redundant lines at top
+			freadline pilotID, input
+			freadline pilotID, input
 			freadline pilotID, input
 			freadline pilotID, input
 			//now we get to the interesting part
@@ -2057,4 +2058,53 @@ Function ingest_motoMPI_input([folderStr])
 	if(pilotID)
 		close pilotID
 	endif
+End
+
+Function parse_refnx([fileStr])
+	string fileStr
+	//parses output from the motoMPI program.
+	//each line is the fit result from a single fit.
+	//the first value on each line is a chi2 value.
+	
+	variable chi2
+	if(!paramisdefault(fileStr))
+		LoadWave/J/M/D/A=wave/K=1/L={0, 1, 0, 0, 0}/V={"\t, "," $",0,0} fileStr
+	else
+		Loadwave/J/M/D/A=wave/K=1/L={0, 1, 0, 0, 0}/V={"\t, "," $",0,0}
+	endif
+	if(!V_flag)
+		return 1
+	endif
+	Wave theMonteCarlo = $(stringfromlist(0, S_wavenames))
+	
+	Wave unique_mask = isUniqueParam()
+	variable ii, jj, kk
+	kk = dimsize(theMonteCarlo, 1) - 1
+	for(jj = dimsize(unique_mask, 1) ; jj >= 0 ; jj -= 1)
+		for(ii = dimsize(unique_mask, 0) ; ii >= 0 ; ii -= 1)
+			if(unique_mask[ii][jj] == 0)
+				deletepoints/M=1 kk, 1, theMonteCarlo
+				kk -= 1
+			elseif(unique_mask[ii][jj] == 1)
+				kk -= 1
+			endif
+		endfor
+	endfor
+	
+	//process the output
+	chi2 = processGlobalMonteCarlo(themontecarlo)
+		
+	duplicate/o theMontecarlo, M_montecarlo
+	killwaves/z theMonteCarlo
+
+	string holdstring = ""
+	holdstring = padstring(holdstring, Dimsize(M_Montecarlo, 1), 48)
+	make2DScatter_plot_matrix(M_monteCarlo, holdstring)
+	
+	//this coefs wave is updated when you processGlobalMonteCarlo
+	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
+	extract_combined_into_list(coefs)
+	
+	ValDisplay Chi2_tab1, win=globalreflectometrypanel, value = _NUM:(chi2)
+	
 End
