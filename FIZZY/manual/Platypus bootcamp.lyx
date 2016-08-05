@@ -104,7 +104,7 @@ d.
 \end_layout
 
 \begin_layout Enumerate
-Go through the Platypus SWMS and understand it.
+Go through the Platypus SWMES and understand it.
 \end_layout
 
 \begin_layout Enumerate
@@ -170,7 +170,7 @@ Cooling water
 \end_layout
 
 \begin_layout Standard
-The cooling water should be being supplied at ~16 degrees at a rate of ~4l/min.
+The cooling water should be being supplied at ~17 degrees at a rate of ~4l/min.
  Check that the flow rate is high enough on the dc1-platypus computer in
  the instrument cabin.
  Check that there are no leaks and that there is enough water in the reservoir.
@@ -1471,38 +1471,33 @@ run/drive
 \begin_layout Subsubsection
 
 \noun on
-motorname homerun 1 - 
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:homeit---Homing"
+
+\end_inset
+
+homeit
 \noun default
-Homing slits 1,2,3,4
+ - Homing slits 2 and 3
 \end_layout
 
 \begin_layout Standard
-slit systems 1,2,3 and 4 (not st3vt and st4vt) are not on absolute encoders.
- This means that after a power outage the slit positions are lost.
- This is bad because SICS may say the slit gaps are small, when in fact
- they are large.
- This may let too many neutrons through and overwhelm the detector.
- The slits must be homed before use, enter 
+ss2d, ss2u, ss3u, ss3d use incremental encoders (with absolute encoders
+ as an alternate mode of operation).
+ After a power outage the positions of these motors are lost and need to
+ undergo a homing routine.
+
 \emph on
-all
+ Firstly close the tertiary shutter to make sure no neutrons are passing
+ down the instrument
 \emph default
- the following commands:
+.
+ Then issue the following command:
 \end_layout
 
 \begin_layout LyX-Code
-ss1u homerun 0
-\end_layout
-
-\begin_layout LyX-Code
-ss1u homerun 1
-\end_layout
-
-\begin_layout LyX-Code
-ss3u homerun 0
-\end_layout
-
-\begin_layout LyX-Code
-ss3u homerun 1
+homeit ss2u ss2d ss3u ss3d
 \end_layout
 
 \begin_layout LyX-Code
@@ -1512,6 +1507,120 @@ drive ss1u 0 ss1d 0 ss2u 0 ss2d 0 ss3u 0 ss3d 0 ss4u 0 ss4d 0
 \begin_layout Standard
 You are now in a position to consider what slit positions you need for the
  experiment.
+ 
+\noun on
+homeit
+\noun default
+ stands for 
+\begin_inset Quotes eld
+\end_inset
+
+HOME Incremental Tape
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection
+
+\noun on
+checkinc
+\noun default
+ - check the incremental tape encoder vs absolute encoder
+\end_layout
+
+\begin_layout Standard
+motors ss2u, ss2d, ss3u, ss3d have incremental tape encoders as well as
+ absolute encoders.
+ You can compare the position according to the tape encoder against the
+ position according to the absolute encoder using:
+\end_layout
+
+\begin_layout LyX-Code
+checkinc
+\emph on
+ motorname
+\end_layout
+
+\begin_layout Standard
+You have to take the softzeros for each encoder type into account when doing
+ this.
+\end_layout
+
+\begin_layout Subsubsection
+
+\noun on
+absenc 
+\noun default
+- toggle between incremental encoder and absolute encoder
+\end_layout
+
+\begin_layout Standard
+ss2u, ss2d, ss3u and ss3d have both incremental and absolute encoders.
+ The incremental encoder is more accurate, but for some purposes the absolute
+ encoder may be preferred.
+ You cannot use the incremental encoder and absolute encoder at the same
+ time.
+ 
+\noun on
+ss2u
+\noun default
+ is the motorname associated with the incremental encoder.
+ There is also a motor name, 
+\noun on
+ss2uabs
+\noun default
+, which uses the absolute encoder.
+ To check whether you are using the absolute encoder or the incremental
+ use:
+\end_layout
+
+\begin_layout LyX-Code
+absenc 
+\emph on
+motorname
+\end_layout
+
+\begin_layout Standard
+To change between the absolute and incremental encoders for a motor issue
+ the following commands:
+\end_layout
+
+\begin_layout LyX-Code
+absenc 
+\emph on
+motorname
+\emph default
+ on
+\end_layout
+
+\begin_layout LyX-Code
+absenc 
+\emph on
+motorname
+\emph default
+ off
+\end_layout
+
+\begin_layout Standard
+If you switch back to using the incremental encoder you have to re-home
+ that motor using the 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:homeit---Homing"
+
+\end_inset
+
+ command.
+ 
+\emph on
+\noun on
+ss2uabs
+\noun default
+ will only be driveable if the absolute encoder is activated
+\emph default
+.
 \end_layout
 
 \begin_layout Subsubsection
