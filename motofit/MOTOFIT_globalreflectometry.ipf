@@ -2080,8 +2080,8 @@ Function parse_refnx([fileStr])
 	Wave unique_mask = isUniqueParam()
 	variable ii, jj, kk
 	kk = dimsize(theMonteCarlo, 1) - 1
-	for(jj = dimsize(unique_mask, 1) ; jj >= 0 ; jj -= 1)
-		for(ii = dimsize(unique_mask, 0) ; ii >= 0 ; ii -= 1)
+	for(jj = dimsize(unique_mask, 1) - 1; jj >= 0 ; jj -= 1)
+		for(ii = dimsize(unique_mask, 0) - 1; ii >= 0 ; ii -= 1)
 			if(unique_mask[ii][jj] == 0)
 				deletepoints/M=1 kk, 1, theMonteCarlo
 				kk -= 1
