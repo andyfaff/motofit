@@ -580,7 +580,7 @@ Function startSICS()
 		Notebook SICScmdPanel#NB0_tab0, defaultTab=20, statusWidth=0, autoSave=1,showRuler=0, rulerUnits=1
 	
 		ListBox currentAxisPos_tab0,pos={388,31},size={300,687},proc=moveAxisListBoxProc
-		ListBox currentAxisPos_tab0,mode= 2,selRow= 0,editStyle= 1,widths={2,0,2,0,2,0,2}, fsize=14
+		ListBox currentAxisPos_tab0,mode= 2,selRow= 0,editStyle= 1,widths={2,0,2,0,2,0,2,0,0,0,0,0,0}, fsize=14
 		ListBox currentAxisPos_tab0 listwave=:packages:platypus:SICS:axeslist
 		ListBox currentAxisPos_tab0,userColumnResize= 0,selwave = root:packages:platypus:sics:selAxesList,mode = 2, colorWave=root:packages:platypus:SICS:cwAxes
 		SetVariable sicsstatus_tab0,pos={40,705},size={286,20},title="SICS status"
@@ -1158,7 +1158,7 @@ Function createAxisListAndPopulate(sock)
 
 	//get hipadaba paths for each of the motors.
 	sort/a axeslist,axeslist
-	redimension/n=(-1,7) axeslist
+	redimension/n=(-1,13) axeslist
 
 	cmd = ""
 	for(ii=0;ii<dimsize(axeslist,0);ii+=1)
@@ -1179,6 +1179,14 @@ Function createAxisListAndPopulate(sock)
 		axeslist[ii][4] = gethipaval(axeslist[ii][3])
 		axeslist[ii][5] = axeslist[ii][1]+"/softupperlim"
 		axeslist[ii][6] = gethipaval(axeslist[ii][5])
+
+		axeslist[ii][7] = axeslist[ii][1]+"/softzero"
+		axeslist[ii][8] = gethipaval(axeslist[ii][7])
+		axeslist[ii][9] = axeslist[ii][1]+"/precision"
+		axeslist[ii][10] = gethipaval(axeslist[ii][9])
+		axeslist[ii][11] = axeslist[ii][1]+"/target"
+		axeslist[ii][12] = gethipaval(axeslist[ii][11])
+
 	endfor
 		
 	return err

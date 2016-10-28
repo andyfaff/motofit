@@ -196,7 +196,7 @@ Function interestProcessor(w,x)
 						//				beep
 					endif
 		
-					if(col==3 || col ==5)
+					if(col==3 || col==5 || col==7 || col==9 || col==11)
 						axeslist[row][col+1] = num2str(str2num(str2))
 						//if the softlimits have changed, need to update positions, as a notify isn't always sent.
 						//send on the interest channel.  SHould just be able to send the short axis name

@@ -227,9 +227,8 @@ Function vslits(s1,s2,s3,s4)
 	cmd += "ss3d "+num2str(-s3/2)+" "
 	cmd += "ss4u "+num2str(s4/2)+" "
 	cmd += "ss1d "+num2str(-s1/2)+" "
-	cmd += "ss1u "+num2str(s1/2)+"\n"
-
-	cmd += "drive ss3u "+num2str(s3/2)+" "
+	cmd += "ss1u "+num2str(s1/2)+" "
+	cmd += "ss3u "+num2str(s3/2)+" "
 	cmd += "ss4d "+num2str(-s4/2)+" "
 	cmd += "ss2d "+num2str(-s2/2)+"\n"
 
@@ -1633,21 +1632,21 @@ Function Instrumentlayout_panel()
 	SetVariable attenuatorstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/attenuator/beam_attenuator")][1],noedit= 1
 
 //Lakeshore
-//	SetVariable lakeshore,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
-//	SetVariable lakeshore,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
-//	SetVariable lakeshore,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueC")][1],noedit= 1, win=instrumentlayout
-//
-//	SetVariable lakeshoreset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/setpoint1")][1],noedit= 1, win=instrumentlayout
-//	SetVariable lakeshoreset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
-//	SetVariable lakeshore1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueD")][1],noedit= 1, win=instrumentlayout
-//	SetVariable lakeshore1,pos={90,293},size={90,16},title="temp D", win=instrumentlayout,bodywidth=40
+	SetVariable lakeshore,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
+	SetVariable lakeshore,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable lakeshore,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueC")][1],noedit= 1, win=instrumentlayout
+
+	SetVariable lakeshoreset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/setpoint1")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshoreset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
+	SetVariable lakeshore1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueD")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshore1,pos={90,293},size={90,16},title="temp D", win=instrumentlayout,bodywidth=40
 
 //Julabo
-	SetVariable julabo,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
-	SetVariable julabo,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
-	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout	
-	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/setpoint")][1],noedit= 1, win=instrumentlayout
-	SetVariable julaboset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
+//	SetVariable julabo,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
+//	SetVariable julabo,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+//	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout	
+//	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/setpoint")][1],noedit= 1, win=instrumentlayout
+//	SetVariable julaboset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
 
 	DrawRect/w=instrumentlayout 219,322,311,357
 	DrawRect/w=instrumentlayout 180,364,213,439
@@ -2641,14 +2640,14 @@ function temperature(temperature, [wait])
 	string cmd = ""
 	if(wait)
 		//old driver for lakeshore
-		//sprintf cmd, "drive tc1_driveable %3.2f", temperature
+		sprintf cmd, "drive tc1_driveable %3.2f", temperature
 		//new driver for julabo has different driveable
-		sprintf cmd, "drive tc1_setpoint %3.2f", temperature
+		//sprintf cmd, "drive tc1_setpoint %3.2f", temperature
 	else
 		//Lakeshore
-		//sprintf cmd, "hset /sample/tc1/sensor/setpoint1 %3.2f", temperature
+		sprintf cmd, "hset /sample/tc1/sensor/setpoint1 %3.2f", temperature
 		//Julabo
-		sprintf cmd, "hset /sample/tc1/setpoint %3.2f", temperature
+		//sprintf cmd, "hset /sample/tc1/setpoint %3.2f", temperature
 	endif
 	sics_cmd_interest(cmd)	
 end

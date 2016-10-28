@@ -52,7 +52,7 @@
 	//the constants below may change frequently
 	Constant Y_PIXEL_SPACING = 1.175	//in mm
 	Constant CHOPFREQ = 23		//Hz
-	Constant ROUGH_BEAM_POSITION = 110		//Rough direct beam position
+	Constant ROUGH_BEAM_POSITION = 92		//Rough direct beam position
 	constant ROUGH_BEAM_WIDTH = 10
 	Constant CHOPPAIRING = 3
 		
