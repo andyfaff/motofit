@@ -1,0 +1,69 @@
+Motofit installation instructions
+=================================
+
+The Motofit package uses two different types of files. The first are 'procedure
+files', which are given the '.ipf' extension. The second are plugins, hereafter
+called 'XOP's, which are compiled C modules. The procedure files and XOP's must
+be put in the correct place for Motofit to work. This installation procedure
+will outline how to put the files in the correct place.  If you have questions
+then don't hesitate to get in contact with the package maintainer, Andrew
+Nelson, via the "motofit" github page (email not listed for protection against
+spambots). All queries are welcome (provided you've read these instructions).
+
+
+Understanding how Igor loads user packages
+------------------------------------------
+To learn about how Igor loads XOP's and procedure files you can type in:
+
+    displayhelptopic "Activating Extensions"
+    displayhelptopic "Igor Pro User Files"
+
+from the Igor commandline.
+
+
+Installation Steps
+------------------
+(1) Locate the "Igor Pro User Files" directory.
+    You can locate this directory by using:
+
+    print SpecialDirPath("Igor Pro User Files", 0, 0, 0)
+
+    from the command line. On OSX this path is typically:
+
+    "Macintosh HD:Users:<username>:Documents:WaveMetrics:Igor Pro 7 User Files:"
+
+    On Windows 7 this path is:
+
+    "C:Users:<username>:Documents:WaveMetrics:Igor Pro 7 User Files:"
+
+    Your exact location may differ slightly.
+
+
+(2) Install the XOP's first.
+    Below the "Igor Pro User Files" directory there is a directory called "Igor
+    Extensions (64-bit)". Transfer the contents of the "Igor Extensions (64-bit)
+    directory" contained in the Motofit installation archive to this directory
+    (don't move the entire directory). If there are pre-existing files with the
+    *same name* then please delete or move them elsewhere first. When Igor
+    starts up it automatically loads all XOP's contained in the "Igor
+    Extensions" directories.
+
+(3) Install the User Procedures.
+    Below the "Igor Pro User Files" directory there is a directory called "User
+    Procedures". Transfer the motofit directory contained in the "User
+    Procedures" directory in the installation archive to this directory. Again,
+    if there is a pre-existing motofit directory then please delete or move
+    elsewhere first. When Igor starts up it automatically allows these
+    procedures to be loaded at a later stage.
+
+(4) Install the Igor Procedures.
+    The procedures installed in step 3 are not automatically loaded when Igor
+    starts up. To allow them to load we place another procedure in the "Igor
+    Procedures" directory below the "Igor Pro User Files" directory. Move the
+    contents of the "Igor Procedures" directory in the installation archive to
+    this directory.
+
+(5) Start up Igor to test if everything works. There should now be a "Motofit"
+    menu item available. Select "Motofit --> Load Motofit package". Once the
+    loading has finished select the "Motofit --> Fit Reflectivity data" menu
+    item.
