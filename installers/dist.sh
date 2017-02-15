@@ -8,6 +8,8 @@ macXOP='dist/macXOP/Igor Extensions (64-bit)'
 tkt='../../XOP Toolkit 7/IgorXOPs7'
 XOPcode='../../XOPcode'
 
+cp install_OSX.command dist
+
 cp -r ../motofit 'dist/User Procedures'
 cp ../MOTOFIT_loadpackage.ipf './dist/Igor Procedures'
 
