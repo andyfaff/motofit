@@ -41,12 +41,12 @@ Installation Steps
 
 (2) Install the XOP's first.
     Below the "Igor Pro User Files" directory there is a directory called "Igor
-    Extensions (64-bit)". Transfer the contents of the "Igor Extensions (64-bit)
-    directory" contained in the Motofit installation archive to this directory
-    (don't move the entire directory). If there are pre-existing files with the
-    *same name* then please delete or move them elsewhere first. When Igor
-    starts up it automatically loads all XOP's contained in the "Igor
-    Extensions" directories.
+    Extensions (64-bit)". Transfer the contents of the "winXOP/Igor Extensions
+    (64-bit)" directory contained in the Motofit installation archive to this
+    directory (don't move the entire directory. Substitute for macXOP if you're
+    on OSX). If there are pre-existing files with the *same name* then please
+    delete or move them elsewhere first. When Igor starts up it automatically
+    loads all XOP's contained in the "Igor Extensions" directories.
 
 (3) Install the User Procedures.
     Below the "Igor Pro User Files" directory there is a directory called "User
