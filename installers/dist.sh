@@ -52,5 +52,5 @@ cp "$tkt/ZIP/VC8/ZIP64.xop" "$winXOP"
 cp "$tkt/deps/lib/libxml2.dll" "$winXOP"
 cp "$tkt/deps/pthreads_win/lib/pthreadVC2_x64.dll" "$winXOP"
 
-zip dist.zip dist
+zip -r dist.zip dist
 
