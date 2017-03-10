@@ -1,6 +1,12 @@
 @echo off
 set batchloc=%~dp0
-set instloc="%USERPROFILE%\Documents\WaveMetrics\Igor Pro 7 User Files"
+
+:: set instloc="%USERPROFILE%\Documents\WaveMetrics\Igor Pro 7 User Files"
+
+:: Put Documents location into docloc
+FOR /F "tokens=2* delims=	 " %%A IN ('REG QUERY "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" /v Personal') DO SET docloc=%%B
+
+set instloc="%docloc%\WaveMetrics\Igor Pro 7 User Files"
 
 IF EXIST %instloc% (
 	echo Files being copied from:
