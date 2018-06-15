@@ -3,12 +3,6 @@
 #include <Image Line Profile>
 #pragma IgorVersion = 6.0
 
-// SVN date:    $Date$
-// SVN author:  $Author$
-// SVN rev.:    $Revision$
-// SVN URL:     $HeadURL$
-// SVN ID:      $Id$
-
 //DEPENDENCIES
 //1) sockit.xop (www.igorexchange.com)
 //2) zip.xop (www.igorexchange.com)
@@ -588,14 +582,14 @@ Function startSICS()
 		SetVariable sicsstatus_tab0,limits={-inf,inf,0},value= root:packages:platypus:SICS:sicsstatus,bodyWidth= 237
 
 		PopupMenu motor_tab1,pos={70,40},size={136,21},proc=motor_tab1menuproc,title="Motor Name"
-		PopupMenu motor_tab1,fSize=10,mode=1,popvalue="dummy_motor",value= #"motorlist()"
-		SetVariable range_tab1,pos={54,80},size={107,16},title="range",fSize=10
+		PopupMenu motor_tab1,fSize=14,mode=1,popvalue="dummy_motor",value= #"motorlist()"
+		SetVariable range_tab1,pos={54,80},size={107,16},title="range",fSize=14
 		SetVariable range_tab1,limits={0,1000,0.1},value= root:packages:platypus:SICS:range
-		SetVariable numpnts_tab1,pos={171,80},size={121,16},title="num points",fSize=10
+		SetVariable numpnts_tab1,pos={171,80},size={121,16},title="num points",fSize=14
 		SetVariable numpnts_tab1,limits={1,inf,1},value= root:packages:platypus:SICS:numpoints
 		CheckBox save_tab1,pos={315,89},size={47,26},title="don/t\rsave?",value= 0
-		PopupMenu mode_tab1,pos={51,103},size={110,21},bodyWidth=85,title="type"
-		PopupMenu mode_tab1,fSize=10
+		PopupMenu mode_tab1,pos={51,113},size={110,21},bodyWidth=85,title="type"
+		PopupMenu mode_tab1,fSize=14
 		PopupMenu mode_tab1,mode=1,popvalue="time",value= #"\"time;MONITOR_1;count;unlimited;frame\""
 		Button Go_tab1,pos={462,39},size={101,101},proc=button_SICScmdpanel,title=""
 		Button Go_tab1,picture= procglobal#go_pict
@@ -603,21 +597,21 @@ Function startSICS()
 		Button Stop_tab1,picture= procglobal#stop_pict
 		Button Pause_tab1,pos={566,39},size={103,103},disable=1,proc=button_SICScmdpanel,title=""
 		Button Pause_tab1,picture= procglobal#pause_pict
-		PopupMenu counttypeVSpos_tab1,pos={183,216},size={272,21},bodyWidth=200,title="count variable",proc=counttypeVSpos_popupcontrol
+		PopupMenu counttypeVSpos_tab1,pos={190,225},size={272,21},bodyWidth=200,title="count variable",proc=counttypeVSpos_popupcontrol
 		PopupMenu counttypeVSpos_tab1,mode=4,popvalue="DetectorCounts",value= #"\"DetectorCounts;AvgCountRate;Det/BM1;Det/BM2;BM2_counts;BM2_rate;BM1_counts;BM1_rate\""
-		SetVariable currentpos_tab1,pos={235,42},size={100,16},disable=2,title=" "
+		SetVariable currentpos_tab1,pos={265,42},size={100,16},disable=2,title=" "
 		SetVariable currentpos_tab1,limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist
-		SetVariable preset_tab1,pos={170,106},size={123,16},title="preset",fSize=10
+		SetVariable preset_tab1,pos={170,112},size={123,16},title="preset",fSize=14
 		SetVariable preset_tab1,limits={1,inf,1},value= root:packages:platypus:SICS:preset
-		ValDisplay progress_tab1,pos={26,144},size={414,14},bodyWidth=342,title="Scan progress"
-		ValDisplay progress_tab1,fSize=10,frame=2,limits={0,1,0},barmisc={0,40}
+		ValDisplay progress_tab1,pos={33,144},size={424,14},bodyWidth=342,title="Scan progress"
+		ValDisplay progress_tab1,fSize=14,frame=2,limits={0,1,0},barmisc={0,60}
 		ValDisplay progress_tab1,value= #"root:packages:platypus:data:scan:pointProgress"
-		SetVariable sampletitle_tab1,pos={40,165},size={400,16},bodyWidth=342,title="Sample title"
-		SetVariable sampletitle_tab1,fSize=10
+		SetVariable sampletitle_tab1,pos={57,169},size={400,16},bodyWidth=342,title="Sample title"
+		SetVariable sampletitle_tab1,fSize=14
 		SetVariable sampletitle_tab1,value= root:packages:platypus:SICS:sampleStr
 		
-		SetVariable filename_tab1,pos={43,187},size={397,16},bodyWidth=342,title="Run Name"
-		SetVariable filename_tab1,fSize=10
+		SetVariable filename_tab1,pos={61,195},size={397,16},bodyWidth=342,title="Run Name"
+		SetVariable filename_tab1,fSize=14
 		SetVariable filename_tab1,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/experiment/file_name")][1],noedit= 1
 	
 		Display/W=(33,254,679,711)/FG=(UGV1,UGH2,UGV2,UGH3)/HOST=# 
@@ -625,14 +619,14 @@ Function startSICS()
 		appendtograph/w=SICScmdpanel#G0_tab1 counts[][0] vs position
 		SetActiveSubwindow ##
 	
-		Button UpdateHMM_tab2,pos={215,31},size={130,40},proc=button_SICScmdpanel,title="Update Detector"
-		PopupMenu displayorder_tab2,title="     displayorder",fSize=10,pos={26,41}
+		Button UpdateHMM_tab2,pos={220,31},size={130,40},proc=button_SICScmdpanel,title="Update Detector"
+		PopupMenu displayorder_tab2,title="     displayorder",fSize=14,pos={26,41}
 		PopupMenu displayorder_tab2,mode=1,value= #"displayorderlist()",proc = popup_changedisplayorder,bodywidth=120
-		SetVariable integratedCounts_tab2 title="Integrated Counts",size={200,20},disable=2,pos = {351,43}
+		SetVariable integratedCounts_tab2 title="Integrated Counts",size={205,20},disable=2,pos = {356,43}
 		SetVariable integratedCounts_tab2 value=root:packages:platypus:SICS:histostatuswave[gethistopos("num_events_inside_oat_xyt")][1]
-		SetVariable integratedCounts_tab2 limits={-inf,inf,0},fSize=10,disable=2
-		Button popgraph_tab2 pos={566,31}
-		Button popgraph_tab2 fSize=12,proc=spawngraph
+		SetVariable integratedCounts_tab2 limits={-inf,inf,0},fSize=14,disable=2
+		Button popgraph_tab2 pos={571,31}
+		Button popgraph_tab2 fSize=14,proc=spawngraph
 		Button popgraph_tab2 title="spawn graph",size={100,40}
 		Checkbox log2Dgraph_tab2 title="log10",pos={364,72},proc=checkbox_sicscmdpanel
 		Checkbox autoupdate_tab2 title="auto update",pos={232,72},proc=checkbox_sicscmdpanel
@@ -939,7 +933,6 @@ Function counttypeVSpos_popupcontrol(PU_Struct)
 	if(PU_Struct.eventCode != 2)
 		return 0
 	endif
-	
 	//first remove all traces from graph
 	removealltraces("SICScmdpanel#g0_tab1",1)
 	

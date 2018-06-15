@@ -1559,81 +1559,81 @@ Function Instrumentlayout_panel()
 	if(itemsinlist(winlist("instrumentlayout",";","")))
 		dowindow/k instrumentlayout
 	endif
-	NewPanel /K=1 /W=(317,56,1040,545) as "Platypus layout"
+	NewPanel /K=1 /W=(317,56,1040,565) as "Platypus layout"
 	dowindow/c instrumentlayout
 	SetDrawLayer/w=instrumentlayout UserBack
 	drawpict 0,0,0.6,0.6,Procglobal#platypuspicture
 
 
-	SetVariable dz_l,pos={3,115},size={70,21},title="dz", win=instrumentlayout
-	SetVariable dz_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable dz_l,pos={3,115},size={80,21},title="dz", win=instrumentlayout
+	SetVariable dz_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable dz_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/detector/vertical_translation")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable sth_l,pos={127,183},size={65,21},title="sth", win=instrumentlayout
-	SetVariable sth_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable sth_l,pos={127,183},size={80,21},title="sth", win=instrumentlayout
+	SetVariable sth_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable sth_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/sth")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable sz_l,pos={127,203},size={65,21},title="sz", win=instrumentlayout
-	SetVariable sz_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable sz_l,pos={127,205},size={80,21},title="sz", win=instrumentlayout
+	SetVariable sz_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable sz_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/translate_z")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable sx_l,pos={127,223},size={65,21},title="sx", win=instrumentlayout
-	SetVariable sx_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable sx_l,pos={127,225},size={80,21},title="sx", win=instrumentlayout
+	SetVariable sx_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable sx_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/translate_x")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable dy_l,pos={3,139},size={70,21},title="dy", win=instrumentlayout
-	SetVariable dy_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable dy_l,pos={3,139},size={80,21},title="dy", win=instrumentlayout
+	SetVariable dy_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable dy_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/detector/longitudinal_translation")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable CNStemp,pos={521,95},size={130,16},title="CNS temp", win=instrumentlayout
-	SetVariable CNStemp,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable CNStemp,pos={521,97},size={160,16},title="CNS temp", win=instrumentlayout
+	SetVariable CNStemp,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable CNStemp,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/cns_out")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable ReactorPower,pos={521,73},size={130,16},title="Reactor power", win=instrumentlayout
-	SetVariable ReactorPower,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable ReactorPower,pos={521,73},size={160,16},title="Reactor power", win=instrumentlayout
+	SetVariable ReactorPower,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable ReactorPower,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/source/power")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable secondaryshutter,pos={521,117},size={130,16},title="secondary shutter", win=instrumentlayout
-	SetVariable secondaryshutter,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable secondaryshutter,pos={521,119},size={160,16},title="secondary shutter", win=instrumentlayout
+	SetVariable secondaryshutter,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable secondaryshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/status/secondary")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable tertiaryshutter,pos={521,139},size={130,16},title="tertiary shutter", win=instrumentlayout
-	SetVariable tertiaryshutter,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable tertiaryshutter,pos={521,141},size={160,16},title="tertiary shutter", win=instrumentlayout
+	SetVariable tertiaryshutter,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable tertiaryshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/status/tertiary")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable mode,pos={521,162},size={130,16},title="mode", win=instrumentlayout
-	SetVariable mode,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable mode,pos={521,164},size={160,16},title="mode", win=instrumentlayout
+	SetVariable mode,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable mode,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/mode")][1],noedit= 1, win=instrumentlayout
 
-	SetVariable omega,pos={521,182},size={130,16},title="omega", win=instrumentlayout
-	SetVariable omega,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable omega,pos={521,184},size={160,16},title="omega", win=instrumentlayout
+	SetVariable omega,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable omega,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/omega")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable twotheta,pos={521,203},size={130,16},title="two theta", win=instrumentlayout
-	SetVariable twotheta,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable twotheta,pos={521,205},size={160,16},title="two theta", win=instrumentlayout
+	SetVariable twotheta,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable twotheta,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/parameters/twotheta")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable sicsstatus,pos={468,223},size={200,16},title="SICS status", win=instrumentlayout
-	SetVariable sicsstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable sicsstatus,pos={440,228},size={240,16},title="SICS status", win=instrumentlayout
+	SetVariable sicsstatus,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable sicsstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:sicsstatus,noedit= 1, win=instrumentlayout
 	
-	SetVariable runscanstatus title="runscan status",valueBackColor=(0,52224,0), pos={468,242}, win=instrumentlayout
-	SetVariable runscanstatus,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout, size = {200,16}
+	SetVariable runscanstatus title="runscan status",valueBackColor=(0,52224,0), pos={440,248}, win=instrumentlayout
+	SetVariable runscanstatus,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout, size = {240,16}
 	SetVariable runscanstatus,limits={-inf,inf,0},value=  root:packages:platypus:SICS:hipadaba_paths[gethipapos("/commands/scan/runscan/feedback/status")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable statemonstatus,pos={468,260},size={200,16},title="statemon"
-	SetVariable statemonstatus,labelBack=(65535,65535,65535),fSize=8
+	SetVariable statemonstatus,pos={440,270},size={240,16},title="statemon"
+	SetVariable statemonstatus,labelBack=(65535,65535,65535),fSize=14
 	SetVariable statemonstatus,valueBackColor=(65535,65535,65535), limits={-inf,inf,0}
 	SetVariable statemonstatus,value=root:packages:platypus:SICS:statemon[0],noedit= 1
 		
-	SetVariable attenuatorstatus,pos={468,280},size={200,16},title="attenuator position"
-	SetVariable attenuatorstatus,labelBack=(65535,65535,65535),fSize=8
+	SetVariable attenuatorstatus,pos={440,294},size={200,16},title="attenuator position"
+	SetVariable attenuatorstatus,labelBack=(65535,65535,65535),fSize=14
 	SetVariable attenuatorstatus,valueBackColor=(65535,65535,65535)
 	SetVariable attenuatorstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/attenuator/beam_attenuator")][1],noedit= 1
 
 //Lakeshore
 //	SetVariable lakeshore,pos={90,273},size={90,16},title="temp A", win=instrumentlayout,bodywidth=40
-//	SetVariable lakeshore,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+//	SetVariable lakeshore,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 //	SetVariable lakeshore,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueA")][1],noedit= 1, win=instrumentlayout
 
 //	SetVariable lakeshoreset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/setpoint1")][1],noedit= 1, win=instrumentlayout
@@ -1643,79 +1643,82 @@ Function Instrumentlayout_panel()
 
 //Julabo
 	SetVariable julabo,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
-	SetVariable julabo,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable julabo,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout	
 	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/setpoint")][1],noedit= 1, win=instrumentlayout
 	SetVariable julaboset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
 
-	DrawRect/w=instrumentlayout 219,322,311,357
-	DrawRect/w=instrumentlayout 180,364,213,439
-	DrawRect/w=instrumentlayout 316,364,349,439
-	DrawRect/w=instrumentlayout 219,448,311,483
+	DrawRect/w=instrumentlayout 219,332,311,367
+	DrawRect/w=instrumentlayout 180,374,213,449
+	DrawRect/w=instrumentlayout 316,374,349,449
+	DrawRect/w=instrumentlayout 219,458,311,493
 	SetDrawEnv/w=instrumentlayout arrow= 3
-	DrawLine/w=instrumentlayout 248,359,248,447
+	DrawLine/w=instrumentlayout 248,369,248,457
 	SetDrawEnv/w=instrumentlayout arrow= 3
-	DrawLine/w=instrumentlayout 217,424,313,424
-	DrawRect/w=instrumentlayout 43,322,135,357
-	DrawRect/w=instrumentlayout 3,364,36,439
-	DrawRect/w=instrumentlayout 139,364,172,439
-	DrawRect/w=instrumentlayout 42,448,134,483
-	SetDrawEnv/w=instrumentlayout arrow= 3
-	DrawLine/w=instrumentlayout 61,359,61,447
-	SetDrawEnv/w=instrumentlayout arrow= 3
-	DrawLine/w=instrumentlayout 39,424,135,424
-	DrawRect/w=instrumentlayout 401,322,493,357
-	DrawRect/w=instrumentlayout 361,364,394,439
-	DrawRect/w=instrumentlayout 499,364,532,439
-	DrawRect/w=instrumentlayout 400,448,492,483
-	SetDrawEnv/w=instrumentlayout arrow= 3
-	DrawLine/w=instrumentlayout 420,359,420,447
-	SetDrawEnv/w=instrumentlayout arrow= 3
-	DrawLine/w=instrumentlayout 398,424,494,424
-	DrawRect/w=instrumentlayout 587,322,679,357
-	DrawRect/w=instrumentlayout 547,364,580,439
-	DrawRect/w=instrumentlayout 683,364,716,439
-	DrawRect/w=instrumentlayout 586,448,678,483
-	SetDrawEnv/w=instrumentlayout arrow= 3
-	DrawLine/w=instrumentlayout 605,359,605,447
-	SetDrawEnv/w=instrumentlayout arrow= 3
-	DrawLine/w=instrumentlayout 583,424,679,424
+	DrawLine/w=instrumentlayout 217,444,313,444
 	
-	SetVariable ss2vg_l,pos={252,376},size={74,13},title="ss2vg", win=instrumentlayout
-	SetVariable ss2vg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	DrawRect/w=instrumentlayout 43,332,135,367
+	DrawRect/w=instrumentlayout 3,374,36,449
+	DrawRect/w=instrumentlayout 139,374,172,449
+	DrawRect/w=instrumentlayout 42,458,134,493
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 61,369,61,457
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 39,444,135,444
+	
+	DrawRect/w=instrumentlayout 401,332,493,367
+	DrawRect/w=instrumentlayout 361,374,394,449
+	DrawRect/w=instrumentlayout 499,374,532,449
+	DrawRect/w=instrumentlayout 400,458,492,493
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 420,369,420,457
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 398,444,494,444
+
+	DrawRect/w=instrumentlayout 587,332,679,367
+	DrawRect/w=instrumentlayout 547,374,580,449
+	DrawRect/w=instrumentlayout 683,374,716,449
+	DrawRect/w=instrumentlayout 586,458,678,493
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 605,369,605,457
+	SetDrawEnv/w=instrumentlayout arrow= 3
+	DrawLine/w=instrumentlayout 583,444,679,444
+	
+	SetVariable ss2vg_l,pos={252,386},size={85,13},title="ss2vg", win=instrumentlayout
+	SetVariable ss2vg_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable ss2vg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/second/vertical/gap")][1],noedit= 1, win=instrumentlayout
-	SetVariable ss2hg_l,pos={252,408},size={74,13},title="ss2hg", win=instrumentlayout
-	SetVariable ss2hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss2hg_l,pos={252,418},size={85,13},title="ss2hg", win=instrumentlayout
+	SetVariable ss2hg_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable ss2hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/second/horizontal/gap")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable ss1vg_l,pos={63,376},size={74,13},title="ss1vg", win=instrumentlayout
-	SetVariable ss1vg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss1vg_l,pos={63,386},size={85,13},title="ss1vg", win=instrumentlayout
+	SetVariable ss1vg_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable ss1vg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/first/vertical/gap")][1],noedit= 1, win=instrumentlayout
-	SetVariable ss1hg_l,pos={65,408},size={74,13},title="ss1hg", win=instrumentlayout
-	SetVariable ss1hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss1hg_l,pos={65,418},size={85,13},title="ss1hg", win=instrumentlayout
+	SetVariable ss1hg_l,labelBack=(65535,65535,65535),fsize=14, win=instrumentlayout
 	SetVariable ss1hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/first/horizontal/gap")][1],noedit= 1, win=instrumentlayout
 
 
-	SetVariable ss3vg_l,pos={424,376},size={74,13},title="ss3vg", win=instrumentlayout
-	SetVariable ss3vg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss3vg_l,pos={424,386},size={85,13},title="ss3vg", win=instrumentlayout
+	SetVariable ss3vg_l,labelBack=(65535,65535,65535),fsize=14, win=instrumentlayout
 	SetVariable ss3vg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/third/vertical/gap")][1],noedit= 1, win=instrumentlayout
-	SetVariable ss3hg_l,pos={424,408},size={74,13},title="ss3hg", win=instrumentlayout
-	SetVariable ss3hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss3hg_l,pos={424,418},size={85,13},title="ss3hg", win=instrumentlayout
+	SetVariable ss3hg_l,labelBack=(65535,65535,65535),fsize=14, win=instrumentlayout
 	SetVariable ss3hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/third/horizontal/gap")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable st3vt_l,pos={402,303},size={75,21},title="st3vt", win=instrumentlayout
-	SetVariable st3vt_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable st3vt_l,pos={412,322},size={85,21},title="st3vt", win=instrumentlayout
+	SetVariable st3vt_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable st3vt_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/third/vertical/st3vt")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable st4vt_l,pos={586,303},size={75,21},title="st4vt", win=instrumentlayout
-	SetVariable st4vt_l,labelBack=(65535,65535,65535),fSize=10, win=instrumentlayout
+	SetVariable st4vt_l,pos={596,322},size={85,21},title="st4vt", win=instrumentlayout
+	SetVariable st4vt_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable st4vt_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/fourth/vertical/st4vt")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable ss4vg_l,pos={609,376},size={74,13},title="ss4vg", win=instrumentlayout
-	SetVariable ss4vg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss4vg_l,pos={609,386},size={85,13},title="ss4vg", win=instrumentlayout
+	SetVariable ss4vg_l,labelBack=(65535,65535,65535),fsize=14, win=instrumentlayout
 	SetVariable ss4vg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/fourth/vertical/gap")][1],noedit= 1, win=instrumentlayout
-	SetVariable ss4hg_l,pos={609,408},size={74,13},title="ss4hg", win=instrumentlayout
-	SetVariable ss4hg_l,labelBack=(65535,65535,65535),fSize=8, win=instrumentlayout
+	SetVariable ss4hg_l,pos={609,418},size={85,13},title="ss4hg", win=instrumentlayout
+	SetVariable ss4hg_l,labelBack=(65535,65535,65535),fsize=14, win=instrumentlayout
 	SetVariable ss4hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/fourth/horizontal/gap")][1],noedit= 1, win=instrumentlayout
 	
 	Wave/t histostatuswave = root:packages:platypus:SICS:histostatuswave
