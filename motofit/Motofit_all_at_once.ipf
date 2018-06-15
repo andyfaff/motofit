@@ -3,11 +3,6 @@
 #pragma Igormode=6.22
 #pragma version = 400
 
-// SVN date:    $Date: 2011-07-18 10:33:32 +1000 (Mon, 18 Jul 2011) $
-// SVN author:  $Author: andrew_nelson $
-// SVN rev.:    $Revision: 455 $
-// SVN URL:     $HeadURL: https://motofit.svn.sourceforge.net/svnroot/motofit/branches/dev/motofit/Motofit/MOTOFIT_all_at_once.ipf $
-// SVN ID:      $Id: MOTOFIT_all_at_once.ipf 455 2011-07-18 00:33:32Z andrew_nelson $
 	
 #include "GeneticOptimisation"
 #include "MOTOFIT_globalreflectometry"
@@ -3013,7 +3008,7 @@ static Function moto_GUI_PopMenu(s) : PopupMenuControl
 	variable ii
 	string datasets = "", dataset = ""
 	
-	if(s.eventcode == -1)
+	if(s.eventcode != 2)
 		return 0
 	endif
 	strswitch(s.ctrlname)
