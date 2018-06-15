@@ -936,6 +936,10 @@ Function counttypeVSpos_popupcontrol(PU_Struct)
 		return 0
 	endif
 	
+	if(PU_Struct.eventCode != 2)
+		return 0
+	endif
+	
 	//first remove all traces from graph
 	removealltraces("SICScmdpanel#g0_tab1",1)
 	
