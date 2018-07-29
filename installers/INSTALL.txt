@@ -30,11 +30,11 @@ Installation Steps
 
     from the command line. On OSX this path is typically:
 
-    "Macintosh HD:Users:<username>:Documents:WaveMetrics:Igor Pro 7 User Files:"
+    "Macintosh HD:Users:<username>:Documents:WaveMetrics:Igor Pro 8 User Files:"
 
     On Windows 7 this path is:
 
-    "C:Users:<username>:Documents:WaveMetrics:Igor Pro 7 User Files:"
+    "C:Users:<username>:Documents:WaveMetrics:Igor Pro 8 User Files:"
 
     Your exact location may differ slightly.
 
