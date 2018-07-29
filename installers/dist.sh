@@ -5,7 +5,7 @@ mkdir -p 'dist/User Procedures'
 
 winXOP='dist/winXOP/Igor Extensions (64-bit)'
 macXOP='dist/macXOP/Igor Extensions (64-bit)'
-tkt='../../XOP Toolkit 7/IgorXOPs7'
+tkt='../../XOP Toolkit 701/IgorXOPs7'
 XOPcode='../../XOPcode'
 
 # copy in installer.
@@ -44,7 +44,7 @@ cp "$XOPcode/ZIP/zlib_README.txt" "$winXOP/COPYING_ZLIB.txt"
 
 
 cp "$tkt/Abeles/VC6/Abeles64.xop" "$winXOP"
-cp "$tkt/easyHttp/VC8/easyhttp64.xop" "$winXOP"
+cp "$tkt/easyHttp/VC8/easyHttp64.xop" "$winXOP"
 cp "$tkt/MultiDimensionalGenCurvefit/VC8/GenCurvefit64.xop" "$winXOP"
 cp "$tkt/SOCKIT/VC8/SOCKIT64.xop" "$winXOP"
 cp "$tkt/XMLutils/VC8/XMLutils64.xop" "$winXOP"
