@@ -1731,12 +1731,12 @@ Function Motofit_smeared(w, RR, qq, dq) :Fitfunc
 	xtemp[][1] = dq[p]
 	
 	if(!mode)
-		bkg = abs(w[4])
+		bkg = w[4]
 		w[4] = 0
 		Abelesall(w, RR, xtemp)
 		w[4] = bkg
 	else
-		bkg = abs(w[6])
+		bkg = w[6]
 		w[6] = 0
 		Abeles_imagALl(w, RR, xtemp)
 		w[6] = bkg
@@ -1765,12 +1765,12 @@ Threadsafe Function Motofit_smeared_log(w, RR, qq, dq):fitfunc
 	variable/g V_gausspoints = respoints
 	
 	if(!mode)
-		bkg = abs(w[4])
+		bkg = w[4]
 		w[4] = 0
 		Abelesall(w, RR, tempqq)
 		w[4] = bkg
 	else
-		bkg = abs(w[6])
+		bkg = w[6]
 		w[6] = 0
 		Abeles_imagALl(w, RR, tempqq)
 		w[6] = bkg
@@ -1818,10 +1818,10 @@ Function Motofit(w, RR, qq) :Fitfunc
 	endif
 		
 	if(!mode)
-		bkg = abs(w[4])
+		bkg = w[4]
 		w[4] = 0
 	else
-		bkg = abs(w[6])
+		bkg = w[6]
 		w[6] = 0
 	endif
 	//	markperftesttime 1			
@@ -2079,7 +2079,7 @@ static Function Moto_changeTheoreticalQrange(num, qmin, qmax)
 	make/o/d/n=(num) root:data:theoretical:theoretical_q,root:data:theoretical:theoretical_R
 	Wave theoretical_Q = root:data:theoretical:theoretical_q
 	Wave theoretical_R = root:data:theoretical:theoretical_R
-	theoretical_q = qmin+(x)*((qmax-qmin)/num)
+	theoretical_q = qmin+(x)*((qmax-qmin)/(num - 1))
 
 	make/o/d/n=(num, 2) root:data:theoretical:originaldata
 	Wave originaldata = root:data:theoretical:originaldata

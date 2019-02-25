@@ -223,7 +223,7 @@ static Function globalpanel_GUI_listbox(lba) : ListBoxControl
 						return 0
 					endif
 					set_param(str2num(lba.listwave[row][col]), row, thedataset, lba.listwave)
-					chi2 = evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+					chi2 = evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")),  usedqwave = str2num(motofit#getmotofitoption("usedqwave")))
 					slider slider0_tab1, win=globalreflectometrypanel, userdata(whichparam) = "row-"+num2istr(row)+";col-"+num2istr(col)
 					valdisplay chi2_tab1, win=globalreflectometrypanel, value=_NUM:chi2
 					break
@@ -243,8 +243,12 @@ static Function set_param(val,row, whichdataset, listwave)
 	//sets values in the listboxes, and propagates changes based on the linkage matrix	
 	Wave linkages = root:Packages:motofit:reflectivity:globalfitting:linkages
 	Wave numcoefs = root:Packages:motofit:reflectivity:globalfitting:numcoefs
+	Wave coefs = root:Packages:motofit:reflectivity:globalfitting:coefs
 	wave uniqueparameter = isuniqueparam(following=1)
-	variable otherrow, othercol
+	variable otherrow, othercol, parnum
+	parnum = linkages[row][whichdataset]
+	
+	coefs[parnum] = val
 	listwave[row][2 * whichdataset + 1] = num2str(val)
 	
 	if(uniqueparameter[row][whichdataset] == 2)
@@ -528,7 +532,7 @@ static Function globalpanel_GUI_slider(sa) : SliderControl
 			if(sa.eventcode & 2^3)
 				listwave[row][col] = num2str(sa.curval)
 				set_param(sa.curval, row, thedataset, listwave)
-				chi2 = evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")))
+				chi2 = evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")), usedqwave = str2num(motofit#getmotofitoption("usedqwave")))
 				ValDisplay Chi2_tab1,value= _NUM:chi2,win=globalreflectometrypanel
 			endif
 			if(sa.eventcode & 2^2)
@@ -1133,7 +1137,7 @@ static Function extract_combined_into_list(coefs)
 		for(jj = 0 ; jj < dimsize(mask, 1) ; jj +=1)
 			for(kk = 0 ; kk < dimsize(mask, 0) ; kk +=1)
 				if(mask[kk][jj] == 1)
-					listwave[kk][2 * jj + 1] = num2str(coefs[ii])
+					listwave[kk][2 * jj + 1] = double2str(coefs[ii])
 				endif
 			endfor
 		endfor
@@ -1538,7 +1542,7 @@ Function Do_a_global_fit()
 	
 	//get the best fit waves AFTER THE FIT
 	variable chi2 = evaluateGlobalFunction(fitcursors = str2num(motofit#getmotofitoption("fitcursors")), usedqwave = str2num(motofit#getmotofitoption("usedqwave")))
-	
+
 	//do you want to append residuals
 	controlinfo/W=reflectivitygraph appendresiduals
 	if(V_Value)
@@ -2107,4 +2111,11 @@ Function parse_refnx([fileStr])
 	
 	ValDisplay Chi2_tab1, win=globalreflectometrypanel, value = _NUM:(chi2)
 	
+End
+
+Function/S double2str(val)
+	variable val
+	string str
+	sprintf str, "%.15g", val
+	return str
 End
