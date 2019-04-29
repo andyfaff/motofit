@@ -3455,9 +3455,10 @@ static Function Moto_analyseMCdat([file])
 	Moto_montecarlo_SLDcurves($(stringfromlist(0, S_wavenames)), 0.02, 2000)
 end
 
-static Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
+static Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts, [reversedSLDplot])
 	Wave M_montecarlo
-	variable SLDbin, SLDpts
+	variable SLDbin, SLDpts, reversedSLDplot
+
 	//calculates the envelope of SLDplots for a montecarlo reflectivity analysis.
 	//M_montecarlo contains the fit coefficients for all the fit coefs, rows = montecarlo iteration, cols = coefs.
 	variable nlayers, MCiters, ii, jj, minz = 0, maxz = 0, SLDmax, SLDmin
@@ -3474,7 +3475,7 @@ static Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 	
 	for(ii = 0 ; ii < MCiters ; ii += 1)
 		tempcoefs[] = M_montecarlo[ii][p]
-		Moto_SLDplot(tempcoefs, anSLDplot)
+		Moto_SLDplot(tempcoefs, anSLDplot, reversedSLDplot=reversedSLDplot)
 		if(leftx(anSLDplot) < minz)
 			minz = leftx(anSLDplot)
 		endif
@@ -3488,7 +3489,7 @@ static Function Moto_montecarlo_SLDcurves(M_montecarlo, SLDbin, SLDpts)
 	make/n=(MCiters, SLDpts)/d/free SLDmatrix = NaN
 	for(ii = 0 ; ii < MCiters ; ii += 1)
 		tempcoefs[] = M_montecarlo[ii][p]
-		Moto_SLDplot(tempcoefs, anSLDplot)
+		Moto_SLDplot(tempcoefs, anSLDplot, reversedSLDplot=reversedSLDplot)
 		SLDmatrix[ii][] = anSLDplot[q]
 	endfor
 		
