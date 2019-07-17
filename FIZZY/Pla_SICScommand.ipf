@@ -307,7 +307,7 @@ Function RebuildBatchListBoxProc(lba) : ListBoxControl
 			break
 		case 1: //mouse down
 			if(lba.eventmod & 2^4)
-				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;sics;setexperimentalmode;positioner;angler;txtme;temperature;setpos;mvp;hplc"
+				popupcontextualmenu "acquire;omega_2theta;run;rel;vslits;samplename;igor;wait;attenuate;attenuate2;sics;setexperimentalmode;positioner;angler;txtme;temperature;setpos;mvp;hplc"
 				listwave[row][col] = createFizzyCommand(S_Selection)
 			endif
 			break
@@ -599,7 +599,7 @@ Function startSICS()
 		Button Pause_tab1,picture= procglobal#pause_pict
 		PopupMenu counttypeVSpos_tab1,pos={190,225},size={272,21},bodyWidth=200,title="count variable",proc=counttypeVSpos_popupcontrol
 		PopupMenu counttypeVSpos_tab1,mode=4,popvalue="DetectorCounts",value= #"\"DetectorCounts;AvgCountRate;Det/BM1;Det/BM2;BM2_counts;BM2_rate;BM1_counts;BM1_rate\""
-		SetVariable currentpos_tab1,pos={265,42},size={100,16},disable=2,title=" "
+		SetVariable currentpos_tab1,pos={265,42},size={100,16},disable=2,title=" ",fsize=14
 		SetVariable currentpos_tab1,limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist
 		SetVariable preset_tab1,pos={170,112},size={123,16},title="preset",fSize=14
 		SetVariable preset_tab1,limits={1,inf,1},value= root:packages:platypus:SICS:preset
@@ -619,7 +619,7 @@ Function startSICS()
 		appendtograph/w=SICScmdpanel#G0_tab1 counts[][0] vs position
 		SetActiveSubwindow ##
 	
-		Button UpdateHMM_tab2,pos={220,31},size={130,40},proc=button_SICScmdpanel,title="Update Detector"
+		Button UpdateHMM_tab2,pos={220,31},size={130,40},proc=button_SICScmdpanel,title="Update Detector",fsize=14
 		PopupMenu displayorder_tab2,title="     displayorder",fSize=14,pos={26,41}
 		PopupMenu displayorder_tab2,mode=1,value= #"displayorderlist()",proc = popup_changedisplayorder,bodywidth=120
 		SetVariable integratedCounts_tab2 title="Integrated Counts",size={205,20},disable=2,pos = {356,43}
@@ -627,7 +627,7 @@ Function startSICS()
 		SetVariable integratedCounts_tab2 limits={-inf,inf,0},fSize=14,disable=2
 		Button popgraph_tab2 pos={571,31}
 		Button popgraph_tab2 fSize=14,proc=spawngraph
-		Button popgraph_tab2 title="spawn graph",size={100,40}
+		Button popgraph_tab2 title="Spawn graph",size={130,40}
 		Checkbox log2Dgraph_tab2 title="log10",pos={364,72},proc=checkbox_sicscmdpanel
 		Checkbox autoupdate_tab2 title="auto update",pos={232,72},proc=checkbox_sicscmdpanel
 	
@@ -827,7 +827,7 @@ Function sicsCmdPanelWinHook(s)		//window hook for events happening in the SICSc
 			if(stringmatch(platform,"MACINTOSH"))
 				cmdChar = num2char(-91)
 			else
-				cmdChar = num2char(-107)	
+				cmdChar = "•"
 			endif
 			
 			switch(s.eventCode)

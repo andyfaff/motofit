@@ -11,7 +11,7 @@
 	static strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
 	static StrConstant PATH_TO_PLATYPUS_HSDATA = "\\\\storage\\nbi_experiment_hsdata:platypus:hsdata:"
 	static constant BUFSIZE = 8192
-	static Strconstant DASserverIP = "137.157.202.140"
+	static Strconstant DASserverIP = "137.157.202.155"
 	static Constant DASserverPort = 8080
 	
 static function parseReply(msg,lhs,rhs)
@@ -296,6 +296,15 @@ Function/t grabHistoStatus(keyvalue)
 	Wave/t histostatusWave = root:packages:platypus:SICS:histostatusWave
 	string val = histostatusWave[gethistopos(keyValue)][1]
 	return replacestring(" ", val, "")
+End
+
+Function parseRateString(str)
+    // a function to parse a string of the form "825.681763 events/sec", returning the number
+    string str
+    variable v
+    string r
+    sscanf str, "%g %s", v, r
+    return v
 End
 
 Function startStreamingImage()

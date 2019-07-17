@@ -1482,7 +1482,7 @@ Function  reducerpanelPOL() : Panel  //reducerpanel
 	checkbox measwithanalyzer_tab0,variable= root:packages:platypus:data:Reducer:measwithanalyzer
 	checkbox verbosevar_tab0,pos={410,79},size={178,14},proc=POLSLIM_verbosecheckbox,title="Run with extended description?",fsize=12,fstyle=1,side=1
 	checkbox verbosevar_tab0,variable= root:packages:platypus:data:Reducer:verbosevar
-	checkbox donotoverwrite_tab0,pos={540,79},size={178,14},proc=POLSLIM_donotoverwritecheckbox,title="Do not overwrite",fsize=12,fstyle=1,side=1
+	checkbox donotoverwrite_tab0,pos={640,79},size={178,14},proc=POLSLIM_donotoverwritecheckbox,title="Do not overwrite",fsize=12,fstyle=1,side=1
 	checkbox donotoverwrite_tab0,variable= root:packages:platypus:data:Reducer:donotoverwrite	
 	
 	SetVariable dataSource_tab0,pos={288,10},size={367,16},title="Data directory"

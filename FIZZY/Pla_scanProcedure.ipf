@@ -356,7 +356,7 @@ Function changeGUIforfpx(mode, motorName, numpoints, preset)
 		break
 	endswitch
 	label/W=SICScmdPanel#G0_tab1/z bottom, motorName
-	PopupMenu/z motor_tab1, win=SICScmdpanel, fSize=10, mode=1, popvalue = motorName, value = #"motorlist()"
+	PopupMenu/z motor_tab1, win=SICScmdpanel, fSize=14, mode=1, popvalue = motorName, value = #"motorlist()"
 	findvalue/TEXT=motorName/z/txop=4 root:packages:platypus:SICS:axeslist
 	if(V_Value > 0)
 		SetVariable currentpos_tab1, win=sicscmdpanel, limits={-inf,inf,0},value=root:packages:platypus:SICS:axeslist[V_Value][2]

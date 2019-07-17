@@ -63,7 +63,7 @@ Function Pla_GetScalingInOverlap(wave1q,wave1R,wave2q,wave2R)
 End
 
 
-Function/c Pla_GetWeightedScalingInOverlap(wave1q,wave1R, wave1dR, wave2q, wave2R, wave2dR)
+Function/c Pla_GetWeightedScalingInOverlap_1(wave1q,wave1R, wave1dR, wave2q, wave2R, wave2dR)
 	Wave wave1q,wave1R, wave1dR, wave2q,wave2R, wave2dR	//1 = first dataset, 2= second dataset
 
 	variable ii, npnts1, npnts2, num2
@@ -147,6 +147,125 @@ Function/c Pla_GetWeightedScalingInOverlap(wave1q,wave1R, wave1dR, wave2q, wave2
 	normal = num/den
 	dnormal = sqrt(1/den)
 //	print normal, dnormal
+	if(numtype(normal))
+		print "ERROR while splicing (GetScalinginOverlap)"
+	endif
+	print "Scale factor = ", normal, "delta-scale factor = ",dnormal
+	Return cmplx(normal, dnormal)
+End
+
+Function/c Pla_GetWeightedScalingInOverlap(wave1q,wave1R, wave1dR, wave2q, wave2R, wave2dR)
+	Wave wave1q,wave1R, wave1dR, wave2q,wave2R, wave2dR	//1 = first dataset, 2= second dataset
+
+	variable ii, npnts1, npnts2, num2
+	
+	sort wave1q,wave1q,wave1R,wave1dR
+	sort wave2q,wave2q,wave2R,wave2dR
+	
+	duplicate/free wave1q, wave1qtemp
+	duplicate/free wave1R, wave1Rtemp
+	duplicate/free wave1dR, wave1dRtemp
+	duplicate/free wave2q, wave2qtemp
+	duplicate/free wave2R, wave2Rtemp
+	duplicate/free wave2dR, wave2dRtemp
+	
+	npnts1 = dimsize(wave1q, 0)
+	npnts2 = dimsize(wave2q, 0)
+
+	print "dimensions: wave 1 begin = ", npnts1, " , wave 2 begin = ", npnts2
+	
+	for(ii = npnts1 - 1 ; ii >= 0 ; ii-=1)
+		if(wave1Rtemp[ii] <= 0 || wave1dRtemp[ii] <= 0 || numtype(wave1Rtemp[ii]) || numtype(wave1dRtemp[ii]))
+			deletepoints ii, 1, wave1qtemp, wave1Rtemp, wave1dRtemp
+		endif
+	endfor
+	
+	for(ii = npnts2 - 1 ; ii >= 0 ; ii-=1)
+		if(wave2Rtemp[ii] <= 0 || wave2dRtemp[ii] <= 0 || numtype(wave2Rtemp[ii]) || numtype(wave2dRtemp[ii]))
+			deletepoints ii, 1, wave2qtemp, wave2Rtemp, wave2dRtemp
+		endif
+	endfor
+	
+	npnts1 = dimsize(wave1qtemp, 0)
+	npnts2 = dimsize(wave2qtemp, 0)
+	
+//2019.04.08 modification: 
+//wave1: delta=dR/R, reject higher q data with delta > 5*min(delta)
+//Skip first 2 points of wave2
+	print "dimensions: wave 1 mid = ", npnts1, " , wave 2 mid = ", npnts2
+
+	make/N=(npnts1)/FREE wave1dRoverR
+	wave1dRoverR = wave1dRtemp / wave1Rtemp
+	variable max_wave1dRoverR
+	max_wave1dRoverR=WaveMin(wave1dRoverR)*5
+	for(ii = npnts1 - 1 ; ii >= 0 ; ii-=1)
+		if (wave1dRoverR[ii] > max_wave1dRoverR && wave1dRoverR[ii] > 0.2)
+			deletepoints ii, 1, wave1qtemp, wave1Rtemp, wave1dRtemp
+		endif
+	endfor
+
+	deletepoints 0, 1, wave2qtemp, wave2Rtemp, wave2dRtemp
+
+	npnts1 = dimsize(wave1qtemp, 0)
+	npnts2 = dimsize(wave2qtemp, 0)
+
+	print "dimensions: wave1 final = ", npnts1, " , wave2 final = ", npnts2
+
+//End 2019.04.08 modification
+
+	if(wave2qtemp[0] > wave1qtemp[npnts1 - 1])
+		print  "ERROR there are no data points in the overlap region. Either reduce the number of deleted points or use manual scaling."
+		return cmplx(NaN, NaN)
+	endif
+	
+	make/u/I/free/n=0 overlapPoints
+	
+	for(ii = 0 ;  ii < dimsize(wave2qtemp, 0) && wave2qtemp[ii] < wave1qtemp[npnts1 - 1] ; ii+=1)
+		if(wave2qtemp[ii] > wave1qtemp[0] && wave2qtemp[ii] < wave1qtemp[npnts1 - 1])
+			redimension/n=(numpnts(overlapPoints) + 1) overlapPoints
+			overlapPoints[numpnts(overlapPoints) - 1] = ii
+		endif
+	endfor
+		
+	num2 = numpnts(overlapPoints)
+	if(!num2)
+		print  "ERROR there are no data points in the overlap region. Either reduce the number of deleted points or use manual scaling."
+		return cmplx(NaN, NaN)
+	endif	
+	print "Overlap q = [", wave2qtemp[overlapPoints[0]], " , ",wave2qtemp[overlapPoints[num2 - 1]],"] , npnts = ", num2
+	
+	Variable ival1, newi, newdi, ratio, dratio, qval2
+	make/n=(num2)/d/free W_scalefactor, W_dScalefactor
+		
+	for(ii = 0 ; ii < num2 ; ii += 1)
+		//get scaling factor at each point of wave 2 in the overlap region
+		qval2 = wave2qtemp[overlapPoints[ii]]
+		newi = interp(qval2, wave1qtemp, wave1Rtemp)		//get the intensity of wave1 at an overlap point
+		newdi = interp(qval2, wave1qtemp, wave1dRtemp)
+		
+		if(!numtype(wave2Rtemp[ii]) && !numtype(newi) && !numtype(newdi))
+			W_scalefactor[ii] = newi/wave2Rtemp[ii]
+			W_dScalefactor[ii] = sqrt((newdi/wave2Rtemp[ii])^2 + ((newi * wave2drtemp[ii])^2)/wave2Rtemp[ii]^4)
+		endif
+	endfor
+	
+	W_dScalefactor = 1/(W_dScalefactor^2)
+	
+	variable normal, num = 0, den=0, dnormal
+	for(ii=0 ; ii < num2 ; ii += 1)
+		if(!numtype(W_scalefactor[ii]) && W_scalefactor[ii] && W_dscalefactor[ii] && !numtype(W_dscalefactor[ii]))
+			num += W_scalefactor[ii] * W_dscalefactor[ii] 
+			den += W_dscalefactor[ii]
+		endif
+	endfor
+	
+//	duplicate/o W_scalefactor, root:W_scalefactor
+//	duplicate/o W_dscalefactor, root:W_dscalefactor
+	
+	normal = num/den
+	dnormal = sqrt(1/den)
+//	print normal, dnormal
+	print "Scale factor = ", 1/normal
 	if(numtype(normal))
 		print "ERROR while splicing (GetScalinginOverlap)"
 	endif

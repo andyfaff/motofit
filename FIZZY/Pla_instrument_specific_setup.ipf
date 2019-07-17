@@ -16,7 +16,7 @@
 
 	Strconstant ICSserverIP  = "137.157.202.139"
 	Constant 	ICSserverPort = 60003
-	Strconstant DASserverIP = "137.157.202.140"
+	Strconstant DASserverIP = "137.157.202.155"
 	Constant 	DASserverPort = 8080
 	Constant 	DASserverPort_bmon = 30000
 	Constant 	DASserverPort_bmon3 = 30002
@@ -59,108 +59,108 @@
 	StrConstant SAVELOC = "V:public:"
 	StrConstant HTTP_PROXY = "proxy.nbi.ansto.gov.au:3128"
 
-Function DefaultHistogram()
-	oat_table("X",210.5,209.5,421)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,40000,1,freq=24)
-End
-
-Function DefaultHistogram2()
-	oat_table("X",210.5,209.5,421)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq=20)
-End
-
+//Function DefaultHistogram()
+//	oat_table("X",210.5,209.5,421)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,40000,1,freq=24)
+//End
+//
+//Function DefaultHistogram2()
+//	oat_table("X",210.5,209.5,421)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,50,1000,freq=20)
+//End
+//
 Function testHistogram()
-	oat_table("X",60.5,59.5,201)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50000,1,freq=20)
+	oat_table("X",-0.5,31.5, 1)
+	oat_table("Y",-0.5, 0.5, 1024)
+	oat_table("T",0,40,1001,freq=24)
 End
-
-
-Function aHistogram()		//suitable for 40mm HG
-	oat_table("X",40,-39,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50, 1000,freq=20)
-End
-
-Function bHistogram()		//suitable for 40mm HG with FOC
-	oat_table("X",56,-52,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq=20)
-End
-
-Function cHistogram()		//suitable for 30mm HG with FOC hslits(40,30,30,38)
-	oat_table("X",50,-50,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq=20)
-End
-
-Function dHistogram()	//suitable for 40mm HG with FOC + 50mm St4vt
-	oat_table("X",64,-56,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq=20)
-End
-
-Function eHistogram()		//suitable for 25mm HG with FOC
-	oat_table("X",56.5,-56.5,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,30,1000,freq=33)
-	//for 33Hz, change to 30us.  For 20Hz use 50.
-End
-
-Function fHistogram()		//suitable for 30mm HG with SB
-	oat_table("X",25.5,-25.5,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq=20)
-End
-
-Function gHistogram()		//suitable for 7mm HG with FOC
-	oat_table("X",10,-10,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq=20)
-End
-
-Function hHistogram()	
-	//suitable for hslits(49,48,33,45) which gives a 40mm widebeam onto sample with FOC guide.
-	//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
-	oat_table("X",60.5, -60.5,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,40, 1000, freq = 24)
-End
-
-Function iHistogram() //Bills SAW, hslits(10,4,4,20)
-	oat_table("X",5.5,-5.5,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq=20)
-End
-
-Function jHistogram()		//suitable for hslits(44,35,35,43) "SB"
-	oat_table("X",35.5,-35.5,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,50,1000,freq=20)
-End
-
-Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
-	oat_table("X",16.5,-16.5,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,30,1000,freq=33)
-	sics_cmd_interest("chopperController status")
-End
-
-Function lHistogram()		//suitable for hslits(40,25,25,40) "MT"/"POL"
-	oat_table("X",28.5,-28.5,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,30,1000,freq=33)
-	sics_cmd_interest("chopperController status")
-End
-
-Function mHistogram()		//suitable for hslits(30,15,12,30) "
-	oat_table("X",13.5,-13.5,1)
-	oat_table("Y",110.5,109.5,221)
-	oat_table("T",0,40,1000,freq=24)
-	sics_cmd_interest("chopperController status")
-End
+//
+//
+//Function aHistogram()		//suitable for 40mm HG
+//	oat_table("X",40,-39,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,50, 1000,freq=20)
+//End
+//
+//Function bHistogram()		//suitable for 40mm HG with FOC
+//	oat_table("X",56,-52,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,50,1000,freq=20)
+//End
+//
+//Function cHistogram()		//suitable for 30mm HG with FOC hslits(40,30,30,38)
+//	oat_table("X",50,-50,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,50,1000,freq=20)
+//End
+//
+//Function dHistogram()	//suitable for 40mm HG with FOC + 50mm St4vt
+//	oat_table("X",64,-56,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,50,1000,freq=20)
+//End
+//
+//Function eHistogram()		//suitable for 25mm HG with FOC
+//	oat_table("X",56.5,-56.5,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,30,1000,freq=33)
+//	//for 33Hz, change to 30us.  For 20Hz use 50.
+//End
+//
+//Function fHistogram()		//suitable for 30mm HG with SB
+//	oat_table("X",25.5,-25.5,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,50,1000,freq=20)
+//End
+//
+//Function gHistogram()		//suitable for 7mm HG with FOC
+//	oat_table("X",10,-10,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,50,1000,freq=20)
+//End
+//
+//Function hHistogram()	
+//	//suitable for hslits(49,48,33,45) which gives a 40mm widebeam onto sample with FOC guide.
+//	//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
+//	oat_table("X",60.5, -60.5,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,40, 1000, freq = 24)
+//End
+//
+//Function iHistogram() //Bills SAW, hslits(10,4,4,20)
+//	oat_table("X",5.5,-5.5,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,50,1000,freq=20)
+//End
+//
+//Function jHistogram()		//suitable for hslits(44,35,35,43) "SB"
+//	oat_table("X",35.5,-35.5,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,50,1000,freq=20)
+//End
+//
+//Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
+//	oat_table("X",16.5,-16.5,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,30,1000,freq=33)
+//	sics_cmd_interest("chopperController status")
+//End
+//
+//Function lHistogram()		//suitable for hslits(40,25,25,40) "MT"/"POL"
+//	oat_table("X",28.5,-28.5,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,30,1000,freq=33)
+//	sics_cmd_interest("chopperController status")
+//End
+//
+//Function mHistogram()		//suitable for hslits(30,15,12,30) "
+//	oat_table("X",13.5,-13.5,1)
+//	oat_table("Y",110.5,109.5,221)
+//	oat_table("T",0,40,1000,freq=24)
+//	sics_cmd_interest("chopperController status")
+//End
 
 Function hnotify_registration()
 	//the purpose of this function is to ask SICS to notify FIZZY when anything changes on the instrument.
@@ -232,6 +232,7 @@ Function vslits(s1,s2,s3,s4)
 	cmd += "ss4d "+num2str(-s4/2)+" "
 	cmd += "ss2d "+num2str(-s2/2)+"\n"
 
+	print cmd
 	appendstatemon("ss2u")
 	SOCKITsendmsg sock_interest,cmd
 	if(V_flag)
@@ -430,6 +431,41 @@ Function attenuate(pos)
 			break
 	endswitch
 	
+	return 0
+End
+
+Function attenuate2(pos)
+	variable pos
+	//pos = -1 take the attenuator out
+	//pos = 0 park the attenuator in the beam
+	//pos = N oscillate the attenuator with a stroke of N mm.
+	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
+	pos = round(pos)
+	
+	if(pos == -1)
+		sockitsendmsg sock_sync,"mc2 send OSCH=-1\n"
+		if(V_Flag)
+			return V_Flag
+		endif	
+	elseif(pos == 0)
+		sockitsendmsg sock_sync,"mc2 send OSCH=0\n"
+		if(V_Flag)
+			return V_Flag
+		endif
+	else
+		if ((pos < 10) || (pos > 50))
+			print "oscillation stroke should be 10 < pos < 50"
+			return 1
+		endif
+		string cmd
+		sprintf cmd, "mc2 send OSCH=%d\n", pos
+		sockitsendmsg sock_sync, cmd
+		wait(5)
+		if(V_Flag)
+			return V_Flag
+		endif
+		
+	endif	
 	return 0
 End
 
@@ -1631,21 +1667,20 @@ Function Instrumentlayout_panel()
 	SetVariable attenuatorstatus,valueBackColor=(65535,65535,65535)
 	SetVariable attenuatorstatus,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/attenuator/beam_attenuator")][1],noedit= 1
 
-//Lakeshore
-//	SetVariable lakeshore,pos={90,273},size={90,16},title="temp A", win=instrumentlayout,bodywidth=40
+///Lakeshore
 //	SetVariable lakeshore,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
-//	SetVariable lakeshore,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueA")][1],noedit= 1, win=instrumentlayout
-
 //	SetVariable lakeshoreset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/setpoint1")][1],noedit= 1, win=instrumentlayout
 //	SetVariable lakeshoreset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
-//	SetVariable lakeshore1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc2/sensor/sensorValueB")][1],noedit= 1, win=instrumentlayout
-//	SetVariable lakeshore1,pos={90,293},size={90,16},title="temp B", win=instrumentlayout,bodywidth=40
+//	SetVariable lakeshore1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueA")][1],noedit= 1, win=instrumentlayout
+//	SetVariable lakeshore1,pos={90,273},size={90,16},title="temp A", win=instrumentlayout,bodywidth=40
+//	SetVariable lakeshore3,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/heater/heaterOutpPercent")][1],noedit= 1, win=instrumentlayout
+//	SetVariable lakeshore3,pos={90,293},size={90,16},title="Heater percent", win=instrumentlayout,bodywidth=40
 
-//Julabo
+///Julabo
 	SetVariable julabo,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
 	SetVariable julabo,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
-	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/value")][1],noedit= 1, win=instrumentlayout	
-	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/setpoint")][1],noedit= 1, win=instrumentlayout
+	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T01S01")][1],noedit= 1, win=instrumentlayout	
+	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T01SP01")][1],noedit= 1, win=instrumentlayout
 	SetVariable julaboset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
 
 	DrawRect/w=instrumentlayout 219,332,311,367
@@ -1722,7 +1757,7 @@ Function Instrumentlayout_panel()
 	SetVariable ss4hg_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/slits/fourth/horizontal/gap")][1],noedit= 1, win=instrumentlayout
 	
 	Wave/t histostatuswave = root:packages:platypus:SICS:histostatuswave
-	valdisplay bmon3, value=#"str2num(root:packages:platypus:SICS:histostatuswave[gethistopos(\"BM3_event_rate\")][1])", limits={0, FSD,0}, title = "Detector\rRate", win=instrumentlayout
+	valdisplay bmon3, value=#"parserateString(root:packages:platypus:SICS:histostatuswave[gethistopos(\"detector_protect_global_rate\")][1])", limits={0, FSD,0}, title = "Detector\rRate", win=instrumentlayout
 	ValDisplay bmon3 mode=3,barmisc={14,50}, size={280,50},fsize=14, valueBackColor=(51456,44032,58880), win=instrumentlayout
 	ValDisplay bmon3 lowColor= (65280,16384,16384), pos = {425,13}, frame=2, format="%d", win=instrumentlayout
 	
@@ -2131,6 +2166,25 @@ Function/t createFizzyCommand(type)
 					break
 			endswitch
 			sprintf cmd, "attenuate(%d)", position
+			break
+		case "attenuate2":
+			prompt position, "attenuator2 mode", popup, "IN;OUT;STROKE(30mm)"
+			doprompt "What do you want the attenuator to do?", position
+			if(V_Flag)
+				return ""
+			endif
+			switch(position)
+				case 1:
+					position = 0
+					break
+				case 2:
+					position = -1
+					break
+				case 3:
+					position = 30
+					break
+			endswitch
+			sprintf cmd, "attenuate2(%d)", position
 			break
 		case "wait":
 			prompt timer, "time (s):"
@@ -2637,7 +2691,7 @@ End
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//
+//Modified 28.06.2018 so it seems to work. Modified the line hset /sample/tc1/sensor/setpoint1 %3.2f
 function temperature(temperature, [wait])
 	variable temperature, wait
 	string cmd = ""
@@ -2651,6 +2705,7 @@ function temperature(temperature, [wait])
 		//sprintf cmd, "hset /sample/tc1/sensor/setpoint1 %3.2f", temperature
 		//Julabo
 		sprintf cmd, "hset /sample/tc1/setpoint %3.2f", temperature
+		print cmd
 	endif
 	sics_cmd_interest(cmd)	
 end
@@ -2909,54 +2964,54 @@ Function chopperRephaseArator(s)
 	return 0
 End
 
-Function pump(ratio, [volume, rate])
-    variable ratio, volume, rate
-    string cmd = "", template
-    //injects liquid from dual syringe pump system towards hamilton syringe.
-    //ROUNDS RATIO TO 2DP!!!!!!!!!!!!
-    //ratio - the ratio of pump0 to pump1. 1 = 100% pump0, 0.6666 = 66.66%pump0:33.33%pump1, 0 = 100% pump1
-    //volume - the total volume of liquid injected. Defaults to 3ml
-    //rate - the total injection rate. Defaults to 1  ml/min
-    
-    if(ratio < 0 || ratio > 1)
-        print "PUMPSET ERROR - ratio has to be in range [0, 1]"
-        return 1
-    endif 
-    ratio = round(ratio *1000)/1000
-    
-    if(paramisdefault(volume))
-		volume = 3
-	endif
-	
-    if(paramisdefault(rate))
-		rate = 1
-	endif
-
-    variable v0, r0, v1, r1
-    
-    r0 = ratio * rate
-    r1 = (1 - ratio) * rate
-    v0 = ratio * volume
-    v1 = (1 - ratio) * volume
- //   print v0, r0, v1, r1
-    
-    r0 = round(1000 * (r0)) / 1000
-    r1 = round(1000 * (r1)) / 1000
-    v0 = round(1000* (v0)) / 1000
-    v1 = round(1000 * (v1)) / 1000
-    print v0, r0, v1, r1
-        
-    //fill out the rates and volumes and do the injection.
-    template = "hset /sample/syr/pump0/Vol %.5s\n"
-    template += "hset /sample/syr/pump0/rat %.5sMM\n"
-    template += "hset /sample/syr/pump1/Vol %.5s\n"
-    template += "hset /sample/syr/pump1/rat %.5sMM\n"
-   template += "drive syr_driveable 1\n"
-    sprintf cmd, template, num2str(v0), num2str(r0), num2str(v1), num2str(r1)
-    print cmd, r0/(r0+r1), v0/(v0+v1), v0+v1, r0+r1
-   sics_cmd_interest(cmd)
-
-End
+//Function pump(ratio, [volume, rate])
+//    variable ratio, volume, rate
+//    string cmd = "", template
+//    //injects liquid from dual syringe pump system towards hamilton syringe.
+//    //ROUNDS RATIO TO 2DP!!!!!!!!!!!!
+//    //ratio - the ratio of pump0 to pump1. 1 = 100% pump0, 0.6666 = 66.66%pump0:33.33%pump1, 0 = 100% pump1
+//    //volume - the total volume of liquid injected. Defaults to 3ml
+//    //rate - the total injection rate. Defaults to 1  ml/min
+//    
+//    if(ratio < 0 || ratio > 1)
+//        print "PUMPSET ERROR - ratio has to be in range [0, 1]"
+//        return 1
+//    endif 
+//    ratio = round(ratio *1000)/1000
+//    
+//    if(paramisdefault(volume))
+//		volume = 3
+//	endif
+//	
+//    if(paramisdefault(rate))
+//		rate = 1
+//	endif
+//
+//    variable v0, r0, v1, r1
+//    
+//    r0 = ratio * rate
+//    r1 = (1 - ratio) * rate
+//    v0 = ratio * volume
+//    v1 = (1 - ratio) * volume
+// //   print v0, r0, v1, r1
+//    
+//    r0 = round(1000 * (r0)) / 1000
+//    r1 = round(1000 * (r1)) / 1000
+//    v0 = round(1000* (v0)) / 1000
+//    v1 = round(1000 * (v1)) / 1000
+//    print v0, r0, v1, r1
+//        
+//    //fill out the rates and volumes and do the injection.
+//    template = "hset /sample/syr/pump0/Vol %.5s\n"
+//    template += "hset /sample/syr/pump0/rat %.5sMM\n"
+//    template += "hset /sample/syr/pump1/Vol %.5s\n"
+//    template += "hset /sample/syr/pump1/rat %.5sMM\n"
+//   template += " 1\n"
+//    sprintf cmd, template, num2str(v0), num2str(r0), num2str(v1), num2str(r1)
+//    print cmd, r0/(r0+r1), v0/(v0+v1), v0+v1, r0+r1
+//   sics_cmd_interest(cmd)
+//
+//End
 
 
 

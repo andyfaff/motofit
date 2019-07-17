@@ -35,19 +35,28 @@ Function addFilesTogether()
 	variable ii
 
 	string pathSep, outputPathStr
-	strswitch(UpperStr(IgorInfo(2)))
-		case "MACINTOSH":
-			pathSep = ":"
-			break
-		case "WINDOWS":
-			pathSep = "\\"
-			break
-	endswitch
-										
+
+	pathSep = "\\"
+	if(stringmatch(outputPathStr,"!*\\*"))
+		pathSep = ":"
+	endif
+
 	outputPathStr = Parsefilepath(1, Stringfromlist(0, S_filename, "\r"), pathSep, 1, 0)
 	for(ii=0 ; ii<itemsinlist(S_filename, "\r"); ii+=1)
 		filenames += Parsefilepath(0, Stringfromlist(ii, S_filename, "\r"), pathSep, 1, 0)+";"
 	endfor
+
+//	strswitch(UpperStr(IgorInfo(2)))
+//		case "WINDOWS":
+//			pathSep = "\\"
+//			break
+//		case "MACINTOSH":
+//			pathSep = ":"
+//			break
+//	endswitch
+//	outputPathStr = Parsefilepath(5, outputPathStr, pathSep, 0, 0)//
+
+	print "madd(",outputPathStr,",",filenames,")"
 	madd(outputPathStr, filenames)
 End
 
@@ -429,7 +438,7 @@ Function  reducerVariablesPanel() : Panel
 	SetVariable rebinpercent_tab0,limits={-1,11,1},value= root:packages:platypus:data:Reducer:rebinpercent, win=SLIMvarpanel
 	SetVariable expected_centre_tab0,pos={8,72},size={178,16},title="expected centre", win=SLIMvarpanel
 	SetVariable expected_centre_tab0,fSize=10, win=SLIMvarpanel
-	SetVariable expected_centre_tab0,limits={-220,220,1},value= root:packages:platypus:data:Reducer:expected_centre, win=SLIMvarpanel
+	SetVariable expected_centre_tab0,limits={0,1000,1},value= root:packages:platypus:data:Reducer:expected_centre, win=SLIMvarpanel
 	CheckBox background_tab0,pos={9,94},size={138,14},title="background subtraction?", win=SLIMvarpanel
 	CheckBox background_tab0,fSize=10,variable= root:packages:platypus:data:Reducer:backgroundsbn, win=SLIMvarpanel, value = backgroundsbn
 	CheckBox manual_tab0,pos={9,115},size={109,14},title="manual beam find?", win=SLIMvarpanel, value = manualbeamfind
@@ -1557,17 +1566,17 @@ Function createSpecBeamAdjustmentPanel(detector, ordProj)
 	SetVariable pixelsToInclude_setvar,limits={1,9999,1},value= root:packages:platypus:data:reducer:TOFpixels,win=specBeamAdjustmentPanel
 	SetVariable width_setvar,pos={464,297},size={170,19},proc=adjustAOI,title="integrate width",win=specBeamAdjustmentPanel
 	SetVariable width_setvar,fSize=12,win=specBeamAdjustmentPanel
-	SetVariable width_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:width,win=specBeamAdjustmentPanel
+	SetVariable width_setvar,limits={1,200,1},value= root:packages:platypus:data:reducer:width,win=specBeamAdjustmentPanel
 	SetVariable position_setvar,pos={464,321},size={170,19},proc=adjustAOI,title="integrate position",win=specBeamAdjustmentPanel
 	SetVariable position_setvar,fSize=12,win=specBeamAdjustmentPanel
-	SetVariable position_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:expected_centre,win=specBeamAdjustmentPanel
+	SetVariable position_setvar,limits={0,1000,1},value= root:packages:platypus:data:reducer:expected_centre,win=specBeamAdjustmentPanel
 	
 	SetVariable true_width_setvar,pos={548,368},size={170,19},proc=myAOI,title="true FWHM",win=specBeamAdjustmentPanel
 	SetVariable true_width_setvar,fSize=12,win=specBeamAdjustmentPanel
-	SetVariable true_width_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:actual_width,win=specBeamAdjustmentPanel
+	SetVariable true_width_setvar,limits={1,200,1},value= root:packages:platypus:data:reducer:actual_width,win=specBeamAdjustmentPanel
 	SetVariable true_position_setvar,pos={378,368},size={170,19},proc=myAOI,title="true position",win=specBeamAdjustmentPanel
 	SetVariable true_position_setvar,fSize=12,win=specBeamAdjustmentPanel
-	SetVariable true_position_setvar,limits={1,220,1},value= root:packages:platypus:data:reducer:actual_position,win=specBeamAdjustmentPanel
+	SetVariable true_position_setvar,limits={0,1000,1},value= root:packages:platypus:data:reducer:actual_position,win=specBeamAdjustmentPanel
 	TitleBox Instruction,pos={429,231},size={226,20},title="Please adjust regions to find gaussian beamcentre",win=specBeamAdjustmentPanel
 	GroupBox group0,pos={440,256},size={203,88},title="auto adjust",win=specBeamAdjustmentPanel
 	GroupBox group1,pos={372,349},size={354,49},title="manual adjust",win=specBeamAdjustmentPanel

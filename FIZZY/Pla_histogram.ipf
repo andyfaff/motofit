@@ -423,15 +423,15 @@ Function oat_table(axis,binlim0,binlim1,numchannels,[freq])
 		
 	strswitch(axis)
 		case "X":
-			if(binlim0<-210.5 || (binlim0+(binlim1-binlim0)*numchannels) > 210.5)
-				print "Error: x bins must lie between -210.5 and 210.5 (OAT_TABLE)"
+			if(binlim0<-0.5 || (binlim0+(binlim1-binlim0)*numchannels) > 31.5)
+				print "Error: x bins must lie between -0.5 and 31.5 (OAT_TABLE)"
 				return 1
 			endif
 			channel = "NXC"
 			break
 		case "Y":
-			if(binlim0<-210.5 || (binlim0+(binlim1-binlim0)*numchannels) > 210.5)
-				print  "Error: y bins must lie between -210.5 and 210.5 (OAT_TABLE)"
+			if(binlim0<-0.5 || (binlim0+(binlim1-binlim0)*numchannels) > 1023.5)
+				print  "Error: y bins must lie between -0.5 and 1023.5 (OAT_TABLE)"
 				return 1
 			endif
 			channel = "NYC"

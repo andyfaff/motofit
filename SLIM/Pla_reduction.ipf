@@ -52,7 +52,7 @@
 	//the constants below may change frequently
 	Constant Y_PIXEL_SPACING = 1.175	//in mm
 	Constant CHOPFREQ = 23		//Hz
-	Constant ROUGH_BEAM_POSITION = 150		//Rough direct beam position
+	Constant ROUGH_BEAM_POSITION = 500		//Rough direct beam position
 	constant ROUGH_BEAM_WIDTH = 10
 	Constant CHOPPAIRING = 3
 		
@@ -2174,9 +2174,62 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 				EE *= real(compSplicefactor)
 				RR *= real(compSplicefactor)
 				
+//2019.04.08 modification:
+//delete 2 leading points of the curve with larger Q
+//delete the datapoints with the larger %error from both curve
+				print "start tempQQ n=",numpnts(tempQQ)," q=[",tempQQ[0],",",tempQQ[numpnts(tempQQ)-1],"]"
+				print "start QQ n=",numpnts(QQ)," q=[",QQ[0],",",QQ[numpnts(QQ)-1],"]"
+
+				make/N=(numpnts(tempQQ))/FREE tempDRoverRR
+				tempDRoverRR = tempDR / tempRR
+				
+				deletepoints 0, 2, QQ, RR, DQ, EE
+				make/N=(numpnts(QQ))/FREE EEoverRR
+				EEoverRR = EE / RR
+				
+				make/N=(numpnts(tempQQ))/FREE temptempQQ
+				make/N=(numpnts(tempQQ))/FREE temptempDR
+				make/N=(numpnts(tempQQ))/FREE temptempDRoverRR
+				temptempQQ = tempQQ
+				temptempDR = tempDR
+				temptempDRoverRR = tempDRoverRR
+								
+				for(jj = numpnts(tempQQ) - 1; jj >= 0; jj -= 1)
+					if (tempQQ[jj] >= QQ[0] && tempQQ[jj] <= QQ[numpnts(QQ)-1])
+						if(tempDRoverRR[jj] >= interp(tempQQ[jj], QQ, EEoverRR) || tempDR[jj] >= interp(tempQQ[jj], QQ, EE))
+//							print "trim tempQQ n=",jj," q=",tempQQ[jj]," %tempDR=",tempDRoverRR[jj]," %EE=",interp(tempQQ[jj], QQ, EEoverRR)," delete tempQQ"
+							deletepoints jj, 1, tempQQ, tempRR, tempDQ, tempDR, tempDRoverRR
+							if(numpnts(tempQQ)==0)
+								break
+							endif
+						else
+							break
+						endif
+					endif
+				endfor
+				print "end tempQQ n=",numpnts(tempQQ)," q=[",tempQQ[0],",",tempQQ[numpnts(tempQQ)-1],"]"
+				
+				do
+					if (QQ[0] >= tempQQ[0] && QQ[0] <= tempQQ[numpnts(tempQQ)-1])
+						if(EEoverRR[0] >= interp(QQ[0], temptempQQ, temptempDRoverRR) || EE[0] >= interp(QQ[0], temptempQQ, temptempDR))
+//							print "trim QQ n=",jj," q=",QQ[jj]," %EE=",EEoverRR[jj]," %tempDR=",interp(QQ[jj], temptempQQ, temptempDRoverRR)," delete QQ"
+							deletepoints 0, 1, QQ, RR, DQ, EE, EEoverRR
+							if(numpnts(QQ)==0)
+								break
+							endif
+						else
+							break
+						endif
+					else
+						break;
+					endif
+				while(1)
+				print "end QQ n=",numpnts(QQ),"q=[",QQ[0],",",QQ[numpnts(QQ)-1],"]"
+//End 2019.04.12 modification
+				
 				concatenate/NP {RR}, tempRR
 				concatenate/NP {QQ}, tempQQ
-				concatenate/NP { dQ}, tempDQ
+				concatenate/NP {DQ}, tempDQ
 				concatenate/NP {EE}, tempDR
 		
 				if(waveexists(resolutionkernel))
@@ -2186,7 +2239,12 @@ Function spliceFiles(outputPathStr, fname, filesToSplice, [factors, rebin])
 					Pla_catalogue#MDindexsort(tempResKernel, indx)
 				endif
 				
-				sort tempQQ,tempQQ,tempRR,tempDR,tempDQ 
+				sort tempQQ,tempQQ,tempRR,tempDR,tempDQ
+				
+//				for (jj=0;  jj<numpnts(tempQQ); jj+=1)
+//					print "result Q=", tempQQ[jj],"R=",tempRR[jj],"dR=",tempDR[jj]
+//				endfor
+				
 			endif
 			
 			killwaves/z qq, RR, EE, dq, resolutionkernel

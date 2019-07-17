@@ -30,12 +30,12 @@ Function batchScan(batchfile)
 			abort
 		endif
 	endif
-     	if(getpos("bz")  > 10)
-		doalert 1, "WARNING, beam shade appears to be in, do you want to continue?"
-		if(V_Flag==2)
-			abort
-		endif
-	endif
+//     	if(getpos("bz")  > 10)
+//		doalert 1, "WARNING, beam shade appears to be in, do you want to continue?"
+//		if(V_Flag==2)
+//			abort
+//		endif
+//	endif
 		
 	if(dimsize(batchfile, 1) != 5)
 		print "Batchbuffer must have 5 columns"
@@ -333,7 +333,7 @@ Function goto(labelsStr, loopNum)
 	Wave sel_batchbuffer = root:packages:platypus:data:batchScan:sel_batchbuffer
 	newdatafolder/o root:packages:platypus:data:batchscan:labels
 
-	NVAR/z labeller = $("root:packages:platypus:data:batchScan:labels"+labelsStr)
+	NVAR/z labeller = $("root:packages:platypus:data:batchScan:labels:"+labelsStr)
 
 	if(!NVAR_exists(labeller))
 		variable/g $("root:packages:platypus:data:batchScan:labels:"+labelsStr)
