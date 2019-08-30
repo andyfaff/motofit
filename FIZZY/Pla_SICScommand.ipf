@@ -2387,7 +2387,7 @@ Function startRegularTasks(times)
 	//the regularTasks procedure is called at this periodic rate
 	CtrlNamedBackground regularTasks, period = 60*times, proc  = regularTasks
 	CtrlNamedBackground regularTasks, start
-	CtrlNamedBackground histostatusTask, period = 60, proc  = histostatusTask
+	CtrlNamedBackground histostatusTask, period = 90, proc  = histostatusTask
 	CtrlNamedBackground histostatusTask, start
 End
 

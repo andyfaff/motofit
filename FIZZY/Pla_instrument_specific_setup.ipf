@@ -77,90 +77,18 @@ Function testHistogram()
 	oat_table("T",0,40,1001,freq=24)
 End
 //
-//
-//Function aHistogram()		//suitable for 40mm HG
-//	oat_table("X",40,-39,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,50, 1000,freq=20)
-//End
-//
-//Function bHistogram()		//suitable for 40mm HG with FOC
-//	oat_table("X",56,-52,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,50,1000,freq=20)
-//End
-//
-//Function cHistogram()		//suitable for 30mm HG with FOC hslits(40,30,30,38)
-//	oat_table("X",50,-50,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,50,1000,freq=20)
-//End
-//
-//Function dHistogram()	//suitable for 40mm HG with FOC + 50mm St4vt
-//	oat_table("X",64,-56,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,50,1000,freq=20)
-//End
-//
-//Function eHistogram()		//suitable for 25mm HG with FOC
-//	oat_table("X",56.5,-56.5,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,30,1000,freq=33)
-//	//for 33Hz, change to 30us.  For 20Hz use 50.
-//End
-//
-//Function fHistogram()		//suitable for 30mm HG with SB
-//	oat_table("X",25.5,-25.5,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,50,1000,freq=20)
-//End
-//
-//Function gHistogram()		//suitable for 7mm HG with FOC
-//	oat_table("X",10,-10,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,50,1000,freq=20)
-//End
-//
-//Function hHistogram()	
-//	//suitable for hslits(49,48,33,45) which gives a 40mm widebeam onto sample with FOC guide.
-//	//this was measured by Zin Tun and Andrew Nelson on 23/12/2009
-//	oat_table("X",60.5, -60.5,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,40, 1000, freq = 24)
-//End
-//
-//Function iHistogram() //Bills SAW, hslits(10,4,4,20)
-//	oat_table("X",5.5,-5.5,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,50,1000,freq=20)
-//End
-//
-//Function jHistogram()		//suitable for hslits(44,35,35,43) "SB"
-//	oat_table("X",35.5,-35.5,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,50,1000,freq=20)
-//End
-//
-//Function kHistogram()		//suitable for hslits(30,15,15,20) "MT"/"POL"
-//	oat_table("X",16.5,-16.5,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,30,1000,freq=33)
-//	sics_cmd_interest("chopperController status")
-//End
-//
-//Function lHistogram()		//suitable for hslits(40,25,25,40) "MT"/"POL"
-//	oat_table("X",28.5,-28.5,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,30,1000,freq=33)
-//	sics_cmd_interest("chopperController status")
-//End
-//
-//Function mHistogram()		//suitable for hslits(30,15,12,30) "
-//	oat_table("X",13.5,-13.5,1)
-//	oat_table("Y",110.5,109.5,221)
-//	oat_table("T",0,40,1000,freq=24)
-//	sics_cmd_interest("chopperController status")
-//End
+Function floodHistogram()
+	oat_table("X",-0.5,0.5, 32)
+	oat_table("Y",-0.5, 0.5, 1024)
+	oat_table("T",0,40,1001,freq=24)
+End
+
+Function aHistogram() // FOC hslits(50, 50, 33, 45)
+	oat_table("X",2.5, 28.5, 1)
+	oat_table("Y",-0.5, 0.5, 1024)
+	oat_table("T",0,40,1000,freq=24)
+End
+
 
 Function hnotify_registration()
 	//the purpose of this function is to ask SICS to notify FIZZY when anything changes on the instrument.
@@ -1861,7 +1789,7 @@ Function createHTML()
 		text +="<TR><TD>Tertiary Shutter</TD><TD>"+ UpperStr(gethipaval("/instrument/status/tertiary")) + "</TD></TR>\r"
 		
 		Wave/t histostatusWave = root:packages:platypus:SICS:histostatusWave
-		text +="<TR><TD>Rough Detector Rate </TD><TD> "+ histostatuswave[gethistopos("BM3_event_rate")][1] + "</TD></TR>\r"
+		text +="<TR><TD>Rough Detector Rate </TD><TD> "+ histostatuswave[gethistopos("detector_protect_global_rate")][1] + "</TD></TR>\r"
 	
 		if(fpxStatus())
 			text +="<TR><TD>Acquisition</TD><TD>ACTIVE</TD></TR>\r"
