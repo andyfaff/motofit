@@ -1566,14 +1566,14 @@ Function createSpecBeamAdjustmentPanel(detector, ordProj)
 	SetVariable pixelsToInclude_setvar,limits={1,9999,1},value= root:packages:platypus:data:reducer:TOFpixels,win=specBeamAdjustmentPanel
 	SetVariable width_setvar,pos={464,297},size={170,19},proc=adjustAOI,title="integrate width",win=specBeamAdjustmentPanel
 	SetVariable width_setvar,fSize=12,win=specBeamAdjustmentPanel
-	SetVariable width_setvar,limits={1,200,1},value= root:packages:platypus:data:reducer:width,win=specBeamAdjustmentPanel
+	SetVariable width_setvar,limits={1,600,1},value= root:packages:platypus:data:reducer:width,win=specBeamAdjustmentPanel
 	SetVariable position_setvar,pos={464,321},size={170,19},proc=adjustAOI,title="integrate position",win=specBeamAdjustmentPanel
 	SetVariable position_setvar,fSize=12,win=specBeamAdjustmentPanel
 	SetVariable position_setvar,limits={0,1000,1},value= root:packages:platypus:data:reducer:expected_centre,win=specBeamAdjustmentPanel
 	
 	SetVariable true_width_setvar,pos={548,368},size={170,19},proc=myAOI,title="true FWHM",win=specBeamAdjustmentPanel
 	SetVariable true_width_setvar,fSize=12,win=specBeamAdjustmentPanel
-	SetVariable true_width_setvar,limits={1,200,1},value= root:packages:platypus:data:reducer:actual_width,win=specBeamAdjustmentPanel
+	SetVariable true_width_setvar,limits={1,600,1},value= root:packages:platypus:data:reducer:actual_width,win=specBeamAdjustmentPanel
 	SetVariable true_position_setvar,pos={378,368},size={170,19},proc=myAOI,title="true position",win=specBeamAdjustmentPanel
 	SetVariable true_position_setvar,fSize=12,win=specBeamAdjustmentPanel
 	SetVariable true_position_setvar,limits={0,1000,1},value= root:packages:platypus:data:reducer:actual_position,win=specBeamAdjustmentPanel

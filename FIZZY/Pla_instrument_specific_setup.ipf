@@ -56,7 +56,7 @@
 
 	//constants for creating a webpage with instrument updates.
 	//on Platypus this is an apache webserver running on DAV1.
-	StrConstant SAVELOC = "V:public:"
+	StrConstant SAVELOC = "U:public:"
 	StrConstant HTTP_PROXY = "proxy.nbi.ansto.gov.au:3128"
 
 //Function DefaultHistogram()
@@ -87,6 +87,12 @@ Function aHistogram() // FOC hslits(50, 50, 33, 45)
 	oat_table("X",2.5, 28.5, 1)
 	oat_table("Y",-0.5, 0.5, 1024)
 	oat_table("T",0,40,1000,freq=24)
+End
+
+Function pHistogram() // Pol
+	oat_table("X",12.5, 18.5, 1)
+	oat_table("Y",-0.5, 0.5, 1024)
+	oat_table("T",0,40,1000,freq=33)
 End
 
 
@@ -1607,8 +1613,8 @@ Function Instrumentlayout_panel()
 ///Julabo
 	SetVariable julabo,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
 	SetVariable julabo,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
-	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T01S01")][1],noedit= 1, win=instrumentlayout	
-	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T01SP01")][1],noedit= 1, win=instrumentlayout
+	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T02S01")][1],noedit= 1, win=instrumentlayout	
+	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T02SP01")][1],noedit= 1, win=instrumentlayout
 	SetVariable julaboset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
 
 	DrawRect/w=instrumentlayout 219,332,311,367
@@ -2633,6 +2639,8 @@ function temperature(temperature, [wait])
 		//sprintf cmd, "hset /sample/tc1/sensor/setpoint1 %3.2f", temperature
 		//Julabo
 		sprintf cmd, "hset /sample/tc1/setpoint %3.2f", temperature
+    	//ls336
+		//sprintf cmd, "hset /control/T1SP1 %3.2f", temperature
 		print cmd
 	endif
 	sics_cmd_interest(cmd)	
@@ -2892,54 +2900,54 @@ Function chopperRephaseArator(s)
 	return 0
 End
 
-//Function pump(ratio, [volume, rate])
-//    variable ratio, volume, rate
-//    string cmd = "", template
-//    //injects liquid from dual syringe pump system towards hamilton syringe.
-//    //ROUNDS RATIO TO 2DP!!!!!!!!!!!!
-//    //ratio - the ratio of pump0 to pump1. 1 = 100% pump0, 0.6666 = 66.66%pump0:33.33%pump1, 0 = 100% pump1
-//    //volume - the total volume of liquid injected. Defaults to 3ml
-//    //rate - the total injection rate. Defaults to 1  ml/min
-//    
-//    if(ratio < 0 || ratio > 1)
-//        print "PUMPSET ERROR - ratio has to be in range [0, 1]"
-//        return 1
-//    endif 
-//    ratio = round(ratio *1000)/1000
-//    
-//    if(paramisdefault(volume))
-//		volume = 3
-//	endif
-//	
-//    if(paramisdefault(rate))
-//		rate = 1
-//	endif
-//
-//    variable v0, r0, v1, r1
-//    
-//    r0 = ratio * rate
-//    r1 = (1 - ratio) * rate
-//    v0 = ratio * volume
-//    v1 = (1 - ratio) * volume
-// //   print v0, r0, v1, r1
-//    
-//    r0 = round(1000 * (r0)) / 1000
-//    r1 = round(1000 * (r1)) / 1000
-//    v0 = round(1000* (v0)) / 1000
-//    v1 = round(1000 * (v1)) / 1000
-//    print v0, r0, v1, r1
-//        
-//    //fill out the rates and volumes and do the injection.
-//    template = "hset /sample/syr/pump0/Vol %.5s\n"
-//    template += "hset /sample/syr/pump0/rat %.5sMM\n"
-//    template += "hset /sample/syr/pump1/Vol %.5s\n"
-//    template += "hset /sample/syr/pump1/rat %.5sMM\n"
-//   template += " 1\n"
-//    sprintf cmd, template, num2str(v0), num2str(r0), num2str(v1), num2str(r1)
-//    print cmd, r0/(r0+r1), v0/(v0+v1), v0+v1, r0+r1
-//   sics_cmd_interest(cmd)
-//
-//End
+Function pump(ratio, [volume, rate])
+    variable ratio, volume, rate
+    string cmd = "", template
+    //injects liquid from dual syringe pump system towards hamilton syringe.
+    //ROUNDS RATIO TO 2DP!!!!!!!!!!!!
+    //ratio - the ratio of pump0 to pump1. 1 = 100% pump0, 0.6666 = 66.66%pump0:33.33%pump1, 0 = 100% pump1
+    //volume - the total volume of liquid injected. Defaults to 3ml
+    //rate - the total injection rate. Defaults to 1  ml/min
+    
+    if(ratio < 0 || ratio > 1)
+        print "PUMPSET ERROR - ratio has to be in range [0, 1]"
+        return 1
+    endif 
+    ratio = round(ratio *1000)/1000
+    
+    if(paramisdefault(volume))
+		volume = 3
+	endif
+	
+    if(paramisdefault(rate))
+		rate = 1
+	endif
+
+    variable v0, r0, v1, r1
+    
+    r0 = ratio * rate
+    r1 = (1 - ratio) * rate
+    v0 = ratio * volume
+    v1 = (1 - ratio) * volume
+ //   print v0, r0, v1, r1
+    
+    r0 = round(1000 * (r0)) / 1000
+    r1 = round(1000 * (r1)) / 1000
+    v0 = round(1000* (v0)) / 1000
+    v1 = round(1000 * (v1)) / 1000
+    print v0, r0, v1, r1
+        
+    //fill out the rates and volumes and do the injection.
+    template = "hset /sample/syr/pump0/Vol %.5s\n"
+    template += "hset /sample/syr/pump0/rat %.5sMM\n"
+    template += "hset /sample/syr/pump1/Vol %.5s\n"
+    template += "hset /sample/syr/pump1/rat %.5sMM\n"
+    template += "hset /sample/syr/pump0/run run\n"
+    sprintf cmd, template, num2str(v0), num2str(r0), num2str(v1), num2str(r1)
+    print cmd, r0/(r0+r1), v0/(v0+v1), v0+v1, r0+r1
+  // sics_cmd_interest(cmd)
+
+End
 
 
 

@@ -133,7 +133,7 @@ Function PolarizedReduction(inputPathStr, outputPathStr, scalefactorI00, scalefa
 	
 	NVAR expectedcentre=root:packages:platypus:data:Reducer:expected_centre
 	if(expectedcentre<20)
-		expectedcentre = 144
+		expectedcentre = 500
 		//root:packages:platypus:data:Reducer:expected_centre = 144
 	endif
 	if(verbose)
@@ -1404,7 +1404,7 @@ Function  reducerpanelPOL() : Panel  //reducerpanel
 
 	variable/g root:packages:platypus:data:Reducer:lowLambda=2.5
 	variable/g root:packages:platypus:data:Reducer:highLambda=12.5
-	variable/g root:packages:platypus:data:Reducer:expected_centre=144
+	variable/g root:packages:platypus:data:Reducer:expected_centre=500
 	variable/g root:packages:platypus:data:Reducer:rebinpercent=3
 	variable/g root:packages:platypus:data:Reducer:backgroundsbn=1
 	variable/g root:packages:platypus:data:Reducer:manualbeamfind=1
@@ -1632,9 +1632,9 @@ Function  reducerVariablesPanelPOL() : Panel
 	SetVariable rebinpercent_tab0,pos={10,51},size={177,16},title="Rebin %tage ", win=SLIMvarpanel
 	SetVariable rebinpercent_tab0,fSize=10, win=SLIMvarpanel
 	SetVariable rebinpercent_tab0,limits={-1,11,1},value= root:packages:platypus:data:Reducer:rebinpercent, win=SLIMvarpanel
-	SetVariable expected_centre_tab0,pos={8,72},size={178,16},title="expected centre", win=SLIMvarpanel
-	SetVariable expected_centre_tab0,fSize=10, win=SLIMvarpanel
-	SetVariable expected_centre_tab0,limits={-220,220,1},value= root:packages:platypus:data:Reducer:expected_centre, win=SLIMvarpanel
+	SetVariable expected_centre_tab0, pos={8,72}, size={178,16}, title="expected centre", win=SLIMvarpanel
+	SetVariable expected_centre_tab0, fSize=10, win=SLIMvarpanel
+	SetVariable expected_centre_tab0, limits={0, 1000, 1}, value=root:packages:platypus:data:Reducer:expected_centre, win=SLIMvarpanel
 	CheckBox background_tab0,pos={9,94},size={138,14},title="background subtraction?", win=SLIMvarpanel
 	CheckBox background_tab0,fSize=10,variable= root:packages:platypus:data:Reducer:backgroundsbn, win=SLIMvarpanel, value = backgroundsbn
 	CheckBox manual_tab0,pos={9,115},size={109,14},title="manual beam find?", win=SLIMvarpanel, value = manualbeamfind

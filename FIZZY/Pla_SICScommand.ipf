@@ -533,8 +533,8 @@ Function startSICS()
 	Wave counts = root:packages:platypus:data:scan:counts
 	fillscanstats(position, counts, 1)	
 
-	make/n=(600, 5)/t/o root:packages:platypus:data:batchScan:list_batchbuffer = ""	
-	make/n=(600, 5)/o root:packages:platypus:data:batchScan:sel_batchbuffer
+	make/n=(2000, 5)/t/o root:packages:platypus:data:batchScan:list_batchbuffer = ""	
+	make/n=(2000, 5)/o root:packages:platypus:data:batchScan:sel_batchbuffer
 	Wave sel_batchbuffer = root:packages:platypus:data:batchScan:sel_batchbuffer
 	wave/t list_batchbuffer = root:packages:platypus:data:batchScan:list_batchbuffer
 	setdimlabel 1, 1, command,list_batchbuffer
