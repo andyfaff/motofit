@@ -677,7 +677,7 @@ Function correct_for_gravity(data, dataSD, lambda, trajectory, lowLambda, highLa
 	//M_gravCorrCoefs.  THis is a theoretical prediction where the spectral ridge is for each timebin.  This will be used to calculate the actual angle
 	//	of incidence in the reduction process.
 
-	variable ii, jj, totaldeflection, err = 0, travel_distance
+	variable ii, jj, totaldeflection, err = 0, travel_distance, NYC
 	try
 		if(numpnts(data) != numpnts(dataSD) || dimsize(data, 0) != dimsize(lambda, 0))
 			print "ERROR the data dimension aren't consistent (correct_for_gravity)"
@@ -690,10 +690,11 @@ Function correct_for_gravity(data, dataSD, lambda, trajectory, lowLambda, highLa
 			abort
 		endif
 
-		make/d/o/n=(dimsize(data, 0), dimsize(data, 1), dimsize(data, 2)) M_gravitycorrected, M_gravitycorrectedSD
-		make/d/o/n=(dimsize(data, 1)) Xsection, XsectionSD
-		make/d/o/n=(dimsize(data, 1) + 1) Xsection_px, Xsection_px_rebin
-		Xsection_px = p-0.5				//subtract half a pixel because we need to work on histogrammed data.
+		NYC = dimsize(data, 1)
+		make/d/o/n=(dimsize(data, 0), NYC, dimsize(data, 2)) M_gravitycorrected, M_gravitycorrectedSD
+		make/d/o/n=(NYC) Xsection, XsectionSD
+		make/d/o/n=(NYC + 1) Xsection_px, Xsection_px_rebin
+		Xsection_px = p - 0.5				//subtract half a pixel because we need to work on histogrammed data.
 		
 		//find out the correct travel_distance to do.  This is empirical
 		//find out where the specular ridge is, as a fn of wavelength
@@ -714,11 +715,12 @@ Function correct_for_gravity(data, dataSD, lambda, trajectory, lowLambda, highLa
 		make/n=(3, dimsize(data, 2)) /o/d M_gravCorrCoefs = 0
 
 		make/o/n=3/d W_coef = {3000,ROUGH_BEAM_POSITION,0}
-		make/o/t W_constraints = {"W_coef[0]<6000","W_coef[0]>1500","W_coef[1]<190","W_coef[1]>30"}
+		make/o/t W_constraints = {"W_coef[0]<6000","W_coef[0]>1500","W_coef[1]<"+num2istr(NYC - 30),"W_coef[1]>30"}
 		
 		for(jj = 0 ; jj < dimsize(data, 2) ; jj += 1)
+			// iterate over each detector image *N* (last index)
 			W_mask[] = M_centrewavelength[p][jj] < 30 ? NaN : W_mask[p]
-			W_mask[] = M_centrewavelength[p][jj] > 190 ? NaN : W_mask[p]
+			W_mask[] = M_centrewavelength[p][jj] > NYC - 30 ? NaN : W_mask[p]
 				
 			variable V_fiterror = 0
 			FuncFit/H="001"/NTHR=0/n/q deflec W_coef  M_centrewavelength[][jj] /X=lambda[][jj] /M=W_mask /C=W_constraints 
