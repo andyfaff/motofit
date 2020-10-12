@@ -236,7 +236,21 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 			endif
 		endif
 	endif
-		
+
+	//if the fast shutter is closed.
+	if(!stringmatch(gethipaval("/instrument/fs/shutter/status"), "1"))
+		print "WARNING, fast Shutter appears to be closed, you may not see any neutrons (fpx)"
+		//if auto is set, then its probably an automatic scan, so don't ask if you want to stop
+		//if auto is NOT set, then you probably want to open the shutter, so ask if you want to continue.
+		if(!automatic)	
+			doalert 1, "Warning, the fast shutter appears closed, do you want to continue? (Scan will start when you press yes)"
+			if(V_Flag==2)
+				print "Stopping because the fast shutter was closed (fpx)"
+				return 1
+			endif
+		endif
+	endif
+
 	//first have to check if motor exists
 	findvalue/text=motorName/Z axeslist
 	if(V_Value == -1)
@@ -325,7 +339,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	string cmdTemplate, cmd
 	cmdTemplate = "autosave 30\nrunscan %s %e %e %d %s %d savetype %s force true"
 	sprintf cmd, cmdTemplate, motorName, start, stop, numpoints, mode, preset, saveStr
-//	print cmd
+	print cmd
 	//send it to SICS, and tell it to autosave
 	sics_cmd_cmd(cmd)
 	
@@ -722,6 +736,7 @@ Function fillScanStats(position, w, full)
 	
 	switch(full)
 		case 0:
+		   // during a scanpoint
 			position[scanpoint] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
 			//time
 			times = str2num(Ind_Process#grabHistoStatus("acq_dataset_active_sec"))
@@ -739,6 +754,7 @@ Function fillScanStats(position, w, full)
 			w[scanpoint][9] =  str2num(gethipaval("/monitor/bm1_event_rate"))
 		break
 		case 1:
+		   // end of a scanpoint
 			position[scanpoint] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
 			//now fall through into case2 to get the updated counts.
 			

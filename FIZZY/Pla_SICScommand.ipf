@@ -438,7 +438,7 @@ Function startSICS()
 	timer = startmstimer
 	print "LOADING HIPADABA PATHS"
 	string hipaxml = ""
-	hipaxml = sockitsendnrecvf(SOCK_interest, "getGumtreeXml / \n", 0, 3)
+	hipaxml = sockitsendnrecvf(SOCK_interest, "getGumtreeXml / \n", 0, 20)
 	//kludge from syringe pump driver
 	hipaxml = replacestring(num2char(6), hipaxml, "")
 	hipaxml = replacestring(num2char(2), hipaxml, "")
@@ -2887,3 +2887,50 @@ print "Wait status:", waitstatus()
 print "____________________________________________________________________________"
 End
 
+
+Function check_angler(angler)
+variable angler
+string motorlist = "ss1u;ss1d;ss2u;ss2d;ss3u;ss3d;ss4u;ss4d"
+variable ii
+variable nmotors = itemsinlist(motorlist)
+Wave/t angler_list = root:packages:platypus:SICS:angler_listwave
+variable ss1vg, ss2vg, ss3vg, ss4vg
+ss1vg = str2num(angler_list[angler][2])
+ss2vg = str2num(angler_list[angler][3])
+ss3vg = str2num(angler_list[angler][4])
+ss4vg = str2num(angler_list[angler][5])
+check_motor("ss1u", ss1vg/2)
+check_motor("ss1d", -ss1vg/2)
+check_motor("ss2u", ss2vg/2)
+check_motor("ss2d", -ss2vg/2)
+check_motor("ss3u", ss3vg/2)
+check_motor("ss3d", -ss3vg/2)
+check_motor("ss4u", ss4vg/2)
+check_motor("ss4d", -ss4vg/2)
+
+variable sth = str2num(angler_list[angler][1])
+variable slit4_distance = str2num(gethipaval("/instrument/parameters/slit4_distance"))
+variable sample_distance = str2num(gethipaval("/instrument/parameters/sample_distance"))
+variable st4vt = tan(pi * 2 * sth / 180) * (slit4_distance - sample_distance)
+check_motor("st4vt", st4vt, tol=0.02)
+End
+
+
+Function check_motor(motor, position, [tol])
+string motor
+variable position
+variable tol
+
+if (paramisdefault(tol))
+tol = 0.01
+endif
+
+variable pos = getpos(motor)
+
+if (abs(pos - position) > tol)
+	Wave/t statemon = root:packages:platypus:SICS:statemon
+	redimension/n=(numpnts(statemon) + 1) statemon
+	print("POSITIONING ERROR: " + motor + " " + num2str(position))
+	statemon[numpnts(statemon) - 1] = "POSITIONING ERROR: " + motor + " " + num2str(position)
+endif
+end
