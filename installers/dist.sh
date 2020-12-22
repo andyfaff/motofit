@@ -18,11 +18,11 @@ cp ../MOTOFIT_loadpackage.ipf './dist/Igor Procedures'
 
 # package the OSX XOP's
 cp -r "$tkt/Abeles/Xcode/Build/Products/Release/Abeles64.xop" "$macXOP"
-cp -r "$tkt/easyHttp/Xcode/build/Release/easyhttp64.xop" "$macXOP"
+cp -r "$tkt/easyHttp/Xcode/Build/Products/Release/easyhttp64.xop" "$macXOP"
 cp -r "$tkt/MultiDimensionalGenCurvefit/Xcode/build/Products/Release/GenCurvefit64.xop" "$macXOP"
-cp -r "$tkt/SOCKIT/Xcode/build/Release/SOCKIT64.xop" "$macXOP"
-cp -r "$tkt/XMLutils/Xcode/build/Products/Release/XMLutils64.xop" "$macXOP"
-cp -r "$tkt/ZIP/Xcode/build/Release/ZIP64.xop" "$macXOP"
+cp -r "$tkt/SOCKIT/Xcode/Build/Products/Release/SOCKIT64.xop" "$macXOP"
+cp -r "$tkt/XMLutils/Xcode/Build/Products/Release/XMLutils64.xop" "$macXOP"
+cp -r "$tkt/ZIP/Xcode/Build/Products/Release/ZIP64.xop" "$macXOP"
 
 cp "$XOPcode/abeles/extra/Abeles Help.ihf" "$macXOP"
 cp "$XOPcode/easyhttp/easyHttp Help.ihf" "$macXOP"
