@@ -282,21 +282,39 @@ End
 
 Function gethistoPos(path)
 	string path
-	//returns the row number of the hipadaba path in the
-	//textwave that contains all the child hipadaba nodes.
 	Wave/t histostatusWave = root:packages:platypus:SICS:histostatusWave
 	findvalue/text=path/txop=4/z histostatusWave
 	return v_value
-ENd
+End
 
-Function/t grabHistoStatus(keyvalue)
-	string keyvalue
+Function/t grabHistoStatus(key)
+	string key
 	//this function returns the status of the Histogram server from it's text status
 	grabAllHistoStatus()
 	Wave/t histostatusWave = root:packages:platypus:SICS:histostatusWave
-	string val = histostatusWave[gethistopos(keyValue)][1]
+	string val = histostatusWave[gethistopos(key)][1]
 	return replacestring(" ", val, "")
 End
+
+Function/t get_histo_status()
+	//this function returns the status of the Histogram server from it's text status
+	string retStr = "", cmd
+	
+	sprintf cmd,"http://%s:%d/admin/textstatus.egi", DASserverIP, DASserverport
+	easyHttp/PROX=""/PASS="manager:ansto" cmd, retStr
+	return retStr
+End
+
+Function get_status_val(status, key)
+	string status, key
+	return numberbykey(key, status, ":", "\n")
+End
+
+Function/t get_status_str(status, key)
+	string status, key
+	return stringbykey(key, status, ":", "\n")
+End
+
 
 Function parseRateString(str)
     // a function to parse a string of the form "825.681763 events/sec", returning the number
@@ -306,6 +324,7 @@ Function parseRateString(str)
     sscanf str, "%g %s", v, r
     return v
 End
+
 
 Function startStreamingImage()
 	//setup the datafolders

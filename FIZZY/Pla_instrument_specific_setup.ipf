@@ -27,10 +27,8 @@
 	Constant 	MOXA2serverPort = 4002
 	Constant 	MOXA3serverPort = 4003
 	Constant 	MOXA4serverPort = 4004
-	StrConstant PATH_TO_DATA = "\\\\storage\\nbi_experiment_data:platypus:data:"
-	StrConstant PATH_TO_DATA2 = "\\\\Filer\\experiments:platypus:data:"
-	StrConstant PATH_TO_HSDATA = "\\\\storage\\nbi_experiment_hsdata:platypus:hsdata:"
-	strconstant LOG_PATH = "\\\\Filer\\experiments:platypus:data:FIZ:logs:"
+	StrConstant PATH_TO_DATA = "Z:cycle:current:"
+	StrConstant PATH_TO_HSDATA = "Z:cycle:current:data:histserv"
 
 	
 	Constant ChopperN_delay = 2.491		// a time delay between the first chopper pulse and chopper N
@@ -56,7 +54,7 @@
 
 	//constants for creating a webpage with instrument updates.
 	//on Platypus this is an apache webserver running on DAV1.
-	StrConstant SAVELOC = "U:public:"
+	StrConstant SAVELOC = "W:public:"
 	StrConstant HTTP_PROXY = "proxy.nbi.ansto.gov.au:3128"
 
 //Function DefaultHistogram()
@@ -89,10 +87,10 @@ Function aHistogram() // FOC hslits(50, 50, 33, 45)
 	oat_table("T",0,40,1000,freq=24)
 End
 
-Function pHistogram() // Pol
-	oat_table("X",12.5, 18.5, 1)
+Function pHistogram() // Pol Don't set blindly because it depends on the exact hslits you useS
+	oat_table("X",10, 20.0, 1)
 	oat_table("Y",-0.5, 0.5, 1024)
-	oat_table("T",0,40,1000,freq=33)
+	oat_table("T",0,30,1000,freq=33)
 End
 
 
@@ -245,6 +243,7 @@ Function setExperimentalMode(mode)
 	return err
 End
 
+
 Function omega_2theta(omega, twotheta, [s1, s2, s3, s4])
 	variable omega,twotheta, s1, s2, s3, s4
 	//sets the angle of incidence (omega) and the total beam deviation (2theta)
@@ -267,7 +266,7 @@ Function omega_2theta(omega, twotheta, [s1, s2, s3, s4])
 		print "ERROR: omega and twotheta NOT be NaN or Inf"
 	endif
 	appendStatemon("om2th")
-	sprintf cmd, "::exp_mode::omega_2theta %3.3f %3.3f %3.3f %3.3f %3.3f %3.3f", omega, twotheta, s1, s2, s3, s4
+	sprintf cmd, "::exp_mode::nomega_2theta %3.3f %3.3f %3.3f %3.3f %3.3f %3.3f", omega, twotheta, s1, s2, s3, s4
 	sics_cmd_interest(cmd)
 End
 
@@ -338,6 +337,8 @@ Function attenuate(pos)
 	//pos = 0 park the attenuator in the beam
 	//pos = 1 oscillate the attenuator
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
+	variable p1, p2
+	string s1, s2
 	switch(pos)
 		case -1:
 			sockitsendmsg sock_sync,"bat send oscd=-1\n"
@@ -354,13 +355,23 @@ Function attenuate(pos)
 			break
 		case 1:
 			sockitsendmsg sock_sync,"bat send oscd=1\n"
-			wait(5)
+			sleep/s/q 1
+			doxopidle
+			s1 = sics_cmd_sync("mc1 send TPD")
+			s2 = sics_cmd_sync("mc1 send TPD")
+			p1 = str2num(s1)
+			p2 = str2num(s2)
+			if(abs(p1 - p2) < 10)
+			    print("ATTENUATOR FAULT: the attenuator didn't seem to go in, closing fast shutter")
+			    appendstatemon("ATTENUATOR FAULT")
+			    fs(0)
+			endif
 			if(V_Flag)
 				return V_Flag
 			endif
 			break
 		default:
-			print "Useage attenuator(-1), attenuator(0),attenuator(1) (attenuate)"
+			print "Usage attenuator(-1), attenuator(0),attenuator(1) (attenuate)"
 			return 1
 			break
 	endswitch
@@ -486,8 +497,22 @@ Function Instrument_Specific_Setup()
 	
 	//make a wave to track the frame deasset time, AKA the chopper delay in ms.
 //	make/n=(0,2)/o root:packages:platypus:SICS:frame_deassert
+	status_backup()
 	
 	return err
+End
+
+Function status_backup()
+// backs up status.tcl to the data directory
+string cmd
+string dayo, timeo
+dayo = Secs2Date(DateTime, -2)
+timeo = Secs2Time(DateTime, 3)
+
+sprintf cmd, "backup /usr/local/sics/data/status_%sT%s.tcl", dayo, timeo
+cmd = replaceString(":", cmd, "")
+print(cmd)
+sics_cmd_sync(cmd)
 End
 
 Function scanReadyToBeStopped(currentPoint)
@@ -1539,15 +1564,23 @@ Function Instrumentlayout_panel()
 	SetVariable dz_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable dz_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/detector/vertical_translation")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable sth_l,pos={127,183},size={80,21},title="sth", win=instrumentlayout
+	SetVariable sth_l,pos={127,180},size={90,21},title="sth", win=instrumentlayout
 	SetVariable sth_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable sth_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/sth")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable sz_l,pos={127,205},size={80,21},title="sz", win=instrumentlayout
+	SetVariable sz_l,pos={229,56},size={80,20},title="sz", win=instrumentlayout
 	SetVariable sz_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable sz_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/translate_z")][1],noedit= 1, win=instrumentlayout
+
+	SetVariable sztop_l,pos={113,205}, size={108, 20}, title="sztop", win=instrumentlayout
+	SetVariable sztop_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
+	SetVariable sztop_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/sztop")][1],noedit= 1, win=instrumentlayout
 	
-	SetVariable sx_l,pos={127,225},size={80,21},title="sx", win=instrumentlayout
+	SetVariable sxtop_l,pos={113,230},size={108,20},title="sxtop", win=instrumentlayout
+	SetVariable sxtop_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
+	SetVariable sxtop_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/sxtop")][1],noedit= 1, win=instrumentlayout
+	
+	SetVariable sx_l,pos={230,81},size={80,21},title="sx", win=instrumentlayout
 	SetVariable sx_l,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable sx_l,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/translate_x")][1],noedit= 1, win=instrumentlayout
 	
@@ -1570,6 +1603,10 @@ Function Instrumentlayout_panel()
 	SetVariable tertiaryshutter,pos={521,141},size={160,16},title="tertiary shutter", win=instrumentlayout
 	SetVariable tertiaryshutter,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable tertiaryshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/status/tertiary")][1],noedit= 1, win=instrumentlayout
+
+	SetVariable fastshutter,pos={407,143},size={100,16},title="fast shutter", win=instrumentlayout
+	SetVariable fastshutter,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
+	SetVariable fastshutter,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/fs/shutter/status")][1],noedit= 1, win=instrumentlayout
 	
 	SetVariable mode,pos={521,164},size={160,16},title="mode", win=instrumentlayout
 	SetVariable mode,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
@@ -1603,19 +1640,22 @@ Function Instrumentlayout_panel()
 
 ///Lakeshore
 //	SetVariable lakeshore,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
-//	SetVariable lakeshoreset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/setpoint1")][1],noedit= 1, win=instrumentlayout
-//	SetVariable lakeshoreset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
-//	SetVariable lakeshore1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/sensor/sensorValueA")][1],noedit= 1, win=instrumentlayout
-//	SetVariable lakeshore1,pos={90,273},size={90,16},title="temp A", win=instrumentlayout,bodywidth=40
-//	SetVariable lakeshore3,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/sample/tc1/heater/heaterOutpPercent")][1],noedit= 1, win=instrumentlayout
-//	SetVariable lakeshore3,pos={90,293},size={90,16},title="Heater percent", win=instrumentlayout,bodywidth=40
+	SetVariable lakeshoreset1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T01SP01")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshoreset1,pos={100,274},size={90,16},title="temp1 setpoint", win=instrumentlayout,bodywidth=40
+	SetVariable lakeshoreset2,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T02SP01")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshoreset2,pos={100,294},size={90,16},title="temp2 setpoint", win=instrumentlayout,bodywidth=40
+	
+	SetVariable lakeshore1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T01S01")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshore1,pos={100,313},size={90,16},title="T01S01", win=instrumentlayout,bodywidth=40
+	SetVariable lakeshore2,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T02S01")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshore2,pos={100,333},size={90,16},title="T02S01", win=instrumentlayout,bodywidth=40
 
 ///Julabo
-	SetVariable julabo,pos={90,273},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
-	SetVariable julabo,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
-	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T02S01")][1],noedit= 1, win=instrumentlayout	
-	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T02SP01")][1],noedit= 1, win=instrumentlayout
-	SetVariable julaboset,pos={90,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
+//	SetVariable julabo,pos={100,293},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
+//	SetVariable julabo,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
+//	SetVariable julabo,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T1S3")][1],noedit= 1, win=instrumentlayout	
+//	SetVariable julaboset,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T1SP1")][1],noedit= 1, win=instrumentlayout
+//	SetVariable julaboset,pos={100,253},size={90,16},title="temp setpoint", win=instrumentlayout,bodywidth=40
 
 	DrawRect/w=instrumentlayout 219,332,311,367
 	DrawRect/w=instrumentlayout 180,374,213,449
@@ -1812,7 +1852,7 @@ Function createHTML()
 		text +="<TR><TD>omega</TD><TD>"+ UpperStr(gethipaval("/instrument/parameters/omega")) + "</TD></TR>\r"
 		text +="<TR><TD>twotheta</TD><TD>"+ UpperStr(gethipaval("/instrument/parameters/twotheta")) + "</TD></TR>\r"
 		text +="<TR><TD>point progress</TD><TD>"+ num2str(pointProgress) + "</TD></TR>\r"
-		text +="<TR><TD>sensorvalueA</TD><TD>"+ UpperStr(gethipaval("/sample/tc1/sensor/sensorValueA")) + "</TD></TR>\r"
+		text +="<TR><TD>power supply amps</TD><TD>"+ UpperStr(gethipaval("/sample/power_supply/amps")) + "</TD></TR>\r"
 
 //		Wave/z frame_deassert = root:packages:platypus:SICS:frame_deassert
 //		if(waveexists(frame_deassert))
@@ -1960,6 +2000,7 @@ Function createHTML()
 	endtry
 	
 	setdatafolder $cDF
+   save/g/o root:packages:platypus:data:batchScan:list_batchbuffer as "W:public:batch.txt"
 End
 
 Function/t createFizzyCommand(type)
@@ -2221,6 +2262,7 @@ Function positioner(posNum)
        Variable posnum
        Wave/t/z position_listwave = root:packages:platypus:SICS:position_listwave
        Wave/z position_selwave = root:packages:platypus:SICS:position_selwave
+       string sxmode, szmode
        string cmd = ""
        variable isRelative, desiredposition
        if(!waveexists(position_listwave) || !waveexists(position_selwave))
@@ -2230,6 +2272,8 @@ Function positioner(posNum)
                return 1
        endif
        posnum = trunc(posnum)
+       szmode = getdimlabel(position_listwave, 1, 3)
+       sxmode = getdimlabel(position_listwave, 1, 1)
 	
 	//samplename
 	if(strlen(position_listwave[posnum][9]))
@@ -2238,29 +2282,29 @@ Function positioner(posNum)
 	
 	cmd += "drive "
 	
-       //sx
+       //sx | sxtop
        isrelative = 2^4 & position_selwave[posnum][2]
        if(isRelative)
-               desiredposition = getpos("sx") + str2num(position_listwave[posnum][1])
+               desiredposition = getpos(sxmode) + str2num(position_listwave[posnum][1])
        else
                desiredposition =  str2num(position_listwave[posnum][1])
        endif
-       if(checkDrive("sx", desiredposition))
+       if(checkDrive(sxmode, desiredposition))
                return 1
        endif
-       cmd += " sx " + num2str(desiredposition)
+       cmd += " " + sxmode + " " + num2str(desiredposition)
 
-       //sz
+       //sz | sztop
        isrelative = 2^4 & position_selwave[posnum][4]
        if(isRelative)
-               desiredposition = getpos("sz") + str2num(position_listwave[posnum][3])
+               desiredposition = getpos(szmode) + str2num(position_listwave[posnum][3])
        else
                desiredposition =  str2num(position_listwave[posnum][3])
        endif
-       if(checkDrive("sz", desiredposition))
+       if(checkDrive(szmode, desiredposition))
                return 1
        endif
-       cmd += " sz " + num2str(desiredposition)
+       cmd += " " + szmode + " " + num2str(desiredposition)
 
        //sth
        isrelative = 2^4 & position_selwave[posnum][6]
@@ -2292,9 +2336,10 @@ Function positioner(posNum)
 
 End
 
-Function positionlist(numpositions)
+Function positionlist(numpositions, [sxmode, szmode])
        //sets up pre-defined position waves for various samples.
        variable numpositions
+       string sxmode, szmode
        string cDF = getdatafolder(1)
        variable ii, oldpositions
        newdatafolder/o root:packages
@@ -2335,16 +2380,22 @@ Function positionlist(numpositions)
        position_listwave[][0] = num2istr(p)
        position_selwave[][0] = 0
 
+		if (paramisdefault(szmode))
+			szmode = "sztop"
+		endif
+		if (paramisdefault(sxmode))
+			sxmode = "sxtop"
+		endif
        setdimlabel 1, 0, position, position_listwave
-       setdimlabel 1, 1, sx, position_listwave
+       setdimlabel 1, 1, $sxmode, position_listwave
        setdimlabel 1, 2, relative, position_listwave
-       setdimlabel 1, 3, sz, position_listwave
+       setdimlabel 1, 3, $szmode, position_listwave
        setdimlabel 1, 4, relative, position_listwave
        setdimlabel 1, 5, sth, position_listwave
        setdimlabel 1, 6, relative, position_listwave
        setdimlabel 1, 7, sphi, position_listwave
        setdimlabel 1, 8, relative, position_listwave
-	setdimlabel 1, 9, samplename, position_listwave
+		setdimlabel 1, 9, samplename, position_listwave
 
        setdatafolder $cDF
 End
@@ -2357,7 +2408,10 @@ Function numpositions_setVarProc(sva) : SetVariableControl
                case 2: // Enter key
                case 3: // Live update
                        Variable dval = sva.dval
-                       positionlist(dval)
+                       Wave/t/z position_listwave=root:packages:platypus:SICS:position_listwave
+                       string sxmode = getdimlabel(position_listwave, 1, 1)
+                       string szmode = getdimlabel(position_listwave, 1, 3)
+                       positionlist(dval, sxmode=sxmode, szmode=szmode)
                        String sval = sva.sval
                        break
        endswitch
@@ -2369,15 +2423,38 @@ Function positions_panel() : Panel
        Dowindow/k position_panel
        //creates a window to setup pre-defined positions
        PauseUpdate; Silent 1           // building window...
-       NewPanel /K=1/N=position_panel/W=(442,111,1211,275) as "Position Panel"
+       NewPanel /K=1/N=position_panel/W=(442,111,1211,325) as "Position Panel"
        positionlist(0)
-       ListBox position_list,pos={6,34},size={752,115}, win=position_panel
+       PopupMenu position_sx_mode title="sx mode",value="sxtop;sx", pos={23,31}, win=position_panel, proc=szx_mode_PopMenuProc
+       PopupMenu position_sz_mode title="sz mode",value="sztop;sz", pos={178,31}, win=position_panel, proc=szx_mode_PopMenuProc
+       ListBox position_list,pos={6,55},size={754,150}, win=position_panel
        ListBox position_list,listWave=root:packages:platypus:SICS:position_listwave, win=position_panel
        ListBox position_list,selWave=root:packages:platypus:SICS:position_selwave, win=position_panel
        ListBox position_list,mode= 5,editStyle= 1, win=position_panel, usercolumnresize = 1, widths = {10,20,10,20,10, 20,10, 20, 10, 40}
        Button position_button, title="set positions", pos={221,6},size={320,22}
        SetVariable numpositions,pos={9,8},size={200,15},proc=numpositions_setVarProc,title="Number of positions", win=position_panel
        SetVariable numpositions,limits={1,10,1},value= _NUM:0, win=position_panel
+End
+
+Function szx_mode_PopMenuProc(pa) : PopupMenuControl
+	STRUCT WMPopupAction &pa
+
+	switch( pa.eventCode )
+		case 2: // mouse up
+			Variable popNum = pa.popNum
+			String popStr = pa.popStr
+    		Wave/t/z position_listwave=root:packages:platypus:SICS:position_listwave
+    		if(!cmpstr(popstr, "sz") || !cmpstr(popstr, "sztop"))
+    			setdimlabel 1, 3, $popstr, position_listwave
+    		elseif(!cmpstr(popstr, "sx") || !cmpstr(popstr, "sxtop"))
+    			setdimlabel 1, 1, $popstr, position_listwave
+    		endif
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
 End
 
 Function positioner_fill_position(position, sx, sz, sth, sphi, [ask])
@@ -2455,6 +2532,7 @@ Function anglerlist(numangles)
        setdatafolder $cDF
 End
 
+
 Function angler(angleNum)
        //creates a drive command to send to sics for pre defined positions.
        //intended to work with a sample changer.
@@ -2482,6 +2560,47 @@ Function angler(angleNum)
 	endif
        omega_2theta(omega, 2 * omega, s1=s1, s2=s2, s3=s3, s4 = s4)
 End
+
+
+Function direct_beam(angleNum)
+    // sets up the instrument for a direct beam measurement.
+    // it's vital that you put the correct attenuator in beforehand
+    // this isn't handled here.
+    Variable angleNum
+    variable omega, s1, s2, s3, s4
+    Wave/t/z angler_listwave = root:packages:platypus:SICS:angler_listwave
+    Wave/z angler_selwave = root:packages:platypus:SICS:angler_selwave
+	 string cmd = ""
+    if(!waveexists(angler_listwave) || !waveexists(angler_selwave))
+        return 1
+    endif
+    if(angleNum < 0 || angleNum > dimsize(angler_listwave, 0) - 1)
+        return 1
+    endif
+    angleNum = trunc(angleNum)
+	
+	 omega = str2num(angler_listwave[anglenum][1])
+	 s1 = str2num(angler_listwave[anglenum][2])
+	 s2 = str2num(angler_listwave[anglenum][3])
+	 s3 = str2num(angler_listwave[anglenum][4])
+	 s4 = str2num(angler_listwave[anglenum][5])
+	 if(numtype(omega) || numtype(s1) || numtype(s2) || numtype(s3) || numtype(s4))
+	    return 1
+	 endif
+	 string mode = gethipaval("/instrument/parameters/mode")
+	 
+	 strswitch(mode)	// string switch
+        case "SB":
+        case "DB":
+            // leave omega as the value from the table        
+            break
+	     default:			// optional default expression executed
+	         omega = 0
+	 endswitch
+	 
+    omega_2theta(omega, 0, s1=s1, s2=s2, s3=s3, s4 = s4)
+End
+
 
 Function numangles_setVarProc(sva) : SetVariableControl
        STRUCT WMSetVariableAction &sva
@@ -2669,6 +2788,12 @@ End
 
 Function set_dc_current(current)
 	variable current
+	
+   if (numtype(current) != 0)
+		print ("Invalid current specified (NaN/Inf error). Aborting magnet field set")
+		return 0
+	endif
+
 	NVAR SOCK_interest = root:packages:platypus:SICS:SOCK_interest
 	string cmd = ""
 	if(current < -30.5 || current > 30.5)
