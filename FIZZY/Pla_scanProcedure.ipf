@@ -116,6 +116,32 @@ Function fpxStatus()
 	return running
 End
 
+function are_you_already_doing_something()
+   string msg = ""
+	SVAR Gsicsstatus = root:packages:platypus:SICS:sicsstatus
+	Wave/t statemon = root:packages:platypus:SICS:statemon
+
+	if( fpxStatus() || statemonstatus("FPX")) 	// if the scan is running we can't continue
+		print "scan is already running (fpx)", time()
+		return 1
+	endif
+	if(numpnts(statemon)>0)
+		print "The SICS statemon isn't cleared, may need to clear it? (fpx)"
+		print statemon
+		return 1
+	endif
+	//check the histogram
+	if(currentacquisitionstatus(msg) == 2 || currentacquisitionstatus(msg) == 3 || statemonstatus("hmcontrol"))
+		Print "you are currently acquiring data, or the histogram server is doing something (fpx)"
+		return 1
+	endif
+	if(!stringmatch(Gsicsstatus, "Eager to execute commands"))
+		Print "ERROR - SICS is: "+Gsicsstatus + " (fpx)", time()
+		return 1
+	endif
+	return 0
+end
+
 Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename, automatic])
 	string motorName
 	variable rangeVal, numpoints
@@ -204,23 +230,8 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	
 	Dowindow/k fpxScan
 	
-	if( fpxStatus() || statemonstatus("FPX"))	//if the scan is running we can't continue
-		print "scan is already running (fpx)", time()
-		return 1
-	endif
-	if(numpnts(statemon)>0)
-		print "The SICS statemon isn't cleared, may need to clear it? (fpx)"
-		print statemon
-		return 1
-	endif
-	//check the histogram
-	if(currentacquisitionstatus(msg) == 2 || currentacquisitionstatus(msg) == 3 || statemonstatus("hmcontrol"))
-		Print "you are currently acquiring data, or the histogram server is doing something (fpx)"
-		return 1
-	endif
-	if(!stringmatch(Gsicsstatus, "Eager to execute commands"))
-		Print "ERROR - SICS is: "+Gsicsstatus + " (fpx)", time()
-		return 1
+	if(are_you_already_doing_something())
+	    return 1
 	endif
 	
 	//if the tertiary shutter is closed, it might be a good idea to open it.
@@ -690,29 +701,6 @@ Function finishScan(status)
 	return err
 End
 
-//grab the file number that you need to save the FIZscan to
-Function getFIZscanNumberAndIncrement()
-	variable fileID, fizscannumber = 0
-	string theLine = ""
-	open/z fileID as PATH_TO_DATA2 + "FIZ:fizscannumber"
-	if(V_flag != 0)
-		return -1
-	endif
-	fstatus fileID
-	theLine = padString(theLine, V_logEOF, 0x20)
-	freadline fileID, theLine
-
-	fizscannumber = str2num(theLine)
-	if(fizscannumber > 0)
-		fizscannumber += 1
-	endif
-
-	fsetpos fileID, 0
-	fprintf fileID, "%d", fizscannumber
-
-	close fileID
-	return fizscannumber
-End
 
 Function fillScanStats(position, w, full)
 	wave position
@@ -728,9 +716,10 @@ Function fillScanStats(position, w, full)
 			
 	string datafilenameandpath = gethipaval("/experiment/file_name")
 	string datafilename = parsefilepath(0, datafilenameandpath, "//", 1, 0)
-	datafilenameandpath = PATH_TO_DATA + "current:" + datafilename
+	datafilenameandpath = PATH_TO_DATA + datafilename
 	Wave/t/z axeslist = root:packages:platypus:SICS:axeslist
-
+	string histo_status = Ind_Process#get_histo_status()
+	
 	variable scanpoint = str2num(getHipaval("/commands/scan/runscan/feedback/scanpoint"))		
 	redimension/n=(scanpoint + 1, -1) w, position
 	
@@ -739,11 +728,11 @@ Function fillScanStats(position, w, full)
 		   // during a scanpoint
 			position[scanpoint] = str2num(getHipaval("/commands/scan/runscan/feedback/scan_variable_value"))
 			//time
-			times = str2num(Ind_Process#grabHistoStatus("acq_dataset_active_sec"))
+			times = Ind_Process#get_status_val(histo_status, "acq_dataset_active_sec")
 			//times = str2num(gethipaval("/instrument/detector/time"))
 			
 			//counts
-			w[scanpoint][0] = str2num(Ind_Process#grabHistoStatus("num_events_filled_to_histo"))
+			w[scanpoint][0] = Ind_Process#get_status_val(histo_status, "num_events_filled_to_histo")
 			//w[scanpoint][0] = str2num(gethipaval("/instrument/detector/total_counts"))
 			
 			//max detector count rate
@@ -772,8 +761,7 @@ Function fillScanStats(position, w, full)
 	//		histostatus = grabAllHistoStatus()
 	//		w[point][0] = numberbykey("num_events_filled_to_histo",histostatus,": ","\r")			
 			//try getting the counts from the HDF file.
-			histostatus = grabAllHistoStatus()
-			variable bm1cts =  numberbykey("BM1_Counts", histostatus, ":", "\r") 
+			variable bm1cts = Ind_Process#get_status_val(histo_status, "BM1_Counts")
 		//	print "BM1counts", gethipaval("/experiment/file_name"), ":", scanpoint, " = ", bm1cts
 			
 			CopyFile/D /O/Z datafilenameandpath as specialdirpath("Temporary", 0, 0, 0)
