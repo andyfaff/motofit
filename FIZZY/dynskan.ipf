@@ -11,7 +11,7 @@
 
 // SICS equivalent
 // dynskan 100 sztop -1.0 1.0 0.05
-// show_data
+// dynskan_data
 
 function dynskan(motor, range, speed, npnts, [automatic])
    string motor
@@ -292,7 +292,7 @@ end
 Function get_dynskan_data()
 	NVAR SOCK_sync = root:packages:platypus:SICS:SOCK_sync
 	string data=""
-	SOCKITsendnrecv SOCK_sync, "show_data\n", data
+	SOCKITsendnrecv SOCK_sync, "dynskan_data\n", data
 
    Wave dynskan_int_counts = root:packages:platypus:data:dynskan:dynskan_int_counts
    Wave dynskan_int_pos = root:packages:platypus:data:dynskan:dynskan_int_pos
@@ -304,17 +304,19 @@ Function get_dynskan_data()
 	redimension/n=(nitems)/d dynskan_int_counts, dynskan_int_pos
 	variable ii
 	string tok
-	for(ii = 0 ; ii < nitems ; ii += 1)
+	data = replacestring(" ", data, "")
+	
+	// first line contains the column headers
+	for(ii = 1 ; ii < nitems ; ii += 1)
 		substr = stringfromlist(ii, data, "\n")
-		substr = replacestring(" ", substr, "")
 		
-		tok = stringbykey(motorname, substr, "=", ",")
+		tok = stringfromlist(1, substr, ",")
 		dynskan_int_pos[ii] = str2num(tok)
 		
-		tok = stringbykey("hmm.num_events_inside_oat_xyt", substr, "=", ",")
+		tok = stringfromlist(4, substr, ",")
 		dynskan_int_counts[ii] = str2num(tok)
 		
-		tok = stringbykey("hmm.current_frame", substr, "=", ",")
+		tok = stringfromlist(3, substr, ",")
 		dynskan_int_frames[ii] = str2num(tok)
 	endfor
 end
