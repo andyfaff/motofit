@@ -14,7 +14,8 @@
 // SVN URL:     $HeadURL$
 // SVN ID:      $Id$
 
-	Strconstant ICSserverIP  = "137.157.202.139"
+	Constant HISTOGRAM_IGNORE = 0
+	Strconstant ICSserverIP  = "137.157.202.166"
 	Constant 	ICSserverPort = 60003
 	Strconstant DASserverIP = "137.157.202.155"
 	Constant 	DASserverPort = 8080
@@ -70,15 +71,15 @@
 //End
 //
 Function testHistogram()
-	oat_table("X",-0.5,31.5, 1)
+	oat_table("X",-0.5,0.5, 32)
 	oat_table("Y",-0.5, 0.5, 1024)
-	oat_table("T",0,40,1001,freq=24)
+	oat_table("T",0,40,1000,freq=24)
 End
 //
 Function floodHistogram()
 	oat_table("X",-0.5,0.5, 32)
 	oat_table("Y",-0.5, 0.5, 1024)
-	oat_table("T",0,40,1001,freq=24)
+	oat_table("T",0,41600,1,freq=24)
 End
 
 Function aHistogram() // FOC hslits(50, 50, 33, 45)
@@ -88,10 +89,17 @@ Function aHistogram() // FOC hslits(50, 50, 33, 45)
 End
 
 Function pHistogram() // Pol Don't set blindly because it depends on the exact hslits you useS
-	oat_table("X",10, 20.0, 1)
+	oat_table("X",8, 24, 1)
 	oat_table("Y",-0.5, 0.5, 1024)
 	oat_table("T",0,30,1000,freq=33)
 End
+
+Function pHistogram_GSANS() // Pol Don't set blindly because it depends on the exact hslits you useS
+	oat_table("X",-0.5,0.5, 32)
+	oat_table("Y",-0.5, 0.5, 1024)
+	oat_table("T",0,30,1000,freq=33)
+End
+
 
 
 Function hnotify_registration()
@@ -304,12 +312,11 @@ Function/wave autoslit(angle, footprint, resolution)
 
 	make/n=0/free/d slits
 	easyHttp/TIME=5/prox/post=request "http://refcalc.appspot.com/singleslit", result
-
 	if(V_flag)
 		return slits
 	endif
 	
-	sscanf result, "(%f, %f, %f, %f)", s1, s2, s3, s4
+	sscanf result, "(np.float64(%f), np.float64(%f), np.float64(%f), np.float64(%f))", s1, s2, s3, s4
 	if(V_flag == 4 && !(numtype(s1) || numtype(s2) || numtype(s3) || numtype(s4)))
 		redimension/n=4 slits
 		s1 = s1 * 1.3 + 4
@@ -584,8 +591,10 @@ End
 
 Function histostatusTask(s)
 	STRUCT WMBackgroundStruct &s
+	if(HISTOGRAM_IGNORE==1)
+		return 0
+	endif
 	Ind_process#grabAllHistoStatus()
-	
 	return 0
 End
 
@@ -1640,14 +1649,14 @@ Function Instrumentlayout_panel()
 
 ///Lakeshore
 //	SetVariable lakeshore,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
-	SetVariable lakeshoreset1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T01SP01")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshoreset1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T1SP1")][1],noedit= 1, win=instrumentlayout
 	SetVariable lakeshoreset1,pos={100,274},size={90,16},title="temp1 setpoint", win=instrumentlayout,bodywidth=40
-	SetVariable lakeshoreset2,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T02SP01")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshoreset2,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T2SP1")][1],noedit= 1, win=instrumentlayout
 	SetVariable lakeshoreset2,pos={100,294},size={90,16},title="temp2 setpoint", win=instrumentlayout,bodywidth=40
 	
-	SetVariable lakeshore1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T01S01")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshore1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T1S1")][1],noedit= 1, win=instrumentlayout
 	SetVariable lakeshore1,pos={100,313},size={90,16},title="T01S01", win=instrumentlayout,bodywidth=40
-	SetVariable lakeshore2,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T02S01")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshore2,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T2S1")][1],noedit= 1, win=instrumentlayout
 	SetVariable lakeshore2,pos={100,333},size={90,16},title="T02S01", win=instrumentlayout,bodywidth=40
 
 ///Julabo
@@ -2000,8 +2009,39 @@ Function createHTML()
 	endtry
 	
 	setdatafolder $cDF
-   save/g/o root:packages:platypus:data:batchScan:list_batchbuffer as "W:public:batch.txt"
+	// the gumtree status page displays the batch file in a window.
+	duplicate/free root:packages:platypus:data:batchScan:list_batchbuffer, temp_batch
+	wave/t wave_ref = temp_batch
+	string v = keysight_status()
+	v = trimstring(v)
+	v = "keysight voltage:     " + v
+	insertpoints 0, 1, wave_ref
+	wave_ref[0][0] = v
+	save/g/o wave_ref as "W:public:batch.txt"
 End
+
+
+Function/s keysight_status()
+// the python keysight logger saves the status to a text file.
+variable fi
+string line
+string lastline
+variable len
+
+open/R/Z fi as "W:/public/keysight_status.log"
+do
+    freadline fi, line
+    len = strlen(line)
+    if (len == 0)
+        break
+    else
+        lastline = line
+    endif
+while(1)
+close fi
+return lastline
+End
+
 
 Function/t createFizzyCommand(type)
 	string type
@@ -3082,7 +3122,7 @@ Function mvp(mvp)
 	string template, cmd
    	if(!numtype(mvp) && mvp > 0 && mvp < 7)
    	    mvp = round(mvp)
-   	    template = "drive mvp_driveable %d\n"	
+   	    template = "drive mvp1_driveable %d\n"	
    	    sprintf cmd, template, mvp
    	    sics_cmd_interest(cmd)
     	endif
@@ -3135,10 +3175,10 @@ Function hplc(A, B, C, D,[ vol, rate, wait])
 		abort
 	endif
 
-	template = "hset /sample/hplc/pump/remote 1\n"
-	template += "hset /sample/hplc/pump/flow/setp %1.3f\n"
-	template += "hset /sample/hplc/pump/ratio/setp %d/%d/%d/%d\n"
-	template += "%s hplc_pump_volume_setp %g\n"
+	template = "hset /sample/hplc1/pump/remote 1\n"
+	template += "hset /sample/hplc1/pump/flow/setp %1.3f\n"
+	template += "hset /sample/hplc1/pump/ratio/setp %d/%d/%d/%d\n"
+	template += "%s hplc1_pump_volume_setp %g\n"
 
 	sprintf cmd, template, rate, A, B, C, D, runmode, vol
 
@@ -3160,3 +3200,114 @@ else
 endif
 
 end
+
+
+// Windows: Execute a DOS command and get output, if any
+// ExecuteDOSCommand(command, maxSecondsToWait)
+// Executes a DOS command and returns any output text as the function result.
+// Returns "" if the DOS command returns no text.
+// maxSecondsToWait is the maximum number of seconds to wait for DOS to finish
+// the command. If it takes longer than that, an error is generated.
+// This function creates files in the Igor Pro User Folder:
+//		IgorBatch.bat	Holds command that DOS is to execute
+//		IgorBatchOutput.txt	Holds output generated by DOS command, if any
+// Example:
+//		Print ExecuteDOSCommand("echo %PATH%", 3)
+Function/S ExecuteDOSCommand_wottpy(command, maxSecondsToWait)
+	String command	// e.g., "echo %PATH%"
+	Variable maxSecondsToWait	// Error if DOS takes longer than this
+	
+	String quoteStr = "\""
+	
+	// Get path to batch file in "Igor Pro User Files"
+	String dirPath = SpecialDirPath("Igor Pro User Files", 0, 0, 0)
+	dirPath = ParseFilePath(5, dirPath, "\\", 0, 0)	// Convert to Windows path
+	String batchFilePath = dirPath + "IgorBatch.bat"
+	String batchOutputFilePath = dirPath + "IgorBatchOutput.txt"
+	
+	DeleteFile/Z batchOutputFilePath
+
+	// Write DOS command to batch file
+	String dosCommand = command + " > " + quoteStr + batchOutputFilePath + quoteStr
+	Variable refNum
+	Open refNum as batchFilePath
+	FBinWrite refNum, dosCommand
+	Close refNum
+	
+	// Execute batch file
+	// The DOS command must complete in the number of seconds specified via /W
+	// /C means cmd.exe quits after executing the command
+	String text
+	sprintf text, "cmd.exe /C \"%s\"", batchFilePath
+	ExecuteScriptText/B/W=(maxSecondsToWait) text
+
+	// Get output
+	String result = ""
+	Open/R/Z refNum as batchOutputFilePath
+	if (V_flag != 0)
+		result = ""
+		// result = "<No output was generated by batch file>"	// For debugging
+	else
+		// Read contents of batch file into string
+		FStatus refNum
+		Variable numBytesInFile = V_logEOF
+		result = PadString("", numBytesInFile, 0x20)
+		FBinRead refNum, result
+		Close refNum
+	endif
+	return result
+end
+
+
+Function wottpy(r0, d0)
+    variable r0, d0
+	
+	string r0s, d0s
+	variable a0, a1
+	if(numtype(r0))
+	    // scratch
+	    r0s = "scratch"
+	else
+		r0s = num2str(r0)
+	endif
+	d0s = num2str(d0)
+	String cmd
+	cmd =  "c: && "
+	cmd += "cd c:\\Users\\platypus\\Desktop && "
+	cmd += "call C:\\ProgramData\\miniforge3\\condabin\\conda activate dev3 && "
+	cmd += "python wott.py " + r0s + " " + d0s
+	string output = ExecuteDOSCommand_wottpy(cmd, 10)
+	output = replacestring("(", output, "")
+	output = replacestring(")", output, "")
+	a0 = str2num(stringfromlist(0, output, ","))
+	a1 = str2num(stringfromlist(1, output, ","))
+	print "actual ",  a0, "    nominal: ", a1
+   return a0
+End
+
+Function notifier(str)
+	string str
+	string cmd
+	cmd =  "c: && "
+	cmd += "cd c:\\Users\\platypus\\Desktop && "
+	cmd += "call C:\\ProgramData\\miniforge3\\Scripts\\activate && "
+	cmd += "conda activate dev3 && "
+	cmd += "python notifier.py \"" + str + "\""
+	print cmd
+	ExecuteDOSCommand_wottpy(cmd, 10)
+End
+
+
+Function digitalTTL(state)
+    // state should be 0 or 1
+    // command switches the technologic digital output pin 1 to an off/on state.
+    variable state
+    string cmd, template
+    
+    template = "daa send do 1=%d"
+	 sprintf cmd, template, state
+	 sics_cmd_cmd(cmd)
+	 sleep/s/q 2.5
+	 doxopidle
+			
+End

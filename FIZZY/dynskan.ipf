@@ -35,7 +35,7 @@ function dynskan(motor, range, speed, npnts, [automatic])
 
 	wave/t axeslist = root:packages:platypus:SICS:axeslist
 	
-	if (dynskan_status() || are_you_already_doing_something())
+	if (dynskan_status() || are_you_already_doing_something(statemon_exceptions="autoalign"))
 		return 1
 	endif
 	
@@ -67,6 +67,7 @@ function dynskan(motor, range, speed, npnts, [automatic])
 	variable/g last_ticks = 0
 	string/g motorname = motor
 	variable/g auto = automatic
+	variable/g desired_location = nan
 	
 	if(speed > maxspeed)
 		DoAlert 0, "Warning, scan speed is faster than max speed, clipping to maxspeed"
@@ -100,7 +101,7 @@ function dynskan(motor, range, speed, npnts, [automatic])
 	dowindow/k dynskan_progress
 	display/n=dynskan_progress/k=1 dynskan_int_counts vs dynskan_int_pos
 	AppendToGraph/R/W=dynskan_progress dynskan_dif_counts vs dynskan_int_pos
-	ModifyGraph/W=dynskan_process rgb(dynskan_dif_counts)=(0,0,0)
+	ModifyGraph/W=dynskan_progress rgb(dynskan_dif_counts)=(0,0,0)
 
 	Label bottom, motorname
 	Label left, "Integrated counts"
@@ -125,8 +126,10 @@ end
 
 function stop_dynskan()
 	ctrlnamedbackground dynskan, kill=1
-	statemonclear("DYNSKAN")
 	process_dynskan()
+	// process_dynskan typically moves motor to centre or to start location
+	wait(2)
+	statemonclear("DYNSKAN")
 end
 
 
@@ -158,13 +161,13 @@ function process_dynskan_dynamic([smooth_len])
    Wave dynskan_int_pos = root:packages:platypus:data:dynskan:dynskan_int_pos
 
 	if(paramisdefault(smooth_len))
-	    smooth_len = 11
+	    smooth_len = 31
 	endif
 	Duplicate/free dynskan_int_counts,yy_smth;
 	Duplicate/free dynskan_int_pos,xx_smth;
 
 	Smooth/E=3/B smooth_len, yy_smth
-	SMooth/E=3/B 5, xx_smth
+	SMooth/E=3/B smooth_len, xx_smth
 	
 	variable npnts = numpnts(dynskan_int_pos)
 	make/o/d/n=(npnts) root:packages:platypus:data:dynskan:dynskan_dif_counts
@@ -238,20 +241,22 @@ function apply_any_offset(motor, centre, initial_position, auto)
 	variable offsetvalue, num, err
 	//	socket	for sending sics commands
 	NVAR SOCK_cmd = root:packages:platypus:SICS:SOCK_cmd
+	nvar desired_location = root:packages:platypus:data:dynskan:desired_location
 
 	if(auto)	//if you are auto aligning
-		if(auto ==1)
+		if(auto == 1)
 			print "dynskan placing ", motor," at: ", centre
-			offsetvalue = centre
-		elseif(auto==2)
+			desired_location = centre
+		elseif(auto == 2)
 			print "dynskan of motor done, returning ", motor, " to: ", initial_position
-			offsetvalue = initial_position
+			desired_location = initial_position
 		endif
-		if(run(motor, offsetvalue))
+		if(run(motor, desired_location))
 			print "error while driving (finishScan)"
 			return 1
 		endif
 		sleep/q/S 2
+		doxopIdle
 	else		//no auto alignment, ask the user
 		DoAlert 1, "Do you want to move to the peak centre?"
 		if(V_Flag == 2)	// you don't want to move to peak centre
@@ -267,7 +272,7 @@ function apply_any_offset(motor, centre, initial_position, auto)
 			if(!V_Flag)		// if you want to enter an offset
 				print "Scan finishing, offset changed and driving to to peak position"
 				print "setpos:", motor, num, offsetvalue
-				sockitsendmsg sock_cmd,"setpos " + motor + " " + num2str(num)+ " "+ num2str(offsetvalue) +"\n"
+				sockitsendnrecv/smal sock_cmd,"setpos " + motor + " " + num2str(num)+ " "+ num2str(offsetvalue) +"\n"
 				if(V_Flag)
 					print "error while setting zero (finishScan)"
 					return 1
@@ -278,7 +283,7 @@ function apply_any_offset(motor, centre, initial_position, auto)
 				endif
 			else				//if you don't want to enter an offset
 				print "Scan finishing, driving to peak position"
-				err= run(motor, num)
+				err = run(motor, num)
 				if(err)
 					print "Error while returning to new position (apply_any_offset)"
 				endif
@@ -301,7 +306,10 @@ Function get_dynskan_data()
 	
 	string substr
 	variable nitems = itemsinlist(data, "\n")
-	redimension/n=(nitems)/d dynskan_int_counts, dynskan_int_pos
+	if(nitems < 2)
+		return 0
+	endif
+	redimension/n=(nitems - 1)/d dynskan_int_counts, dynskan_int_pos
 	variable ii
 	string tok
 	data = replacestring(" ", data, "")
@@ -311,12 +319,12 @@ Function get_dynskan_data()
 		substr = stringfromlist(ii, data, "\n")
 		
 		tok = stringfromlist(1, substr, ",")
-		dynskan_int_pos[ii] = str2num(tok)
+		dynskan_int_pos[ii - 1] = str2num(tok)
 		
 		tok = stringfromlist(4, substr, ",")
-		dynskan_int_counts[ii] = str2num(tok)
+		dynskan_int_counts[ii - 1] = str2num(tok)
 		
 		tok = stringfromlist(3, substr, ",")
-		dynskan_int_frames[ii] = str2num(tok)
+		dynskan_int_frames[ii - 1] = str2num(tok)
 	endfor
 end

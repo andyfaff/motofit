@@ -499,6 +499,9 @@ Function startSICS()
 
 	//get the current status
 	sockitsendmsg sock_interest,"status\n"
+	
+	// setup histogram status arrays
+	grabAllHistoStatus()
 
 	//this is instrument dependent!!!! Only call this function on your own instrument.
 	print "Instrument specific setup"
@@ -661,7 +664,7 @@ Function startSICS()
 		Button positions_tab3 title="Defined positions",pos={514,577}, size={100,30},proc=button_SICScmdpanel
 		Button anglers_tab3 title="Defined angles",pos={514,619}, size={100,30},proc=button_SICScmdpanel
 				
-		setwindow sicscmdpanel hook(winhook)=sicscmdpanelwinhook 
+		setwindow SICScmdPanel hook(winhook)=sicscmdpanelwinhook 
 		//		Modifypanel/W=SICScmdpanel noedit=1
 	endif
 	struct WMTabControlAction tca
@@ -811,16 +814,17 @@ Function sicsCmdPanelWinHook(s)		//window hook for events happening in the SICSc
 	//shutsdown the connection to sics when FIZZY GUI is closed.
 	//has a hook to the notebook window in FIZZY that acts as a SICS terminal
 	Variable statusCode = 0
- 	
 	switch(s.eventCode)
 		case 2:		//trying to kill the window
 			sicsclose()
 			return 1
 			break
 	endswitch
-	
+	// see whether the active subwindow is the notebook
+	getwindow/z sicscmdpanel activeSW
+
 	//hook for the notebook window
-	strswitch(s.winname)
+	strswitch(s_value)
 		case "SICScmdpanel#NB0_tab0":
 			String platform= UpperStr(igorinfo(2))
 			string cmdChar, temp
@@ -829,37 +833,38 @@ Function sicsCmdPanelWinHook(s)		//window hook for events happening in the SICSc
 			else
 				cmdChar = "•"
 			endif
-			
+
 			switch(s.eventCode)
 				case 11: // Keyboard
 					switch (s.keycode)
 						case 30:		//down
-							notebook $s.winname, findtext={cmdChar, 2^4+2^0}
-							notebook $s.winname, selection={startOfParagraph, endOfParagraph}
+							notebook $s_value, findtext={cmdChar, 2^4+2^0}
+							notebook $s_value, selection={startOfParagraph, endOfParagraph}
 							statuscode=1
 							break
 						case 31:		//up 
-							notebook $s.winname, findtext={cmdChar, 2^0}
-							notebook $s.winname, selection={startOfParagraph, endOfParagraph}
+							notebook $s_value, findtext={cmdChar, 2^0}
+							notebook $s_value, selection={startOfParagraph, endOfParagraph}
 							statuscode=1
 							break
+						case 3:      //enter
 						case 13:		//return
-							notebook $s.winname, selection={startOfParagraph, endOfParagraph}
-							notebook $s.winname, textRGB=(0, 0,  65535), fstyle=1, fsize=12
-							getselection notebook, $s.winname, 3
+							notebook $s_value, selection={startOfParagraph, endOfParagraph}
+							notebook $s_value, textRGB=(0, 0,  65535), fstyle=1, fsize=12
+							getselection notebook, $s_value, 3
 							string cmdStr = S_Selection
 							variable parastart = V_startparagraph, paraend = V_endparagraph
 							variable endpos=V_endpos, startpos=V_startpos
 							
 							//figure out if its the last command in the terminal window
 							Notebook SICScmdpanel#NB0_tab0 selection={startOfFile, endOfFile}	
-							getselection notebook, $s.winname, 1
+							getselection notebook, $s_value, 1
 							if(V_endparagraph != paraend)	//it's not the last command, so copy the selection into the last line
 								//remove trailing carriage return
 								cmdStr = removeending(cmdStr, "\r")
 								Notebook SICScmdpanel#NB0_tab0 selection={endOfFile, endOfFile}, text = cmdStr
-								notebook $s.winname, selection={startOfParagraph, endOfParagraph}
-								notebook $s.winname, textRGB=(0, 0,  65535), fstyle=1, fsize=12
+								notebook $s_value, selection={startOfParagraph, endOfParagraph}
+								notebook $s_value, textRGB=(0, 0,  65535), fstyle=1, fsize=12
 								return 1
 							endif
 							
@@ -867,7 +872,7 @@ Function sicsCmdPanelWinHook(s)		//window hook for events happening in the SICSc
 							
 							if(strlen(S_Selection) > 0 && (!stringmatch(S_Selection, "\r")) )
 								temp = ""
-								notebook $s.winname, selection={startofparagraph, endofparagraph}
+								notebook $s_value, selection={startofparagraph, endofparagraph}
 								if(!Stringmatch(S_Selection[0], cmdchar))
 									temp = cmdChar
 								endif
@@ -875,7 +880,7 @@ Function sicsCmdPanelWinHook(s)		//window hook for events happening in the SICSc
 								if(!Stringmatch(S_Selection[strlen(S_Selection)-1],"\r"))
 									temp +="\r"
 								endif
-								notebook $s.winname, text = temp
+								notebook $s_value, text = temp
 							endif
 							//SICS can't cope with the IGOR command character, so remove it.
 							cmdStr = replacestring(cmdChar, cmdStr, "")
@@ -885,8 +890,8 @@ Function sicsCmdPanelWinHook(s)		//window hook for events happening in the SICSc
 							//							if(strlen(S_Selection)>0)
 							//								notebookaction/w=$s.winname commands=S_Selection, frame=1,ignoreerrors=1, title=S_Selection 
 							//							endif
-							notebook $s.winname, selection={endofparagraph,startofnextparagraph}
-							notebook $s.winname, textRGB=(0, 0, 0)
+							notebook $s_value, selection={endofparagraph,startofnextparagraph}
+							notebook $s_value, textRGB=(0, 0, 0)
 							statuscode=1
 							break
 					endswitch
@@ -1075,10 +1080,10 @@ Function SICSclose()
 	sock_interest=-1
 	sock_sync=-1
 		
-	dowindow/k currentpositions
-	dowindow/k sicscmdpanel
-	dowindow/k spawngraphstats
-	dowindow/k spawngraph0
+	killwindow/z currentpositions
+	killwindow/z sicscmdpanel
+	killwindow/z spawngraphstats
+	killwindow/z spawngraph0
 	
 	Ind_Process#log_close()
 	

@@ -1,5 +1,4 @@
 #pragma rtGlobals=1		// Use modern global access presettype.
-#PRAGMA modulename = platypus
 
 // SVN date:    $Date$
 // SVN author:  $Author$
@@ -116,7 +115,8 @@ Function fpxStatus()
 	return running
 End
 
-function are_you_already_doing_something()
+function are_you_already_doing_something([statemon_exceptions])
+	string statemon_exceptions
    string msg = ""
 	SVAR Gsicsstatus = root:packages:platypus:SICS:sicsstatus
 	Wave/t statemon = root:packages:platypus:SICS:statemon
@@ -125,10 +125,33 @@ function are_you_already_doing_something()
 		print "scan is already running (fpx)", time()
 		return 1
 	endif
-	if(numpnts(statemon)>0)
-		print "The SICS statemon isn't cleared, may need to clear it? (fpx)"
-		print statemon
-		return 1
+	if(paramIsDefault(statemon_exceptions))
+		// no exceptions for statemon checking
+		if(numpnts(statemon)>0)
+			print "The SICS statemon isn't cleared, may need to clear it? (fpx)"
+			print statemon
+			return 1
+		endif	
+	else
+		// there are some exceptions for statemon checking
+		duplicate/free statemon, statemon_copy
+		string item
+		variable ii
+		for(ii=0; ii < itemsinlist(statemon_exceptions); ii+=1)
+			item = stringfromlist(ii, statemon_exceptions)
+			for(;;)
+				findvalue/TEXT=item/TXOP=4 statemon_copy
+				if(V_Value == -1)
+					break
+				else
+					deletepoints V_Value, 1, statemon_copy
+				endif
+			endfor
+		endfor
+		if(numpnts(statemon_copy) > 0)
+			print "The SICS statemon isn't cleared, may need to clear it? (fpx)"
+			return 1
+		endif
 	endif
 	//check the histogram
 	if(currentacquisitionstatus(msg) == 2 || currentacquisitionstatus(msg) == 3 || statemonstatus("hmcontrol"))
@@ -141,6 +164,7 @@ function are_you_already_doing_something()
 	endif
 	return 0
 end
+
 
 Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename, automatic])
 	string motorName
@@ -230,7 +254,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	
 	Dowindow/k fpxScan
 	
-	if(are_you_already_doing_something())
+	if(are_you_already_doing_something(statemon_exceptions="autoalign"))
 	    return 1
 	endif
 	
