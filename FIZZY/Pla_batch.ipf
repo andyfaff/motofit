@@ -276,7 +276,7 @@ Function executenextbatchpoint(batchbuffer, currentpoint)
 	//print batchbuffer[currentpoint][1]
 	//dbg()
 	if(strlen(batchbuffer[currentpoint][1])>0 && (sel_batchbuffer[currentpoint][2] & 2^4))
-		print "STARTED POINT: "+num2str(currentpoint)+" of batch Scan at:    ", Secs2Time(DateTime,2)
+		print "STARTED POINT: "+num2str(currentpoint)+" of batch Scan at:    ", Secs2Time(DateTime,3)
 		batchbuffer[currentpoint][3] = "Executing"
 		//can't put /P flag in execute command.  This is because
 		//that would post it to the operation queue.  If the batch background task

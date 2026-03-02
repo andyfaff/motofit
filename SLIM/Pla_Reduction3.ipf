@@ -494,7 +494,6 @@ Function SLIM_listproc(lba) : ListBoxControl
 			break		
 		case 3: // double click
 			break
-		case 4: // cell selection
 		case 5: // cell selection plus shift key
 			break
 		case 6: // begin edit
