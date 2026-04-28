@@ -3285,16 +3285,14 @@ Function wottpy(r0, d0)
 	endif
 	d0s = num2str(d0)
 	
-	// string pth = get_dir("wottpy")
-	// pth = replacestring("\\", pth, "/")
+	// IP10
+	pythonfile file="wott.py", args=r0s + " " + d0s, var={"actual", a0}
 	
-	executescriptText/B/W=20 "C:/users/platypus/Desktop/wott.bat " + r0s + " " + d0s
+	// IP9
+	// executescriptText/B/W=20 "C:/users/platypus/Desktop/wott.bat " + r0s + " " + d0s
    //	executescriptText/B/W=20 pth + "/wott.bat " + r0s + " " + d0s
 
-	print S_Value
-	a0 = str2num(stringfromlist(0, S_value, ","))
-   a1 = str2num(stringfromlist(1, S_value, ","))
-	print "actual ",  a0, "    nominal: ", a1
+	print "actual ",  a0
    return a0
 End
 
