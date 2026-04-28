@@ -3094,23 +3094,23 @@ Function pump(ratio, [volume, rate])
     r1 = (1 - ratio) * rate
     v0 = ratio * volume
     v1 = (1 - ratio) * volume
- //   print v0, r0, v1, r1
+ 	 // print v0, r0, v1, r1
     
     r0 = round(1000 * (r0)) / 1000
     r1 = round(1000 * (r1)) / 1000
     v0 = round(1000* (v0)) / 1000
     v1 = round(1000 * (v1)) / 1000
-    print v0, r0, v1, r1
+    // print v0, r0, v1, r1
         
     //fill out the rates and volumes and do the injection.
-    template = "hset /sample/syr/pump0/Vol %.5s\n"
-    template += "hset /sample/syr/pump0/rat %.5sMM\n"
-    template += "hset /sample/syr/pump1/Vol %.5s\n"
-    template += "hset /sample/syr/pump1/rat %.5sMM\n"
-    template += "hset /sample/syr/pump0/run run\n"
+    template = "hset /sample/hplc1/pump0/Vol %.5s\n"
+    template += "hset /sample/hplc1/pump0/rat %.5sMM\n"
+    template += "hset /sample/hplc1/pump1/Vol %.5s\n"
+    template += "hset /sample/hplc1/pump1/rat %.5sMM\n"
+    template += "hset /sample/hplc1/pump0/run run\n"
     sprintf cmd, template, num2str(v0), num2str(r0), num2str(v1), num2str(r1)
-    print cmd, r0/(r0+r1), v0/(v0+v1), v0+v1, r0+r1
-  // sics_cmd_interest(cmd)
+    print cmd//, r0/(r0+r1), v0/(v0+v1), v0+v1, r0+r1
+    sics_cmd_interest(cmd)
 
 End
 
@@ -3216,7 +3216,7 @@ end
 Function/S ExecuteDOSCommand_wottpy(command, maxSecondsToWait)
 	String command	// e.g., "echo %PATH%"
 	Variable maxSecondsToWait	// Error if DOS takes longer than this
-	
+	String result = ""
 	String quoteStr = "\""
 	
 	// Get path to batch file in "Igor Pro User Files"
@@ -3229,6 +3229,7 @@ Function/S ExecuteDOSCommand_wottpy(command, maxSecondsToWait)
 
 	// Write DOS command to batch file
 	String dosCommand = command + " > " + quoteStr + batchOutputFilePath + quoteStr
+	// print dosCommand
 	Variable refNum
 	Open refNum as batchFilePath
 	FBinWrite refNum, dosCommand
@@ -3239,10 +3240,12 @@ Function/S ExecuteDOSCommand_wottpy(command, maxSecondsToWait)
 	// /C means cmd.exe quits after executing the command
 	String text
 	sprintf text, "cmd.exe /C \"%s\"", batchFilePath
-	ExecuteScriptText/B/W=(maxSecondsToWait) text
-
+	ExecuteScriptText/z/B/W=(maxSecondsToWait) text
+	if(V_flag != 0)
+		// execute script text had an error
+		return ""
+	endif
 	// Get output
-	String result = ""
 	Open/R/Z refNum as batchOutputFilePath
 	if (V_flag != 0)
 		result = ""
@@ -3259,6 +3262,16 @@ Function/S ExecuteDOSCommand_wottpy(command, maxSecondsToWait)
 end
 
 
+Function/s get_dir(func)
+	// get directory of the procedure file containing a specific function
+	string func
+	string pth = parsefilepath(1, FunctionPath(func), ":", 1, 0)
+	//convert to windows
+	pth = parsefilepath(5, pth, "\\", 0, 0)
+	return pth 
+End
+
+
 Function wottpy(r0, d0)
     variable r0, d0
 	
@@ -3271,19 +3284,20 @@ Function wottpy(r0, d0)
 		r0s = num2str(r0)
 	endif
 	d0s = num2str(d0)
-	String cmd
-	cmd =  "c: && "
-	cmd += "cd c:\\Users\\platypus\\Desktop && "
-	cmd += "call C:\\ProgramData\\miniforge3\\condabin\\conda activate dev3 && "
-	cmd += "python wott.py " + r0s + " " + d0s
-	string output = ExecuteDOSCommand_wottpy(cmd, 10)
-	output = replacestring("(", output, "")
-	output = replacestring(")", output, "")
-	a0 = str2num(stringfromlist(0, output, ","))
-	a1 = str2num(stringfromlist(1, output, ","))
+	
+	// string pth = get_dir("wottpy")
+	// pth = replacestring("\\", pth, "/")
+	
+	executescriptText/B/W=20 "C:/users/platypus/Desktop/wott.bat " + r0s + " " + d0s
+   //	executescriptText/B/W=20 pth + "/wott.bat " + r0s + " " + d0s
+
+	print S_Value
+	a0 = str2num(stringfromlist(0, S_value, ","))
+   a1 = str2num(stringfromlist(1, S_value, ","))
 	print "actual ",  a0, "    nominal: ", a1
    return a0
 End
+
 
 Function notifier(str)
 	string str
