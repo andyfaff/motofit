@@ -616,7 +616,7 @@ Function regularTasks(s)
 //			if(NVAR_exists(sentChopperSMS) && sentChopperSMS == 0)
 //				//send an SMS
 //				print "SENDING SMS TO SOMEONE, COZ CHOPPERS HAVE GONE WRONG"
-//				easyhttp "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=r1vergod&to=" + getHipaVal("/user/phone") + "&text=Chopper+phasing+."+Secs2Time(DateTime, 3)+gethipaval("/experiment/file_name")
+//				easyhttp "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=<redacted>&to=" + getHipaVal("/user/phone") + "&text=Chopper+phasing+."+Secs2Time(DateTime, 3)+gethipaval("/experiment/file_name")
 //				sentChopperSMS = 1
 //				//pause the acquisition
 //				print "RUN HAS BEEN PAUSED DUE TO CHOPPER PHASING, please press the unpause button"
