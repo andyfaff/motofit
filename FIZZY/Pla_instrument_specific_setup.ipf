@@ -294,39 +294,31 @@ Function aoautoslit(angle, footprint, resolution)
 	return 0
 End
 
+
 Function/wave autoslit(angle, footprint, resolution)
 	//calculate the slits based on angle, footprint and resolution, does no moving
-	//it uses the slit calculator at http://refcalc.appspot.com/slits
 	variable angle, footprint, resolution
 	string result = ""
 	variable s1, s2, s3, s4, L12, LS4, L2S, LpreS1
-	string request, template
+	string request
 	//instrument distances
 	L12 = str2num(gethipaval("/instrument/parameters/slit3_distance")) - str2num(gethipaval("/instrument/parameters/slit2_distance"))
 	L2S = str2num(gethipaval("/instrument/parameters/sample_distance")) - str2num(gethipaval("/instrument/parameters/slit3_distance"))
 	LS4 = str2num(gethipaval("/instrument/parameters/slit4_distance")) - str2num(gethipaval("/instrument/parameters/sample_distance"))
 	LpreS1 = str2num(gethipaval("/instrument/parameters/slit2_distance")) - str2num(gethipaval("/instrument/parameters/slit1_distance"))
 
-	template = "a1=%f&footprint=%f&resolution=%f&L12=%f&L2S=%f&LS4=%f&LpreS1=%f"
-	sprintf request, template, angle, footprint, resolution, L12, L2S, LS4, LpreS1
-
-	make/n=0/free/d slits
-	easyHttp/TIME=5/prox/post=request "http://refcalc.appspot.com/singleslit", result
-	if(V_flag)
-		return slits
-	endif
-	
-	sscanf result, "(np.float64(%f), np.float64(%f), np.float64(%f), np.float64(%f))", s1, s2, s3, s4
-	if(V_flag == 4 && !(numtype(s1) || numtype(s2) || numtype(s3) || numtype(s4)))
-		redimension/n=4 slits
-		s1 = s1 * 1.3 + 4
-		s4 = s4 * 1.2 + 1
-		print "autoslit calculates: vslits(", s1, ",", s2, ",", s3, ",", s4,"), angle", angle, ", footprint", footprint,", dtheta/theta:", resolution
-		slits = {s1, s2, s3, s4}
+	make/n=4/free/d slits
+	sprintf request, "%g %g %g %g %g %g %g", angle, footprint, resolution, L12, L2S, LS4, LpreS1
+	pythonfile file="slits.py", array={"result", slits}, args=request
+	if(V_flag == 0)
+		slits[0] = slits[0] * 1.3 + 4
+		slits[3] = slits[3] * 1.2 + 1
+		print "autoslit calculates: vslits(", slits[0], ",", slits[1], ",", slits[2], ",", slits[3],"), angle", angle, ", footprint", footprint,", dtheta/theta:", resolution
 		return slits
 	else
 		return slits
 	endif
+	return slits
 End
 
 
