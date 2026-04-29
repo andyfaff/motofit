@@ -13,12 +13,12 @@ def wott(r0: int, d0: int):
     # 70021 70023, ~0.8 degrees
     d0 = PlatypusReduce(pth / d0)
     output = d0.reduce(pth / r0, save=False)
-    
+
     actual = d0.omega_corrected[0][0]
-    nominal = d0.reflected_beam.cat.cat['omega'][0]
+    nominal = d0.reflected_beam.cat.cat["omega"][0]
     return actual, nominal
-    
-    
+
+
 if __name__ == "__main__":
 
     r0 = int(sys.argv[1])
