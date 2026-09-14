@@ -313,5 +313,6 @@ Function autoalign_stop()
     statemonclear("autoalign")
     print "Finished", Secs2Date(DateTime,-2), Secs2Time(DateTime,3)
    	print "================================"
+   	speak("Finished Autoalign")
     ctrlnamedBackground autoaligner, stop=1
 End

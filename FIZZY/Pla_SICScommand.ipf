@@ -2914,7 +2914,7 @@ check_motor("ss4u", ss4vg/2)
 check_motor("ss4d", -ss4vg/2)
 
 variable sth = str2num(angler_list[angler][1])
-variable slit4_distance = str2num(gethipaval("/instrument/parameters/slit4_distance"))
+variable slit4_distance = getpos("ss4y")
 variable sample_distance = str2num(gethipaval("/instrument/parameters/sample_distance"))
 variable st4vt = tan(pi * 2 * sth / 180) * (slit4_distance - sample_distance)
 check_motor("st4vt", st4vt, tol=0.02)

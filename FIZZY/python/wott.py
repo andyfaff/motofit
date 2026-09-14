@@ -4,9 +4,14 @@ import numpy as np
 from refnx.reduce import PlatypusReduce
 
 
-def wott(r0: int, d0: int):
+def wott(r0, d0):
     pth = Path("Z:/cycle/current/data/sics")
-    r0 = f"PLP{r0:07d}.nx.hdf"
+    
+    if r0 == "scratch.nx.hdf":
+        pass
+    else:
+        r0 = f"PLP{r0:07d}.nx.hdf"
+
     d0 = f"PLP{d0:07d}.nx.hdf"
 
     # pth = Path("W:", "cycle", "171", "data", "sics")
@@ -20,7 +25,11 @@ def wott(r0: int, d0: int):
 
 
 if __name__ == "__main__":
+    
+    try:
+        r0 = int(sys.argv[1])
+    except ValueError:
+        r0 = "scratch.nx.hdf"
 
-    r0 = int(sys.argv[1])
     d0 = int(sys.argv[2])
     actual, nominal = wott(r0, d0)

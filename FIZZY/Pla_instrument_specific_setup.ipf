@@ -302,9 +302,9 @@ Function/wave autoslit(angle, footprint, resolution)
 	variable s1, s2, s3, s4, L12, LS4, L2S, LpreS1
 	string request
 	//instrument distances
-	L12 = str2num(gethipaval("/instrument/parameters/slit3_distance")) - str2num(gethipaval("/instrument/parameters/slit2_distance"))
-	L2S = str2num(gethipaval("/instrument/parameters/sample_distance")) - str2num(gethipaval("/instrument/parameters/slit3_distance"))
-	LS4 = str2num(gethipaval("/instrument/parameters/slit4_distance")) - str2num(gethipaval("/instrument/parameters/sample_distance"))
+	L12 = getpos("ss3y") - str2num(gethipaval("/instrument/parameters/slit2_distance"))
+	L2S = str2num(gethipaval("/instrument/parameters/sample_distance")) - getpos("ss3y")
+	LS4 = getpos("ss4y") - str2num(gethipaval("/instrument/parameters/sample_distance"))
 	LpreS1 = str2num(gethipaval("/instrument/parameters/slit2_distance")) - str2num(gethipaval("/instrument/parameters/slit1_distance"))
 
 	make/n=4/free/d slits
@@ -633,7 +633,8 @@ Function regularTasks(s)
 	
 	//update the webpage status
 	createHTML()
-
+	sics_cmd_sync("slit3_distance " + num2str(getpos("ss3y")))
+	sics_cmd_sync("slit4_distance " + num2str(getpos("ss4y")))
 	return 0
 End
 
@@ -1643,13 +1644,13 @@ Function Instrumentlayout_panel()
 //	SetVariable lakeshore,labelBack=(65535,65535,65535),fSize=14, win=instrumentlayout
 	SetVariable lakeshoreset1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T1SP1")][1],noedit= 1, win=instrumentlayout
 	SetVariable lakeshoreset1,pos={100,274},size={90,16},title="temp1 setpoint", win=instrumentlayout,bodywidth=40
-	SetVariable lakeshoreset2,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T2SP1")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshoreset2,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T1SP2")][1],noedit= 1, win=instrumentlayout
 	SetVariable lakeshoreset2,pos={100,294},size={90,16},title="temp2 setpoint", win=instrumentlayout,bodywidth=40
-	
+
 	SetVariable lakeshore1,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T1S1")][1],noedit= 1, win=instrumentlayout
-	SetVariable lakeshore1,pos={100,313},size={90,16},title="T01S01", win=instrumentlayout,bodywidth=40
-	SetVariable lakeshore2,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T2S1")][1],noedit= 1, win=instrumentlayout
-	SetVariable lakeshore2,pos={100,333},size={90,16},title="T02S01", win=instrumentlayout,bodywidth=40
+	SetVariable lakeshore1,pos={100,313},size={90,16},title="T1S1", win=instrumentlayout,bodywidth=40
+	SetVariable lakeshore2,limits={-inf,inf,0},value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/control/T1S2")][1],noedit= 1, win=instrumentlayout
+	SetVariable lakeshore2,pos={100,333},size={90,16},title="T1S2", win=instrumentlayout,bodywidth=40
 
 ///Julabo
 //	SetVariable julabo,pos={100,293},size={90,16},title="sample temp", win=instrumentlayout,bodywidth=40
@@ -2669,7 +2670,7 @@ Function autosetangles_buttonproc(s): buttonControl
       	
 			for(ii = 0 ; ii < dimsize(angler_listwave, 0) ; ii += 1)
 				angle = str2num(angler_listwave[ii][1])
-				Wave slits = autoslit(angle, footprint, resolution)
+				Wave slits = autoslit(abs(angle), footprint, resolution)
 				if(numpnts(slits) != 4)
 					return 0
 				endif
@@ -3299,6 +3300,14 @@ Function notifier(str)
 	cmd += "python notifier.py \"" + str + "\""
 	print cmd
 	ExecuteDOSCommand_wottpy(cmd, 10)
+End
+
+
+Function speak(str)
+	string str
+	string cmd
+	sprintf cmd, "import pyttsx3; engine = pyttsx3.init(); engine.say('%s')", str
+	python execute=cmd
 End
 
 

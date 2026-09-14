@@ -23,6 +23,14 @@ function dynskan(motor, range, speed, npnts, [automatic])
 	string temp
 	string savedDataFolder = GetDataFolder(1)	// Save
 
+	//if the tertiary shutter is closed, it might be a good idea to open it.
+	if(stringmatch(gethipaval("/instrument/status/tertiary"), "*Closed*"))
+		doalert 1, "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons, do you want to continue?"
+		if(V_Flag==2)
+			abort
+		endif
+	endif		
+	
 	SetDataFolder root:
 	newdataFolder/o root:packages
 	newdatafolder/o root:packages:platypus

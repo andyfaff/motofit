@@ -75,6 +75,7 @@ Function batchScan(batchfile)
 	CtrlNamedBackground  batchScan start
 	print "______________________________________________________"
 	print "STARTING BATCH MODE"
+	speak("Starting batch file")
 	return 0
 End
 
@@ -187,7 +188,7 @@ Function batchScanStop()
 	Button/z pausebatch_tab3 win=sicscmdpanel,disable=1		
 	print "FINISHED BATCH MODE at:    ", Secs2Time(DateTime,2)
 	print "______________________________________________________"
-
+	speak("Finished batch file")
 End
 
 Function batchScanPause(pauseORrestart)
