@@ -13,6 +13,7 @@ Function batchScan(batchfile)
 	
 	//if the tertiary shutter is closed, it might be a good idea to open it.
 	if(!stringmatch(gethipaval("/instrument/status/tertiary"), "*OPEN*"))
+		Speak("Warning, tertiary shutter appears to be closed")
 		doalert 1, "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons, do you want to continue?"
 		if(V_Flag==2)
 			abort
@@ -22,8 +23,9 @@ Function batchScan(batchfile)
 	//see if attenuator is going
 	sockitsendnrecv SOCK_sync, "bat\n", msg
 	msg = replacestring(" = ",msg, "=")
-      msg = removeending(msg, "\n")
-     	if(str2num(stringfromlist(1, msg, "="))  > 1)
+	msg = removeending(msg, "\n")
+	if(str2num(stringfromlist(1, msg, "="))  > 1)
+		Speak("Warning, beam attenuator appears to be running")
 		doalert 1, "WARNING, beam attenuator appears to be running, do you want to continue?"
 		beep
 		if(V_Flag==2)

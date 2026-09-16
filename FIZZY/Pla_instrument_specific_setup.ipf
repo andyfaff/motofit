@@ -3306,8 +3306,19 @@ End
 Function speak(str)
 	string str
 	string cmd
-	sprintf cmd, "import pyttsx3; engine = pyttsx3.init(); engine.say('%s')", str
-	python execute=cmd
+	NVAR/z v = root:packages:platypus:SICS:pyttsx3_init
+	if(NVAR_Exists(v) == 0)
+		variable/g root:packages:platypus:SICS:pyttsx3_init
+		nvar v = root:packages:platypus:SICS:pyttsx3_init
+		v = 0
+	endif
+	if(v == 0)
+		python execute="import pyttsx3; engine=pyttsx3.init(); engine.runAndWait()"
+		v = 1
+	endif
+	
+	sprintf cmd, "engine.say('%s')", str
+	python/z execute=cmd
 End
 
 

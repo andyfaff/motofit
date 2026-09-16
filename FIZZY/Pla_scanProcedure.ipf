@@ -260,6 +260,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 	
 	//if the tertiary shutter is closed, it might be a good idea to open it.
 	if(!stringmatch(gethipaval("/instrument/status/tertiary"), "*OPEN*"))
+		speak("WARNING, tertiary Shutter appears to be closed, you may not see any neutrons") 
 		print "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons (fpx)"
 		//if auto is set, then its probably an automatic scan, so don't ask if you want to stop
 		//if auto is NOT set, then you probably want to open the shutter, so ask if you want to continue.
@@ -274,6 +275,7 @@ Function fpx(motorName,rangeVal, numpoints, [mode ,preset, savetype, samplename,
 
 	//if the fast shutter is closed.
 	if(!stringmatch(gethipaval("/instrument/fs/shutter/status"), "1"))
+		speak("WARNING, fast Shutter appears to be closed, you may not see any neutrons")
 		print "WARNING, fast Shutter appears to be closed, you may not see any neutrons (fpx)"
 		//if auto is set, then its probably an automatic scan, so don't ask if you want to stop
 		//if auto is NOT set, then you probably want to open the shutter, so ask if you want to continue.
@@ -576,7 +578,6 @@ Function finishScan(status)
 		while(grepstring(reply, "ERROR: Busy"))
 		print "Stopped scan for some reason (finishScan)"
 	endif
-	
 	print "SCAN FINISHED", time(), date()
 
 	//if you want to save, then we must save the data.
