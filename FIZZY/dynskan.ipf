@@ -117,6 +117,7 @@ function dynskan(motor, range, speed, npnts, [automatic])
 
 
 	ctrlnamedbackground dynskan, proc=dynskan_func, start, period=10
+	start_hipadaba_logging(motor_to_hipadaba(motor))
 	SetDataFolder savedDataFolder
 end
 
@@ -137,6 +138,7 @@ function stop_dynskan()
 	process_dynskan()
 	// process_dynskan typically moves motor to centre or to start location
 	wait(2)
+	stop_hipadaba_logging()
 	statemonclear("DYNSKAN")
 end
 
@@ -335,4 +337,39 @@ Function get_dynskan_data()
 		tok = stringfromlist(3, substr, ",")
 		dynskan_int_frames[ii - 1] = str2num(tok)
 	endfor
+end
+
+
+function start_hipadaba_logging(nodes)
+	// logging of given nodes in the hipadaba tree
+	//
+	// nodes: semicolon separated list of the hipadaba nodes to track
+	//
+	// The node logs are currently saved into the IPUF10/Python Scripts directory.
+	string nodes
+	nodes = replacestring(";", nodes, " ")
+	string pth = SpecialDirPath("Igor Pro User Files", 0, 1, 0)
+	pth = replacestring("\\", pth, "\\")
+
+	string cmd = ""
+	// cmd.exe /c start /min 
+	cmd += "cmd.exe /c c: && cd \"" + pth + "Python Scripts\" && "
+    //cmd += "call C:\\ProgramData\\miniforge3\\Scripts\\activate && "
+	cmd += "conda activate dev3 && "
+	cmd += "python hipadaba_logger.py --tags " + nodes
+	print cmd
+	executescripttext/B/W=0.2/z cmd
+end
+
+
+function stop_hipadaba_logging()
+	// stops the hipadaba logging
+	string pth = SpecialDirPath("Igor Pro User Files", 0, 1, 0)
+	pth = replacestring("\\", pth, "\\")
+	pth += "Python Scripts"
+	newpath/C/O/Q stop_hipadaba_logger, pth
+	variable fnum
+	open/p=stop_hipadaba_logger fnum as "stop.txt"
+	close fnum
+	killpath/z stop_hipadaba_logger
 end

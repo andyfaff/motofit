@@ -807,7 +807,17 @@ Function/t getHipaVal(path)
 	else
 		return hipadaba_paths[V_Value][1]
 	endif
-ENd
+End
+
+
+Function/s motor_to_hipadaba(motor)
+	// the hipadaba path corresponding to a given motor.
+   string motor
+   Wave/t axeslist = root:packages:platypus:SICS:axeslist
+	findvalue/text=motor axeslist
+	return axeslist[V_row][1]
+End
+
 
 Function sicsCmdPanelWinHook(s)		//window hook for events happening in the SICScmdpanel
 	STRUCT WMWinHookStruct &s
