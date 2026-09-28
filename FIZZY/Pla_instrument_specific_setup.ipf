@@ -2927,7 +2927,7 @@ Function txtme(text)
 	text = replacestring(" ", text, "+")
 	string cmd = ""
 	string phone = getHipaVal("/user/phone")
-	sprintf cmd, "http://api.clickatell.com/http/sendmsg?api_id=3251818&user=andyfaff&password=nanjeminya1&to=%s&text=%s", phone, text
+	sprintf cmd, "", phone, text
 	//	print cmd
 	easyhttp/PROX cmd
 ENd
@@ -3125,9 +3125,9 @@ Function flipperstatuspanel()
 	PauseUpdate; Silent 1		// building window...
 	NewPanel /W=(94,131,794,528)
 	SetVariable analyser,pos={235,161},size={390,16},title="analyser"
-	SetVariable analyser,value= root:packages:platypus:SICS:hipadaba_paths[55][1]
+	SetVariable analyser,value= root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/analyzer_flipper/switch_on")][1]
 	SetVariable polarizerflipper,pos={237,133},size={390,16},title="polariser flipper"
-	SetVariable polarizerflipper,value= root:packages:platypus:SICS:hipadaba_paths[46][1]
+	SetVariable polarizerflipper,value=  root:packages:platypus:SICS:hipadaba_paths[gethipapos("/instrument/polarizer_flipper/switch_on")][1]
 End
 
 

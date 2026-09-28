@@ -1,1 +1,2 @@
-Place these python files into the 'IP10UF/Python Scripts' directory
+- Place these python files into the 'IP10UF/Python Scripts' directory
+- Once you've set up a dev3 environment with the environment.yml file, register conda so that you can call conda from any cmd window. Do this via `conda init cmd.exe`. This allows one to activate an environment from a bog-standard cmd prompt, and makes it easier to call into python using `executescripttext`.
