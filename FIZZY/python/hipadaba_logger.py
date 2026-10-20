@@ -6,7 +6,10 @@ from pathlib import Path
 
 import aiofiles
 import aiohttp
+import numpy as np
+import pandas as pd
 import zmq.asyncio
+from refnx.reduce import event
 
 
 async def get_webpage(session, das_url, auth):
@@ -32,6 +35,107 @@ def parse_textstatus(data):
             dct[k.strip()] = v.strip()
 
     return dct
+
+
+def status_dct(
+    DAQ,
+    hipadaba_folder="C:/Documents and Settings/platypus/Documents/WaveMetrics/Igor Pro 10 User Files/Python Scripts",
+    dataset_num=0
+):
+    N = dataset_num
+    pth = Path(hipadaba_folder)
+    with open(pth / DAQ / f"DATASET_{N}" / "status.txt", "r") as f:
+        status = "".join(f.readlines())
+        status = parse_textstatus(status)
+    return status
+
+
+def process_hipadaba_scan(
+    node,
+    DAQ,
+    frame_agg,
+    event_folder="z:/cycle/current/data/histserv",
+    hipadaba_folder="C:/Documents and Settings/platypus/Documents/WaveMetrics/Igor Pro 10 User Files/Python Scripts",
+    xbins=None,
+    ybins=None,
+    tbins=None,
+    dataset_num=0,
+    frequency=24,
+    start_end_frame=None,
+):
+    PERIOD = 1 / frequency
+    N = dataset_num
+
+    pth = Path(event_folder)
+
+    _events = event.events(pth / DAQ / f"DATASET_{N}" / "EOS.bin")[0]
+    if tbins is None:
+        tbins = np.min(_events[1]) - 0.5, np.max(_events[1]) + 0.5
+    if ybins is None:
+        ybins = np.min(_events[2]) - 0.5, np.max(_events[2]) + 0.5
+    if xbins is None:
+        xbins = np.min(_events[-1]) - 0.5, np.max(_events[-1]) + 0.5
+
+    # epoch time of 1st frame
+    status = status_dct(DAQ, dataset_num=dataset_num, hipadaba_folder=hipadaba_folder)
+
+    # epoch times for start of first and last frame
+    NUM_FRAMES = _events[0][-1] + 1
+    et_F0 = float(status["dataset_start_time_t"])
+    et_FN = np.arange(NUM_FRAMES, dtype=np.float64) * PERIOD + et_F0
+    np.testing.assert_equal(et_F0, et_FN[0])
+
+    pth = Path(hipadaba_folder)
+    df = pd.read_csv(pth / "instrument_log.dat", names=["node", "ET", "pos"])
+    _idx = df["node"] == node
+    filtered_df = df[_idx]
+    hipa_epoch_times = filtered_df["ET"][_idx].to_numpy()
+    positions = filtered_df["pos"][_idx].to_numpy()
+    if not len(hipa_epoch_times):
+        raise RuntimeError("No hipadaba values recorded for that node")
+
+    # find overlap between hipadaba values and events
+    if et_F0 > hipa_epoch_times[-1] or et_FN[-1] < hipa_epoch_times[0]:
+        raise RuntimeError(
+            "There is no overlap between the hipadaba recorded positions and the event mode data"
+        )
+
+    # override the first/last frames.
+    if start_end_frame is not None:
+        first_frame, last_frame = start_end_frame
+    else:  # the default situation
+        # work out first neutron frame we want.
+        if et_F0 > hipa_epoch_times[0]:
+            # the first neutron frame is encompassed by hipa information
+            first_frame = 0
+        else:
+            # the first neutron frame comes before the first hipa information
+            first_frame = np.searchsorted(et_FN, hipa_epoch_times[0])
+
+        if et_FN[-1] < hipa_epoch_times[-1]:
+            last_frame = _events[0][-1]
+        else:
+            last_frame = np.searchsorted(et_FN, hipa_epoch_times[-1])
+    
+    # generate frame bins
+    _FBINS = np.arange(first_frame, last_frame, frame_agg)
+    FBINS = []
+    for i in range(len(_FBINS) - 1):
+        FBINS.append(np.arange(_FBINS[i], _FBINS[i + 1]))
+
+    det, _ = event.process_event_stream(_events, FBINS, tbins, ybins, xbins)
+
+    # find corresponding average position for the FRM_AGG range
+    pos_node = []
+    for _fbin in FBINS:
+        # get the epoch time of the frame bins
+        ts = et_FN[_fbin[0]]
+        tf = et_FN[_fbin[-1] + 1]
+        pos_start_end = np.interp([ts, tf], hipa_epoch_times, positions)
+        pos_node.append(np.mean(pos_start_end))
+    pos_node = np.array(pos_node)
+
+    return pos_node, det
 
 
 async def zmq_logger(ics_url, das_url, args, auth):

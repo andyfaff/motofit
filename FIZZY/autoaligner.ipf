@@ -90,7 +90,7 @@ Function autoalign(angle, direct_beam_number, height, [set_z, set_sth, sztype, z
 	print "SOFTZERO at start: ", sztype, " = ", gethipaVal("/sample/" + sztype + "/softzero")
 
 	appendStatemon("autoalign")
-	ctrlnamedBackground autoaligner, proc=autoalign_runner, start, period=60
+	ctrlnamedBackground autoaligner, proc=autoalign_runner, start, period=20
 	newdataFolder/o root:packages:platypus:SICS:autoaligner
 	string/g root:packages:platypus:SICS:autoaligner:step /N=step
 	string/g root:packages:platypus:SICS:autoaligner:next_step /N=next_step
@@ -161,8 +161,8 @@ Function autoalign_runner(s)
 	variable actual, offset, aas
 	if(cycle == -0.5 && autoalign_status()==2)
 		// first time into the background task, need to move
+		appendStatemon("om2th")
 		angler(angle)
-		wait(2)
 		cycle += 0.25
 		return 0
 	endif
@@ -187,7 +187,7 @@ Function autoalign_runner(s)
 		strswitch(next_step)
 			case "height":
 			    print "Cycle ", cycle, ": starting DYNSKAN"
-				if(dynskan(sztype, height, zspeed, 31, automatic=1))
+				if(dynskan(sztype, height, zspeed, npnts=12, automatic=1))
 					print "Problem with dynskan (autoalign)"
 				endif
 				cycle += 0.5

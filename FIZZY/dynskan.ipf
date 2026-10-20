@@ -4,20 +4,20 @@
 
 // https://cms.nbi.ansto.gov.au/instruments/platypus-reflectometer/instrument-manual/echidna-table-of-contents
 
-// if the scan has crap stats try increasing step size and/or time per point.
-// fly("st4vt", 2.0, 0.05, 2)
-// fly("sz", 2.5, 0.1, 2)
+// if the scan has crap stats try decreasing speed
+// dynskan("st4vt", 2.0, 0.05)
+// dynskan("sztop", 2.5, 0.05)
 
 
 // SICS equivalent
 // dynskan 100 sztop -1.0 1.0 0.05
 // dynskan_data
 
-function dynskan(motor, range, speed, npnts, [automatic])
+function dynskan(motor, range, speed [, npnts, automatic])
    string motor
    variable range, speed, npnts, automatic
    
-   variable initial_pos, maxspeed, step_size
+   variable initial_pos, maxspeed, step_size, accel, dist_to_speed
    variable lowerlimit, upperlimit
 	string hipadaba_path
 	string temp
@@ -25,6 +25,7 @@ function dynskan(motor, range, speed, npnts, [automatic])
 
 	//if the tertiary shutter is closed, it might be a good idea to open it.
 	if(stringmatch(gethipaval("/instrument/status/tertiary"), "*Closed*"))
+	   speak("The tertiary shutter appears to be closed")
 		doalert 1, "WARNING, tertiary Shutter appears to be closed, you may not see any neutrons, do you want to continue?"
 		if(V_Flag==2)
 			abort
@@ -39,6 +40,9 @@ function dynskan(motor, range, speed, npnts, [automatic])
 
 	if(paramisDefault(automatic))
 		automatic = 0
+	endif
+	if(ParamIsDefault(npnts))
+		npnts = 4
 	endif
 
 	wave/t axeslist = root:packages:platypus:SICS:axeslist
@@ -60,16 +64,17 @@ function dynskan(motor, range, speed, npnts, [automatic])
 		motoraxisrow = row
 	endif
 	
-	hipadaba_path = axeslist[motoraxisrow][1]
+	hipadaba_path = motor_to_hipadaba(motor)
 	maxspeed = str2num(getHipaVal(hipadaba_path + "/maxSpeed"))
-	
+	accel = str2num(getHipaVal(hipadaba_path + "/accel"))
+	dist_to_speed = speed * speed / accel / 2		
 	// check lower and upper bounds to see if the move would work
 	initial_pos = str2num(axeslist[motoraxisrow][2])
    step_size = range / (npnts - 1)
 	variable/g initial_position = initial_pos
 	variable/g range_ = range
-	variable start_loc = initial_pos - range/2 - 2 * step_size
-	variable stop_loc = initial_pos + range/2 + 2 * step_size
+	variable start_loc = initial_pos - range/2 - dist_to_speed
+	variable stop_loc = initial_pos + range/2 + dist_to_speed
 	variable/g step_sz = step_size
 	variable/g n_pnts = npnts
 	variable/g last_ticks = 0
@@ -183,8 +188,8 @@ function process_dynskan_dynamic([smooth_len])
 	make/o/d/n=(npnts) root:packages:platypus:data:dynskan:dynskan_dif_counts
 	Wave dynskan_dif_counts = root:packages:platypus:data:dynskan:dynskan_dif_counts
 	Differentiate yy_smth/X=xx_smth/D=dynskan_dif_counts
-	dynskan_dif_counts[0, 20] = 0
-	dynskan_dif_counts[npnts - 20, npnts] = 0
+	dynskan_dif_counts[0, 10] = 0
+	dynskan_dif_counts[npnts - 10, npnts] = 0
 end
 
 
@@ -196,7 +201,7 @@ function process_dynskan([npnts])
    variable npnts
    Wave dynskan_int_counts = root:packages:platypus:data:dynskan:dynskan_int_counts
    Wave dynskan_int_pos = root:packages:platypus:data:dynskan:dynskan_int_pos
-	
+		
 	nvar n_pnts = root:packages:platypus:data:dynskan:n_pnts 
 	nvar step_sz = root:packages:platypus:data:dynskan:step_sz	
 	nvar range_ = root:packages:platypus:data:dynskan:range_
@@ -205,40 +210,41 @@ function process_dynskan([npnts])
 	svar motorname = root:packages:platypus:data:dynskan:motorname
 	variable/g root:packages:platypus:data:dynskan:dynskan_centre
 	nvar dynskan_centre = root:packages:platypus:data:dynskan:dynskan_centre
-	
-	if(paramisdefault(npnts))
-	    npnts = n_pnts
-	endif
-	make/free/d/n=(npnts + 1) edges, loc, interp_cts
-	setscale/I x, initial_position - 0.5*(range_ + step_sz), initial_position + 0.5*(range_ + step_sz), edges
-	edges = pnt2x(edges, p)
-	loc = binarysearchinterp(dynskan_int_pos, edges)
-	interp_cts = dynskan_int_counts[loc]
-	
-	// now histogram
-	
-	make/d/o/n=(npnts) root:packages:platypus:data:dynskan:dynskan_counts
-	make/d/o/n=(npnts) root:packages:platypus:data:dynskan:dynskan_pos
-	wave dynskan_counts = root:packages:platypus:data:dynskan:dynskan_counts
-   wave dynskan_pos = root:packages:platypus:data:dynskan:dynskan_pos
+	variable/g root:packages:platypus:data:dynskan:hipadaba_centre = nan
+	nvar hipadaba_centre = root:packages:platypus:data:dynskan:hipadaba_centre
 
-	dynskan_counts = interp_cts[p + 1] - interp_cts[p]
-	dynskan_pos = 0.5 * (edges[p + 1] + edges[p])
-
-	dowindow/k dynskan_plot	
-	display/k=1/n=dynskan_plot dynskan_counts vs dynskan_pos
-	ModifyGraph rgb(dynskan_counts)=(1,16019,65535), lsize(dynskan_counts)=2
-	Label bottom motorname
-	
 	DFREF savedDataFolder = GetDataFolderDFR()
+
+	// try processing with the hipadaba logging approach
+	try
+		process_hipadaba(motor_to_hipadaba(motorname), trimstring(getHipaVal("/instrument/detector/daq_dirname")), n_pnts)
+		wave/z hipadaba_counts = root:packages:platypus:data:dynskan:hipadaba_counts
+		wave/z hipadaba_pos = root:packages:platypus:data:dynskan:hipadaba_pos
+		if(WaveExists(hipadaba_counts))
+			appendtograph/W=dynskan_progress hipadaba_counts vs hipadaba_pos
+		endif
+		SetDataFolder root:packages:platypus:data:dynskan
+		CurveFit/q/M=2/W=2 gauss, hipadaba_counts/X=hipadaba_pos/D
+		ModifyGraph/W=dynskan_progress rgb(hipadaba_counts)=(1,4,52428),rgb(fit_hipadaba_counts)=(1,4,52428), lstyle(fit_hipadaba_counts)=3
+		Wave W_coef
+		hipadaba_centre = W_coef[2]
+	catch
+	endtry
+
 	SetDataFolder root:packages:platypus:data:dynskan
-	CurveFit/q/M=2/W=2 gauss, dynskan_counts/X=dynskan_pos/D
+	Wave dynskan_dif_counts = root:packages:platypus:data:dynskan:dynskan_dif_counts
+	Wave dynskan_int_pos = root:packages:platypus:data:dynskan:dynskan_int_pos
+
+	SetDataFolder root:packages:platypus:data:dynskan
+	CurveFit/q/M=2/W=2 gauss, dynskan_dif_counts/X=dynskan_int_pos/D
 	Wave W_coef
+	ModifyGraph/W=dynskan_progress lstyle(fit_dynskan_dif_counts)=3, rgb(fit_dynskan_dif_counts)=(0,0,0)
 	dynskan_centre = W_coef[2]
 	TextBox/C/N=text0/A=MC "Peak Centre = " + num2str(W_coef[2])
-	print "Gauss centre at " + num2str(W_coef[2])
+	print "Gauss centre at: " + num2str(W_coef[2])
+	print "Hipadaba centre at ", hipadaba_centre
 	setdatafolder savedDataFolder
-	doupdate/w=dynskan_plot
+	doupdate/w=dynskan_progress
 
 	apply_any_offset(motorname, dynskan_centre, initial_position, auto)
 end
@@ -351,14 +357,18 @@ function start_hipadaba_logging(nodes)
 	string pth = SpecialDirPath("Igor Pro User Files", 0, 1, 0)
 	pth = replacestring("\\", pth, "\\")
 
+	string nodestr = ""
+	if(strlen(nodes))
+	    nodestr = "--tags " + nodes 
+	endif
+	
 	string cmd = ""
-	// cmd.exe /c start /min 
-	cmd += "cmd.exe /c c: && cd \"" + pth + "Python Scripts\" && "
-    //cmd += "call C:\\ProgramData\\miniforge3\\Scripts\\activate && "
-	cmd += "conda activate dev3 && "
-	cmd += "python hipadaba_logger.py --tags " + nodes
-	print cmd
-	executescripttext/B/W=0.2/z cmd
+	sprintf cmd, "cmd.exe /c c: && cd \"%sPython Scripts\" && conda activate dev3 && title Hipadaba logger && python hipadaba_logger.py %s", pth, nodestr
+	// print cmd
+	// the following line is required if one hasn't set up cmd.exe to automatically know conda
+   // "call C:\\ProgramData\\miniforge3\\Scripts\\activate && "
+	executescripttext/B/W=0.5/z cmd
+	//ExecuteDOSCommand_wottpy(cmd, 0.5)
 end
 
 
@@ -372,4 +382,44 @@ function stop_hipadaba_logging()
 	open/p=stop_hipadaba_logger fnum as "stop.txt"
 	close fnum
 	killpath/z stop_hipadaba_logger
+end
+
+
+function process_hipadaba(node, daq, frame_agg, [miny, maxy, mint, maxt, start_frame, end_frame])
+	// process the dynskan data via the hipadaba logged data and the event mode file
+	// node - hipadaba node for what you're scanning
+	// daq - DAQ_dirname for the data
+	// frame_agg - how many frames you'd like to aggregate together
+	// miny - minimum y pixel to include
+	// maxy - maximum y pixel to include
+	// mint - minimum tof to include (microseconds)
+	// maxt - maximum tof to include (microseconds)
+	
+	// You have to specify both mint/miny and maxt/maxt for them to have an effect
+	string node, daq
+	variable frame_agg
+	variable miny, maxy, mint, maxt, start_frame, end_frame
+	string cmd
+	variable sz
+	string ybins = ""
+	string tbins = ""
+	string start_end_frame = ""
+	if(ParamIsDefault(miny) == 0 && paramisdefault(maxy) == 0)
+		 sprintf ybins, ", ybins=(%f, %f)", miny, maxy
+	endif
+	if(ParamIsDefault(mint) == 0 && paramisdefault(maxt) == 0)
+		 sprintf tbins, ", tbins=(%f, %f)", mint, maxt
+	endif
+	if(ParamIsDefault(start_frame)==0 && paramisdefault(end_frame)==0)
+		sprintf start_end_frame, ", start_end_frame=(%d, %d)", start_frame, end_frame
+	endif
+	
+	sprintf cmd, "import numpy as np;import hipadaba_logger; pos, det = hipadaba_logger.process_hipadaba_scan('%s', '%s', %d%s%s%s); output=np.c_[pos, np.squeeze(det)]", node, daq, frame_agg, ybins, tbins, start_end_frame
+	print(cmd)
+	   
+	make/free/o output
+	python execute=cmd, array={"output", output}
+	sz = dimsize(output, 0)
+	make/d/o/n=(sz) root:packages:platypus:data:dynskan:hipadaba_counts = output[p][1] * 100
+	make/d/o/n=(sz) root:packages:platypus:data:dynskan:hipadaba_pos = output[p][0]
 end

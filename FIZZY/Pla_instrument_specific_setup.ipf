@@ -3134,6 +3134,12 @@ End
 Function hplc(A, B, C, D,[ vol, rate, wait])
 	variable A, B, C, D, vol, rate, wait
 	string template = "", runmode = "drive", cmd = ""
+	string status = ""
+	status = getHipaVal("/sample/hplc1/pump/status")
+	if(cmpstr("IDLE", status) != 0)
+		speak("Warning HPLC is already pumping, dont send repeat commands")
+		return 1
+	endif
 	if(paramisdefault(vol))
 		vol = 5
 	endif
@@ -3151,9 +3157,7 @@ Function hplc(A, B, C, D,[ vol, rate, wait])
 		print "HPLC rate too high"
 		abort
 	endif
-	if (!wait)
-		runmode = "run"
-	endif
+
 	if(a < 0 || b < 0 || c < 0 || d < 0)
 		print "HPLC: all ratio values must be positive"
 		abort
@@ -3171,10 +3175,13 @@ Function hplc(A, B, C, D,[ vol, rate, wait])
 	template = "hset /sample/hplc1/pump/remote 1\n"
 	template += "hset /sample/hplc1/pump/flow/setp %1.3f\n"
 	template += "hset /sample/hplc1/pump/ratio/setp %d/%d/%d/%d\n"
-	template += "%s hplc1_pump_volume_setp %g\n"
+	if(wait)
+		template += "drive hplc1_pump_volume_setp %g\n"	
+	else
+		template += "hset /sample/hplc1/pump/volume/setp %g\n"
+	endif
 
-	sprintf cmd, template, rate, A, B, C, D, runmode, vol
-
+	sprintf cmd, template, rate, A, B, C, D, vol
 	if(sics_cmd_cmd(cmd))
 		print "Error while sending HPLC request (HPLC)"
 		return 1
@@ -3265,10 +3272,10 @@ Function/s get_dir(func)
 End
 
 
-Function wottpy(r0, d0)
-    variable r0, d0
+Function wottpy(r0, d0 [, start_time, end_time])
+    variable r0, d0, start_time, end_time
 	
-	string r0s, d0s
+	string r0s, args
 	variable a0, a1
 	if(numtype(r0))
 	    // scratch
@@ -3276,10 +3283,14 @@ Function wottpy(r0, d0)
 	else
 		r0s = num2str(r0)
 	endif
-	d0s = num2str(d0)
 	
+	if(ParamIsDefault(start_time)==0 && ParamIsDefault(end_time)==0)
+		sprintf args, "%s %d %3.2f %3.2f", r0s, d0, start_time, end_time
+	else
+		sprintf args, "%s %d", r0s, d0
+	endif
 	// IP10
-	pythonfile file="wott.py", args=r0s + " " + d0s, var={"actual", a0}
+	pythonfile file="wott.py", args=args, var={"actual", a0}
 	
 	// IP9
 	// executescriptText/B/W=20 "C:/users/platypus/Desktop/wott.bat " + r0s + " " + d0s
